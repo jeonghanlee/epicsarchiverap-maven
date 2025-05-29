@@ -1,0 +1,76 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+    <id>release</id>
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory> <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>mgmt.war</include>
+                <include>engine.war</include>
+                <include>etl.war</include>
+                <include>retrieval.war</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>LICENSE</include>
+                <include>NOTICE</include>
+                <include>*License.txt</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${stage.dir}</directory> <outputDirectory>/</outputDirectory>
+            <includes>
+                 <include>RELEASE_NOTES</include>
+            </includes>
+        </fileSet>
+
+
+        <fileSet>
+            <directory>${project.basedir}/docs/docs/source/samples</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>quickstart.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/docs/docs/source/samples</directory>
+            <outputDirectory>install_scripts</outputDirectory>
+            <includes>
+                <include>sampleStartup.sh</include>
+                <include>deployMultipleTomcats.py</include>
+                <include>addMysqlConnPool.py</include>
+                <include>single_machine_install.sh</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/docs/docs/source/samples/site_specific_content</directory>
+            <outputDirectory>sample_site_specific_content</outputDirectory>
+            <includes>
+                <include>template_changes.html</include>
+            </includes>
+        </fileSet>
+         <fileSet>
+            <directory>${project.basedir}/docs/docs/source/samples/site_specific_content</directory> <outputDirectory>sample_site_specific_content/img</outputDirectory>
+            <includes>
+                <include>*.png</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${src.main.dir}/org/epics/archiverappliance/config/persistence</directory>
+            <outputDirectory>install_scripts</outputDirectory>
+            <includes>
+                <include>*.sql</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</assembly>
