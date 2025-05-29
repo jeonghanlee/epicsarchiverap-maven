@@ -21,7 +21,7 @@
         <stage.dir>${project.build.directory}/stage</stage.dir>
         <src.main.dir>${project.basedir}/src/main</src.main.dir>
         <lib.dir>${project.basedir}/lib</lib.dir>
-        <api.docs.dir>${project.based.dir}/docs/api</api.docs.dir>
+        <api.docs.dir>${project.basedir}/docs/api</api.docs.dir>
         <archapplsite>${env.ARCHAPPL_SITEID == null ? "tests" : env.ARCHAPPL_SITEID}</archapplsite>
         <default.sitespecific.path>${project.basedir}/src/sitespecific/${archapplsite}</default.sitespecific.path>
         <sitespecific.path>${default.sitespecific.path}</sitespecific.path>
@@ -278,6 +278,8 @@
     <build>
         <sourceDirectory>${src.main.dir}</sourceDirectory>
         <testSourceDirectory>${project.basedir}/src/test</testSourceDirectory>
+        <resources>
+        </resources>
         <testResources>
             <testResource>
                 <directory>${project.basedir}/src/sitespecific/tests/classpathfiles</directory>
@@ -298,6 +300,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <release>${java.version}</release>
                 </configuration>
             </plugin>
@@ -319,7 +323,7 @@
                     <systemPropertyVariables>
                     </systemPropertyVariables>
                     <excludes>
-                        <exclude>**/integration/**</exclude>
+                         <exclude>**/integration/**</exclude>
                         <exclude>**/localEpics/**</exclude>
                         <exclude>**/flaky/**</exclude>
                         <exclude>**/singleFork/**</exclude>
@@ -327,7 +331,7 @@
                     </excludes>
                 </configuration>
                 <executions>
-                    <execution>
+                     <execution>
                         <id>unit-tests</id>
                         <phase>test</phase>
                         <goals><goal>test</goal></goals>
@@ -374,6 +378,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.7.1</version> <executions>
+
                     <execution>
                         <id>analyze-dependencies</id>
                         <goals>
@@ -395,9 +400,9 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.3.0</version>
                 <executions>
-                    <execution>
+                     <execution>
                         <id>generateBPLActionsMappings</id>
-                        <phase>generate-resources</phase>
+                        <phase>process-classes</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
@@ -407,8 +412,8 @@
                                 <argument>-classpath</argument>
                                 <classpath /> <argument>org.epics.archiverappliance.mgmt.BPLServlet</argument>
                             </arguments>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                            </configuration>
+                            <outputFile>${api.docs.dir}/mgmtpathmappings.txt</outputFile> <workingDirectory>${project.basedir}</workingDirectory>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>generateJavaDocTagletScriptables</id>
@@ -480,7 +485,7 @@
                         <configuration>
                              <mainClass>org.epics.archiverappliance.TestRun</mainClass>
                              <arguments>
-                                 <argument>-c2</argument>
+                                <argument>-c2</argument>
                              </arguments>
                              <classpathScope>test</classpathScope>
                              <environmentVariables>
@@ -521,8 +526,8 @@
                     <tagletpath>${lib.dir}/test/BPLTaglets.jar</tagletpath>
                     <destDir>${api.docs.dir}</destDir>
                     <verbose>true</verbose> <show>protected</show>
-                </configuration>
-                <dependencies>
+                 </configuration>
+                 <dependencies>
                    <dependency>
                         <groupId>commons-io</groupId>
                         <artifactId>commons-io</artifactId>
@@ -552,11 +557,12 @@
                 <executions>
                     <execution>
                         <id>copy-mappings-for-javadoc-cxt</id>
-                        <phase>process-classes</phase> <goals>
+                        <phase>process-classes</phase>
+                        <goals>
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/javadoc/docs/api</outputDirectory> <resources>
+                            <outputDirectory>${project.build.directory}/docs/api</outputDirectory> <resources>
                                 <resource>
                                     <directory>${api.docs.dir}</directory> <includes>
                                         <include>mgmtpathmappings.txt</include>
@@ -664,7 +670,7 @@
                                 <available file="${mappings.file.abs.path}" property="mappings.file.is.available.by.ant"/>
                                 <echo message="ANT DIAGNOSTIC RESULT: Is ${mappings.file.abs.path} available? ${mappings.file.is.available.by.ant}"/>
                                 <fail message="ANT DIAGNOSTIC FAIL: mgmtpathmappings.txt NOT found by Ant at ${mappings.file.abs.path} during prepare-package phase!"
-                                        unless="mappings.file.is.available.by.ant"/>
+                                      unless="mappings.file.is.available.by.ant"/>
                                 <echo message="ANT DIAGNOSTIC SUCCESS: mgmtpathmappings.txt IS found by Ant at ${mappings.file.abs.path}."/>
                             </target>
                         </configuration>
@@ -707,7 +713,7 @@
                         <configuration>
                             <target>
                                 <echo file="${stage.dir}/org/epics/archiverappliance/staticcontent/version.txt"
-                                        message="Archiver Appliance Version ${project.version}"/>
+                                      message="Archiver Appliance Version ${project.version}"/>
                             </target>
                         </configuration>
                     </execution>
@@ -1015,9 +1021,7 @@
         </profile>
         <profile>
             <id>all-tests-profile</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
+            <activation><activeByDefault>false</activeByDefault></activation>
             <build>
                 <plugins>
                      <plugin>
@@ -1087,4 +1091,3 @@
         </profile>
     </profiles>
 </project>
-
