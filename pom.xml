@@ -30,12 +30,17 @@
     <junit.jupiter.version>5.9.3</junit.jupiter.version>
     <log4j.version>2.20.0</log4j.version>
     <selenium.version>4.22.0</selenium.version>
-    <sphinx.skip>true</sphinx.skip>
+    <sphinx.skip>false</sphinx.skip>
     <jamtio.name>jamtio</jamtio.name>
     <jamtio.ver>071005</jamtio.ver>
     <redisnio.name>redisnio</redisnio.name>
     <redisnio.ver>0.0.1</redisnio.ver>
   </properties>
+  <!--
+        Jeong Han Lee, Dr.rer.nat. 
+        jeonghan.lee@gmail.com
+        2025-05-30 POM.xml tested, enable as default option for sphinx documentation process due to files in docs/docs
+  -->
   <repositories>
     <repository>
       <id>central</id>
