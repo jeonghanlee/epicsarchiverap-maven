@@ -18,10 +18,13 @@
         <archappl.sequential.tests>${env.ARCHAPPL_SEQUENTIAL_TESTS}</archappl.sequential.tests>
         <runTestsSequentiallyCondition>${env.ARCHAPPL_SEQUENTIAL_TESTS == 'true' ? 1 : (Runtime.getRuntime().availableProcessors() / 2 > 0 ? Runtime.getRuntime().availableProcessors() / 2 : 1)}</runTestsSequentiallyCondition>
 
-        <stage.dir>${project.build.directory}/stage</stage.dir>
         <src.main.dir>${project.basedir}/src/main</src.main.dir>
         <lib.dir>${project.basedir}/lib</lib.dir>
-        <api.docs.dir>${project.based.dir}/docs/api</api.docs.dir>
+        <api.docs.dir>${project.basedir}/docs/api</api.docs.dir>
+        <!-- intermediate files .txt lost thier path, so we have to define it specifically -->
+        <java.docs.output.path>${project.build.directory}/site/apidocs/docs/api</java.docs.output.path>
+        <!-- project.build.directory = ${project.basdir/target} -->
+        <stage.dir>${project.build.directory}/stage</stage.dir>
         <archapplsite>${env.ARCHAPPL_SITEID == null ? "tests" : env.ARCHAPPL_SITEID}</archapplsite>
         <default.sitespecific.path>${project.basedir}/src/sitespecific/${archapplsite}</default.sitespecific.path>
         <sitespecific.path>${default.sitespecific.path}</sitespecific.path>
@@ -278,6 +281,8 @@
     <build>
         <sourceDirectory>${src.main.dir}</sourceDirectory>
         <testSourceDirectory>${project.basedir}/src/test</testSourceDirectory>
+        <resources>
+        </resources>
         <testResources>
             <testResource>
                 <directory>${project.basedir}/src/sitespecific/tests/classpathfiles</directory>
@@ -293,15 +298,18 @@
         </testResources>
 
         <plugins>
+<!-- maven-compiler-plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <release>${java.version}</release>
                 </configuration>
             </plugin>
-
+<!-- maven-surefire-plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -319,7 +327,7 @@
                     <systemPropertyVariables>
                     </systemPropertyVariables>
                     <excludes>
-                        <exclude>**/integration/**</exclude>
+                         <exclude>**/integration/**</exclude>
                         <exclude>**/localEpics/**</exclude>
                         <exclude>**/flaky/**</exclude>
                         <exclude>**/singleFork/**</exclude>
@@ -327,7 +335,7 @@
                     </excludes>
                 </configuration>
                 <executions>
-                    <execution>
+                     <execution>
                         <id>unit-tests</id>
                         <phase>test</phase>
                         <goals><goal>test</goal></goals>
@@ -337,7 +345,7 @@
                     </execution>
                 </executions>
             </plugin>
-
+<!-- maven-failsafe-plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -369,11 +377,12 @@
                     </execution>
                 </executions>
             </plugin>
-
+<!-- maven-dependency-plugin -->
              <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.7.1</version> <executions>
+
                     <execution>
                         <id>analyze-dependencies</id>
                         <goals>
@@ -390,33 +399,143 @@
                 </executions>
             </plugin>
 
+
+ 
+            <!-- maven-antrun-plugin -->
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>create-api-docs-directory</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <echo message="ANT: Ensuring directory ${api.docs.dir} exists."/>
+                                <mkdir dir="${api.docs.dir}"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                   <execution>
+                        <id>check-mappings-file-before-javadoc</id>
+                        <phase>prepare-package</phase> <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <property name="mappings.file.abs.path" value="${project.basedir}/docs/api/mgmtpathmappings.txt"/>
+                                <echo message="ANT DIAGNOSTIC: Project base directory is: ${project.basedir}"/>
+                                <echo message="ANT DIAGNOSTIC: Expecting mgmtpathmappings.txt at: ${mappings.file.abs.path}"/>
+                                <available file="${mappings.file.abs.path}" property="mappings.file.is.available.by.ant"/>
+                                <echo message="ANT DIAGNOSTIC RESULT: Is ${mappings.file.abs.path} available? ${mappings.file.is.available.by.ant}"/>
+                                <fail message="ANT DIAGNOSTIC FAIL: mgmtpathmappings.txt NOT found by Ant at ${mappings.file.abs.path} during prepare-package phase!"
+                                      unless="mappings.file.is.available.by.ant"/>
+                                <echo message="ANT DIAGNOSTIC SUCCESS: mgmtpathmappings.txt IS found by Ant at ${mappings.file.abs.path}."/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>download-and-unpack-svg-viewer</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <property name="svg.viewer.zip.dir" value="${project.build.directory}/dependencies/svg_viewer_zip"/>
+                                <property name="svg.viewer.zip.file" value="${svg.viewer.zip.dir}/svg_viewer-v1.2.1.zip"/>
+                                <property name="svg.viewer.url" value="https://github.com/archiver-appliance/svg_viewer/archive/v1.2.1.zip"/>
+                                <property name="svg.viewer.base.unpacked.dir" value="${project.build.directory}/dependencies/unpacked"/>
+                                <echo message="Downloading SVG Viewer from ${svg.viewer.url} to ${svg.viewer.zip.file}"/>
+                                <mkdir dir="${svg.viewer.zip.dir}"/>
+                                <get src="${svg.viewer.url}" dest="${svg.viewer.zip.file}" skipexisting="true"/>
+                                <echo message="Unpacking SVG Viewer to ${svg.viewer.base.unpacked.dir}"/>
+                                <mkdir dir="${svg.viewer.base.unpacked.dir}"/>
+                                <unzip src="${svg.viewer.zip.file}" dest="${svg.viewer.base.unpacked.dir}"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-version-txt</id>
+                        <phase>prepare-package</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <echo file="${stage.dir}/org/epics/archiverappliance/staticcontent/version.txt"
+                                      message="Archiver Appliance Version ${project.version}"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>sitespecificantscript</id>
+                        <phase>prepare-package</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <property name="ant.classes" refid="maven.runtime.classpath"/>
+                                <property name="archapplsite" value="${archapplsite}"/>
+                                <property name="sitespecificpath" value="${sitespecific.path}"/>
+                                <property name="stage" value="${stage.dir}"/>
+                                <ant antfile="${project.basedir}/build.xml" target="sitespecificbuild"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- exec-maven-plugin -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.3.0</version>
                 <executions>
+
                     <execution>
                         <id>generateBPLActionsMappings</id>
-                        <phase>generate-resources</phase>
+                        <phase>compile</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
                         <configuration>
                             <executable>${env.JAVA_HOME}/bin/java</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
                             <arguments>
                                 <argument>-classpath</argument>
-                                <classpath /> <argument>org.epics.archiverappliance.mgmt.BPLServlet</argument>
-                            </arguments>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                            </configuration>
+                                <classpath />
+                                <argument>org.epics.archiverappliance.mgmt.BPLServlet</argument>
+                                </arguments>
+                            <!-- we need to copy it to ${java.docs.output.path} -->
+                            <outputFile>${api.docs.dir}/mgmtpathmappings.txt</outputFile>
+                        </configuration>
                     </execution>
+                     <execution>
+                        <id>copy-mgmt_scriptables-for-package</id>
+                        <phase>package</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>scp</executable>
+                            <arguments>
+                                <argument>${java.docs.output.path}/mgmt_scriptables.txt</argument>
+                                <argument>${api.docs.dir}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <!-- we need to copy ${java.docs.output.path}/docs/api/mgmt_scriptables.txt to ${api.docs.dir} in prepare-pacakges -->
                     <execution>
                         <id>generateJavaDocTagletScriptables</id>
                         <phase>package</phase>
-                        <goals><goal>java</goal></goals>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
                         <configuration>
-                            <mainClass>org.epics.archiverappliance.common.taglets.ProcessMgmtScriptables</mainClass>
                             <workingDirectory>${project.basedir}</workingDirectory>
+                            <mainClass>org.epics.archiverappliance.common.taglets.ProcessMgmtScriptables</mainClass>
+                            <arguments>
+                            </arguments>
                             <classpathScope>compile</classpathScope>
                         </configuration>
                     </execution>
@@ -480,7 +599,7 @@
                         <configuration>
                              <mainClass>org.epics.archiverappliance.TestRun</mainClass>
                              <arguments>
-                                 <argument>-c2</argument>
+                                <argument>-c2</argument>
                              </arguments>
                              <classpathScope>test</classpathScope>
                              <environmentVariables>
@@ -492,82 +611,14 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.8.0</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <failOnError>false</failOnError>
-                    <doclint>none</doclint>
-                    <author>true</author>
-                    <version>true</version>
-                    <use>true</use>
-                    <links>
-                        <link>https://docs.oracle.com/en/java/javase/21/docs/api/</link>
-                    </links>
-                    <taglets>
-                        <taglet>
-                            <tagletClass>org.epics.archiverappliance.taglets.BPLActionTaglet</tagletClass>
-                        </taglet>
-                        <taglet>
-                            <tagletClass>org.epics.archiverappliance.taglets.BPLActionParamTaglet</tagletClass>
-                        </taglet>
-                        <taglet>
-                            <tagletClass>org.epics.archiverappliance.taglets.BPLActionEndTaglet</tagletClass>
-                        </taglet>
-                    </taglets>
-                    <tagletpath>${lib.dir}/test/BPLTaglets.jar</tagletpath>
-                    <destDir>${api.docs.dir}</destDir>
-                    <verbose>true</verbose> <show>protected</show>
-                </configuration>
-                <dependencies>
-                   <dependency>
-                        <groupId>commons-io</groupId>
-                        <artifactId>commons-io</artifactId>
-                        <version>2.11.0</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-lang3</artifactId>
-                        <version>3.12.0</version>
-                    </dependency>
-                </dependencies>
-                <executions>
-                    <execution>
-                        <id>generate-javadoc</id>
-                        <goals>
-                            <goal>javadoc</goal>
-                        </goals>
-                        <phase>prepare-package</phase>
-                    </execution>
-                </executions>
-            </plugin>
-
+<!-- maven-resources-plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.3.1</version>
                 <executions>
                     <execution>
-                        <id>copy-mappings-for-javadoc-cxt</id>
-                        <phase>process-classes</phase> <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/javadoc/docs/api</outputDirectory> <resources>
-                                <resource>
-                                    <directory>${api.docs.dir}</directory> <includes>
-                                        <include>mgmtpathmappings.txt</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                            <overwrite>true</overwrite>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-javadoc-resources</id>
+                        <id>copy-initial-doc-resources</id>
                         <phase>generate-sources</phase>
                         <goals><goal>copy-resources</goal></goals>
                         <configuration>
@@ -575,19 +626,35 @@
                             <resources>
                                 <resource>
                                     <directory>${project.basedir}</directory>
-                                    <includes>
-                                        <include>LICENSE</include>
-                                    </includes>
+                                    <includes><include>LICENSE</include></includes>
                                 </resource>
                                 <resource>
                                     <directory>${src.main.dir}/edu/stanford/slac/archiverappliance/PB</directory>
+                                    <includes><include>EPICSEvent.proto</include></includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+<!-- mgmtpathmappings.txt must be copied to target/site/apidocs after generateBPLActionsMappings -->
+                    <execution>
+                        <id>copy-mgmtpathmappings-for-processing</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${java.docs.output.path}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${api.docs.dir}</directory>
                                     <includes>
-                                        <include>EPICSEvent.proto</include>
+                                        <include>mgmtpathmappings.txt</include>
                                     </includes>
                                 </resource>
                             </resources>
                         </configuration>
                     </execution>
+              
                     <execution>
                         <id>stage-resources</id>
                         <phase>prepare-package</phase>
@@ -645,89 +712,62 @@
                     </execution>
                 </executions>
             </plugin>
-
+                       <!-- maven-javadoc-plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.0.0</version>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.8.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <failOnError>false</failOnError>
+                    <doclint>none</doclint>
+                    <author>true</author>
+                    <version>true</version>
+                    <use>true</use>
+                    <links>
+                        <link>https://docs.oracle.com/en/java/javase/${java.version}/docs/api/</link>
+                    </links>
+                    <taglets>
+                        <taglet>
+                            <tagletClass>org.epics.archiverappliance.taglets.BPLActionTaglet</tagletClass>
+                        </taglet>
+                        <taglet>
+                            <tagletClass>org.epics.archiverappliance.taglets.BPLActionParamTaglet</tagletClass>
+                        </taglet>
+                        <taglet>
+                            <tagletClass>org.epics.archiverappliance.taglets.BPLActionEndTaglet</tagletClass>
+                        </taglet>
+                    </taglets>
+                    <tagletpath>${lib.dir}/test/BPLTaglets.jar</tagletpath>
+                    <destDir>${javadoc.output.dir}</destDir>
+                    <verbose>true</verbose>
+                    <show>protected</show>
+                 </configuration>
+                 <dependencies>
+                    <dependency>
+                        <groupId>commons-io</groupId>
+                        <artifactId>commons-io</artifactId>
+                        <version>2.11.0</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                        <version>3.12.0</version>
+                    </dependency>
+                </dependencies>
                 <executions>
-                   <execution>
-                        <id>check-mappings-file-before-javadoc</id>
-                        <phase>prepare-package</phase> <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <property name="mappings.file.abs.path" value="${project.basedir}/docs/api/mgmtpathmappings.txt"/>
-                                <echo message="ANT DIAGNOSTIC: Project base directory is: ${project.basedir}"/>
-                                <echo message="ANT DIAGNOSTIC: Expecting mgmtpathmappings.txt at: ${mappings.file.abs.path}"/>
-                                <available file="${mappings.file.abs.path}" property="mappings.file.is.available.by.ant"/>
-                                <echo message="ANT DIAGNOSTIC RESULT: Is ${mappings.file.abs.path} available? ${mappings.file.is.available.by.ant}"/>
-                                <fail message="ANT DIAGNOSTIC FAIL: mgmtpathmappings.txt NOT found by Ant at ${mappings.file.abs.path} during prepare-package phase!"
-                                        unless="mappings.file.is.available.by.ant"/>
-                                <echo message="ANT DIAGNOSTIC SUCCESS: mgmtpathmappings.txt IS found by Ant at ${mappings.file.abs.path}."/>
-                            </target>
-                        </configuration>
-                    </execution>
-                     <execution>
-                        <id>echo-constructed-classpath</id>
-                        <phase>process-classes</phase>
-                        <goals><goal>run</goal></goals>
-                        <configuration>
-                            <target>
-                                <echo message="DEBUG: bplservlet.classpath = ${bplservlet.classpath}"/>
-                            </target>
-                        </configuration>
-                    </execution>
                     <execution>
-                        <id>download-and-unpack-svg-viewer</id>
-                        <phase>generate-resources</phase>
+                        <id>generate-javadoc</id>
                         <goals>
-                            <goal>run</goal>
+                            <goal>javadoc</goal>
                         </goals>
-                        <configuration>
-                            <target>
-                                <property name="svg.viewer.zip.dir" value="${project.build.directory}/dependencies/svg_viewer_zip"/>
-                                <property name="svg.viewer.zip.file" value="${svg.viewer.zip.dir}/svg_viewer-v1.2.1.zip"/>
-                                <property name="svg.viewer.url" value="https://github.com/archiver-appliance/svg_viewer/archive/v1.2.1.zip"/>
-                                <property name="svg.viewer.base.unpacked.dir" value="${project.build.directory}/dependencies/unpacked"/>
-                                <echo message="Downloading SVG Viewer from ${svg.viewer.url} to ${svg.viewer.zip.file}"/>
-                                <mkdir dir="${svg.viewer.zip.dir}"/>
-                                <get src="${svg.viewer.url}" dest="${svg.viewer.zip.file}" skipexisting="true"/>
-                                <echo message="Unpacking SVG Viewer to ${svg.viewer.base.unpacked.dir}"/>
-                                <mkdir dir="${svg.viewer.base.unpacked.dir}"/>
-                                <unzip src="${svg.viewer.zip.file}" dest="${svg.viewer.base.unpacked.dir}"/>
-                            </target>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>create-version-txt</id>
                         <phase>prepare-package</phase>
-                        <goals><goal>run</goal></goals>
-                        <configuration>
-                            <target>
-                                <echo file="${stage.dir}/org/epics/archiverappliance/staticcontent/version.txt"
-                                        message="Archiver Appliance Version ${project.version}"/>
-                            </target>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>sitespecificantscript</id>
-                        <phase>prepare-package</phase>
-                        <goals><goal>run</goal></goals>
-                        <configuration>
-                            <target>
-                                <property name="ant.classes" refid="maven.runtime.classpath"/>
-                                <property name="archapplsite" value="${archapplsite}"/>
-                                <property name="sitespecificpath" value="${sitespecific.path}"/>
-                                <property name="stage" value="${stage.dir}"/>
-                                <ant antfile="${project.basedir}/build.xml" target="sitespecificbuild"/>
-                            </target>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
-
+            
+            
+            <!-- maven-war-plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
@@ -841,7 +881,7 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <!-- maven-assembly-plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -861,7 +901,7 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <!-- maven-splotless-plugin -->
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
@@ -915,6 +955,7 @@
                     </execution>
                 </executions>
             </plugin>
+           <!-- maven-clean-plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
@@ -1015,9 +1056,7 @@
         </profile>
         <profile>
             <id>all-tests-profile</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
+            <activation><activeByDefault>false</activeByDefault></activation>
             <build>
                 <plugins>
                      <plugin>
@@ -1087,4 +1126,3 @@
         </profile>
     </profiles>
 </project>
-
