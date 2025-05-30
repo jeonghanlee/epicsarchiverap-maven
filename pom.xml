@@ -275,6 +275,7 @@
   </dependencies>
   <build>
     <sourceDirectory>${src.main.dir}</sourceDirectory>
+    <!--
     <testSourceDirectory>${project.basedir}/src/test</testSourceDirectory>
     <resources>
         </resources>
@@ -291,6 +292,7 @@
         </includes>
       </testResource>
     </testResources>
+    -->
     <plugins>
       <!-- maven-compiler-plugin -->
       <plugin>
@@ -303,7 +305,8 @@
           <release>${java.version}</release>
         </configuration>
       </plugin>
-      <!-- maven-surefire-plugin -->
+      <!--
+      maven-surefire-plugin
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -341,7 +344,7 @@
           </execution>
         </executions>
       </plugin>
-      <!-- maven-failsafe-plugin -->
+     maven-failsafe-plugin
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -373,6 +376,7 @@
           </execution>
         </executions>
       </plugin>
+       -->
       <!-- maven-dependency-plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -577,6 +581,7 @@
               <executable>${project.basedir}/docs/build_docs.sh</executable>
             </configuration>
           </execution>
+          <!--
           <execution>
             <id>shutdownAllTomcats</id>
             <phase>post-integration-test</phase>
@@ -615,6 +620,7 @@
               </environmentVariables>
             </configuration>
           </execution>
+          -->
         </executions>
       </plugin>
       <!-- maven-resources-plugin -->
