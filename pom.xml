@@ -30,6 +30,11 @@
     <junit.jupiter.version>5.9.3</junit.jupiter.version>
     <log4j.version>2.20.0</log4j.version>
     <selenium.version>4.22.0</selenium.version>
+    <sphinx.skip>true</sphinx.skip>
+    <jamtio.name>jamtio</jamtio.name>
+    <jamtio.ver>071005</jamtio.ver>
+    <redisnio.name>redisnio</redisnio.name>
+    <redisnio.ver>0.0.1</redisnio.ver>
   </properties>
   <repositories>
     <repository>
@@ -44,17 +49,17 @@
   <dependencies>
     <dependency>
       <groupId>local.org.epics</groupId>
-      <artifactId>jamtio</artifactId>
-      <version>071005</version>
+      <artifactId>${jamtio.name}</artifactId>
+      <version>${jamtio.ver}</version>
       <scope>system</scope>
-      <systemPath>${lib.dir}/jamtio_071005.jar</systemPath>
+      <systemPath>${lib.dir}/${jamtio.name}_${jamtio.ver}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>local.org.epics</groupId>
-      <artifactId>redisnio</artifactId>
-      <version>0.0.1</version>
+      <artifactId>${redisnio.name}</artifactId>
+      <version>${redisnio.ver}</version>
       <scope>system</scope>
-      <systemPath>${lib.dir}/redisnio_0.0.1.jar</systemPath>
+      <systemPath>${lib.dir}/${redisnio.name}_${redisnio.ver}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>local.org.epics</groupId>
@@ -577,6 +582,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
+              <skip>${sphinx.skip}</skip>
               <workingDirectory>${project.basedir}/docs</workingDirectory>
               <executable>${project.basedir}/docs/build_docs.sh</executable>
             </configuration>
@@ -888,8 +894,8 @@
                     <!-- [INFO] deleting outdated resource WEB-INF/lib/jamtio_071005.jar
                         [INFO] deleting outdated resource WEB-INF/lib/redisnio_0.0.1.jar -->
                     <!-- Need to investigate the requirements on the following later, 2025-05-29 -->
-                    <include>jamtio_*.jar</include>
-                    <include>redisnio_*.jar</include>
+                    <include>${jamtio.name}_${jamtio.ver}.jar</include>
+                    <include>${redisnio.name}_${redisnio.ver}.jar</include>
                   </includes>
                   <targetPath>WEB-INF/lib</targetPath>
                 </resource>
