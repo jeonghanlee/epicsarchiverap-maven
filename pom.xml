@@ -14,11 +14,16 @@
         <java.version>21</java.version>
 
         <src.main.dir>${project.basedir}/src/main</src.main.dir>
+
         <lib.dir>${project.basedir}/lib</lib.dir>
-        <api.docs.dir>${project.basedir}/docs/api</api.docs.dir>
+        <docs.dir>${project.basedir}/docs</docs.dir>
+        <api.docs.dir>${docs.dir}/api</api.docs.dir>
+        <classes.dir>${project.build.directory}/build/classes</classes.dir>
         <java.docs.output.path>${project.build.directory}/site/apidocs/docs/api</java.docs.output.path>
         <stage.dir>${project.build.directory}/stage</stage.dir>
-
+<!--
+ intermediate files .txt lost thier path, so we have to define it specifically
+-->
         <archapplsite>default</archapplsite>
         <default.sitespecific.path>${project.basedir}/src/sitespecific/${archapplsite}</default.sitespecific.path>
         <sitespecific.path>${default.sitespecific.path}</sitespecific.path>
@@ -307,7 +312,7 @@
                     </execution>
                     <execution>
                         <id>create-version-txt</id>
-                        <phase>prepare-package</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
@@ -318,7 +323,8 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>sitespecificantscript</id> <phase>prepare-package</phase>
+                        <id>sitespecificantscript</id>
+                        <phase>package</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
@@ -327,7 +333,8 @@
                                 <property name="ant.classes" refid="maven.runtime.classpath"/>
                                 <property name="archapplsite" value="${archapplsite}"/>
                                 <property name="sitespecificpath" value="${sitespecific.path}"/>
-                                <property name="stage" value="${stage.dir}"/> <ant antfile="${project.basedir}/build.xml" target="sitespecificbuild"/>
+                                <property name="stage" value="${stage.dir}"/>
+                                <ant antfile="${project.basedir}/build.xml" target="sitespecificbuild"/>
                             </target>
                         </configuration>
                     </execution>
@@ -339,6 +346,11 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.3.0</version>
                 <executions>
+                    <!--
+                    JAVA_HOME=/opt/java-env/JDK /opt/java-env/MAVEN/bin/mvn dependency:build-classpath -Dmdep.outputFile=cp.txt
+                    FULL_CLASSPATH="target/classes:$(cat cp.txt)"
+                     /opt/java-env/JDK/bin/java -cp "$FULL_CLASSPATH" org.epics.archiverappliance.mgmt.BPLServlet
+                    -->
                     <execution>
                         <id>generateBPLActionsMappings</id>
                         <phase>compile</phase>
@@ -370,6 +382,9 @@
                             </arguments>
                         </configuration>
                     </execution>
+                    <!--
+                     we need to copy ${java.docs.output.path}/docs/api/mgmt_scriptables.txt to ${api.docs.dir} in prepare-pacakges
+                    -->
                     <execution>
                         <id>generateJavaDocTagletScriptables</id>
                         <phase>package</phase>
@@ -421,8 +436,9 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <skip>${sphinx.skip}</skip> <workingDirectory>${project.basedir}/docs</workingDirectory>
-                            <executable>${project.basedir}/docs/build_docs.sh</executable>
+                            <skip>${sphinx.skip}</skip>
+                            <workingDirectory>${docs.dir}</workingDirectory>
+                            <executable>${docs.dir}/build_docs.sh</executable>
                         </configuration>
                     </execution>
                     </executions>
@@ -440,7 +456,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.basedir}/docs</outputDirectory>
+                            <outputDirectory>${docs.dir}</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${project.basedir}</directory>
@@ -485,7 +501,7 @@
                             <outputDirectory>${stage.dir}</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${project.basedir}/docs</directory>
+                                    <directory>${docs.dir}</directory>
                                     <includes>
                                         <include>*.*</include>
                                     </includes>
@@ -526,7 +542,9 @@
                     </execution>
                     </executions>
             </plugin>
-
+<!--
+### maven-javadoc-plugin  https://maven.apache.org/plugins/maven-javadoc-plugin/
+-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -553,7 +571,8 @@
                         </taglet>
                     </taglets>
                     <tagletpath>${lib.dir}/test/BPLTaglets.jar</tagletpath>
-                    <destDir>${javadoc.output.dir}</destDir> <verbose>true</verbose>
+                    <destDir>${javadoc.output.dir}</destDir>
+                    <verbose>true</verbose>
                     <show>protected</show>
                 </configuration>
                 <dependencies>
@@ -627,11 +646,11 @@
                                     <targetPath>install</targetPath>
                                 </resource>
                                 <resource>
-                                    <directory>${project.basedir}/docs/docs/build</directory>
+                                    <directory>${docs.dir}/docs/build</directory>
                                     <targetPath>ui/help</targetPath>
                                 </resource>
                                 <resource>
-                                    <directory>${project.basedir}/docs/docs/source/samples</directory>
+                                    <directory>${docs.dir}/docs/source/samples</directory>
                                     <includes>
                                         <include>deployMultipleTomcats.py</include>
                                     </includes>
@@ -724,18 +743,24 @@
                 <version>3.4.0</version>
                 <configuration>
                     <filesets>
-                        <fileset>
-                            <directory>${api.docs.dir}</directory>
-                        </fileset>
-                        <fileset>
-                            <directory>${stage.dir}</directory>
-                        </fileset>
+                      <fileset>
+                        <directory>${api.docs.dir}</directory>
+                      </fileset>
+                      <fileset>
+                        <directory>${docs.dir}</directory>
+                      <includes>
+                        <include>LICENSE</include>
+                        <include>EPICSEvent.proto</include>
+                      </includes>
+                    </fileset>
                     </filesets>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
+<!--
+ profile becomes active iff the env var is defined
+-->
     <profiles>
         <profile>
             <id>env-archappl-siteid</id>
@@ -747,30 +772,6 @@
             <properties>
                 <archapplsite>${env.ARCHAPPL_SITEID}</archapplsite>
             </properties>
-        </profile>
-
-        <profile>
-            <id>windows-sphinx</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                </os>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>sphinx</id> <configuration>
-                                    <executable>${project.basedir}/docs/build_docs.bat</executable>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 </project>
