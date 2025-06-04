@@ -303,8 +303,11 @@
       </testResource>
     </testResources>
     -->
+    <pluginManagement>
     <plugins>
-      <!-- maven-compiler-plugin -->
+<!-- 
+### PLUGIN - maven-compiler-plugin https://maven.apache.org/plugins/maven-compiler-plugin/
+-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -315,79 +318,10 @@
           <release>${java.version}</release>
         </configuration>
       </plugin>
-      <!--
-      maven-surefire-plugin
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.3.0</version>
-        <configuration>
-          <argLine>
-             -Dwebdriver.gecko.driver=${lib.dir}/test/geckodriver-v0.24.0-linux64/geckodriver
-             -Dlog4j1.compatibility="true"
-          </argLine>
-          <environmentVariables>
-            <ARCHAPPL_SHORT_TERM_FOLDER>${project.build.directory}/surefire/sts</ARCHAPPL_SHORT_TERM_FOLDER>
-            <ARCHAPPL_MEDIUM_TERM_FOLDER>${project.build.directory}/surefire/mts</ARCHAPPL_MEDIUM_TERM_FOLDER>
-            <ARCHAPPL_LONG_TERM_FOLDER>${project.build.directory}/surefire/lts</ARCHAPPL_LONG_TERM_FOLDER>
-          </environmentVariables>
-          <systemPropertyVariables>
-          </systemPropertyVariables>
-          <excludes>
-            <exclude>**/integration/**</exclude>
-            <exclude>**/localEpics/**</exclude>
-            <exclude>**/flaky/**</exclude>
-            <exclude>**/singleFork/**</exclude>
-            <exclude>**/slow/**</exclude>
-          </excludes>
-        </configuration>
-        <executions>
-          <execution>
-            <id>unit-tests</id>
-            <phase>test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <groups>!flaky &amp; !integration &amp; !localEpics &amp; !slow &amp; !singleFork</groups>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-     maven-failsafe-plugin
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>3.3.0</version>
-        <configuration>
-          <groups>integration</groups>
-          <forkCount>1</forkCount>
-          <argLine>
-             -Dwebdriver.gecko.driver=${lib.dir}/test/geckodriver-v0.24.0-linux64/geckodriver
-             -Dlog4j1.compatibility="true"
-          </argLine>
-          <environmentVariables>
-            <ARCHAPPL_SHORT_TERM_FOLDER>${project.build.directory}/failsafe-reports/sts</ARCHAPPL_SHORT_TERM_FOLDER>
-            <ARCHAPPL_MEDIUM_TERM_FOLDER>${project.build.directory}/failsafe-reports/mts</ARCHAPPL_MEDIUM_TERM_FOLDER>
-            <ARCHAPPL_LONG_TERM_FOLDER>${project.build.directory}/failsafe-reports/lts</ARCHAPPL_LONG_TERM_FOLDER>
-          </environmentVariables>
-        </configuration>
-        <executions>
-          <execution>
-            <id>integration-tests</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <groups>integration</groups>
-              <excludedGroups>slow,flaky</excludedGroups>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-       -->
-      <!-- maven-dependency-plugin -->
+
+<!-- 
+### PLUGIN - maven-dependency-plugin https://maven.apache.org/plugins/maven-dependency-plugin/
+-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
@@ -408,7 +342,10 @@
           </execution>
         </executions>
       </plugin>
-      <!-- maven-antrun-plugin -->
+      
+<!-- 
+### PLUGIN - maven-antrun-plugin https://maven.apache.org/plugins/maven-antrun-plugin/
+-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
@@ -496,7 +433,10 @@
           </execution>
         </executions>
       </plugin>
-       <!-- exec-maven-plugin -->
+      
+<!-- 
+### PLUGIN - exec-maven-plugin https://www.mojohaus.org/exec-maven-plugin/
+-->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
@@ -592,49 +532,12 @@
               <executable>${project.basedir}/docs/build_docs.sh</executable>
             </configuration>
           </execution>
-          <!--
-          <execution>
-            <id>shutdownAllTomcats</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <executable>pkill</executable>
-              <arguments>
-                <argument>-9</argument>
-                <argument>-f</argument>
-                <argument>Deaatag=eaatesttm</argument>
-              </arguments>
-              <skip>false</skip>
-              <successCodes>
-                <successCode>0</successCode>
-                <successCode>1</successCode>
-              </successCodes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>testRun-java</id>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <mainClass>org.epics.archiverappliance.TestRun</mainClass>
-              <arguments>
-                <argument>-c2</argument>
-              </arguments>
-              <classpathScope>test</classpathScope>
-              <environmentVariables>
-                <ARCHAPPL_SHORT_TERM_FOLDER>${project.build.directory}/storage/sts</ARCHAPPL_SHORT_TERM_FOLDER>
-                <ARCHAPPL_MEDIUM_TERM_FOLDER>${project.build.directory}/storage/mts</ARCHAPPL_MEDIUM_TERM_FOLDER>
-                <ARCHAPPL_LONG_TERM_FOLDER>${project.build.directory}/storage/lts</ARCHAPPL_LONG_TERM_FOLDER>
-              </environmentVariables>
-            </configuration>
-          </execution>
-          -->
         </executions>
       </plugin>
-      <!-- maven-resources-plugin -->
+      
+<!-- 
+### maven-resources-plugin https://maven.apache.org/plugins/maven-resources-plugin/
+-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
@@ -752,7 +655,9 @@
           ** Ignore integration-test-setup -->
         </executions>
       </plugin>
-      <!-- maven-javadoc-plugin -->
+<!-- 
+### maven-javadoc-plugin https://maven.apache.org/plugins/maven-javadoc-plugin/
+-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -805,7 +710,9 @@
           </execution>
         </executions>
       </plugin>
-      <!-- maven-war-plugin -->
+<!-- 
+### maven-war-plugin https://maven.apache.org/plugins/maven-javadoc-plugin/
+-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
@@ -926,7 +833,9 @@
           </execution>
         </executions>
       </plugin>
-      <!-- maven-assembly-plugin -->
+<!-- 
+### maven-assembly-plugin https://maven.apache.org/plugins/maven-assembly-plugin/
+-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
@@ -948,63 +857,10 @@
           </execution>
         </executions>
       </plugin>
-      <!-- maven-splotless-plugin -->
-      <!-- * I don't need the following the automatic formatting tools
-      <plugin>
-        <groupId>com.diffplug.spotless</groupId>
-        <artifactId>spotless-maven-plugin</artifactId>
-        <version>2.43.0</version>
-        <configuration>
-          <java>
-            <removeUnusedImports/>
-            <palantirJavaFormat/>
-            <importOrder>
-              <order>,java,javax,sun,</order>
-            </importOrder>
-            <formatAnnotations/>
-            <targetExclude>
-              <exclude>${src.main.dir}/edu/stanford/slac/archiverappliance/PB/EPICSEvent.java</exclude>
-            </targetExclude>
-          </java>
-          <formats>
-            <format>
-              <includes>
-                <include>*.gradle</include>
-                <include>*.md</include>
-                <include>.gitignore</include>
-              </includes>
-              <trimTrailingWhitespace/>
-              <indent>
-                <tabs>true</tabs>
-                <spacesPerTab>4</spacesPerTab>
-              </indent>
-              <endWithNewline/>
-            </format>
-            <format>
-              <includes>
-                <include>docs/docs/source/**/*.html</include>
-                <include>docs/docs/source/**/*.css</include>
-                <include>docs/docs/source/**/*.md</include>
-                <include>docs/**/docs.js</include>
-                <include>src/main/**/*.html</include>
-                <include>src/main/**/*.js</include>
-                <include>src/main/**/*.css</include>
-              </includes>
-              <prettier/>
-            </format>
-          </formats>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>check</goal>
-            </goals>
-            <phase>verify</phase>
-          </execution>
-        </executions>
-      </plugin>
-      * I don't need the following the automatic formatting tools -->
-      <!-- maven-clean-plugin -->
+
+<!-- 
+### maven-clean-plugin https://maven.apache.org/plugins/maven-clean-plugin/
+-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
@@ -1021,7 +877,10 @@
         </configuration>
       </plugin>
     </plugins>
+  </pluginManagement>
   </build>
+  
+  
   <profiles>
     <profile>
       <id>env-archappl-siteid</id>
