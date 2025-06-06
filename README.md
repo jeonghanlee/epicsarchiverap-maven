@@ -62,7 +62,7 @@ JAVA_HOME=/opt/java-env/JDK /opt/java-env/MAVEN/bin/mvn clean package
 * Packaged Application (`WARs/JARs`): Found in the `target/` directory.
 * Javadoc API Documentation: Found in the the `target/site/apidocs`.
 * Sphinx HTML Documentation: If built, usually in `docs/docs/build`.
-* Assembly Package: If configured, often found in `target/archappl_v<VERSION>.tar.gz` (e.g., `target/archappl_v2025-06-01-rev1-LBNL-ALS-U.tar.gz`).
+* Assembly Package: If configured, often found in `target/archappl_<VERSION>.tar.gz` (e.g., `target/archappl_2025-06-05.tar.gz`).
 
 ## Troubleshooting
 
