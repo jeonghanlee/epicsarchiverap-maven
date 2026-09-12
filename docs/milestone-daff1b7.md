@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: draft the M4 dependency-refresh plan from the audit table in its detail; the owner's Maven-centric .gitignore rewrite closes M1 whenever it lands.
+Next session entry point: execute M8 stage 1 (wire the test tree into Maven, unit set as the default test) as the prerequisite of the accepted M4 plan; the owner's Maven-centric .gitignore rewrite closes M1 whenever it lands.
 
 ## Milestone
 
@@ -21,11 +21,11 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M1 | Gradle removal (complete erasure) | Milestone | In progress | No | | `git grep -i gradle` empty outside this register on a committed tree; [detail](#m1---gradle-removal-complete-erasure) |
 | Phase 1 | M2 | Maven Wrapper as the build entry | Milestone | Complete | No | | Fresh clone of c1dd0b1 builds four WARs through mvnw (2026-09-11); [detail](#m2---maven-wrapper-as-the-build-entry) |
 | Phase 1 | M3 | Canonical pom as single source of truth | Milestone | Complete | No | D6 | Fresh clone of 9be652c builds four WARs from the tracked pom with no system scope (2026-09-12); [detail](#m3---canonical-pom-as-single-source-of-truth) |
-| Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | Not started | Yes | M3 | Pinned current versions build and pass tests on Tomcat 9; [detail](#m4---dependency-refresh-to-stable-current-versions) |
+| Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | Not started | No | M3, M8 | Pinned current versions build and pass the unit set; [detail](#m4---dependency-refresh-to-stable-current-versions) |
 | Phase 1 | M5 | Maven-centric CI and docs build | Milestone | Not started | Yes | | Owner-authored GitHub Actions on mvnw; readthedocs on mvnw; [detail](#m5---maven-centric-ci-and-docs-build) |
 | Phase 1 | M6 | Upstream core features: cherry-pick policy and application | Milestone | Not started | Yes | | Policy accepted and selected upstream changes applied; [detail](#m6---upstream-core-features-cherry-pick-policy-and-application) |
 | Phase 1 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; [detail](#m7---site-required-features-and-fixes) |
-| Phase 1 | M8 | Maven test platform | Milestone | Not started | Yes | | Unit and integration tests run under Maven against Tomcat 9; [detail](#m8---maven-test-platform) |
+| Phase 1 | M8 | Maven test platform | Milestone | In progress | No | | Stage 1: test tree compiles and the unit set runs by default; Stage 2: Tomcat 9 and softIoc profiles; [detail](#m8---maven-test-platform) |
 | Phase 1 | M9 | Documentation for the Maven build | Milestone | Not started | Yes | | Build, test, and deploy docs match the Maven-only reality; [detail](#m9---documentation-for-the-maven-build) |
 | Phase 1 | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; [detail](#m10---ant-removal-final-maven-only-consolidation) |
 | Phase 2 | M11 | sqlite-jdbc runtime dependency | Milestone | Not started | Yes | | SQLite persistence path works at runtime; [detail](#m11---sqlite-jdbc-runtime-dependency) |
@@ -53,6 +53,9 @@ This register covers the minimal modernization of the existing Java appliance on
 | D14 | Naming stays as it is through Phase 2: artifact names archappl-<version>-<component>.war, ARCHAPPL_* variables, and the instance layout are not renamed. | 2026-09-11 |
 | D15 | jython-standalone 2.7 stays through Phase 2: it is the execution engine for policies.py, which is Python 2 syntax, and no Python 3 Jython exists. Replacing the policy engine is EPICS-Arche work, not minimal modernization. | 2026-09-12 |
 | D16 | redisnio (the Redis NIO FileSystemProvider jar) is removed. ArchPaths resolves only `jar:file://` (zip) specially and everything else on the default filesystem; no code, configuration, template, or document names a redis scheme, so the provider is unreachable. | 2026-09-12 |
+| D17 | Test platform scope: do not carry the whole upstream suite; keep only the tests this site needs, on the paths it uses. The upstream tests are not trusted as-is; the platform is built on Java testing fundamentals (hermetic, deterministic, temp-dir based, no hard-coded host paths, fast unit set by default) and reinforced where upstream tests fall short. IOC-dependent tests reuse the test definitions of the epics-ioc-runner project rather than upstream's SIOCSetup where they fit. | 2026-09-12 |
+| D18 | Test selection (owner rulings): Matlab export, PVA management API, and zipfs compressed-storage tests stay; the Channel Archiver migration tests are dropped (the site does not use that migration). Whether the main-code ChannelArchiver support itself is removed is decided in the M12 inventory. | 2026-09-12 |
+| D19 | The site standard for PVA serving is QSRV2 on pvxs. Test fixtures use softIocPVX (pvxs 1.5.1); softIocPVA (QSRV1) remains only as a compatibility fallback for unconverted tests. | 2026-09-12 |
 
 ### Milestone Details
 
@@ -241,8 +244,8 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | 2026-09-12 | fresh clone of modernize at 9be652c, ~/.m2 local.org.epics purged, JDK 21.0.12.1, wrapper Maven 3.9.9 | Pass | Exit 0; four WARs; 4 downloads logged from the project-local lib/repo; 0 system-scope warnings; no local jar in any WAR; javadoc:javadoc and test-compile exit 0 |
-| T2 | 2026-09-12 | this checkout after purging the cached local.org.epics artifacts | Pass | Build log shows "Downloaded from project-local: file:///.../lib/repo/local/org/epics/pbrawclient/0.2.1/..."; BPLTaglets re-cached from lib/repo by javadoc; 0 system-scope warnings; engine WAR contains no redisnio, pbrawclient, or BPLTaglets; javadoc and test-compile exit 0 |
+| T1 | 2026-09-12 | fresh clone of modernize at 9be652c, ~/.m2 local.org.epics purged, JDK 21.0.12.1, wrapper Maven 3.9.9 | Pass | Exit 0; four WARs; 4 downloads logged from the project-local lib/repo; 0 system-scope warnings; no local jar in any WAR; javadoc:javadoc exit 0. test-compile also exited 0 but compiled nothing: the pom sets no testSourceDirectory and declares no JUnit dependency, so no test is wired into Maven (found 2026-09-12; test wiring is M8) |
+| T2 | 2026-09-12 | this checkout after purging the cached local.org.epics artifacts | Pass | Build log shows "Downloaded from project-local: file:///.../lib/repo/local/org/epics/pbrawclient/0.2.1/..."; BPLTaglets re-cached from lib/repo by javadoc; 0 system-scope warnings; engine WAR contains no redisnio, pbrawclient, or BPLTaglets; javadoc exit 0; test-compile exit 0 is vacuous (no test source wired, see T1) |
 
 ##### Closure Evidence
 
@@ -281,7 +284,7 @@ Out of scope: adding sqlite-jdbc (M11); removing MariaDB (M13) or Redis (M12); r
 
 ##### Dependencies And Decisions
 
-- M3 (refresh applies to the canonical pom); D8; D13; D15.
+- M3 (refresh applies to the canonical pom); M8 stage 1 (compiled tests for T2 and T4); D8; D13; D15.
 - Full dependency audit, 2026-09-12 (`dependency:list`, `dependency:analyze`, `versions:display-dependency-updates` through mvnw): 30 direct dependencies, 53 resolved artifacts (50 compile and runtime). No used-undeclared dependency. Eight unused-declared are runtime or plugin loaded and legitimate (four log4j bindings, mariadb driver, disruptor, BPLTaglets, redisnio). Two open ranges resolve to floating versions and make the build non-reproducible: guava `[32.0.0-android,)` (resolved 33.7.1-jre on 2026-09-12) and commons-io `[2.14.0,)` (resolved 2.22.0).
 
 | Dependency | Declared | Current stable line | Action |
@@ -307,22 +310,31 @@ Out of scope: adding sqlite-jdbc (M11); removing MariaDB (M13) or Redis (M12); r
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
+Plan Status: accepted
+Plan Acceptance: owner, 2026-09-12
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Pin guava and commons-io to the versions they resolve to at execution time; from then on no range remains in the pom.
-2. Move each "update" row above to the current release of its stable line as of execution, one property or version at a time, building after each group.
-3. Keep Tomcat 9 (latest 9.0.x), jython, httpclient 4.x, and the aged libraries as recorded.
-4. Run the build and the tests; record every chosen version in this detail as evidence.
+Targets measured on 2026-09-12 with `versions:display-dependency-updates -DallowMajorUpdates=false` (latest within the current major line); re-checked at execution, and the executed value is recorded as evidence.
+
+0. Baseline before any change: run the unit set on the unchanged tree, `./mvnw -B test -Dgroups='!integration & !localEpics & !slow & !flaky'` (the 67 untagged JUnit 5 classes; the tagged sets need Tomcat or softIoc and belong to M8), and record pass, fail, and error counts. Only a change in that outcome counts against a version bump. Add build-time dependency-set checks that stay in the pom: maven-enforcer-plugin with dependencyConvergence and requireUpperBoundDeps, extra-enforcer-rules banDuplicateClasses, and dependency:analyze-only with failOnWarning for used-undeclared; run them on the unchanged tree first and record the baseline.
+1. Pin the two ranges to their current resolution: guava `[32.0.0-android,)` to 33.7.1-jre, commons-io `[2.14.0,)` to 2.22.0. No range remains.
+2. Runtime and servlet line: tomcat-servlet-api 9.0.113 to 9.0.121 (the value aa-env fixed; D13). log4j api, core, jul, slf4j2-impl, 1.2-api 2.20.0 to 2.26.1 via the log4j.version property. disruptor: try 4.0.0 (log4j 2.26 supports the 4.x line); if the async logger fails at runtime, keep 3.4.4 and record why.
+3. EPICS and appliance libraries: jca 2.4.10 to 2.4.12; core-pva 5.0.0 to 5.0.5; hazelcast 5.4.0 to 5.7.0 (cluster state; smoke-test appliance start after the bump).
+4. Apache Commons and utilities: commons-lang3 3.12.0 to 3.20.0; commons-codec 1.15 to 1.22.1; commons-validator 1.7 to 1.11.0; commons-fileupload 1.5 to 1.6.0; opencsv 5.7.1 to 5.12.0.
+5. Keep as recorded: httpclient 4.5.14 and httpcore 4.4.16 (last of the 4.x line); jython-standalone 2.7.3 (D15; 2.7.4 is the latest stable and may be taken if it builds, 2.7.5b1 is a beta and is excluded); mariadb-java-client 3.3.3 (removed by M13); jedis 4.4.0 (M12 decides); protobuf-java 4.36.1 (current); jdbm, jmatio, json-simple, commons-math3 unchanged.
+6. Apply in the order above, one group per build: `./mvnw -B clean package -DskipTests` plus the enforcer and analyze checks after each group, then the unit set from step 0 at the end; on a failure, hold that group at its previous version, record the failure, and continue.
+7. Tomcat 9 start smoke: run the `integration` tests that are not `localEpics` (`-Dgroups='integration & !localEpics'`, TomcatSetup-based) so the hazelcast, log4j, and disruptor bumps are exercised at appliance start. Host facts (2026-09-12): /opt/tomcat9 is Tomcat 9.0.113 owned by tomcat with an unreadable conf/ directory, so it cannot serve as TOMCAT_HOME for a user-run test; use a user-owned Apache Tomcat 9.0.121 unpacked under the scratch directory as TOMCAT_HOME (matches the target version). If that cannot be arranged, record the smoke as deferred to M8, not as passed.
+8. Record every executed version in the table above as evidence; confirm `dependency:list` shows no range and no system scope.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Integration | ./mvnw -B clean package | JDK 21, wrapper Maven | Build succeeds with pinned versions |
-| T2 | Unit | ./mvnw -B test | JDK 21, wrapper Maven | Tests pass |
+| T1 | Integration | ./mvnw -B clean package -DskipTests | JDK 21, wrapper Maven | Build succeeds with every version pinned |
+| T2 | Unit | ./mvnw -B test -Dgroups='!integration & !localEpics & !slow & !flaky' | JDK 21, wrapper Maven | Same pass, fail, and error counts as the step 0 baseline or better |
+| T3 | Static | enforcer (dependencyConvergence, requireUpperBoundDeps, banDuplicateClasses) and dependency:analyze-only failOnWarning | JDK 21, wrapper Maven | No convergence conflict, no duplicate class, no used-undeclared dependency |
+| T4 | Integration | ./mvnw -B test -Dgroups='integration & !localEpics' | JDK 21, Tomcat 9.0.121 via TOMCAT_HOME | Appliance starts under TomcatSetup and the tests pass; deferred to M8 if no Tomcat 9 on the host |
 
 ##### Verification Results
 
@@ -330,6 +342,8 @@ Superseded Plan Artifacts: none
 | --- | --- | --- | --- | --- |
 | T1 | Not run | JDK 21, wrapper Maven | Pending | none |
 | T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T3 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T4 | Not run | JDK 21, Tomcat 9.0.121 | Pending | none |
 
 ##### Closure Evidence
 
@@ -539,50 +553,69 @@ Last Compared: never
 Origin: daff1b7 / M8
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: In progress
 
 ##### Summary
 
-Rebuild the test platform on Maven. The removed Gradle build carried categorized test tasks (unit, epics, integration, flaky), a `testRun` development server, and a Tomcat shutdown helper; none of that exists under Maven. Phase 1 needs a Maven-native way to run unit tests, EPICS-dependent tests, and Tomcat 9 integration tests in the existing environment.
+Wire the test tree into Maven and rebuild the test selection the removed Gradle build had. Found 2026-09-12: the pom sets no testSourceDirectory and declares no JUnit dependency, so Maven has never compiled a single test (185 test sources under src/test/org and src/test/edu; Maven looked in src/test/java). The tests are JUnit 5 (151 classes) and already carry tags: integration 64, localEpics 49, slow 8, flaky 3; 67 classes are untagged and need no environment. Stage 1 (pulled forward as the prerequisite of M4) compiles the test tree and makes the untagged unit set the default `./mvnw test`; Stage 2 adds the Tomcat 9 and softIoc profiles.
 
 ##### Scope
 
-Surefire for unit tests and Failsafe (or an equivalent current-stable mechanism) for integration tests, JUnit 5 tags or profiles to select unit, EPICS, and integration sets, and a documented way to run the integration set against a local Tomcat 9.
+Stage 1: testSourceDirectory and test resources, test-scope dependencies the tree needs (JUnit 5 with the platform suite, selenium-java and webdrivermanager for the browser tests, awaitility, jinjava for the AppliancesXMLGenerator helper), conversion of the one JUnit 4 suite (PvaTest.java) to a JUnit 5 suite, and Surefire configured so `./mvnw test` runs only the untagged set while `-Dgroups` can select the others. Stage 2: an `integration` profile that runs `integration & !localEpics` against a user-owned Tomcat 9.0.121 through TOMCAT_HOME, a `localEpics` profile that runs the softIoc-based tests with EPICS base on PATH, and the documented invocations.
 
-Out of scope: CI wiring (M5).
+Out of scope: CI wiring (M5); the pythontests scripts.
+
+Selection and reinforcement (D17, D18): the platform keeps only the tests this site needs — kept: PlainPB and PB, ETL, retrieval with postprocessors, saverestore, Matlab export, zipfs compressed storage, mgmt (policies and PVA management API), config, common, engine including PVA (V4); dropped: retrieval/channelarchiver (migration from the 2011 Channel Archiver, not used; removed 2026-09-12). Reinforcement backlog on the kept tests, applied incrementally: Thread.sleep waits (253 calls in 56 files) replaced with Awaitility; hard-coded /scratch and /tmp paths replaced with @TempDir and a ConfigServiceForTests default under target; the static shared ConfigServiceForTests instances (8 files) isolated; a global JUnit timeout so a hang fails instead of blocking; the two-minute V4 tests tagged slow; JaCoCo coverage wired so the kept set is selected by measured coverage of the site's paths, not by folder name.
 
 ##### Completion Criteria
 
-- `./mvnw test` runs the unit set; a documented invocation runs the EPICS and Tomcat 9 integration sets; each set passes in the existing environment.
+- Stage 1: `./mvnw test-compile` compiles every test source; `./mvnw test` runs the untagged set and its pass, fail, and error counts are recorded as the baseline; a fresh clone reproduces both.
+- Stage 2: the `integration` and `localEpics` sets run through their profiles in the existing environment and their results are recorded.
 
 ##### Dependencies And Decisions
 
-- D11 (Phase 1); D8 (current stable JUnit 5 and Surefire/Failsafe).
+- D11 (Phase 1); D8 (current stable JUnit 5, Surefire, and test libraries, pinned and recorded at execution).
+- Stage 1 is the prerequisite of M4 (its T2 and T4 need compiled tests); M4 waits on it.
+- softIoc for Stage 2 (owner direction 2026-09-12, "make one easily"): no build was needed. The installed ALSU EPICS environment already provides it at /data/gitsrc/alsu-epics-environment/1.2.2/debian-13/7.0.10/base/bin/linux-x86_64 (EPICS base 7.0.10 for this Debian 13 host). Verified end to end: softIoc served a PINI ai record over CA on a pinned port (EPICS_CA_SERVER_PORT=5097, ADDR_LIST 127.0.0.1) and caget returned its value. SIOCSetup actually launches softIocPVA (the PVA-enabled variant), provided by the same tree. Verified end to end on 2026-09-12 with the tree's setEpicsEnv.bash: CA with caget, PVA with pvxget (pvxs 1.5.1, NTScalar returned). Two operational facts the Stage 2 fixture must honor: softIocPVA needs stdin held open (SIOCSetup pipes it; with -S and closed stdin the main thread suspends on epicsThreadExitMain and PVA never answers), and port isolation must use the server-side variables EPICS_PVAS_SERVER_PORT, EPICS_PVAS_BROADCAST_PORT, and EPICS_PVAS_INTF_ADDR_LIST=127.0.0.1 on the IOC with the matching EPICS_PVA_BROADCAST_PORT and EPICS_PVA_ADDR_LIST on the client; client-style EPICS_PVA_* alone does not move the server, and the default 5076 search cannot see a loopback-only server (another PVA server already listens on this host's interface broadcast addresses). softIocPVX (pvxs 1.5.1, QSRV2) from the same tree is the fixture IOC (D19, site standard QSRV2): verified 2026-09-12 on the pinned ports — PVA answers pvxget with the full NTScalar (value 42) and CA answers caget, QSRV2 reports loaded and enabled, zero errors in the IOC log. SIOCSetup currently launches softIocPVA by name; the Stage 2 fixture targets softIocPVX and keeps softIocPVA available for unconverted tests. Stage 2 puts the tree's bin directories on PATH in the localEpics profile.
+- Facts the plan rests on (2026-09-12): every selenium test and every TomcatSetup or SIOCSetup test is tagged, so the untagged set starts no browser, Tomcat, or IOC; AppliancesXMLGenerator (untagged helper used by TomcatSetup) imports com.hubspot.jinjava, which no pom declares; PvaTest.java uses org.junit.runners.Suite with @RunWith, @BeforeClass, @AfterClass, and @Category; test data files live beside the sources under src/test (retrieval/channelarchiver, retrieval/postprocessor/data, mgmt).
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: owner, 2026-09-12
+Implementation Authorization: owner, 2026-09-12
 Superseded Plan Artifacts: none
 
-1. Inventory the existing tests and their environment needs (none, EPICS, Tomcat).
-2. Define the tag or profile split and configure Surefire/Failsafe.
-3. Run each set in the existing environment and record results.
+Stage 1
+1. pom: `<testSourceDirectory>${project.basedir}/src/test</testSourceDirectory>` and a testResources entry for src/test excluding `**/*.java`, so the data files beside the tests reach target/test-classes.
+2. pom: test-scope dependencies at the current stable releases (verified at execution, versions recorded here): junit-jupiter (api, params, engine) and junit-platform-suite through the JUnit BOM; selenium-java and io.github.bonigarcia:webdrivermanager; org.awaitility:awaitility; com.hubspot.jinjava:jinjava. Add whatever else test-compile reports missing, one at a time, recording each.
+3. Convert PvaTest.java from the JUnit 4 Suite runner to a JUnit 5 `@Suite` (junit-platform-suite-api) with `@SelectClasses`, and replace @BeforeClass/@AfterClass with @BeforeAll/@AfterAll or a suite-level extension; no JUnit 4 dependency is added.
+4. pom: maven-surefire-plugin at the current 3.x with `<excludedGroups>integration,localEpics,slow,flaky</excludedGroups>` as the default, so `./mvnw test` is the unit set and `-Dgroups=...` still selects any set.
+5. Run `./mvnw -B test-compile` until every test source compiles; then `./mvnw -B test` and record the unit baseline counts (this is also M4 step 0).
+6. Fresh clone: repeat step 5 on the committed tree.
+
+Stage 2 (after M4)
+7. `integration` profile: groups `integration & !localEpics`, TOMCAT_HOME pointing at a user-owned Tomcat 9.0.121 under the scratch directory (/opt/tomcat9 on this host is 9.0.113 with an unreadable conf/); record results.
+8. `localEpics` profile: softIoc from the EPICS-env build on PATH; record results.
+9. Document the three invocations in the developer guide (feeds M9). The standing platform document is TESTING.md at the repository root (layout, sets, fixture contracts, principles); M9 links it from the developer guide and keeps the two consistent.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Unit | ./mvnw test | JDK 21 | Unit set passes |
-| T2 | Integration | Documented integration invocation | JDK 21, EPICS, Tomcat 9 | EPICS and Tomcat sets pass |
+| T1 | Static | ./mvnw -B test-compile; count *.class under target/test-classes | JDK 21, wrapper Maven | Every test source compiles (185 sources) |
+| T2 | Unit | ./mvnw -B test (default excludedGroups) | JDK 21, wrapper Maven | The untagged set runs (about 67 classes); counts recorded as baseline |
+| T3 | Integration | ./mvnw -B test -Pintegration | JDK 21, Tomcat 9.0.121 via TOMCAT_HOME | Stage 2: integration set runs and results recorded |
+| T4 | Integration | ./mvnw -B test -PlocalEpics | JDK 21, softIoc on PATH | Stage 2: localEpics set runs and results recorded |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21 | Pending | none |
-| T2 | Not run | JDK 21, EPICS, Tomcat 9 | Pending | none |
+| T1 | 2026-09-12 | JDK 21.0.12.1, wrapper Maven 3.9.9 | Pass | ./mvnw -B test-compile exit 0; 233 class files under target/test-classes from 185 sources; test data and the tests-site classpathfiles (archappl.properties, policies.py, appliances.xml) present in target/test-classes |
+| T2 | 2026-09-12 | JDK 21.0.12.1, wrapper Maven 3.9.9, surefire 3.6.0, default excludedGroups | Pass | ./mvnw -B test: 69 classes, 739 tests, 0 failures, 0 errors, 0 skipped, BUILD SUCCESS; storage folders under target/test-storage; PvaTest suite excluded by default (its members are tagged integration and localEpics) |
+| T3 | Not run | JDK 21, Tomcat 9.0.121 | Pending | none |
+| T4 | Not run | JDK 21, softIoc | Pending | none |
 
 ##### Closure Evidence
 
