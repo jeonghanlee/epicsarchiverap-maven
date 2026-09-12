@@ -14,6 +14,9 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <java.version>21</java.version>
+    <junit.bom.version>5.14.4</junit.bom.version>
+    <test.excludedGroups>integration,localEpics,slow,flaky</test.excludedGroups>
+    <test.excludes>**/PvaTest.java</test.excludes>
     <src.main.dir>${project.basedir}/src/main</src.main.dir>
     <docs.dir>${project.basedir}/docs</docs.dir>
     <api.docs.dir>${docs.dir}/api</api.docs.dir>
@@ -46,6 +49,17 @@
       <url>https://clojars.org/repo</url>
     </repository>
   </repositories>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.bom.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>local.org.epics</groupId>
@@ -128,6 +142,16 @@
       <groupId>com.googlecode.json-simple</groupId>
       <artifactId>json-simple</artifactId>
       <version>1.1.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>junit</groupId>
+          <artifactId>junit</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.hamcrest</groupId>
+          <artifactId>hamcrest-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.python</groupId>
@@ -192,10 +216,80 @@
     <artifactId>jmatio</artifactId>
     <version>1.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-java</artifactId>
+      <version>4.49.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.github.bonigarcia</groupId>
+      <artifactId>webdrivermanager</artifactId>
+      <version>6.3.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>4.3.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-cli</groupId>
+      <artifactId>commons-cli</artifactId>
+      <version>1.11.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.hubspot.jinjava</groupId>
+      <artifactId>jinjava</artifactId>
+      <version>2.8.4</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <sourceDirectory>${src.main.dir}</sourceDirectory>
+    <testSourceDirectory>${project.basedir}/src/test</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/src/test</directory>
+        <excludes>
+          <exclude>**/*.java</exclude>
+        </excludes>
+      </testResource>
+      <testResource>
+        <directory>${project.basedir}/src/sitespecific/tests/classpathfiles</directory>
+      </testResource>
+    </testResources>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.6.0</version>
+        <configuration>
+          <excludedGroups>${test.excludedGroups}</excludedGroups>
+          <excludes>
+            <exclude>${test.excludes}</exclude>
+          </excludes>
+          <environmentVariables>
+            <ARCHAPPL_SHORT_TERM_FOLDER>${project.build.directory}/test-storage/sts</ARCHAPPL_SHORT_TERM_FOLDER>
+            <ARCHAPPL_MEDIUM_TERM_FOLDER>${project.build.directory}/test-storage/mts</ARCHAPPL_MEDIUM_TERM_FOLDER>
+            <ARCHAPPL_LONG_TERM_FOLDER>${project.build.directory}/test-storage/lts</ARCHAPPL_LONG_TERM_FOLDER>
+            <ARCHAPPL_XLTS_TERM_FOLDER>${project.build.directory}/test-storage/xlts</ARCHAPPL_XLTS_TERM_FOLDER>
+          </environmentVariables>
+          <trimStackTrace>false</trimStackTrace>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
