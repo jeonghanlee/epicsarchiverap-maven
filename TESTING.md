@@ -40,7 +40,7 @@ source /path/to/epics-environment/setEpicsEnv.bash
 
 - The fixture must keep the IOC's stdin open (pipe it). A soft IOC started with `-S` and a closed stdin suspends its main thread and PVA never answers.
 - Port isolation uses the server-side variables on the IOC process: `EPICS_PVAS_SERVER_PORT`, `EPICS_PVAS_BROADCAST_PORT`, `EPICS_PVAS_INTF_ADDR_LIST=127.0.0.1`, and `EPICS_CA_SERVER_PORT`. Clients set the matching `EPICS_PVA_BROADCAST_PORT`, `EPICS_PVA_ADDR_LIST=127.0.0.1`, `EPICS_PVA_AUTO_ADDR_LIST=NO` (and the CA equivalents). Client-style `EPICS_PVA_*` variables alone do not move the server, and default ports cannot isolate from other PVA servers on the same host.
-- IOC lifecycle for new fixtures follows the epics-ioc-runner local-mode contract: `ioc-runner --local generate | install | start <name> | stop <name>`, with a `<name>.conf` EnvironmentFile carrying `IOC_CMD`, the database, and all `EPICS_*` variables. It requires a user systemd instance.
+- The fixture launches `softIocPVX` directly (no external supervisor). `SIOCSetup` does this from Java: it runs `softIocPVX -m P=<prefix> -d <db>` through a `ProcessBuilder` with stdin as a pipe, and stops the IOC by writing `exit` to that stdin. The database is the in-repo `src/resources/test/UnitTestPVs.db`.
 
 ## Tomcat integration tests
 
