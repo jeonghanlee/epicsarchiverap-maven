@@ -8,7 +8,7 @@ build:
     python: "3.10"
   jobs:
     pre_build:
-      - ./gradlew javadoc
+      - ./mvnw -B -q javadoc:javadoc
 
 python:
   install:

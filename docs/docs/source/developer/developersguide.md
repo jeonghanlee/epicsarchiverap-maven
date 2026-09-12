@@ -50,34 +50,31 @@ configurations for each test.
     cp -R conf conf_original
 ```
 
-Gradle will do this step for you if you forget.
-
 ## Building
 
-The EPICS archiver appliance is shared on
-[GitHub](https://github.com/slacmshankar/epicsarchiverap) using Git as
-the source control repository. We use [Gradle](http://gradle.org/) for
-building. The default target builds the install package and the various
-wars and places them into the `build/distributions` folder.
+The Maven build for this fork lives in
+[jeonghanlee/epicsarchiverap-maven](https://github.com/jeonghanlee/epicsarchiverap-maven).
+The build is driven by the tracked `pom.xml` through the Maven Wrapper, so
+you do not need to install Maven; the wrapper downloads the pinned Maven
+version recorded in `.mvn/wrapper/maven-wrapper.properties`. JDK 21 is
+required, and `JAVA_HOME` must be exported because the build invokes
+`${JAVA_HOME}/bin/java` to generate the BPL mappings.
 
 ```bash
-$ ls build/distributions
-archappl_v1.1.0-31-ge02e1f1.dirty.tar.gz
+$ export JAVA_HOME=/path/to/jdk-21
+$ ./mvnw -B clean package -DskipTests
 ```
 
-The Gradle build script will build into the default build directory
-`build`. You don\'t need to install Gradle, instead you can use the
-wrapper as `./gradlew`, or install it and run from the `epicsarchiverap`
-folder:
+The build places the four component WARs in the `target` folder, named
+after the `project.version` in `pom.xml`:
 
 ```bash
-$ gradle
-BUILD SUCCESSFUL in 16s
-12 actionable tasks: 10 executed, 2 up-to-date
+$ ls target/*.war
+target/archappl-<version>-engine.war
+target/archappl-<version>-etl.war
+target/archappl-<version>-mgmt.war
+target/archappl-<version>-retrieval.war
 ```
-
-The build can then be found in `epicsarchiverap/build/distributions` or
-the war files in `epicsarchiverap/build/libs`.
 
 ## Deploying
 
@@ -118,54 +115,23 @@ version of Firefox/Google chrome.
 
 ## Running the unit tests
 
-Gradle creates temporary directories for all the unit tests. If you wish
-to clean them first you can use `gradle clean`. You then have the
-following options:
+Unit tests run through Maven Surefire with JUnit 5:
 
 ```bash
-gradle test # Runs all unit tests except slow tests
-gradle unitTests # Runs all unit tests
-gradle epicsTests # Runs all integration tests that require only an epics installation
-gradle integrationTests # Runs all tests that require a tomcat installation and optionally an epics installation
-gradle flakyTests # Runs all tests that can fail due to system resources
-gradle allTests # Runs all tests (not recommended)
+./mvnw test
 ```
 
-Or run individual tests with:
+Run a single test class with:
 
 ```bash
-gradle test -tests PolicyExecutionTest
-gradle integrationTests --tests PvaGetArchivedPVsTest --info
+./mvnw test -Dtest=PolicyExecutionTest
 ```
 
-If you cancel an integrationTest early, or it gets stuck for some reason
-it\'s possible to kill any tomcats running with
-
-```bash
-gradle shutdownAllTomcats
-```
-
-If you wish to run the current development version locally for testing,
-it\'s possible to use:
-
-```bash
-gradle testRun
-```
-
-## Formatting with Spotless
-
-The gradle build script `build.gradle` includes the [Spotless Plugin](https://github.com/diffplug/spotless)
-which tracks the
-formatting of the code. To run the formatter run:
-
-```bash
-gradle spotlessApply
-```
-
-The build script checks that the changes in the current git branch are
-up-to-date with `origin/master` branch. So make sure your local
-`origin/master` is up-to-date with the [home repository](https://github.com/slacmshankar/epicsarchiverap) master
-branch to pass the CI checks.
+The categorized test tasks (`unitTests`, `epicsTests`, `integrationTests`,
+`flakyTests`, `allTests`), the `testRun` development server, the
+`shutdownAllTomcats` helper, and the Spotless formatting check existed only
+in the previous build tooling, which has been removed, and have no Maven
+equivalent.
 
 ## Side projects
 

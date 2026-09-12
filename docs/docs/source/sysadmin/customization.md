@@ -58,15 +58,12 @@ extensible for other distributions.
    drwxr-xr-x 3 mshankar cd 28 Jun 21 10:40 tests
    drwxr-xr-x 3 mshankar cd 45 Sep  9 16:03 slacdev
    $ export ARCHAPPL_SITEID=slacdev
-   $ gradle
-
-   > Configure project :
-   [ant:echo] Building the archiver appliance for the site slacdev
+   $ ./mvnw -B package -DskipTests
    ```
 
-2. The archiver appliance uses [gradle](http://gradle.org) for its
+2. The archiver appliance uses [Apache Maven](https://maven.apache.org/) for its
    builds, and [Apache Ant](http://ant.apache.org/) for site specific
-   build steps. As part of the gradle build process, you have the
+   build steps. As part of the Maven build process, you have the
    opportunity to call an ant script that is as part of the
    `src/sitespecific` folder. The `build.xml` in the `src/sitespecific`
    is called (if it exists) after the compile and staging tasks and
