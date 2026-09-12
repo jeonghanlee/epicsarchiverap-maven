@@ -15,7 +15,6 @@
     <maven.compiler.target>21</maven.compiler.target>
     <java.version>21</java.version>
     <src.main.dir>${project.basedir}/src/main</src.main.dir>
-    <lib.dir>${project.basedir}/lib</lib.dir>
     <docs.dir>${project.basedir}/docs</docs.dir>
     <api.docs.dir>${docs.dir}/api</api.docs.dir>
     <classes.dir>${project.build.directory}/build/classes</classes.dir>
@@ -32,14 +31,12 @@
     <log4j.version>2.20.0</log4j.version>
     <selenium.version>4.22.0</selenium.version>
     <sphinx.skip>false</sphinx.skip>
-    <redisnio.name>redisnio</redisnio.name>
-    <redisnio.ver>0.0.1</redisnio.ver>
-    <!--
-    <jamtio.name>jamtio</jamtio.name>
-   <jamtio.ver>071005</jamtio.ver>
-   -->
   </properties>
   <repositories>
+    <repository>
+      <id>project-local</id>
+      <url>file://${project.basedir}/lib/repo</url>
+    </repository>
     <repository>
       <id>central</id>
       <url>https://repo.maven.apache.org/maven2</url>
@@ -50,40 +47,16 @@
     </repository>
   </repositories>
   <dependencies>
-  <!--
-    <dependency>
-      <groupId>local.org.epics</groupId>
-      <artifactId>${jamtio.name}</artifactId>
-      <version>${jamtio.ver}</version>
-      <scope>system</scope>
-      <systemPath>${lib.dir}/${jamtio.name}_${jamtio.ver}.jar</systemPath>
-    </dependency>
-    -->
-    <dependency>
-      <groupId>local.org.epics</groupId>
-      <artifactId>${redisnio.name}</artifactId>
-      <version>${redisnio.ver}</version>
-      <scope>system</scope>
-      <systemPath>${lib.dir}/${redisnio.name}_${redisnio.ver}.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>local.org.epics</groupId>
-      <artifactId>BPLTaglets</artifactId>
-      <version>local</version>
-      <scope>system</scope>
-      <systemPath>${lib.dir}/test/BPLTaglets.jar</systemPath>
-    </dependency>
     <dependency>
       <groupId>local.org.epics</groupId>
       <artifactId>pbrawclient</artifactId>
       <version>0.2.1</version>
-      <scope>system</scope>
-      <systemPath>${lib.dir}/test/pbrawclient-0.2.1.jar</systemPath>
+      <scope>test</scope>
     </dependency>
     <dependency>
     <groupId>org.apache.tomcat</groupId>
     <artifactId>tomcat-servlet-api</artifactId>
-    <version>9.0.74</version>
+    <version>9.0.113</version>
     <scope>compile</scope>
     </dependency>
     <dependency>
@@ -557,7 +530,11 @@
               <tagletClass>org.epics.archiverappliance.taglets.BPLActionEndTaglet</tagletClass>
             </taglet>
           </taglets>
-          <tagletpath>${lib.dir}/test/BPLTaglets.jar</tagletpath>
+          <tagletArtifact>
+            <groupId>local.org.epics</groupId>
+            <artifactId>BPLTaglets</artifactId>
+            <version>1.0</version>
+          </tagletArtifact>
           <destDir>${javadoc.output.dir}</destDir>
           <verbose>true</verbose>
           <show>protected</show>
@@ -617,14 +594,6 @@
                   <targetPath>WEB-INF/classes</targetPath>
                 </resource>
                 <resource>
-                  <directory>${lib.dir}</directory>
-                  <includes>
-                    <!--<include>${jamtio.name}_${jamtio.ver}.jar</include>-->
-                    <include>${redisnio.name}_${redisnio.ver}.jar</include>
-                  </includes>
-                  <targetPath>WEB-INF/lib</targetPath>
-                </resource>
-                <resource>
                 <!--
                     copies from all of directory (staticcontent/* ) to targetPath folder (ui)
                     css/mgmt.css
@@ -681,14 +650,6 @@
                   <directory>${src.main.dir}/org/epics/archiverappliance/common/scripts</directory>
                   <targetPath>install/pbutils</targetPath>
                 </resource>
-                <resource>
-                  <directory>${lib.dir}</directory>
-                  <includes>
-                    <!--<include>${jamtio.name}_${jamtio.ver}.jar</include>-->
-                    <include>${redisnio.name}_${redisnio.ver}.jar</include>
-                  </includes>
-                  <targetPath>WEB-INF/lib</targetPath>
-                </resource>
               </webResources>
             </configuration>
           </execution>
@@ -711,14 +672,6 @@
                   <directory>${sitespecific.path}/classpathfiles</directory>
                   <targetPath>WEB-INF/classes</targetPath>
                 </resource>
-                <resource>
-                  <directory>${lib.dir}</directory>
-                  <includes>
-                    <!--<include>${jamtio.name}_${jamtio.ver}.jar</include>-->
-                    <include>${redisnio.name}_${redisnio.ver}.jar</include>
-                  </includes>
-                  <targetPath>WEB-INF/lib</targetPath>
-                </resource>
               </webResources>
             </configuration>
           </execution>
@@ -740,14 +693,6 @@
                 <resource>
                   <directory>${sitespecific.path}/classpathfiles</directory>
                   <targetPath>WEB-INF/classes</targetPath>
-                </resource>
-                <resource>
-                  <directory>${lib.dir}</directory>
-                  <includes>
-                    <!--<include>${jamtio.name}_${jamtio.ver}.jar</include>-->
-                    <include>${redisnio.name}_${redisnio.ver}.jar</include>
-                  </includes>
-                  <targetPath>WEB-INF/lib</targetPath>
                 </resource>
               </webResources>
             </configuration>
@@ -774,14 +719,6 @@
                 <resource>
                   <directory>${sitespecific.path}/classpathfiles</directory>
                   <targetPath>WEB-INF/classes</targetPath>
-                </resource>
-                <resource>
-                  <directory>${lib.dir}</directory>
-                  <includes>
-                    <!--<include>${jamtio.name}_${jamtio.ver}.jar</include>-->
-                    <include>${redisnio.name}_${redisnio.ver}.jar</include>
-                  </includes>
-                  <targetPath>WEB-INF/lib</targetPath>
                 </resource>
               </webResources>
             </configuration>

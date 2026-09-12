@@ -27,7 +27,7 @@ This component is included under the Jython license (http://www.jython.org/licen
 jython-2.5.3.jar
 
 This component is included under the JMatIO license (http://www.mathworks.com/matlabcentral/fileexchange/view_license?file_info_id=10759), a local copy of which can be found in the file jmatio_license.txt. 
-jamtio_071005.jar
+jmatio-1.0.jar
 
 This component is included under the GNU General Public license, a local copy of which can be found in the file GNU_GPL_license.txt.
 caj-1.1.14.jar
