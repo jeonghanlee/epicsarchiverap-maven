@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: owner rewrites .gitignore Maven-centric to close M1, then draft the M3 canonical-pom plan.
+Next session entry point: draft the M4 dependency-refresh plan from the audit table in its detail; the owner's Maven-centric .gitignore rewrite closes M1 whenever it lands.
 
 ## Milestone
 
@@ -19,9 +19,9 @@ This register covers the minimal modernization of the existing Java appliance on
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Phase 1 | M1 | Gradle removal (complete erasure) | Milestone | In progress | No | | `git grep -i gradle` empty outside this register on a committed tree; [detail](#m1---gradle-removal-complete-erasure) |
-| Phase 1 | M2 | Maven Wrapper as the build entry | Milestone | In progress | No | | `./mvnw -B clean package -DskipTests` builds four WARs from a fresh clone; [detail](#m2---maven-wrapper-as-the-build-entry) |
-| Phase 1 | M3 | Canonical pom as single source of truth | Milestone | Not started | Yes | D6 | pom.xml self-sufficient for a clean build with no external copy; [detail](#m3---canonical-pom-as-single-source-of-truth) |
-| Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | Not started | No | M3 | Pinned current versions build and pass tests on Tomcat 9; [detail](#m4---dependency-refresh-to-stable-current-versions) |
+| Phase 1 | M2 | Maven Wrapper as the build entry | Milestone | Complete | No | | Fresh clone of c1dd0b1 builds four WARs through mvnw (2026-09-11); [detail](#m2---maven-wrapper-as-the-build-entry) |
+| Phase 1 | M3 | Canonical pom as single source of truth | Milestone | Complete | No | D6 | Fresh clone of 9be652c builds four WARs from the tracked pom with no system scope (2026-09-12); [detail](#m3---canonical-pom-as-single-source-of-truth) |
+| Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | Not started | Yes | M3 | Pinned current versions build and pass tests on Tomcat 9; [detail](#m4---dependency-refresh-to-stable-current-versions) |
 | Phase 1 | M5 | Maven-centric CI and docs build | Milestone | Not started | Yes | | Owner-authored GitHub Actions on mvnw; readthedocs on mvnw; [detail](#m5---maven-centric-ci-and-docs-build) |
 | Phase 1 | M6 | Upstream core features: cherry-pick policy and application | Milestone | Not started | Yes | | Policy accepted and selected upstream changes applied; [detail](#m6---upstream-core-features-cherry-pick-policy-and-application) |
 | Phase 1 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; [detail](#m7---site-required-features-and-fixes) |
@@ -51,6 +51,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | D12 | This register covers only the minimal modernization of the existing architecture through Phase 2. The architecture replacement (storage, query, services, engine, API, MCP, viewer) is EPICS-Arche work and is not tracked here. | 2026-09-11 |
 | D13 | Tomcat 9 is fixed for the existing appliance through the end of Phase 2. The jakarta/Tomcat 11 migration and the embedded-Tomcat runnable jars are retired (recorded in the prior generation at the History commit); tomcat-servlet-api tracks the current 9.0.x as a final value. Phase 2 end state: WARs on Tomcat 9, systemd-run by aa-env, SQLite (sqlite3) as the only store. | 2026-09-11 |
 | D14 | Naming stays as it is through Phase 2: artifact names archappl-<version>-<component>.war, ARCHAPPL_* variables, and the instance layout are not renamed. | 2026-09-11 |
+| D15 | jython-standalone 2.7 stays through Phase 2: it is the execution engine for policies.py, which is Python 2 syntax, and no Python 3 Jython exists. Replacing the policy engine is EPICS-Arche work, not minimal modernization. | 2026-09-12 |
+| D16 | redisnio (the Redis NIO FileSystemProvider jar) is removed. ArchPaths resolves only `jar:file://` (zip) specially and everything else on the default filesystem; no code, configuration, template, or document names a redis scheme, so the provider is unreachable. | 2026-09-12 |
 
 ### Milestone Details
 
@@ -127,11 +129,11 @@ Last Compared: never
 Origin: daff1b7 / M2
 Identity History: none
 GitHub Issue: none
-Status: In progress
+Status: Complete
 
 ##### Summary
 
-The Apache Maven Wrapper is the build entry so no host needs a system Maven; aa-env sets its MAVEN_CMD to the wrapper and stops installing Maven. The wrapper files are committed (ff67460); a fresh-clone verification remains.
+The Apache Maven Wrapper is the build entry so no host needs a system Maven; aa-env sets its MAVEN_CMD to the wrapper and stops installing Maven. The wrapper files are committed (ff67460) and a fresh clone of c1dd0b1 builds all four WARs through the wrapper.
 
 ##### Scope
 
@@ -157,7 +159,7 @@ Superseded Plan Artifacts: none
 1. Generate the wrapper pinned to 3.9.9. Done.
 2. Verify the wrapper build in this checkout. Done.
 3. Commit the wrapper files. Done (ff67460).
-4. Verify from a fresh clone and close.
+4. Verify from a fresh clone and close. Done (2026-09-11).
 
 ##### Test Plan
 
@@ -171,11 +173,11 @@ Superseded Plan Artifacts: none
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | 2026-09-11 | JDK 21.0.12.1, JAVA_HOME exported | Pass | Exit 0; distributionUrl apache-maven-3.9.9-bin.zip; WARs in target/ |
-| T2 | Not run | fresh clone | Pending | none |
+| T2 | 2026-09-11 | fresh clone of modernize at c1dd0b1, JDK 21.0.12.1, JAVA_HOME exported | Pass | `./mvnw -B -q clean package -DskipTests` exit 0; target/archappl-2025-6-{engine,etl,mgmt,retrieval}.war produced |
 
 ##### Closure Evidence
 
-- none yet (pending T2)
+- Wrapper committed in ff67460 (Maven 3.9.9, only-script); T1 and T2 passed on 2026-09-11; no external gate.
 
 ##### GitHub Projection
 
@@ -192,7 +194,7 @@ Last Compared: never
 Origin: daff1b7 / M3
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: Complete
 
 ##### Summary
 
@@ -207,39 +209,44 @@ Out of scope: version pin changes (M4); CI (M5).
 ##### Completion Criteria
 
 - A clean checkout builds all four WARs from the tracked pom.xml with no external pom substitution.
-- lib/jamtio and lib/redisnio are consumed through a packaging path that survives without a system-scope path.
+- No system-scope dependency remains; the local jars still needed (BPLTaglets for javadoc, pbrawclient for tests) resolve from the project-local repository lib/repo, and no dead jar is packaged into the WARs.
 
 ##### Dependencies And Decisions
 
-- D6; D8.
+- D6; D8; D10.
+- Findings (2026-09-11) the plan rests on: the tracked pom differs from aa-env's tracked pom.xml (D6 base) in exactly two lines, tomcat-servlet-api 9.0.74 versus 9.0.113; aa-env's `make init` overwrites the pom with `cp -rf $(TOP)/pom.xml $(SRC_PATH)` (configure/RULES_SRC). lib/jamtio_071005.jar is dead: its dependency and its WEB-INF/lib include are commented out. lib/redisnio_0.0.1.jar is a Redis NIO FileSystemProvider (edu.stanford.slac.archiverappliance.PlainPB.fs.redis, registered through META-INF/services, built 2016) with no source reference; it is packaged into every WAR through a webResources include and is used only if a PlainPB store path names a redis filesystem. lib/test holds awaitility 4.2.0, commons-cli 1.5.0, and junit-platform-console-standalone 1.10.0 (all on Maven Central) plus two custom jars, BPLTaglets.jar (javadoc taglet, tagletpath) and pbrawclient-0.2.1.jar (test client), all declared with system scope.
+- D16 resolves step 3: redisnio is dropped. Code reading on 2026-09-12: ArchPaths.get handles only the `jar:file://` prefix (JDK zip provider looked up by the "jar" scheme) and sends every other path to FileSystems.getDefault(); src/main contains no URI-based Path or FileSystem lookup that could dispatch by scheme, and no `redis://` appears in code, sitespecific configuration, aa-env templates, or docs.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: owner, 2026-09-12
+Implementation Authorization: owner, 2026-09-12
 Superseded Plan Artifacts: none
 
-1. Merge the aa-maven pom to the D6 base and remove any external-copy dependency.
-2. Rehome lib/jamtio and lib/redisnio off system scope.
+1. Align the pom to the D6 base: set tomcat-servlet-api to 9.0.113, the only difference at that point. After the rest of this row the tracked pom is the canonical build definition and diverges from aa-env's copy by design (83 lines on 2026-09-12), so aa-env must remove its `make init` pom copy (their M6, gated on this row) in the same step it takes this change; otherwise its build regresses to the stale pom and fails on the removed lib/test jars. Deployment builds pinned to NewHope are unaffected. Done 2026-09-12.
+2. Remove the dead jamtio artifact: delete lib/jamtio_071005.jar, the commented dependency and include blocks, and the jamtio.name and jamtio.ver properties. Done.
+3. Drop redisnio (D16): remove the system dependency, the five WEB-INF/lib include blocks, the redisnio.name and redisnio.ver properties, and lib/redisnio_0.0.1.jar. Done.
+4. lib/test: awaitility, commons-cli, and junit-platform-console-standalone were referenced by nothing in the pom and are deleted (not re-declared). BPLTaglets 1.0 and pbrawclient 0.2.1 are installed into lib/repo (jar and pom only) under groupId local.org.epics, served by a `project-local` file repository; BPLTaglets is the javadoc plugin's tagletArtifact (no dependency), pbrawclient is a test-scope dependency because only tests use it (main code mentions it in a comment only) and its bundled EPICSEvent duplicate must not reach the WARs. lib.dir property removed. Done.
+5. No `<scope>system</scope>` or `<systemPath>` remains; the build prints no system-scope warning. Done; T1 from a fresh clone of commit 9be652c passed on 2026-09-12.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
 | T1 | Integration | ./mvnw -B clean package on a fresh checkout with no pom copy | JDK 21, wrapper Maven | Four WARs build |
-| T2 | Integration | Inspect built WARs for the lib jars | JDK 21, wrapper Maven | jamtio and redisnio present without a system-scope path |
+| T2 | Integration | Purge ~/.m2/repository/local/org/epics, then package, javadoc:javadoc, and test-compile | JDK 21, wrapper Maven | Artifacts download from the project-local file repository; no system-scope warning; no local jar inside the WARs |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-09-12 | fresh clone of modernize at 9be652c, ~/.m2 local.org.epics purged, JDK 21.0.12.1, wrapper Maven 3.9.9 | Pass | Exit 0; four WARs; 4 downloads logged from the project-local lib/repo; 0 system-scope warnings; no local jar in any WAR; javadoc:javadoc and test-compile exit 0 |
+| T2 | 2026-09-12 | this checkout after purging the cached local.org.epics artifacts | Pass | Build log shows "Downloaded from project-local: file:///.../lib/repo/local/org/epics/pbrawclient/0.2.1/..."; BPLTaglets re-cached from lib/repo by javadoc; 0 system-scope warnings; engine WAR contains no redisnio, pbrawclient, or BPLTaglets; javadoc and test-compile exit 0 |
 
 ##### Closure Evidence
 
-- none
+- Executed as commit 9be652c (pom, lib/repo, jar removals, NOTICE); T1 and T2 passed on 2026-09-12; no external gate. aa-env is notified that its pom copy step must be removed at the same time it takes this commit.
 
 ##### GitHub Projection
 
@@ -264,9 +271,9 @@ Refresh and pin the third-party dependency versions on the canonical pom to the 
 
 ##### Scope
 
-Set tomcat-servlet-api to the current 9.0.x, refresh log4j, mariadb-java-client, jca, commons-* and guava to current stable releases, and pin every range to a fixed version. Record the chosen versions as evidence. Upstream's catalog on 2026-09-02 (jca 2.4.12, log4j 2.20.0, mariadb 3.3.3, protobuf-java 4.33.0, junit 5.9.3) is a reference point, not a target.
+Pin the two open version ranges, move every dependency to the current release of its stable line, keep Tomcat 9 (D13) and jython (D15), and record the chosen versions as evidence.
 
-Out of scope: adding sqlite-jdbc (M11).
+Out of scope: adding sqlite-jdbc (M11); removing MariaDB (M13) or Redis (M12); replacing the aged libraries jdbm, jmatio, json-simple, and commons-math3 (left as-is under minimal modernization).
 
 ##### Completion Criteria
 
@@ -274,7 +281,29 @@ Out of scope: adding sqlite-jdbc (M11).
 
 ##### Dependencies And Decisions
 
-- M3 (refresh applies to the canonical pom); D8; D13.
+- M3 (refresh applies to the canonical pom); D8; D13; D15.
+- Full dependency audit, 2026-09-12 (`dependency:list`, `dependency:analyze`, `versions:display-dependency-updates` through mvnw): 30 direct dependencies, 53 resolved artifacts (50 compile and runtime). No used-undeclared dependency. Eight unused-declared are runtime or plugin loaded and legitimate (four log4j bindings, mariadb driver, disruptor, BPLTaglets, redisnio). Two open ranges resolve to floating versions and make the build non-reproducible: guava `[32.0.0-android,)` (resolved 33.7.1-jre on 2026-09-12) and commons-io `[2.14.0,)` (resolved 2.22.0).
+
+| Dependency | Declared | Current stable line | Action |
+| --- | --- | --- | --- |
+| guava | range | 33.x jre | pin |
+| commons-io | range | 2.22.x | pin |
+| log4j api, core, jul, slf4j2-impl, 1.2-api | 2.20.0 | 2.25.x (3.0 is beta, excluded) | update |
+| disruptor | 3.4.4 | 4.0.0 (check log4j compatibility) | update if compatible |
+| tomcat-servlet-api | 9.0.74 (9.0.113 after M3) | latest 9.0.x (D13) | update within 9.0.x |
+| jca | 2.4.10 | 2.4.12 | update |
+| core-pva | 5.0.0 | 5.0.5 | update |
+| protobuf-java | 4.36.1 | current | keep |
+| hazelcast | 5.4.0 | 5.7.0 | update |
+| commons-lang3, commons-codec, commons-validator | 3.12.0, 1.15, 1.7 | 3.20.0, 1.22.1, 1.11.0 | update |
+| commons-fileupload | 1.5 | 1.6.0 | update |
+| opencsv | 5.7.1 | 5.12.0 | update |
+| httpclient, httpcore | 4.5.14, 4.4.16 | last of the 4.x line | keep the 4.x line |
+| mariadb-java-client | 3.3.3 | 3.5.10 | leave; removed by M13 |
+| jedis | 4.4.0 | 6.x (8.1 is beta) | leave; M12 decides the Redis backend |
+| jython-standalone | 2.7.3 | 2.7.x | keep (D15) |
+| jdbm, jmatio, json-simple, commons-math3 | 2.4, 1.0, 1.1.1, 3.6.1 | effectively unmaintained | keep; note only |
+| redisnio, BPLTaglets, pbrawclient | system scope | local jars | handled by M3 |
 
 ##### Implementation Plan
 
@@ -283,9 +312,10 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Determine the current stable release of each dependency at execution time and update the version properties.
-2. Pin guava and commons-* to fixed versions.
-3. Build and run tests; record the versions.
+1. Pin guava and commons-io to the versions they resolve to at execution time; from then on no range remains in the pom.
+2. Move each "update" row above to the current release of its stable line as of execution, one property or version at a time, building after each group.
+3. Keep Tomcat 9 (latest 9.0.x), jython, httpclient 4.x, and the aged libraries as recorded.
+4. Run the build and the tests; record every chosen version in this detail as evidence.
 
 ##### Test Plan
 
