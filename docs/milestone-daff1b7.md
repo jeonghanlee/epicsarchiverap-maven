@@ -27,6 +27,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; [detail](#m7---site-required-features-and-fixes) |
 | Phase 1 | M8 | Maven test platform | Milestone | In progress | No | | Stage 1: test tree compiles and the unit set runs by default; Stage 2: Tomcat 9 and softIoc profiles; [detail](#m8---maven-test-platform) |
 | Phase 1 | M9 | Documentation for the Maven build | Milestone | Not started | Yes | | Build, test, and deploy docs match the Maven-only reality; [detail](#m9---documentation-for-the-maven-build) |
+| Phase 1 | M14 | Build self-sufficiency (no build-time network, pip, or scp) | Milestone | Not started | Yes | | Build runs offline: no svg_viewer download, no per-build sphinx pip install, no scp; [detail](#m14---build-self-sufficiency-no-build-time-network-pip-or-scp) |
+| Phase 1 | M15 | Separate non-test utilities out of src/test | Milestone | Not started | Yes | | The 20 main() dev/generator utilities move out of the test source tree; [detail](#m15---separate-non-test-utilities-out-of-srctest) |
 | Phase 1 | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; [detail](#m10---ant-removal-final-maven-only-consolidation) |
 | Phase 2 | M11 | sqlite-jdbc runtime dependency | Milestone | Not started | Yes | | SQLite persistence path works at runtime; [detail](#m11---sqlite-jdbc-runtime-dependency) |
 | Phase 2 | M12 | Persistence and storage backend pruning | Milestone | Not started | Yes | | Owner-approved backends removed, build and tests pass; [detail](#m12---persistence-and-storage-backend-pruning) |
@@ -57,6 +59,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | D18 | Test selection (owner rulings): Matlab export, PVA management API, and zipfs compressed-storage tests stay; the Channel Archiver migration tests are dropped (the site does not use that migration). Whether the main-code ChannelArchiver support itself is removed is decided in the M12 inventory. | 2026-09-12 |
 | D19 | The site standard for PVA serving is QSRV2 on pvxs. Test fixtures use softIocPVX (pvxs 1.5.1); softIocPVA (QSRV1) remains only as a compatibility fallback for unconverted tests. | 2026-09-12 |
 | D20 | EPICS test fixtures launch softIocPVX directly from Java (SIOCSetup: ProcessBuilder, stdin pipe, `exit` to stop), not through epics-ioc-runner. The runner needs a user systemd instance, which a headless build host lacks; direct launch keeps the fixture self-contained. SIOCSetup now runs softIocPVX (was softIocPVA). | 2026-09-12 |
+| D21 | Build artifact final name is the variable scheme aa-<yyyyMMdd>-<git short hash> (maven.build.timestamp plus git-commit-id), replacing archappl-<version>; the WAR and assembly names use the one project finalName, ending the earlier dash/underscore split. Tests resolve it through the archappl.final.name system property; aa-env will be notified on the commit because it deploys the WARs and the name change affects its deploy paths. | 2026-09-12 |
+| D22 | The 29 Selenium browser integration tests are rewritten to exercise the mgmt BPL HTTP endpoints directly (archivePV, getPVStatus, areWeArchivingPV, getMatchingPVs), not the mgmt UI DOM. They verify server behavior, not the UI, so the browser, chromedriver, and WebDriverManager dependencies are dropped; the UI itself is EPICS-Arche's concern. | 2026-09-12 |
 
 ### Milestone Details
 
@@ -566,7 +570,7 @@ Stage 1: testSourceDirectory and test resources, test-scope dependencies the tre
 
 Out of scope: CI wiring (M5); the pythontests scripts.
 
-Selection and reinforcement (D17, D18): the platform keeps only the tests this site needs — kept: PlainPB and PB, ETL, retrieval with postprocessors, saverestore, Matlab export, zipfs compressed storage, mgmt (policies and PVA management API), config, common, engine including PVA (V4); dropped: retrieval/channelarchiver (migration from the 2011 Channel Archiver, not used; removed 2026-09-12). Reinforcement backlog on the kept tests, applied incrementally: Thread.sleep waits (253 calls in 56 files) replaced with Awaitility; hard-coded /scratch and /tmp paths replaced with @TempDir and a ConfigServiceForTests default under target; the static shared ConfigServiceForTests instances (8 files) isolated; a global JUnit timeout so a hang fails instead of blocking; the two-minute V4 tests tagged slow; JaCoCo coverage wired so the kept set is selected by measured coverage of the site's paths, not by folder name.
+Selection and reinforcement (D17, D18): the platform keeps only the tests this site needs — kept: PlainPB and PB, ETL, retrieval with postprocessors, saverestore, Matlab export, zipfs compressed storage, mgmt (policies and PVA management API), config, common, engine including PVA (V4); dropped: retrieval/channelarchiver (migration from the 2011 Channel Archiver, not used; removed 2026-09-12). Selenium browser tests are rewritten to HTTP BPL calls (D22), dropping the browser dependency. Reinforcement backlog on the kept tests, applied incrementally: Thread.sleep waits (253 calls in 56 files) replaced with Awaitility; hard-coded /scratch and /tmp paths replaced with @TempDir and a ConfigServiceForTests default under target; the static shared ConfigServiceForTests instances (8 files) isolated; a global JUnit timeout so a hang fails instead of blocking; the two-minute V4 tests tagged slow; JaCoCo coverage wired so the kept set is selected by measured coverage of the site's paths, not by folder name.
 
 ##### Completion Criteria
 
@@ -937,6 +941,133 @@ Superseded Plan Artifacts: none
 ##### GitHub Projection
 
 Title: Remove the MariaDB dependency in favor of SQLite
+Labels: none
+GitHub Milestone: none
+Observed State: none
+Observed Labels: none
+Observed Milestone: none
+Last Compared: never
+
+#### M14 - Build self-sufficiency (no build-time network, pip, or scp)
+
+Origin: daff1b7 / M14
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The build reaches outside itself in three ways that break an offline or air-gapped build and violate D14 (small and strong): the package phase downloads the svg_viewer zip from GitHub, the sphinx step builds a Python venv and pip-installs on every build, and a local file copy is done with the scp executable.
+
+##### Scope
+
+Remove the build-time network fetch of svg_viewer (vendor the asset or make it an ordinary resolved dependency); make the sphinx documentation build opt-in or environment-provided rather than a per-build pip install; replace the scp invocation with a plain in-JVM or filesystem copy. After this, `./mvnw -B clean package -DskipTests` completes with no outbound network.
+
+Out of scope: the Sphinx content itself (M9); the antrun executions as such (M10).
+
+##### Completion Criteria
+
+- A clean build with the network disabled produces the four WARs (offline-resolved dependencies aside).
+- No build step invokes scp, downloads svg_viewer, or pip-installs.
+
+##### Dependencies And Decisions
+
+- D11 (Phase 1); D14 (small and strong).
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Vendor or dependency-resolve svg_viewer instead of downloading it.
+2. Make sphinx opt-in (profile or provided environment), not a per-build pip install.
+3. Replace scp with a filesystem copy.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | Build with outbound network blocked | JDK 21, wrapper Maven, offline | Four WARs build; no network, scp, or pip step runs |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | offline | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Make the build self-sufficient (no build-time network, pip, or scp)
+Labels: none
+GitHub Milestone: none
+Observed State: none
+Observed Labels: none
+Observed Milestone: none
+Last Compared: never
+
+#### M15 - Separate non-test utilities out of src/test
+
+Origin: daff1b7 / M15
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The test source tree holds 20 classes that are not tests but main() dev and data-generation utilities (for example GenerateData, Generate100KPerfHarness, GetFileTime, GZIPUtil, GenerateLargeDB). They are compiled with the tests and four of them carry hard-coded /scratch or /tmp paths. They are not run by Surefire but do not belong in src/test.
+
+##### Scope
+
+Move the main() utilities to a dedicated source location (a tools module or src/tools), or remove the ones with no current use; fix or drop the hard-coded /scratch and /tmp paths in the ones that are kept.
+
+Out of scope: the actual @Test classes; the 17665 literal cleanup (M8 reinforcement).
+
+##### Completion Criteria
+
+- src/test contains only JUnit test classes and their support; the utilities live elsewhere or are removed; no kept utility carries a hard-coded absolute path.
+
+##### Dependencies And Decisions
+
+- D11 (Phase 1); D14.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Inventory the 20 main() utilities and their callers.
+2. Move the kept ones out of src/test and drop the unused; fix absolute paths.
+3. Confirm test-compile and the unit set are unaffected.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Static | Search src/test for `static void main` and absolute /scratch or /tmp paths | source tree | None remain under src/test |
+| T2 | Unit | ./mvnw -B test | JDK 21, wrapper Maven | Same unit-set result as before the move |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | source tree | Pending | none |
+| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Move non-test utilities out of the test source tree
 Labels: none
 GitHub Milestone: none
 Observed State: none
