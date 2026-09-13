@@ -1,33 +1,31 @@
 package org.epics.archiverappliance.mgmt.pauseresume;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.awaitility.Awaitility;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.persistence.JDBM2Persistence;
+import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.File;
-import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 /**
- * Start an appserver with persistence; start archiving a PV and then pause it and delete it
- * Make sure that the typeinfo disappears from persistence.
- * @author mshankar
- *
+ * Start an appserver with persistence, archive a PV, then pause, resume, pause and delete it through
+ * the mgmt BPL, replacing the former browser-driven flow. Each transition is confirmed through the
+ * PV's status. Verifies the server workflow rather than the UI.
  */
 @Tag("integration")
 @Tag("localEpics")
@@ -37,12 +35,6 @@ public class DeletePVTest {
             new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "DeletePVTest");
     TomcatSetup tomcatSetup = new TomcatSetup();
     SIOCSetup siocSetup = new SIOCSetup();
-    WebDriver driver;
-
-    @BeforeAll
-    public static void setupClass() {
-        WebDriverManager.firefoxdriver().setup();
-    }
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -61,144 +53,62 @@ public class DeletePVTest {
 
         siocSetup.startSIOCWithDefaultDB();
         tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
-        driver = new FirefoxDriver();
     }
 
     @AfterEach
     public void tearDown() throws Exception {
-        driver.quit();
         tomcatSetup.tearDown();
         siocSetup.stopSIOC();
     }
 
+    private static String statusOf(String getPVStatusUrl) {
+        JSONArray status = GetUrlContent.getURLContentAsJSONArray(getPVStatusUrl);
+        if (status == null || status.isEmpty()) {
+            return "(absent)";
+        }
+        return String.valueOf(((JSONObject) status.get(0)).get("status"));
+    }
+
     @Test
     public void testSimpleDeletePV() throws Exception {
-        driver.get("http://localhost:17665/mgmt/ui/index.html");
-        WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
-        String pvNameToArchive = "UnitTestNoNamingConvention:sine";
-        pvstextarea.sendKeys(pvNameToArchive);
-        WebElement archiveButton = driver.findElement(By.id("archstatArchive"));
-        logger.debug("About to submit");
-        archiveButton.click();
-        // We have to wait for about 10 minutes here as it does take a while for the workflow to complete.
-        Thread.sleep(4 * 60 * 1000);
-        WebElement checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
-        checkStatusButton.click();
-        Thread.sleep(2 * 1000);
-        WebElement statusPVName =
-                driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(1)"));
-        String pvNameObtainedFromTable = statusPVName.getText();
-        Assertions.assertTrue(
-                pvNameToArchive.equals(pvNameObtainedFromTable),
-                "PV Name is not " + pvNameToArchive + "; instead we get " + pvNameObtainedFromTable);
-        WebElement statusPVStatus =
-                driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(2)"));
-        String pvArchiveStatusObtainedFromTable = statusPVStatus.getText();
-        String expectedPVStatus = "Being archived";
-        Assertions.assertTrue(
-                expectedPVStatus.equals(pvArchiveStatusObtainedFromTable),
-                "Expecting PV archive status to be " + expectedPVStatus + "; instead it is "
-                        + pvArchiveStatusObtainedFromTable);
+        String pvName = "UnitTestNoNamingConvention:sine";
+        String mgmtUrl = "http://localhost:17665/mgmt/bpl/";
+        String encoded = URLEncoder.encode(pvName, StandardCharsets.UTF_8);
+        String archivePVUrl = mgmtUrl + "archivePV?pv=" + encoded;
+        String getPVStatusUrl = mgmtUrl + "getPVStatus?pv=" + encoded;
+        String pauseUrl = mgmtUrl + "pauseArchivingPV?pv=" + encoded;
+        String resumeUrl = mgmtUrl + "resumeArchivingPV?pv=" + encoded;
+        String deleteUrl = mgmtUrl + "deletePV?pv=" + encoded;
 
-        logger.info("We are now archiving the PV; let's go into the details page; pause and delete");
-        driver.get("http://localhost:17665/mgmt/ui/pvdetails.html?pv=" + pvNameToArchive);
-        {
-            Thread.sleep(2 * 1000);
-            WebElement pauseArchivingButn = driver.findElement(By.id("pvDetailsPauseArchiving"));
-            logger.info("Clicking on the button to pause archiving the PV");
-            pauseArchivingButn.click();
-            Thread.sleep(10 * 1000);
-            WebElement pvDetailsTable = driver.findElement(By.id("pvDetailsTable"));
-            List<WebElement> pvDetailsTableRows = pvDetailsTable.findElements(By.cssSelector("tbody tr"));
-            for (WebElement pvDetailsTableRow : pvDetailsTableRows) {
-                WebElement pvDetailsTableFirstCol = pvDetailsTableRow.findElement(By.cssSelector("td:nth-child(1)"));
-                if (pvDetailsTableFirstCol.getText().contains("Is this PV paused:")) {
-                    WebElement pvDetailsTableSecondCol =
-                            pvDetailsTableRow.findElement(By.cssSelector("td:nth-child(2)"));
-                    String obtainedPauseStatus = pvDetailsTableSecondCol.getText();
-                    String expectedPauseStatus = "Yes";
-                    Assertions.assertTrue(
-                            expectedPauseStatus.equals(obtainedPauseStatus),
-                            "Expecting paused status to be " + expectedPauseStatus + "; instead it is "
-                                    + obtainedPauseStatus);
-                    break;
-                }
-            }
-        }
-        {
-            Thread.sleep(2 * 1000);
-            WebElement resumeArchivingButn = driver.findElement(By.id("pvDetailsResumeArchiving"));
-            logger.info("Clicking on the button to resume archiving the PV");
-            resumeArchivingButn.click();
-            Thread.sleep(10 * 1000);
-            WebElement pvDetailsTable = driver.findElement(By.id("pvDetailsTable"));
-            List<WebElement> pvDetailsTableRows = pvDetailsTable.findElements(By.cssSelector("tbody tr"));
-            for (WebElement pvDetailsTableRow : pvDetailsTableRows) {
-                WebElement pvDetailsTableFirstCol = pvDetailsTableRow.findElement(By.cssSelector("td:nth-child(1)"));
-                if (pvDetailsTableFirstCol.getText().contains("Is this PV paused:")) {
-                    WebElement pvDetailsTableSecondCol =
-                            pvDetailsTableRow.findElement(By.cssSelector("td:nth-child(2)"));
-                    String obtainedPauseStatus = pvDetailsTableSecondCol.getText();
-                    String expectedPauseStatus = "No";
-                    Assertions.assertTrue(
-                            expectedPauseStatus.equals(obtainedPauseStatus),
-                            "Expecting paused status to be " + expectedPauseStatus + "; instead it is "
-                                    + obtainedPauseStatus);
-                    break;
-                }
-            }
-        }
-        {
-            Thread.sleep(2 * 1000);
-            WebElement pauseArchivingButn = driver.findElement(By.id("pvDetailsPauseArchiving"));
-            logger.info("Clicking on the button to pause archiving the PV");
-            pauseArchivingButn.click();
-            Thread.sleep(10 * 1000);
-            WebElement pvDetailsTable = driver.findElement(By.id("pvDetailsTable"));
-            List<WebElement> pvDetailsTableRows = pvDetailsTable.findElements(By.cssSelector("tbody tr"));
-            for (WebElement pvDetailsTableRow : pvDetailsTableRows) {
-                WebElement pvDetailsTableFirstCol = pvDetailsTableRow.findElement(By.cssSelector("td:nth-child(1)"));
-                if (pvDetailsTableFirstCol.getText().contains("Is this PV paused:")) {
-                    WebElement pvDetailsTableSecondCol =
-                            pvDetailsTableRow.findElement(By.cssSelector("td:nth-child(2)"));
-                    String obtainedPauseStatus = pvDetailsTableSecondCol.getText();
-                    String expectedPauseStatus = "Yes";
-                    Assertions.assertTrue(
-                            expectedPauseStatus.equals(obtainedPauseStatus),
-                            "Expecting paused status to be " + expectedPauseStatus + "; instead it is "
-                                    + obtainedPauseStatus);
-                    break;
-                }
-            }
-        }
-        {
-            Thread.sleep(2 * 1000);
-            WebElement deletePVButn = driver.findElement(By.id("pvDetailsStopArchiving"));
-            logger.info("Clicking on the button to delete/stop archiving the PV");
-            deletePVButn.click();
-            Thread.sleep(2 * 1000);
-            WebElement dialogOkButton = driver.findElement(By.id("pvStopArchivingOk"));
-            logger.info("About to submit");
-            dialogOkButton.click();
-            Thread.sleep(10 * 1000);
-        }
-        {
-            driver.get("http://localhost:17665/mgmt/ui/index.html");
-            checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
-            checkStatusButton.click();
-            Thread.sleep(2 * 1000);
-            statusPVName = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(1)"));
-            pvNameObtainedFromTable = statusPVName.getText();
-            Assertions.assertTrue(
-                    pvNameToArchive.equals(pvNameObtainedFromTable),
-                    "PV Name is not " + pvNameToArchive + "; instead we get " + pvNameObtainedFromTable);
-            statusPVStatus = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(2)"));
-            pvArchiveStatusObtainedFromTable = statusPVStatus.getText();
-            expectedPVStatus = "Not being archived";
-            Assertions.assertTrue(
-                    expectedPVStatus.equals(pvArchiveStatusObtainedFromTable),
-                    "Expecting PV archive status to be " + expectedPVStatus + "; instead it is "
-                            + pvArchiveStatusObtainedFromTable);
-        }
+        // Wait for the appliance to accept archive requests, then wait until the PV is being archived.
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(2))
+                .pollInterval(Duration.ofSeconds(5))
+                .ignoreExceptions()
+                .until(() -> GetUrlContent.getURLContentAsJSONArray(archivePVUrl) != null);
+        awaitStatus(null, getPVStatusUrl, "Being archived", Duration.ofMinutes(5));
+
+        // Pause, resume, pause again, then delete; confirm the PV's status after each transition.
+        awaitStatus(pauseUrl, getPVStatusUrl, "Paused", Duration.ofMinutes(2));
+        awaitStatus(resumeUrl, getPVStatusUrl, "Being archived", Duration.ofMinutes(2));
+        awaitStatus(pauseUrl, getPVStatusUrl, "Paused", Duration.ofMinutes(2));
+        awaitStatus(deleteUrl, getPVStatusUrl, "Not being archived", Duration.ofMinutes(2));
+    }
+
+    /**
+     * Re-issue the (idempotent) action, if any, and poll the PV status until it reaches the expected
+     * value, ignoring transient errors.
+     */
+    private static void awaitStatus(String actionUrl, String getPVStatusUrl, String expectedStatus, Duration atMost) {
+        Awaitility.await()
+                .atMost(atMost)
+                .pollInterval(Duration.ofSeconds(5))
+                .ignoreExceptions()
+                .until(() -> {
+                    if (actionUrl != null) {
+                        GetUrlContent.getURLContentAsJSONObject(actionUrl);
+                    }
+                    return expectedStatus.equals(statusOf(getPVStatusUrl));
+                });
     }
 }
