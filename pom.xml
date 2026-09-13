@@ -324,6 +324,13 @@
             <ARCHAPPL_MEDIUM_TERM_FOLDER>${project.build.directory}/test-storage/mts</ARCHAPPL_MEDIUM_TERM_FOLDER>
             <ARCHAPPL_LONG_TERM_FOLDER>${project.build.directory}/test-storage/lts</ARCHAPPL_LONG_TERM_FOLDER>
             <ARCHAPPL_XLTS_TERM_FOLDER>${project.build.directory}/test-storage/xlts</ARCHAPPL_XLTS_TERM_FOLDER>
+            <!-- Pin EPICS clients (the in-JVM CA/PVA clients and the child Tomcat, which inherits
+                 this environment) to the loopback interface so a test never reaches, or is answered
+                 by, an IOC on the wider network. The soft IOC servers are pinned in SIOCSetup. -->
+            <EPICS_CA_AUTO_ADDR_LIST>NO</EPICS_CA_AUTO_ADDR_LIST>
+            <EPICS_CA_ADDR_LIST>127.0.0.1</EPICS_CA_ADDR_LIST>
+            <EPICS_PVA_AUTO_ADDR_LIST>NO</EPICS_PVA_AUTO_ADDR_LIST>
+            <EPICS_PVA_ADDR_LIST>127.0.0.1</EPICS_PVA_ADDR_LIST>
           </environmentVariables>
           <trimStackTrace>false</trimStackTrace>
         </configuration>
@@ -925,7 +932,9 @@
       <id>integration</id>
       <properties>
         <test.excludedGroups></test.excludedGroups>
-        <test.groups>integration &amp; !localEpics</test.groups>
+        <!-- This site runs both Tomcat and EPICS, so the integration profile runs every test
+             that needs an external environment: Tomcat, a local EPICS IOC, or both. -->
+        <test.groups>integration | localEpics</test.groups>
       </properties>
     </profile>
   </profiles>

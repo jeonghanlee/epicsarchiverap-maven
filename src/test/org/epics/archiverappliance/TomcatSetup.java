@@ -41,6 +41,9 @@ public class TomcatSetup {
 	LinkedList<Process> watchedProcesses = new LinkedList<Process>();
 	LinkedList<File> cleanupFolders = new LinkedList<File>();
 	protected static final int DEFAULT_SERVER_STARTUP_PORT = 16000;
+	// Set once tearDown starts, so the log-reader threads treat the resulting closed streams as
+	// an expected shutdown rather than a read error.
+	private volatile boolean stopping = false;
 
 	private static void overrideEnvWithSystemProperty(Map<String, String> environment, String key) {
 		if (System.getProperties().containsKey(key)) {
@@ -112,6 +115,7 @@ public class TomcatSetup {
 
 	}
 	public void tearDown() throws Exception {
+		stopping = true;
 		for(Process process : watchedProcesses) {
 			// First try to kill the process cleanly
 			process.destroy();
@@ -131,7 +135,7 @@ public class TomcatSetup {
 		}
 	}
 
-	private static void catchApplianceLog(String applianceName, Process p, CountDownLatch latch, BufferedReader li) {
+	private void catchApplianceLog(String applianceName, Process p, CountDownLatch latch, BufferedReader li) {
 		Logger applianceLogger = LogManager.getLogger("APP" + applianceName);
 		try {
 			String msg;
@@ -142,8 +146,16 @@ public class TomcatSetup {
 					latch.countDown();
 				}
 			}
+		} catch(IOException ex) {
+			// tearDown destroys the process, which closes this stream while readLine is blocked;
+			// that is an expected shutdown artifact, not a startup failure.
+			if(stopping || !p.isAlive()) {
+				logger.debug("Appliance log for " + applianceName + " closed on shutdown");
+			} else {
+				logger.error("Error reading the appliance log for " + applianceName, ex);
+			}
 		} catch(Exception ex) {
-			logger.error("Exception starting Tomcat", ex);
+			logger.error("Unexpected error reading the appliance log for " + applianceName, ex);
 		}
 	}
 

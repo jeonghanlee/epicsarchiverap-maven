@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PipedOutputStream;
 import java.io.PrintWriter;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,6 +47,13 @@ public class SIOCSetup {
 		
 		String softIocExecutable = System.getProperty("archappl.softioc", "softIocPVX");
 		ProcessBuilder pb = new ProcessBuilder(softIocExecutable, "-m", "P=" + prefix, "-d", f.getAbsolutePath());
+		// Keep the soft IOC's CA and PVA servers on the loopback interface so the fixture never
+		// advertises to, or is discovered from, IOCs on the wider network. Clients are pinned to
+		// 127.0.0.1 by the Surefire environment (see pom.xml).
+		Map<String, String> env = pb.environment();
+		env.put("EPICS_CAS_INTF_ADDR_LIST", "127.0.0.1");
+		env.put("EPICS_CAS_BEACON_ADDR_LIST", "127.0.0.1");
+		env.put("EPICS_PVAS_INTF_ADDR_LIST", "127.0.0.1");
 		pb.redirectErrorStream(true);
 		pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 		pb.redirectInput(ProcessBuilder.Redirect.PIPE);

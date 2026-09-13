@@ -21,12 +21,19 @@ Tests are selected by JUnit 5 tags. Untagged tests need no external environment.
 | slow / flaky | `@Tag("slow")` / `@Tag("flaky")` | as tagged |
 
 ```bash
-./mvnw test
-./mvnw test -Dgroups='integration & !localEpics'
-./mvnw test -Dtest=PolicyExecutionTest
+./mvnw test                                       # unit set only (default)
+./mvnw test -Dgroups='integration & !localEpics'  # by tag: Tomcat-only tests, excludes IOC-needing ones
+./mvnw test -Dtest=PolicyExecutionTest            # a single test class
 ```
 
-The default run executes the unit set only. Any tagged set is opted into with `-Dgroups`.
+The default run executes the unit set only. Any tagged set is opted into with `-Dgroups`; the `-Dgroups` above selects one tag combination directly, whereas the profiles below name the common environment-based sets.
+
+Most integration tests carry both `integration` and `localEpics`: they need Tomcat and a local IOC. Two Maven profiles select the environment-dependent sets, each requiring the environment its tests use:
+
+```bash
+./mvnw test -P integration    # every test needing Tomcat and/or a local EPICS IOC (integration | localEpics)
+./mvnw test -P localEpics      # the EPICS-only subset that needs no Tomcat (localEpics & !integration)
+```
 
 ## EPICS-dependent tests
 
@@ -39,7 +46,7 @@ source /path/to/epics-environment/setEpicsEnv.bash
 ```
 
 - The fixture must keep the IOC's stdin open (pipe it). A soft IOC started with `-S` and a closed stdin suspends its main thread and PVA never answers.
-- Port isolation uses the server-side variables on the IOC process: `EPICS_PVAS_SERVER_PORT`, `EPICS_PVAS_BROADCAST_PORT`, `EPICS_PVAS_INTF_ADDR_LIST=127.0.0.1`, and `EPICS_CA_SERVER_PORT`. Clients set the matching `EPICS_PVA_BROADCAST_PORT`, `EPICS_PVA_ADDR_LIST=127.0.0.1`, `EPICS_PVA_AUTO_ADDR_LIST=NO` (and the CA equivalents). Client-style `EPICS_PVA_*` variables alone do not move the server, and default ports cannot isolate from other PVA servers on the same host.
+- Network isolation pins both ends to the loopback interface. The soft IOC's servers bind loopback via `EPICS_CAS_INTF_ADDR_LIST=127.0.0.1`, `EPICS_CAS_BEACON_ADDR_LIST=127.0.0.1`, and `EPICS_PVAS_INTF_ADDR_LIST=127.0.0.1`, set by `SIOCSetup` on the IOC process. The clients search only loopback via `EPICS_CA_ADDR_LIST=127.0.0.1`, `EPICS_CA_AUTO_ADDR_LIST=NO`, and the `EPICS_PVA_*` equivalents, set for the Surefire JVM in `pom.xml` and inherited by the child Tomcat. This keeps a test from reaching, or being answered by, an IOC on the wider network. Ports are left at their defaults; isolating from another IOC already bound to the same loopback ports would additionally require distinct `EPICS_*_SERVER_PORT` values, which the platform does not yet set.
 - The fixture launches `softIocPVX` directly (no external supervisor). `SIOCSetup` does this from Java: it runs `softIocPVX -m P=<prefix> -d <db>` through a `ProcessBuilder` with stdin as a pipe, and stops the IOC by writing `exit` to that stdin. The database is the in-repo `src/resources/test/UnitTestPVs.db`.
 
 ## Tomcat integration tests
