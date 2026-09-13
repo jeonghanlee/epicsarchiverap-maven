@@ -1,57 +1,29 @@
-RELEASE_NOTES
-bin/
+# Maven build output (WARs, stage, test-storage, site/apidocs, RELEASE_NOTES)
+target/
+
+# Generated into the tracked docs/ tree by the build
+docs/api/
 docs/EPICSEvent.proto
 docs/LICENSE
-docs/api/
-stage/
+
+# Integration-test artifacts written at the working-tree root
+/tomcat_*
+/logs/
+/*.log
+
+# Soft IOC interactive history
+.iocsh_history
+
+# git-workflow scratch (commit messages, staging scripts)
+/work/
+
+# IDE and editor
+.idea/
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS and editor junk
 .DS_Store
 *.swp
-/mts
-*.log
-
-.gradle
-**/build/
-!src/**/build/
-
-# Ignore Gradle GUI config
-gradle-app.setting
-
-# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
-!gradle-wrapper.jar
-
-# Avoid ignore Gradle wrappper properties
-!gradle-wrapper.properties
-
-# Cache of project
-.gradletasknamecache
-
-# Eclipse Gradle plugin generated files
-# Eclipse Core
-.project
-# JDT-specific (Eclipse Java Development Tools)
-.classpath
-# Eclipse settings
-.settings
-
-# vscode settings
-.vscode
-
-# Intelij files
-/.idea/
-
-# Integration tests folders
-tomcat_*
-
-# War files
-wars
-
-# Test logs
-logs
-
-## Local ignore.
-target
-
-src/sitespecific/als
-
-## Test-run artifacts
-.iocsh_history
