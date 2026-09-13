@@ -202,18 +202,17 @@ public class TomcatSetup {
 
 	private File makeTomcatFolders(String testName, String applianceName, int port, int startupPort) throws IOException {
 		File testFolder = new File(tomcatBaseDir(), "tomcat_" + testName);
-		if(!testFolder.exists() && !testFolder.mkdirs()) throw new IOException("Could not create the Tomcat work folder " + testFolder.getAbsolutePath());
 		File workFolder = new File(testFolder, applianceName);
-		assert (workFolder.mkdir());
-
+		// Start from a clean work folder so a leftover from an earlier run does not fail the setup.
+		if(workFolder.exists()) FileUtils.deleteDirectory(workFolder);
 		File webAppsFolder = new File(workFolder, "webapps");
-		assert(webAppsFolder.mkdir());
 		File logsFolder = new File(workFolder, "logs");
-		assert(logsFolder.mkdir());
+		File tempFolder = new File(workFolder, "temp");
+		for(File dir : new File[] {workFolder, webAppsFolder, logsFolder, tempFolder}) {
+			if(!dir.mkdirs()) throw new IOException("Could not create the Tomcat work folder " + dir.getAbsolutePath());
+		}
 
 		FileUtils.copyFile(new File("src/resources/test/log4j2.xml"), new File(logsFolder, "log4j2.xml"));
-		File tempFolder = new File(workFolder, "temp");
-		assert(tempFolder.mkdir());
 
 		logger.debug("Copying the webapps wars to " + webAppsFolder.getAbsolutePath());
 		for(String component : new String[] {"mgmt", "retrieval", "etl", "engine"}) {

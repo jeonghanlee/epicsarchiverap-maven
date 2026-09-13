@@ -44,7 +44,14 @@ source /path/to/epics-environment/setEpicsEnv.bash
 
 ## Tomcat integration tests
 
-`TomcatSetup` starts one Tomcat instance per test from `TOMCAT_HOME` and creates per-test work folders. Use a user-owned Tomcat 9 unpacked from the Apache distribution; a root-owned install with an unreadable `conf/` cannot serve as `TOMCAT_HOME`.
+`TomcatSetup` starts one Tomcat instance per test from `TOMCAT_HOME` and creates per-test work folders under `archappl.tomcat.dir` (default `target/tomcats`). Use a user-owned Tomcat 9 unpacked from the Apache distribution, with a `conf_original` copy of its pristine `conf` beside it; a root-owned install with an unreadable `conf/` cannot serve as `TOMCAT_HOME`.
+
+Two operational notes:
+
+- Run the integration set after `package`. The WARs carry the build's date and commit in their name (see the artifact naming), so they must be freshly built before `TomcatSetup` copies them.
+- A test that errors before its `tearDown` leaves its Tomcat holding the ports, which fails the next run with `Address already in use`. The test Tomcats run with `CATALINA_OPTS=-Deaatag=eaatesttm`; clear leftovers with `pkill -f 'eaatag=eaatesttm'` before re-running.
+
+Browser tests are being rewritten to HTTP: instead of driving a page through Selenium, they GET the same page or BPL endpoint with the JDK HTTP client and poll for readiness with Awaitility, verifying the server response rather than the DOM.
 
 ## Principles
 
