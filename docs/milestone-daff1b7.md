@@ -18,7 +18,7 @@ This register covers the minimal modernization of the existing Java appliance on
 
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Phase 1 | M1 | Gradle removal (complete erasure) | Milestone | In progress | No | | `git grep -i gradle` empty outside this register on a committed tree; [detail](#m1---gradle-removal-complete-erasure) |
+| Phase 1 | M1 | Gradle removal (complete erasure) | Milestone | Complete | No | | `git grep -i gradle` returns only this register on the committed tree (2026-09-12); [detail](#m1---gradle-removal-complete-erasure) |
 | Phase 1 | M2 | Maven Wrapper as the build entry | Milestone | Complete | No | | Fresh clone of c1dd0b1 builds four WARs through mvnw (2026-09-11); [detail](#m2---maven-wrapper-as-the-build-entry) |
 | Phase 1 | M3 | Canonical pom as single source of truth | Milestone | Complete | No | D6 | Fresh clone of 9be652c builds four WARs from the tracked pom with no system scope (2026-09-12); [detail](#m3---canonical-pom-as-single-source-of-truth) |
 | Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | Not started | No | M3, M8 | Pinned current versions build and pass the unit set; [detail](#m4---dependency-refresh-to-stable-current-versions) |
@@ -65,7 +65,7 @@ This register covers the minimal modernization of the existing Java appliance on
 Origin: daff1b7 / M1
 Identity History: none
 GitHub Issue: none
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -110,13 +110,13 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | 2026-09-11 | committed tree at ff67460 | Partial | Hits: .gitignore (owner rewrite pending) and the register |
+| T1 | 2026-09-12 | committed tree | Pass | After the Maven-centric .gitignore rewrite, git grep -il gradle returns only docs/milestone-daff1b7.md |
 | T2 | 2026-09-11 | JDK 21.0.12.1, Maven 3.9.9 via mvnw | Pass | target/archappl-2025-6-{engine,etl,mgmt,retrieval}.war |
 | T3 | 2026-09-11 | JDK 21, JAVA_HOME set and unset | Pass | Exit 0 both runs, target/site/apidocs present; re-run without JAVA_HOME on the tree committed as ff67460, exit 0 |
 
 ##### Closure Evidence
 
-- none yet (pending .gitignore rewrite and final T1)
+- Gradle build files, workflows, docker tree, and legacy README removed (ff67460); docs and readthedocs moved to Maven; .gitignore rewritten Maven-centric; on the committed tree git grep -i gradle returns only this register; the Maven build and javadoc goal pass without any Gradle artifact.
 
 ##### GitHub Projection
 
