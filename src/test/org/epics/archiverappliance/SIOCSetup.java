@@ -44,7 +44,8 @@ public class SIOCSetup {
 		
 		logger.info("Starting SIOC with DB file " + f.getAbsolutePath());
 		
-		ProcessBuilder pb = new ProcessBuilder("softIocPVX", "-m", "P=" + prefix, "-d", f.getAbsolutePath());
+		String softIocExecutable = System.getProperty("archappl.softioc", "softIocPVX");
+		ProcessBuilder pb = new ProcessBuilder(softIocExecutable, "-m", "P=" + prefix, "-d", f.getAbsolutePath());
 		pb.redirectErrorStream(true);
 		pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 		pb.redirectInput(ProcessBuilder.Redirect.PIPE);

@@ -182,9 +182,27 @@ public class TomcatSetup {
 	 * @return Returns the CATALINA_BASE for this instance
 	 * @throws IOException
 	 */
+	/**
+	 * The base directory that holds the per-test Tomcat work folders.
+	 * Supplied by the build as archappl.tomcat.dir; defaults to target/tomcats for a direct run.
+	 */
+	private static File tomcatBaseDir() {
+		return new File(System.getProperty("archappl.tomcat.dir", "target/tomcats"));
+	}
+
+	/**
+	 * The built WAR for a component, resolved from the build-supplied output directory and final name.
+	 * archappl.war.dir defaults to target and archappl.final.name to the Maven project final name.
+	 */
+	private static File warFile(String component) {
+		String warDir = System.getProperty("archappl.war.dir", "target");
+		String finalName = System.getProperty("archappl.final.name", "archappl-2025-6");
+		return new File(warDir, finalName + "-" + component + ".war");
+	}
+
 	private File makeTomcatFolders(String testName, String applianceName, int port, int startupPort) throws IOException {
-		File testFolder = new File("build/tomcats/tomcat_" + testName);
-		assert(testFolder.exists());
+		File testFolder = new File(tomcatBaseDir(), "tomcat_" + testName);
+		if(!testFolder.exists() && !testFolder.mkdirs()) throw new IOException("Could not create the Tomcat work folder " + testFolder.getAbsolutePath());
 		File workFolder = new File(testFolder, applianceName);
 		assert (workFolder.mkdir());
 
@@ -198,10 +216,11 @@ public class TomcatSetup {
 		assert(tempFolder.mkdir());
 
 		logger.debug("Copying the webapps wars to " + webAppsFolder.getAbsolutePath());
-		FileUtils.copyFile(new File("./build/libs/mgmt.war"), new File(webAppsFolder, "mgmt.war"));
-		FileUtils.copyFile(new File("./build/libs/retrieval.war"), new File(webAppsFolder, "retrieval.war"));
-		FileUtils.copyFile(new File("./build/libs/etl.war"), new File(webAppsFolder, "etl.war"));
-		FileUtils.copyFile(new File("./build/libs/engine.war"), new File(webAppsFolder, "engine.war"));
+		for(String component : new String[] {"mgmt", "retrieval", "etl", "engine"}) {
+			File builtWar = warFile(component);
+			if(!builtWar.exists()) throw new IOException("Cannot find the built WAR " + builtWar.getAbsolutePath() + "; run the Maven package phase before the integration tests.");
+			FileUtils.copyFile(builtWar, new File(webAppsFolder, component + ".war"));
+		}
 
 		File confOriginal = new File(System.getenv("TOMCAT_HOME"), "conf_original");
 		File confFolder = new File(workFolder, "conf");
@@ -228,7 +247,7 @@ public class TomcatSetup {
 		environment.putAll(System.getenv());
 		environment.remove("CLASSPATH");
 		environment.put("CATALINA_HOME", System.getenv("TOMCAT_HOME"));
-		File workFolder = new File("build/tomcats/tomcat_" + testName + File.separator + applianceName);
+		File workFolder = new File(new File(tomcatBaseDir(), "tomcat_" + testName), applianceName);
 		assert (workFolder.exists());
 		environment.put("CATALINA_BASE", workFolder.getAbsolutePath());
         environment.put("CATALINA_OPTS", "-Deaatag=eaatesttm"); // The tag is for pkill during testing

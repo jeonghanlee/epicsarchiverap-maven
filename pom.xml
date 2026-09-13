@@ -14,8 +14,10 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <java.version>21</java.version>
+    <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
     <junit.bom.version>5.14.4</junit.bom.version>
     <test.excludedGroups>integration,localEpics,slow,flaky</test.excludedGroups>
+    <test.groups></test.groups>
     <test.excludes>**/PvaTest.java</test.excludes>
     <src.main.dir>${project.basedir}/src/main</src.main.dir>
     <docs.dir>${project.basedir}/docs</docs.dir>
@@ -258,6 +260,7 @@
     </dependency>
   </dependencies>
   <build>
+    <finalName>aa-${maven.build.timestamp}-${git.commit.id.abbrev}</finalName>
     <sourceDirectory>${src.main.dir}</sourceDirectory>
     <testSourceDirectory>${project.basedir}/src/test</testSourceDirectory>
     <testResources>
@@ -270,17 +273,52 @@
       <testResource>
         <directory>${project.basedir}/src/sitespecific/tests/classpathfiles</directory>
       </testResource>
+      <testResource>
+        <directory>${project.basedir}/src/resources/test</directory>
+        <excludes>
+          <exclude>UnitTestPVs.db</exclude>
+        </excludes>
+      </testResource>
     </testResources>
     <plugins>
+      <plugin>
+        <groupId>io.github.git-commit-id</groupId>
+        <artifactId>git-commit-id-maven-plugin</artifactId>
+        <version>9.0.1</version>
+        <executions>
+          <execution>
+            <id>get-the-git-infos</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <abbrevLength>8</abbrevLength>
+          <failOnNoGitDirectory>false</failOnNoGitDirectory>
+          <runOnlyOnce>true</runOnlyOnce>
+          <includeOnlyProperties>
+            <property>git.commit.id.abbrev</property>
+          </includeOnlyProperties>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.6.0</version>
         <configuration>
           <excludedGroups>${test.excludedGroups}</excludedGroups>
+          <groups>${test.groups}</groups>
           <excludes>
             <exclude>${test.excludes}</exclude>
           </excludes>
+          <systemPropertyVariables>
+            <archappl.war.dir>${project.build.directory}</archappl.war.dir>
+            <archappl.final.name>${project.build.finalName}</archappl.final.name>
+            <archappl.tomcat.dir>${project.build.directory}/tomcats</archappl.tomcat.dir>
+            <archappl.softioc>softIocPVX</archappl.softioc>
+          </systemPropertyVariables>
           <environmentVariables>
             <ARCHAPPL_SHORT_TERM_FOLDER>${project.build.directory}/test-storage/sts</ARCHAPPL_SHORT_TERM_FOLDER>
             <ARCHAPPL_MEDIUM_TERM_FOLDER>${project.build.directory}/test-storage/mts</ARCHAPPL_MEDIUM_TERM_FOLDER>
@@ -827,7 +865,7 @@
           <descriptors>
             <descriptor>src/assembly/release.xml</descriptor>
           </descriptors>
-          <finalName>archappl_${project.version}</finalName>
+          <finalName>${project.build.finalName}</finalName>
           <appendAssemblyId>false</appendAssemblyId>
         </configuration>
         <executions>
@@ -874,6 +912,20 @@
       </activation>
       <properties>
         <archapplsite>${env.ARCHAPPL_SITEID}</archapplsite>
+      </properties>
+    </profile>
+    <profile>
+      <id>localEpics</id>
+      <properties>
+        <test.excludedGroups></test.excludedGroups>
+        <test.groups>localEpics &amp; !integration</test.groups>
+      </properties>
+    </profile>
+    <profile>
+      <id>integration</id>
+      <properties>
+        <test.excludedGroups></test.excludedGroups>
+        <test.groups>integration &amp; !localEpics</test.groups>
       </properties>
     </profile>
   </profiles>
