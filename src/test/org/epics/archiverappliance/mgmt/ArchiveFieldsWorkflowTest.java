@@ -1,26 +1,27 @@
 package org.epics.archiverappliance.mgmt;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.awaitility.Awaitility;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
+import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 /**
- * Test archiving of fields - this should include standard field like HIHI and also non-standard fields.
- * @author mshankar
- *
+ * Test archiving of fields through the mgmt BPL, replacing the former browser-driven flow.
+ * Standard fields (HIHI-style and metadata) must reach "Being archived"; a non-existent field
+ * (.YYZ) must not. Verifies the server workflow rather than the UI.
  */
 @Tag("integration")
 @Tag("localEpics")
@@ -28,72 +29,66 @@ public class ArchiveFieldsWorkflowTest {
     private static Logger logger = LogManager.getLogger(ArchiveFieldsWorkflowTest.class.getName());
     TomcatSetup tomcatSetup = new TomcatSetup();
     SIOCSetup siocSetup = new SIOCSetup();
-    WebDriver driver;
-
-    @BeforeAll
-    public static void setupClass() {
-        WebDriverManager.firefoxdriver().setup();
-    }
 
     @BeforeEach
     public void setUp() throws Exception {
         siocSetup.startSIOCWithDefaultDB();
         tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
-        driver = new FirefoxDriver();
     }
 
     @AfterEach
     public void tearDown() throws Exception {
-        driver.quit();
         tomcatSetup.tearDown();
         siocSetup.stopSIOC();
     }
 
+    private static String statusOf(String getPVStatusUrl) {
+        JSONArray status = GetUrlContent.getURLContentAsJSONArray(getPVStatusUrl);
+        if (status == null || status.isEmpty()) {
+            return "(absent)";
+        }
+        return String.valueOf(((JSONObject) status.get(0)).get("status"));
+    }
+
     @Test
     public void testArchiveFieldsPV() throws Exception {
-        driver.get("http://localhost:17665/mgmt/ui/index.html");
-        ((JavascriptExecutor) driver).executeScript("window.skipAutoRefresh = true;");
-        WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
-        String[] fieldsToArchive = new String[] {
-            "UnitTestNoNamingConvention:sine",
-            "UnitTestNoNamingConvention:sine.EOFF",
-            "UnitTestNoNamingConvention:sine.EGU",
-            "UnitTestNoNamingConvention:sine.ALST",
-            "UnitTestNoNamingConvention:sine.HOPR",
-            "UnitTestNoNamingConvention:sine.DESC",
-            "UnitTestNoNamingConvention:sine.YYZ"
+        String base = "UnitTestNoNamingConvention:sine";
+        String bogusField = base + ".YYZ";
+        String[] realFields = new String[] {
+            base, base + ".EOFF", base + ".EGU", base + ".ALST", base + ".HOPR", base + ".DESC"
         };
-        pvstextarea.sendKeys(String.join("\n", fieldsToArchive));
-        WebElement archiveButton = driver.findElement(By.id("archstatArchive"));
-        logger.debug("About to submit");
-        archiveButton.click();
-        Thread.sleep(5 * 60 * 1000);
-        WebElement checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
-        checkStatusButton.click();
-        Thread.sleep(17 * 1000);
-        for (int i = 0; i < fieldsToArchive.length; i++) {
-            int rowWithInfo = i + 1;
-            WebElement statusPVName = driver.findElement(
-                    By.cssSelector("#archstatsdiv_table tr:nth-child(" + rowWithInfo + ") td:nth-child(1)"));
-            String pvNameObtainedFromTable = statusPVName.getText();
-            Assertions.assertTrue(
-                    fieldsToArchive[i].equals(pvNameObtainedFromTable),
-                    "PV Name is not " + fieldsToArchive[i] + "; instead we get " + pvNameObtainedFromTable);
-            WebElement statusPVStatus = driver.findElement(
-                    By.cssSelector("#archstatsdiv_table tr:nth-child(" + rowWithInfo + ") td:nth-child(2)"));
-            String pvArchiveStatusObtainedFromTable = statusPVStatus.getText();
-            String expectedPVStatus = "Being archived";
-            if (fieldsToArchive[i].equals("UnitTestNoNamingConvention:sine.YYZ")) {
-                Assertions.assertTrue(
-                        !expectedPVStatus.equals(pvArchiveStatusObtainedFromTable),
-                        "Expecting PV archive status to NOT be " + expectedPVStatus + "; instead it is "
-                                + pvArchiveStatusObtainedFromTable + " for field " + fieldsToArchive[i]);
-            } else {
-                Assertions.assertTrue(
-                        expectedPVStatus.equals(pvArchiveStatusObtainedFromTable),
-                        "Expecting PV archive status to be " + expectedPVStatus + "; instead it is "
-                                + pvArchiveStatusObtainedFromTable + " for field " + fieldsToArchive[i]);
-            }
+        String mgmtUrl = "http://localhost:17665/mgmt/bpl/";
+
+        // Wait for the appliance to accept archive requests, then submit every field.
+        String firstArchiveUrl = mgmtUrl + "archivePV?pv=" + URLEncoder.encode(realFields[0], StandardCharsets.UTF_8);
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(2))
+                .pollInterval(Duration.ofSeconds(5))
+                .ignoreExceptions()
+                .until(() -> GetUrlContent.getURLContentAsJSONArray(firstArchiveUrl) != null);
+        for (String field : realFields) {
+            GetUrlContent.getURLContentAsJSONArray(
+                    mgmtUrl + "archivePV?pv=" + URLEncoder.encode(field, StandardCharsets.UTF_8));
         }
+        GetUrlContent.getURLContentAsJSONArray(
+                mgmtUrl + "archivePV?pv=" + URLEncoder.encode(bogusField, StandardCharsets.UTF_8));
+
+        // Every real field must reach "Being archived".
+        for (String field : realFields) {
+            String getPVStatusUrl = mgmtUrl + "getPVStatus?pv=" + URLEncoder.encode(field, StandardCharsets.UTF_8);
+            Awaitility.await()
+                    .atMost(Duration.ofMinutes(5))
+                    .pollInterval(Duration.ofSeconds(10))
+                    .ignoreExceptions()
+                    .until(() -> "Being archived".equals(statusOf(getPVStatusUrl)));
+        }
+
+        // The non-existent field must not be archived.
+        String bogusStatusUrl = mgmtUrl + "getPVStatus?pv=" + URLEncoder.encode(bogusField, StandardCharsets.UTF_8);
+        String bogusStatus = statusOf(bogusStatusUrl);
+        logger.info("Status of the non-existent field " + bogusField + " is " + bogusStatus);
+        Assertions.assertNotEquals(
+                "Being archived", bogusStatus,
+                "Expecting the non-existent field " + bogusField + " to not be archived; instead it is " + bogusStatus);
     }
 }
