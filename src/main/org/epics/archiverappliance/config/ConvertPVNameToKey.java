@@ -2,6 +2,7 @@ package org.epics.archiverappliance.config;
 
 import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +40,7 @@ public class ConvertPVNameToKey implements PVNameToKeyMapping {
 	private static final String SITE_NAME_SPACE_SEPARATORS = "org.epics.archiverappliance.config.ConvertPVNameToKey.siteNameSpaceSeparators";
 	private static final String SITE_NAME_SPACE_TERMINATOR = "org.epics.archiverappliance.config.ConvertPVNameToKey.siteNameSpaceTerminator";
 	private String siteNameSpaceSeparators;
+	private Pattern siteNameSpaceSeparatorsPattern;
 	private char terminatorChar = ':';
 	private String fileSeparator;
 	
@@ -82,6 +84,7 @@ public class ConvertPVNameToKey implements PVNameToKeyMapping {
 		if(this.siteNameSpaceSeparators == null || this.siteNameSpaceSeparators.equals("") || this.siteNameSpaceSeparators.length() < 1) {
 			throw new ConfigException("The appliance archiver cannot function without knowning the characters that separate the components of a PV name ");
 		}
+		this.siteNameSpaceSeparatorsPattern = Pattern.compile(this.siteNameSpaceSeparators);
 		String terminatorStr = configService.getInstallationProperties().getProperty(SITE_NAME_SPACE_TERMINATOR);
 		if(terminatorStr == null || terminatorStr.equals("") || terminatorStr.length() < 1) {
 			throw new ConfigException("The appliance archiver cannot function without knowning the character that terminates the translated path name ");
@@ -110,7 +113,10 @@ public class ConvertPVNameToKey implements PVNameToKeyMapping {
 	 */
 	@Override
 	public boolean containsSiteSeparators(String pvName) {
-		return pvName.matches(siteNameSpaceSeparators);
+		// Does the name contain any of the site separator characters. We use find() rather than
+		// matches() because matches() anchors the whole string, so a multi-character name such as
+		// "ABC:DEF" would never match a single-character separator class like [\:\-].
+		return siteNameSpaceSeparatorsPattern.matcher(pvName).find();
 	}
 
 
