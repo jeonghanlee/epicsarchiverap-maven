@@ -1,6 +1,5 @@
 package org.epics.archiverappliance.mgmt;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -13,19 +12,19 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.retrieval.client.RawDataRetrievalAsEventStream;
 import org.epics.archiverappliance.retrieval.client.RetrievalEventProcessor;
+import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.awaitility.Awaitility;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.support.ui.Select;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -42,22 +41,16 @@ public class ScanSamplingMethodTest {
 	private static Logger logger = LogManager.getLogger(ScanSamplingMethodTest.class.getName());
 	TomcatSetup tomcatSetup = new TomcatSetup();
 	SIOCSetup siocSetup = new SIOCSetup();
-	WebDriver driver;
+	private static final String MGMT = "http://localhost:17665/mgmt/bpl/";
 
-	@BeforeAll
-	public static void setupClass() {
-		WebDriverManager.firefoxdriver().setup();
-	}
 	@BeforeEach
 	public void setUp() throws Exception {
 		siocSetup.startSIOCWithDefaultDB();
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
-		driver = new FirefoxDriver();
 	}
 
 	@AfterEach
 	public void tearDown() throws Exception {
-		driver.quit();
 		tomcatSetup.tearDown();
 		siocSetup.stopSIOC();
 	}
@@ -66,23 +59,16 @@ public class ScanSamplingMethodTest {
 	public void testScanPV() throws Exception {
 		String[] pvNames = new String[] {"ArchUnitTest:counter10Hz", "ArchUnitTest:counter1Hz", "ArchUnitTest:counter1By10thHz", "ArchUnitTest:manual"};
 
-		int port = ConfigServiceForTests.RETRIEVAL_TEST_PORT;
-		driver.get("http://localhost:" + port + "/mgmt/ui/index.html");
-		WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
-		for(String pvName : pvNames) { 
-			pvstextarea.sendKeys(pvName);
-			pvstextarea.sendKeys(Keys.RETURN);
+		// Archive each PV with the SCAN sampling method and a 1.0s period, then wait until all are
+		// being archived before generating data.
+		for(String pvName : pvNames) {
+			String archivePVUrl = MGMT + "archivePV?pv=" + enc(pvName) + "&samplingmethod=SCAN&samplingperiod=1.0";
+			Awaitility.await()
+					.atMost(Duration.ofMinutes(2))
+					.pollInterval(Duration.ofSeconds(5))
+					.ignoreExceptions()
+					.until(() -> GetUrlContent.getURLContentAsJSONArray(archivePVUrl) != null);
 		}
-		WebElement archiveButton = driver.findElement(By.id("archstatArchiveWithPeriod"));
-		logger.debug("About to submit");
-		archiveButton.click();
-		Thread.sleep(5000);
-		Select samplingMethodButton = new Select(driver.findElement(By.id("pvDetailsSamplingMethod")));
-		samplingMethodButton.selectByVisibleText("Scan");
-		WebElement samplingPeriod = driver.findElement(By.id("pvDetailsSamplingPeriod"));
-		samplingPeriod.sendKeys("1.0");
-		WebElement okButton = driver.findElement(By.id("pvDetailsParamsOk"));
-		okButton.click();
 		checkIfAllPVsAreArchived(pvNames);
 
 		Thread.sleep(60*1000);
@@ -134,27 +120,27 @@ public class ScanSamplingMethodTest {
 		}
 	}	
 	
-	private boolean checkIfAllPVsAreArchived(String[] pvNames) throws Exception { 
-		for(int i = 0; i < 3600; i++) { 
-			Thread.sleep(8000);
-			WebElement checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
-			checkStatusButton.click();
-			Thread.sleep(2*1000);
-			boolean allArchived = true;
-			for(int p = 0; p < pvNames.length; p++) { 
-				WebElement statusPVStatus = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(" + (p+1) + ") td:nth-child(2)"));
-				String pvArchiveStatusObtainedFromTable = statusPVStatus.getText();
-				String expectedPVStatus = "Being archived";
-				if(!pvArchiveStatusObtainedFromTable.equals(expectedPVStatus)) { 
-					allArchived = false;
-					break;
-				}
-			}
-			if (allArchived) { 
-				return true;
-			}
+	private static String enc(String pv) throws Exception {
+		return URLEncoder.encode(pv, StandardCharsets.UTF_8);
+	}
+
+	private static String statusOf(String pv) throws Exception {
+		JSONArray status = GetUrlContent.getURLContentAsJSONArray(MGMT + "getPVStatus?pv=" + enc(pv));
+		if (status == null || status.isEmpty()) {
+			return "(absent)";
 		}
-		return false;
+		return String.valueOf(((JSONObject) status.get(0)).get("status"));
+	}
+
+	/** Wait until every PV reports that it is being archived. */
+	private void checkIfAllPVsAreArchived(String[] pvNames) {
+		for (String pvName : pvNames) {
+			Awaitility.await()
+					.atMost(Duration.ofMinutes(5))
+					.pollInterval(Duration.ofSeconds(10))
+					.ignoreExceptions()
+					.until(() -> "Being archived".equals(statusOf(pvName)));
+		}
 	}
 	
 	private double rapidlyChangeManualPV(String pvName) throws Exception {
