@@ -34,7 +34,6 @@
     <tomcat.home>${env.TOMCAT_HOME}</tomcat.home>
     <junit.jupiter.version>5.9.3</junit.jupiter.version>
     <log4j.version>2.20.0</log4j.version>
-    <selenium.version>4.22.0</selenium.version>
     <sphinx.skip>false</sphinx.skip>
   </properties>
   <repositories>
@@ -229,15 +228,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.seleniumhq.selenium</groupId>
-      <artifactId>selenium-java</artifactId>
-      <version>4.49.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.github.bonigarcia</groupId>
-      <artifactId>webdrivermanager</artifactId>
-      <version>6.3.4</version>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>1.27.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
