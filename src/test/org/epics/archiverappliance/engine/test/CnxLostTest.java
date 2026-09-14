@@ -1,6 +1,5 @@
 package org.epics.archiverappliance.engine.test;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,22 +10,24 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.persistence.JDBM2Persistence;
 import org.epics.archiverappliance.mgmt.ArchiveWorkflowCompleted;
+import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.awaitility.Awaitility;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.epics.archiverappliance.retrieval.client.EpicsMessage;
 import org.epics.archiverappliance.retrieval.client.GenMsgIterator;
 import org.epics.archiverappliance.retrieval.client.RawDataRetrieval;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Arrays;
@@ -45,12 +46,7 @@ public class CnxLostTest {
 	private File persistenceFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "CnxLostTest");
 	TomcatSetup tomcatSetup = new TomcatSetup();
 	SIOCSetup siocSetup = new SIOCSetup();
-	WebDriver driver;
-
-	@BeforeAll
-	public static void setupClass() {
-		WebDriverManager.firefoxdriver().setup();
-	}
+	private static final String MGMT = "http://localhost:17665/mgmt/bpl/";
 
 	@BeforeEach
 	public void setUp() throws Exception {
@@ -63,12 +59,10 @@ public class CnxLostTest {
 
 		siocSetup.startSIOCWithDefaultDB();
 		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
-		driver = new FirefoxDriver();
 	}
 
 	@AfterEach
 	public void tearDown() throws Exception {
-		driver.quit();
 		tomcatSetup.tearDown();
 		siocSetup.stopSIOC();
 		if(persistenceFolder.exists()) {
@@ -98,24 +92,15 @@ public class CnxLostTest {
 
 	@Test
 	public void testConnectionLossHeaders() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
-		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
 		 String pvNameToArchive = "UnitTestNoNamingConvention:inactive1";
-		 pvstextarea.sendKeys(pvNameToArchive);
-		 WebElement archiveButton = driver.findElement(By.id("archstatArchive"));
-		 logger.debug("About to submit");
-		 archiveButton.click();
+		 String archivePVUrl = MGMT + "archivePV?pv=" + enc(pvNameToArchive);
+		 Awaitility.await()
+				 .atMost(Duration.ofMinutes(2))
+				 .pollInterval(Duration.ofSeconds(5))
+				 .ignoreExceptions()
+				 .until(() -> GetUrlContent.getURLContentAsJSONArray(archivePVUrl) != null);
 		 ArchiveWorkflowCompleted.isArchiveRequestComplete(pvNameToArchive);
-		 WebElement checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
-		 checkStatusButton.click();
-		 Thread.sleep(2*1000);
-		 WebElement statusPVName = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(1)"));
-		 String pvNameObtainedFromTable = statusPVName.getText();
-		 Assertions.assertTrue(pvNameToArchive.equals(pvNameObtainedFromTable), "PV Name is not " + pvNameToArchive + "; instead we get " + pvNameObtainedFromTable);
-		 WebElement statusPVStatus = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(2)"));
-		 String pvArchiveStatusObtainedFromTable = statusPVStatus.getText();
-		 String expectedPVStatus = "Being archived";
-		 Assertions.assertTrue(expectedPVStatus.equals(pvArchiveStatusObtainedFromTable), "Expecting PV archive status to be " + expectedPVStatus + "; instead it is " + pvArchiveStatusObtainedFromTable);
+		 awaitStatus(pvNameToArchive, "Being archived", Duration.ofMinutes(5));
 		 
 		 // UnitTestNoNamingConvention:inactive1 is SCAN passive without autosave so it should have an invalid timestamp.
 		 // We caput something to generate a valid timestamp..
@@ -129,51 +114,16 @@ public class CnxLostTest {
 			new ExpectedEventType(ConnectionLossType.NONE, 1)
 		 });
 
-		 logger.info("We are now archiving the PV; let's go into the details page; pause and resume");
-		 driver.get("http://localhost:17665/mgmt/ui/pvdetails.html?pv=" + pvNameToArchive);
-		 { 
-			 Thread.sleep(20*1000);
-			 WebElement pauseArchivingButn = driver.findElement(By.id("pvDetailsPauseArchiving"));
-			 logger.info("Clicking on the button to pause archiving the PV");
-			 pauseArchivingButn.click();
-			 Thread.sleep(20*1000);
-			 WebElement pvDetailsTable = driver.findElement(By.id("pvDetailsTable"));
-			 List<WebElement> pvDetailsTableRows = pvDetailsTable.findElements(By.cssSelector("tbody tr"));
-			 for(WebElement pvDetailsTableRow : pvDetailsTableRows) {
-				 WebElement pvDetailsTableFirstCol = pvDetailsTableRow.findElement(By.cssSelector("td:nth-child(1)"));
-				 if(pvDetailsTableFirstCol.getText().contains("Is this PV paused:")) {
-					 WebElement pvDetailsTableSecondCol = pvDetailsTableRow.findElement(By.cssSelector("td:nth-child(2)"));
-					 String obtainedPauseStatus = pvDetailsTableSecondCol.getText();
-					 String expectedPauseStatus = "Yes";
-					 Assertions.assertTrue(expectedPauseStatus.equals(obtainedPauseStatus), "Expecting paused status to be " + expectedPauseStatus + "; instead it is " + obtainedPauseStatus);
-					 break;
-				 }
-			 }
-		 }
+		 logger.info("We are now archiving the PV; pause and resume it through the BPL");
+		 GetUrlContent.getURLContentAsJSONObject(MGMT + "pauseArchivingPV?pv=" + enc(pvNameToArchive));
+		 awaitStatus(pvNameToArchive, "Paused", Duration.ofMinutes(2));
 		 siocSetup.caput(pvNameToArchive, "3.0"); // We are paused; so we should miss this event
 		 Thread.sleep(60*1000);
 		 siocSetup.caput(pvNameToArchive, "4.0");
 		 Thread.sleep(60*1000);
-		 { 
-			 Thread.sleep(20*1000);
-			 WebElement resumeArchivingButn = driver.findElement(By.id("pvDetailsResumeArchiving"));
-			 logger.info("Clicking on the button to resume archiving the PV");
-			 resumeArchivingButn.click();
-			 Thread.sleep(20*1000);
-			 WebElement pvDetailsTable = driver.findElement(By.id("pvDetailsTable"));
-			 List<WebElement> pvDetailsTableRows = pvDetailsTable.findElements(By.cssSelector("tbody tr"));
-			 for(WebElement pvDetailsTableRow : pvDetailsTableRows) {
-				 WebElement pvDetailsTableFirstCol = pvDetailsTableRow.findElement(By.cssSelector("td:nth-child(1)"));
-				 if(pvDetailsTableFirstCol.getText().contains("Is this PV paused:")) {
-					 WebElement pvDetailsTableSecondCol = pvDetailsTableRow.findElement(By.cssSelector("td:nth-child(2)"));
-					 String obtainedPauseStatus = pvDetailsTableSecondCol.getText();
-					 String expectedPauseStatus = "No";
-					 Assertions.assertTrue(expectedPauseStatus.equals(obtainedPauseStatus), "Expecting paused status to be " + expectedPauseStatus + "; instead it is " + obtainedPauseStatus);
-					 break;
-				 }
-			 }
-		 }
-		 
+		 GetUrlContent.getURLContentAsJSONObject(MGMT + "resumeArchivingPV?pv=" + enc(pvNameToArchive));
+		 awaitStatus(pvNameToArchive, "Being archived", Duration.ofMinutes(2));
+
 		 checkRetrieval(pvNameToArchive, new ExpectedEventType[] { 
 			new ExpectedEventType(ConnectionLossType.STARTUP_OR_PAUSE_RESUME, 1),
 			new ExpectedEventType(ConnectionLossType.NONE, 1),
@@ -203,6 +153,26 @@ public class CnxLostTest {
 	}
 
 	
+	private static String enc(String pv) throws Exception {
+		return URLEncoder.encode(pv, StandardCharsets.UTF_8);
+	}
+
+	private static String statusOf(String pv) throws Exception {
+		JSONArray status = GetUrlContent.getURLContentAsJSONArray(MGMT + "getPVStatus?pv=" + enc(pv));
+		if (status == null || status.isEmpty()) {
+			return "(absent)";
+		}
+		return String.valueOf(((JSONObject) status.get(0)).get("status"));
+	}
+
+	private static void awaitStatus(String pv, String expectedStatus, Duration atMost) {
+		Awaitility.await()
+				.atMost(atMost)
+				.pollInterval(Duration.ofSeconds(5))
+				.ignoreExceptions()
+				.until(() -> expectedStatus.equals(statusOf(pv)));
+	}
+
 	private void checkRetrieval(String retrievalPVName, ExpectedEventType[] expectedEvents) throws IOException {
 		RawDataRetrieval rawDataRetrieval = new RawDataRetrieval("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
         Instant now = TimeUtils.now();
