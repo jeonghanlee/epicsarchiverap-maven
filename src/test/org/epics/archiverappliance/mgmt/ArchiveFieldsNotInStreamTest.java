@@ -1,8 +1,9 @@
 package org.epics.archiverappliance.mgmt;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.awaitility.Awaitility;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.SIOCSetup;
@@ -11,164 +12,161 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.retrieval.client.RawDataRetrievalAsEventStream;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 /**
- * This relates to issue - https://github.com/slacmshankar/epicsarchiverap/issues/69
- * We want to create a policy that has extra fields that are not in getFieldsArchivedAsPartOfStream
- * When archiving PV's with this policy, we should check
- * <ol>
- * <li>Fields that are part of getFieldsArchivedAsPartOfStream should be in the .VAL's archiveFields</li>
- * <li>Fields that are NOT part of getFieldsArchivedAsPartOfStream should NOT be in the .VAL's archiveFields</li>
- * <li>Fields that are NOT part of getFieldsArchivedAsPartOfStream should have separate PVTypeInfo's.</li>
- * <li>Just to make things interesting, let's throw in EPICS aliases as well.</li>
- * </ol>
- * 
- * The best RTYP to use test this is the MOTOR record; however this has a lot of dependencies. 
- * So, we approximate this using a couple of CALC records in the UnitTestPVs
- * If we <code>caput ArchUnitTest:fieldtst:cnt 0.0</code>, we should see...
- * <pre><code>
- * $ camonitor ArchUnitTest:fieldtst ArchUnitTest:fieldtst.C
- * ArchUnitTest:fieldtst          2018-11-14 15:36:26.730758 0  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:36:26.730758 3.5  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:36:26.730758 0  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:36:57.730752 0  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:36:57.730752 0.5  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:36:58.730694 0.5  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:36:58.730694 1  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:36:59.730766 1  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:36:59.730766 1.5  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:37:00.730725 1.5  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:37:00.730725 2  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:37:01.730730 2  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:37:01.730730 2.5  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:37:02.730723 2.5  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:37:02.730723 3  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:37:03.730723 3  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:37:03.730723 3.5  
- * ArchUnitTest:fieldtst.C        2018-11-14 15:37:04.730761 3.5  
- * </code></pre>
- * Rather unfortunate about the duplicate timestamps; but we should at least be able to test to make sure we capture all the data.
- * 
- * So, we archive ArchUnitTest:fieldtstalias from within a special policies file which add the .C archiveField
- * Make sure all the listed conditions are true for ArchUnitTest:fieldtst and ArchUnitTest:fieldtst.C. 
- * Make sure we can get the data for ArchUnitTest:fieldtst and ArchUnitTest:fieldtst.C (and for the alias as well).
- * 
- *   
- * @author mshankar
- *
+ * Archive a PV (given by an EPICS alias) governed by a policy that adds a field not in the
+ * archived-as-part-of-stream set, through the mgmt BPL and replacing the browser-driven flow.
+ * The alias resolves to the real name; the non-stream field gets its own type info; and data is
+ * retrievable under the real name, the field, and their aliases. Verifies the server, not the UI.
  */
 @Tag("integration")
 @Tag("localEpics")
 public class ArchiveFieldsNotInStreamTest {
-	private static Logger logger = LogManager.getLogger(ArchiveFieldsNotInStreamTest.class.getName());
-	TomcatSetup tomcatSetup = new TomcatSetup();
-	SIOCSetup siocSetup = new SIOCSetup();
-	WebDriver driver;
+    private static Logger logger = LogManager.getLogger(ArchiveFieldsNotInStreamTest.class.getName());
+    private static final String MGMT = "http://localhost:17665/mgmt/bpl/";
+    TomcatSetup tomcatSetup = new TomcatSetup();
+    SIOCSetup siocSetup = new SIOCSetup();
 
-	@BeforeAll
-	public static void setupClass() {
-		WebDriverManager.firefoxdriver().setup();
-	}
-	@BeforeEach
-	public void setUp() throws Exception {
-		System.getProperties().put("ARCHAPPL_POLICIES", System.getProperty("user.dir") + "/src/test/org/epics/archiverappliance/mgmt/ArchiveFieldsNotInStream.py");
-		siocSetup.startSIOCWithDefaultDB();
-		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
-		driver = new FirefoxDriver();
-	}
+    @BeforeEach
+    public void setUp() throws Exception {
+        System.getProperties().put("ARCHAPPL_POLICIES", System.getProperty("user.dir") + "/src/test/org/epics/archiverappliance/mgmt/ArchiveFieldsNotInStream.py");
+        // This test asserts exact sample counts, so it must start from empty stores; otherwise
+        // samples left by an earlier run are merged into the retrieved stream.
+        deleteStoredDataForThesePVs();
+        siocSetup.startSIOCWithDefaultDB();
+        tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
+    }
 
-	@AfterEach
-	public void tearDown() throws Exception {
-		driver.quit();
-		tomcatSetup.tearDown();
-		siocSetup.stopSIOC();
-	}
+    @AfterEach
+    public void tearDown() throws Exception {
+        tomcatSetup.tearDown();
+        siocSetup.stopSIOC();
+        deleteStoredDataForThesePVs();
+    }
 
-	@Test
-	public void testArchiveFieldsPV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
-		 ((JavascriptExecutor)driver).executeScript("window.skipAutoRefresh = true;");
-		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
-		 String[] fieldsToArchive = new String[] {
-				 "ArchUnitTest:fieldtstalias"
-		 };
-		 pvstextarea.sendKeys(String.join("\n", fieldsToArchive));
-		 WebElement archiveButton = driver.findElement(By.id("archstatArchive"));
-		 logger.debug("About to submit");
-		 archiveButton.click();
-		 Thread.sleep(4*60*1000);
-		 logger.debug("Checking for archive status");
-		 WebElement checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
-		 checkStatusButton.click();
-		 Thread.sleep(17*1000);
-		 for(int i = 0; i < fieldsToArchive.length; i++) { 
-			 int rowWithInfo = i+1;
-			 WebElement statusPVName = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(" + rowWithInfo + ") td:nth-child(1)"));
-			 String pvNameObtainedFromTable = statusPVName.getText();
-			 Assertions.assertTrue(fieldsToArchive[i].equals(pvNameObtainedFromTable), "PV Name is not " + fieldsToArchive[i] + "; instead we get " + pvNameObtainedFromTable);
-			 WebElement statusPVStatus = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(" + rowWithInfo + ") td:nth-child(2)"));
-			 String pvArchiveStatusObtainedFromTable = statusPVStatus.getText();
-			 String expectedPVStatus = "Being archived";
-			 Assertions.assertTrue(expectedPVStatus.equals(pvArchiveStatusObtainedFromTable), "Expecting PV archive status to be " + expectedPVStatus + "; instead it is " + pvArchiveStatusObtainedFromTable + " for field " + fieldsToArchive[i]);
-		 }
-		 
-		 // Check that we have PVTypeInfo's for the main PV. Also check the archiveFields.
-		 JSONObject valInfo = GetUrlContent.getURLContentAsJSONObject("http://localhost:17665/mgmt/bpl/getPVTypeInfo?pv=ArchUnitTest:fieldtst", true);
-		 logger.debug(valInfo.toJSONString());
-		 @SuppressWarnings("unchecked")
-		 List<String> archiveFields = (List<String>) valInfo.get("archiveFields");
-		 Assertions.assertTrue(archiveFields.contains("HIHI"), "TypeInfo should contain the HIHI field but it does not");
-		 Assertions.assertTrue(archiveFields.contains("LOLO"), "TypeInfo should contain the LOLO field but it does not");
-		 Assertions.assertTrue(!archiveFields.contains("DESC"), "TypeInfo should not contain the DESC field but it does");
-		 Assertions.assertTrue(!archiveFields.contains("C"), "TypeInfo should not contain the C field but it does");
+    /**
+     * Remove the stored data for the PVs this test archives from each of the three stores.
+     */
+    private static void deleteStoredDataForThesePVs() throws IOException {
+        for (String storeFolder : new String[] {
+            System.getenv("ARCHAPPL_SHORT_TERM_FOLDER"),
+            System.getenv("ARCHAPPL_MEDIUM_TERM_FOLDER"),
+            System.getenv("ARCHAPPL_LONG_TERM_FOLDER")
+        }) {
+            if (storeFolder == null) {
+                continue;
+            }
+            File pvFolder = new File(storeFolder, "ArchUnitTest");
+            if (pvFolder.exists()) {
+                FileUtils.deleteDirectory(pvFolder);
+            }
+        }
+    }
 
-		 JSONObject C_Info = GetUrlContent.getURLContentAsJSONObject("http://localhost:17665/mgmt/bpl/getPVTypeInfo?pv=ArchUnitTest:fieldtst.C", true);
-		 Assertions.assertTrue(C_Info != null, "Did not find a typeinfo for ArchUnitTest:fieldtst.C");
-		 logger.debug(C_Info.toJSONString());
-		 
-		 testRetrievalCount("ArchUnitTest:fieldtst", new double[] { 0.0 } );
-		 siocSetup.caput("ArchUnitTest:fieldtst:cnt", "0.0");
-		 Thread.sleep(2*60*1000);
-		 testRetrievalCount("ArchUnitTest:fieldtst", new double[] { 0.0 } );
-		 testRetrievalCount("ArchUnitTest:fieldtst.C", new double[] { 3.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5 } );
-		 testRetrievalCount("ArchUnitTest:fieldtstalias", new double[] { 0.0 } );
-		 testRetrievalCount("ArchUnitTest:fieldtstalias.C", new double[] { 3.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5 } );
-	}
-	
-	private void testRetrievalCount(String pvName, double[] expectedValues) throws IOException {
-		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
+    private static String statusOf(String pv) {
+        JSONArray status = GetUrlContent.getURLContentAsJSONArray(
+                MGMT + "getPVStatus?pv=" + URLEncoder.encode(pv, StandardCharsets.UTF_8));
+        if (status == null || status.isEmpty()) {
+            return "(absent)";
+        }
+        return String.valueOf(((JSONObject) status.get(0)).get("status"));
+    }
+
+    private static JSONObject awaitTypeInfo(String pv) {
+        String url = MGMT + "getPVTypeInfo?pv=" + URLEncoder.encode(pv, StandardCharsets.UTF_8);
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(5))
+                .pollInterval(Duration.ofSeconds(10))
+                .ignoreExceptions()
+                .until(() -> GetUrlContent.getURLContentAsJSONObject(url, false) != null);
+        return GetUrlContent.getURLContentAsJSONObject(url, true);
+    }
+
+    @Test
+    public void testArchiveFieldsPV() throws Exception {
+        String aliasToArchive = "ArchUnitTest:fieldtstalias";
+        String realName = "ArchUnitTest:fieldtst";
+        String archivePVUrl = MGMT + "archivePV?pv=" + URLEncoder.encode(aliasToArchive, StandardCharsets.UTF_8);
+
+        // Submit the alias for archiving; the workflow resolves it to the real name and archives that.
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(2))
+                .pollInterval(Duration.ofSeconds(5))
+                .ignoreExceptions()
+                .until(() -> GetUrlContent.getURLContentAsJSONArray(archivePVUrl) != null);
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(6))
+                .pollInterval(Duration.ofSeconds(10))
+                .ignoreExceptions()
+                .until(() -> "Being archived".equals(statusOf(realName)));
+
+        // The real PV's type info carries the stream fields (HIHI, LOLO) but not the non-stream ones.
+        JSONObject valInfo = awaitTypeInfo(realName);
+        logger.debug(valInfo.toJSONString());
+        @SuppressWarnings("unchecked")
+        List<String> archiveFields = (List<String>) valInfo.get("archiveFields");
+        Assertions.assertTrue(archiveFields.contains("HIHI"), "TypeInfo should contain the HIHI field but it does not");
+        Assertions.assertTrue(archiveFields.contains("LOLO"), "TypeInfo should contain the LOLO field but it does not");
+        Assertions.assertTrue(!archiveFields.contains("DESC"), "TypeInfo should not contain the DESC field but it does");
+        Assertions.assertTrue(!archiveFields.contains("C"), "TypeInfo should not contain the C field but it does");
+
+        // The non-stream field gets its own type info.
+        JSONObject cInfo = awaitTypeInfo(realName + ".C");
+        Assertions.assertTrue(cInfo != null, "Did not find a typeinfo for " + realName + ".C");
+        logger.debug(cInfo.toJSONString());
+
+        testRetrievalCount(realName, new double[] {0.0});
+
+        // The non-stream field is archived by its own, later workflow. The value sequence below is a
+        // one-shot: fieldtst:cnt climbs by 0.5 and latches at its limit, writing each previous value
+        // to the .C field, so it only runs while the counter is moving. The field must therefore
+        // already be archiving before the caput that restarts the counter, or the samples are lost.
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(6))
+                .pollInterval(Duration.ofSeconds(10))
+                .ignoreExceptions()
+                .until(() -> "Being archived".equals(statusOf(realName + ".C")));
+
+        siocSetup.caput("ArchUnitTest:fieldtst:cnt", "0.0");
+        Thread.sleep(2 * 60 * 1000);
+        testRetrievalCount(realName, new double[] {0.0});
+        testRetrievalCount(realName + ".C", new double[] {3.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5});
+        testRetrievalCount(aliasToArchive, new double[] {0.0});
+        testRetrievalCount(aliasToArchive + ".C", new double[] {3.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5});
+    }
+
+    private void testRetrievalCount(String pvName, double[] expectedValues) throws IOException {
+        RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");
         Instant end = TimeUtils.plusDays(TimeUtils.now(), 1);
         Instant start = TimeUtils.minusDays(end, 2);
-		try(EventStream stream = rawDataRetrieval.getDataForPVS(new String[] { pvName }, start, end, null)) {
-			long previousEpochSeconds = 0;
-			int eventCount = 0;
-			Assertions.assertTrue(stream != null, "Got a null event stream for PV " + pvName);
-			for(Event e : stream) {
-				long actualSeconds = e.getEpochSeconds();
-				logger.debug("For " + pvName + " got value " + e.getSampleValue().getValue().doubleValue());
-				Assertions.assertTrue(actualSeconds > previousEpochSeconds, "Got a sample at or before the previous sample " + actualSeconds + " ! >= " + previousEpochSeconds);
-				previousEpochSeconds = actualSeconds;
-				Assertions.assertTrue(Math.abs(Math.abs(e.getSampleValue().getValue().doubleValue()) -  Math.abs(expectedValues[eventCount])) < 0.001, "Got " + e.getSampleValue().getValue().doubleValue() + " expecting " +  expectedValues[eventCount] + " at " + eventCount);
-				eventCount++;
-			}
-
-			Assertions.assertTrue(eventCount == expectedValues.length, "Expecting " + expectedValues.length + " got " + eventCount + " for pv " + pvName);
-		}
-	}
+        try (EventStream stream = rawDataRetrieval.getDataForPVS(new String[] {pvName}, start, end, null)) {
+            long previousEpochSeconds = 0;
+            int eventCount = 0;
+            Assertions.assertTrue(stream != null, "Got a null event stream for PV " + pvName);
+            for (Event e : stream) {
+                long actualSeconds = e.getEpochSeconds();
+                logger.debug("For " + pvName + " got value " + e.getSampleValue().getValue().doubleValue());
+                Assertions.assertTrue(actualSeconds > previousEpochSeconds, "Got a sample at or before the previous sample " + actualSeconds + " ! >= " + previousEpochSeconds);
+                previousEpochSeconds = actualSeconds;
+                Assertions.assertTrue(Math.abs(Math.abs(e.getSampleValue().getValue().doubleValue()) - Math.abs(expectedValues[eventCount])) < 0.001, "Got " + e.getSampleValue().getValue().doubleValue() + " expecting " + expectedValues[eventCount] + " at " + eventCount);
+                eventCount++;
+            }
+            Assertions.assertTrue(eventCount == expectedValues.length, "Expecting " + expectedValues.length + " got " + eventCount + " for pv " + pvName);
+        }
+    }
 }
