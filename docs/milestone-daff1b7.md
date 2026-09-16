@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M8 is Complete; M4 is ready to start. Follow M4's dependency checks before changing versions, using the fresh-clone 749-test pass on eb047c576948ad2ee770cd1e0a3b74808b64bb2e as the current unchanged-code baseline. M8's fresh-clone compilation and unit evidence is under /tmp/aa-m8-fresh.K496KKtT/; integration evidence is under /tmp/aa-m8-dbd-isolation.15cg2nm4/; localEpics evidence is under /tmp/aa-m8-complete.xrp4jyu7/. The three selections passed 749, 98, and 26 tests respectively, with zero failures, errors, or skips.
+Next session entry point: M4 implementation and verification are complete locally; commit and push remain before closure. All four open-range declarations are pinned, and final clean verify passed with documentation, four WARs, and every dependency check. The updated dependencies passed 749 default tests and 45 selected integration tests (794 unique tests, zero failures/errors/skips). Review the pom and M4 evidence below for landing; keep M4 In progress until the changes reach origin/modernize. M8 is Complete.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -23,7 +23,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M1 | Gradle removal (complete erasure) | Milestone | Complete | No | | `git grep -i gradle` returns only this register on the committed tree (2026-09-12); [detail](#m1---gradle-removal-complete-erasure) |
 | Phase 1 | M2 | Maven Wrapper as the build entry | Milestone | Complete | No | | Fresh clone of c1dd0b1 builds four WARs through mvnw (2026-09-11); [detail](#m2---maven-wrapper-as-the-build-entry) |
 | Phase 1 | M3 | Canonical pom as single source of truth | Milestone | Complete | No | D6 | Fresh clone of 9be652c builds four WARs from the tracked pom with no system scope (2026-09-12); [detail](#m3---canonical-pom-as-single-source-of-truth) |
-| Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | Not started | Yes | M3, M8 | Pinned current versions build and pass the unit set; [detail](#m4---dependency-refresh-to-stable-current-versions) |
+| Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | In progress | No | M3, M8 | Fixed versions, build and dependency checks pass; 749 default and 45 integration tests pass; landing pending; [detail](#m4---dependency-refresh-to-stable-current-versions) |
 | Phase 1 | M5 | Maven-centric CI and docs build | Milestone | Not started | Yes | | Owner-authored GitHub Actions on mvnw; readthedocs on mvnw; [detail](#m5---maven-centric-ci-and-docs-build) |
 | Phase 1 | M6 | Upstream core features: cherry-pick policy and application | Milestone | Not started | Yes | | Policy accepted and selected upstream changes applied; [detail](#m6---upstream-core-features-cherry-pick-policy-and-application) |
 | Phase 1 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; [detail](#m7---site-required-features-and-fixes) |
@@ -274,7 +274,7 @@ Last Compared: never
 Origin: daff1b7 / M4
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -282,7 +282,7 @@ Refresh and pin the third-party dependency versions on the canonical pom to the 
 
 ##### Scope
 
-Pin the two open version ranges, move every dependency to the current release of its stable line, keep Tomcat 9 (D13) and jython (D15), and record the chosen versions as evidence.
+Pin all open version ranges, move every in-scope dependency to the current release of its stable line, keep Tomcat 9 (D13) and jython (D15), and record the chosen versions as evidence.
 
 Out of scope: adding sqlite-jdbc (M11); removing MariaDB (M13) or Redis (M12); replacing the aged libraries jdbm, jmatio, json-simple, and commons-math3 (left as-is under minimal modernization).
 
@@ -295,44 +295,52 @@ Out of scope: adding sqlite-jdbc (M11); removing MariaDB (M13) or Redis (M12); r
 - M3 (refresh applies to the canonical pom); M8 stage 1 (compiled tests for T2 and T4); D8; D13; D15.
 - Full dependency audit, 2026-09-12 (`dependency:list`, `dependency:analyze`, `versions:display-dependency-updates` through mvnw): 30 direct dependencies, 53 resolved artifacts (50 compile and runtime). No used-undeclared dependency. Eight unused-declared are runtime or plugin loaded and legitimate (four log4j bindings, mariadb driver, disruptor, BPLTaglets, redisnio). Two open ranges resolve to floating versions and make the build non-reproducible: guava `[32.0.0-android,)` (resolved 33.7.1-jre on 2026-09-12) and commons-io `[2.14.0,)` (resolved 2.22.0).
 
-| Dependency | Declared | Current stable line | Action |
+| Dependency | Before M4 | Executed version | Action |
 | --- | --- | --- | --- |
-| guava | range | 33.x jre | pin |
-| commons-io | range | 2.22.x | pin |
-| log4j api, core, jul, slf4j2-impl, 1.2-api | 2.20.0 | 2.25.x (3.0 is beta, excluded) | update |
-| disruptor | 3.4.4 | 4.0.0 (check log4j compatibility) | update if compatible |
-| tomcat-servlet-api | 9.0.74 (9.0.113 after M3) | latest 9.0.x (D13) | update within 9.0.x |
+| guava | [32.0.0-android,) | 33.7.1-jre | pin |
+| commons-io | [2.14.0,) | 2.22.0 | pin |
+| log4j api, core, jul, slf4j2-impl, 1.2-api | 2.20.0 | 2.26.1 | update; exclude 3.0 beta |
+| disruptor | 3.4.4 | 4.0.0 | update; runtime tests passed |
+| tomcat-servlet-api | 9.0.113 | 9.0.122 | latest stable 9.0.x observed at execution |
 | jca | 2.4.10 | 2.4.12 | update |
 | core-pva | 5.0.0 | 5.0.5 | update |
-| protobuf-java | 4.36.1 | current | keep |
+| protobuf-java | [3.25.5,) | 4.36.1 | pin existing resolved version |
 | hazelcast | 5.4.0 | 5.7.0 | update |
 | commons-lang3, commons-codec, commons-validator | 3.12.0, 1.15, 1.7 | 3.20.0, 1.22.1, 1.11.0 | update |
 | commons-fileupload | 1.5 | 1.6.0 | update |
 | opencsv | 5.7.1 | 5.12.0 | update |
-| httpclient, httpcore | 4.5.14, 4.4.16 | last of the 4.x line | keep the 4.x line |
-| mariadb-java-client | 3.3.3 | 3.5.10 | leave; removed by M13 |
-| jedis | 4.4.0 | 6.x (8.1 is beta) | leave; M12 decides the Redis backend |
-| jython-standalone | 2.7.3 | 2.7.x | keep (D15) |
-| jdbm, jmatio, json-simple, commons-math3 | 2.4, 1.0, 1.1.1, 3.6.1 | effectively unmaintained | keep; note only |
-| redisnio, BPLTaglets, pbrawclient | system scope | local jars | handled by M3 |
+| Javadoc plugin: commons-io, commons-lang3 | [2.14.0,), 3.12.0 | 2.22.0, 3.20.0 | share fixed properties with project dependencies |
+| commons-compress (test) | 1.27.1 | 1.28.0 | update |
+| httpclient, httpcore | 4.5.14, 4.4.16 | 4.5.14, 4.4.16 | keep the 4.x line |
+| mariadb-java-client | 3.3.3 | 3.3.3 | leave; removed by M13 |
+| jedis | 4.4.0 | 4.4.0 | leave; M12 decides the Redis backend |
+| jython-standalone | 2.7.3 | 2.7.4 | update within the stable 2.7 line (D15) |
+| jdbm, jmatio, json-simple, commons-math3 | 2.4, 1.0, 1.1.1, 3.6.1 | 2.4, 1.0, 1.1.1, 3.6.1 | keep |
+| junit-jupiter, junit-platform-suite (test) | 5.14.4, 1.14.4 | 5.14.4, 1.14.4 | keep; declare directly used API and params artifacts explicitly |
+| awaitility, commons-cli, jinjava (test) | 4.3.0, 1.11.0, 2.8.4 | 4.3.0, 1.11.0, 2.8.4 | keep |
+| pbrawclient (test) | local.org.epics:0.2.1 | local.org.epics:0.2.1 | project-local Maven repository; no system scope |
+
+Executed targets were checked against official Maven Central metadata on 2026-09-15; raw metadata and the actual resolved dependency list are retained under `/tmp/aa-m4.GlFhTyob/`. Transitive conflicts are aligned through dependencyManagement: SLF4J API 2.0.19, Commons Logging 1.4.0, checker-qual 3.32.0, error_prone_annotations 2.50.0, immutables-exceptions 1.9, and Jackson BOM 2.20.1, plus the shared Guava, Commons IO, Codec, and Lang versions above. The Jackson BOM preserves Jinjava's selected 2.20/2.20.1 family. Commons Logging supplies the JCL API and Log4j routing, so MariaDB's duplicate jcl-over-slf4j is excluded. FindBugs annotations already supplies javax.annotation classes, so Jinjava's duplicate jsr305 is excluded. No convergence or duplicate-class rule is suppressed.
 
 ##### Implementation Plan
 
 Plan Status: accepted
 Plan Acceptance: owner, 2026-09-12
-Implementation Authorization: none
+Implementation Authorization: owner, 2026-09-15 (M4 execution)
 Superseded Plan Artifacts: none
 
 Targets measured on 2026-09-12 with `versions:display-dependency-updates -DallowMajorUpdates=false` (latest within the current major line); re-checked at execution, and the executed value is recorded as evidence.
 
+Execution premise checked on 2026-09-15: the shipped pom also declares protobuf-java as [3.25.5,), resolved to 4.36.1 in the fresh-clone baseline. Pinning this third project range is required by the existing no-range completion criterion. A full-pom scan also found the Javadoc plugin repeating the Commons IO range; the plugin now shares fixed Commons IO and Lang properties with the project dependencies. The baseline source and pom are unchanged since that 749-test pass; test source changes are not needed for the dependency inventory.
+
 0. Baseline before any change: run the unit set on the unchanged tree, `./mvnw -B test -Dgroups='!integration & !localEpics & !slow & !flaky'` (the 67 untagged JUnit 5 classes; the tagged sets need Tomcat or softIoc and belong to M8), and record pass, fail, and error counts. Only a change in that outcome counts against a version bump. Add build-time dependency-set checks that stay in the pom: maven-enforcer-plugin with dependencyConvergence and requireUpperBoundDeps, extra-enforcer-rules banDuplicateClasses, and dependency:analyze-only with failOnWarning for used-undeclared; run them on the unchanged tree first and record the baseline.
-1. Pin the two ranges to their current resolution: guava `[32.0.0-android,)` to 33.7.1-jre, commons-io `[2.14.0,)` to 2.22.0. No range remains.
-2. Runtime and servlet line: tomcat-servlet-api 9.0.113 to 9.0.121 (the value aa-env fixed; D13). log4j api, core, jul, slf4j2-impl, 1.2-api 2.20.0 to 2.26.1 via the log4j.version property. disruptor: try 4.0.0 (log4j 2.26 supports the 4.x line); if the async logger fails at runtime, keep 3.4.4 and record why.
+1. Pin the three ranges to their current resolution: guava `[32.0.0-android,)` to 33.7.1-jre, commons-io `[2.14.0,)` to 2.22.0, and protobuf-java `[3.25.5,)` to 4.36.1. Pin the Javadoc plugin declarations to the same fixed Commons IO and Lang properties. No range remains in project or plugin declarations.
+2. Runtime and servlet line: tomcat-servlet-api 9.0.113 to the latest stable 9.0.x at execution (9.0.122 observed; the planned runtime fixture remains 9.0.121, D13). log4j api, core, jul, slf4j2-impl, 1.2-api 2.20.0 to 2.26.1 via the log4j.version property. disruptor: try 4.0.0 (log4j 2.26 supports the 4.x line); if the async logger fails at runtime, keep 3.4.4 and record why.
 3. EPICS and appliance libraries: jca 2.4.10 to 2.4.12; core-pva 5.0.0 to 5.0.5; hazelcast 5.4.0 to 5.7.0 (cluster state; smoke-test appliance start after the bump).
 4. Apache Commons and utilities: commons-lang3 3.12.0 to 3.20.0; commons-codec 1.15 to 1.22.1; commons-validator 1.7 to 1.11.0; commons-fileupload 1.5 to 1.6.0; opencsv 5.7.1 to 5.12.0.
 5. Keep as recorded: httpclient 4.5.14 and httpcore 4.4.16 (last of the 4.x line); jython-standalone 2.7.3 (D15; 2.7.4 is the latest stable and may be taken if it builds, 2.7.5b1 is a beta and is excluded); mariadb-java-client 3.3.3 (removed by M13); jedis 4.4.0 (M12 decides); protobuf-java 4.36.1 (current); jdbm, jmatio, json-simple, commons-math3 unchanged.
 6. Apply in the order above, one group per build: `./mvnw -B clean package -DskipTests` plus the enforcer and analyze checks after each group, then the unit set from step 0 at the end; on a failure, hold that group at its previous version, record the failure, and continue.
-7. Tomcat 9 start smoke: run the `integration` tests that are not `localEpics` (`-Dgroups='integration & !localEpics'`, TomcatSetup-based) so the hazelcast, log4j, and disruptor bumps are exercised at appliance start. Host facts (2026-09-12): /opt/tomcat9 is Tomcat 9.0.113 owned by tomcat with an unreadable conf/ directory, so it cannot serve as TOMCAT_HOME for a user-run test; use a user-owned Apache Tomcat 9.0.121 unpacked under the scratch directory as TOMCAT_HOME (matches the target version). If that cannot be arranged, record the smoke as deferred to M8, not as passed.
+7. Tomcat 9 start smoke: run the `integration` tests that are not `localEpics` (`-Pintegration -Dtest.groups='integration & !localEpics'`, TomcatSetup-based) so the hazelcast, log4j, and disruptor bumps are exercised at appliance start. Host facts (2026-09-12): /opt/tomcat9 is Tomcat 9.0.113 owned by tomcat with an unreadable conf/ directory, so it cannot serve as TOMCAT_HOME for a user-run test; use a user-owned Apache Tomcat 9.0.121 unpacked under the scratch directory as TOMCAT_HOME (runtime fixture; the API dependency was rechecked as 9.0.122). If that cannot be arranged, record the smoke as deferred to M8, not as passed.
 8. Record every executed version in the table above as evidence; confirm `dependency:list` shows no range and no system scope.
 
 ##### Test Plan
@@ -342,20 +350,25 @@ Targets measured on 2026-09-12 with `versions:display-dependency-updates -Dallow
 | T1 | Integration | ./mvnw -B clean package -DskipTests | JDK 21, wrapper Maven | Build succeeds with every version pinned |
 | T2 | Unit | ./mvnw -B test -Dgroups='!integration & !localEpics & !slow & !flaky' | JDK 21, wrapper Maven | Same pass, fail, and error counts as the step 0 baseline or better |
 | T3 | Static | enforcer (dependencyConvergence, requireUpperBoundDeps, banDuplicateClasses) and dependency:analyze-only failOnWarning | JDK 21, wrapper Maven | No convergence conflict, no duplicate class, no used-undeclared dependency |
-| T4 | Integration | ./mvnw -B test -Dgroups='integration & !localEpics' | JDK 21, Tomcat 9.0.121 via TOMCAT_HOME | Appliance starts under TomcatSetup and the tests pass; deferred to M8 if no Tomcat 9 on the host |
+| T4 | Integration | ./mvnw -B test -Pintegration -Dtest.groups='integration & !localEpics' | JDK 21, Tomcat 9.0.121 via TOMCAT_HOME | Appliance starts under TomcatSetup and the tests pass; deferred to M8 if no Tomcat 9 on the host |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
-| T3 | Not run | JDK 21, wrapper Maven | Pending | none |
-| T4 | Not run | JDK 21, Tomcat 9.0.121 | Pending | none |
+| T1 | 2026-09-15 23:58:53 PDT | JDK 21.0.12.1, wrapper Maven 3.9.9 | Pass | Final `clean verify -DskipTests dependency:list dependency:tree` exited 0 in 21.786 s; documentation, four WARs, and release archive built. No open range or system scope remains. `/tmp/aa-m4.GlFhTyob/final-verify/` contains the pom, command, timestamps, and log. |
+| T2 | 2026-09-15 23:57:56 PDT | JDK 21.0.12.1, wrapper Maven 3.9.9, Surefire 3.6.0 | Pass | `./mvnw -B -ntp test`: 67 classes, 749 tests, zero failures/errors/skips, exit 0, 13 min 44 s. `/tmp/aa-m4.GlFhTyob/final-unit/` retains the exact pom, log, timestamps, and reports. The subsequent Javadoc-only alignment leaves all project dependencies and dependencyManagement unchanged after property expansion. Unchanged baseline: 749/0/0/0 at 2026-09-15 23:15:20 PDT on eb047c57, `/tmp/aa-m8-fresh.K496KKtT/verification.json`. |
+| T3 | 2026-09-15 23:58:53 PDT | JDK 21, wrapper Maven; test dependencies included | Pass | All three enforcer rules passed and analyze-only reported no dependency problems in `final-verify/maven.log`. Before library changes, `baseline-enforcer/` failed on 11 convergence conflicts, three upper-bound violations, and two duplicate-class groups; `baseline-analysis/` found three undeclared JUnit APIs and six runtime/aggregate false-positive unused declarations. Explicit API dependencies and specific runtime/aggregate analysis exceptions resolve the latter. |
+| T4 | 2026-09-16 00:53:50 PDT | JDK 21.0.12.1, Maven 3.9.9, Surefire 3.6.0, Tomcat 9.0.121, EPICS 1.2.0 / base 7.0.10 | Pass | `test -Pintegration -Dtest.groups='integration & !localEpics'`: 27 classes, 45 tests, zero failures/errors/skips, exit 0, 53 min 45 s. Actual WARs, Tomcat, Java PVA servers, and required soft IOCs ran; no test or assertion changed. Evidence: `/tmp/aa-m4.GlFhTyob/final-integration/`. This tag selection includes IOC users such as DbdArchiveTest, so the established EPICS environment was sourced as well. |
+
+Group evidence: `pinned-package/` passed before version upgrades. `runtime-package/`, `epics-package/`, and `utilities-package/` each completed compilation, documentation, WARs, and dependency analysis; their trailing enforcer checks retained baseline conflicts, with Commons Logging version convergence also reported after the utility refresh. `aligned-verify/` resolves all of these conflicts without suppressing rules. Archive inspection confirmed identical sets of 49 runtime libraries in all four WARs, the intended Log4j/Disruptor/SLF4J/JCA/PVA/Hazelcast/Jython versions, and no JUnit, jcl-over-slf4j, or jsr305 jars. All logs are under `/tmp/aa-m4.GlFhTyob/`.
+
+Final verification: Maven summaries, XML suite totals, and individual testcase elements agree for both test selections, with 794 distinct tests and no overlap. The 749 unit test identities match the unchanged baseline. A read-only process check after completion found no owned Tomcat, softIocPVX, or Surefire process remaining. The integration run emitted the same native-stream warning observed in M8; its dumpstream is retained with the reports. Consolidated run evidence and the verified pom hash are in `/tmp/aa-m4.GlFhTyob/verification.json`.
 
 ##### Closure Evidence
 
-- none
+- Local implementation satisfies the accepted scope and T1-T4 all passed. Source code and test assertions are unchanged.
+- Commit and upstream landing are pending; M4 remains In progress.
 
 ##### GitHub Projection
 
