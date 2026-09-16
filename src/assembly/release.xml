@@ -22,8 +22,7 @@
             <outputDirectory>/</outputDirectory>
             <includes>
                 <include>LICENSE</include>
-                <include>NOTICE</include>
-                <include>*License.txt</include>
+                <include>LICENCES/**</include>
             </includes>
         </fileSet>
         <fileSet>

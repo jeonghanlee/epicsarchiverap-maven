@@ -1,52 +1,245 @@
-EPICS archiver appliance uses open source libraries. Please see the attribution notices below.
+EPICS archiver appliance: third-party licenses and notices
+=========================================================
 
-These components are included under the Apache 2.0 license (http://www.apache.org/licenses/LICENSE-2.0.txt), a local copy of which can be found in the file Apache_2.0_License.txt.
-commons-codec-1.9.jar
-commons-fileupload-1.3.1.jar
-commons-io-2.4.jar
-commons-lang-2.6.jar
-commons-lang3-3.3.2.jar
-commons-logging-1.1.3.jar
-commons-math3-3.3.jar
-commons-validator-1.4.0.jar
-httpclient-4.3.5.jar
-httpcore-4.3.2.jar
-log4j-1.2.17.jar
-guava-17.0.jar
-json-simple-1.1.1.jar
-hazelcast-all-3.3.jar
-joda-time-2.4.jar
-opencsv-2.3.jar
-jdbm-2.4.jar
+The appliance's own license is in ../LICENSE. This inventory covers the
+libraries in WEB-INF/lib of the mgmt, engine, etl and retrieval WARs, the
+vendored browser assets, and generated documentation assets. Build tools,
+test-only dependencies and separately installed Tomcat are outside this
+inventory. Maven dependency versions and packaging are defined in ../pom.xml.
 
+License filenames below are relative to this directory. Original copyright,
+LICENSE and NOTICE entries inside dependency JARs and browser files remain
+part of their distributions; this inventory does not replace those entries.
+Dependency upgrades require updating the corresponding inventory and notices.
 
-This component is included under the Google Protocol Buffer license, a local copy of which can be found in the file protobuf_license.txt.
-protobuf-java-2.4.1.jar
+Runtime libraries (49 JARs shared by the four WARs)
+-------------------------------------------------
 
-This component is included under the Jython license (http://www.jython.org/license.html), a local copy of which can be found in the file jython_license.txt.
-jython-2.5.3.jar
+Apache-2.0; local text: Apache_2.0_License.txt
 
-This component is included under the JMatIO license (http://www.mathworks.com/matlabcentral/fileexchange/view_license?file_info_id=10759), a local copy of which can be found in the file jmatio_license.txt. 
-jmatio-1.0.jar
+  caffeine-2.9.3.jar
+  commons-beanutils-1.11.0.jar
+  commons-codec-1.22.1.jar
+  commons-collections-3.2.2.jar
+  commons-collections4-4.5.0.jar
+  commons-digester-2.1.jar
+  commons-fileupload-1.6.0.jar
+  commons-io-2.22.0.jar
+  commons-lang3-3.20.0.jar
+  commons-logging-1.4.0.jar
+  commons-math3-3.6.1.jar
+  commons-pool2-2.11.1.jar
+  commons-text-1.13.1.jar
+  commons-validator-1.11.0.jar
+  disruptor-4.0.0.jar
+  error_prone_annotations-2.50.0.jar
+  failureaccess-1.0.3.jar
+  gson-2.10.1.jar
+  guava-33.7.1-jre.jar
+  hazelcast-5.7.0.jar
+  httpclient-4.5.14.jar
+  httpcore-4.4.16.jar
+  j2objc-annotations-3.1.jar
+  jdbm-2.4.jar
+  json-simple-1.1.1.jar
+  jspecify-1.0.1.jar
+  listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar
+  log4j-1.2-api-2.26.1.jar
+  log4j-api-2.26.1.jar
+  log4j-core-2.26.1.jar
+  log4j-jul-2.26.1.jar
+  log4j-slf4j2-impl-2.26.1.jar
+  opencsv-5.12.0.jar
 
-This component is included under the GNU General Public license, a local copy of which can be found in the file GNU_GPL_license.txt.
-caj-1.1.14.jar
+Other licenses:
 
-This component is included under the JCA license, a local copy of which can be found in the file jca_license.txt.
-jca-2.3.6.jar
+  bcpkix-jdk18on-1.82.jar
+    License: Bouncy Castle license (MIT)
+    Text: bouncycastle_license.html
+  bcprov-jdk18on-1.82.jar
+    License: Bouncy Castle license (MIT)
+    Text: bouncycastle_license.html
+  bcutil-jdk18on-1.82.jar
+    License: Bouncy Castle license (MIT)
+    Text: bouncycastle_license.html
+  checker-qual-3.32.0.jar
+    License: MIT
+    Text: checker_qual_license.txt
+  core-pva-5.0.5.jar
+    License: EPL-1.0
+    Text: phoebus_license.txt
+  jca-2.4.12.jar
+    License: EPICS; bundled CAJ has LICENSE-CAJ (GPL-2.0)
+    Text: jca_license.txt, GNU_GPL_license.txt
+  jedis-4.4.0.jar
+    License: MIT
+    Text: jedis_license.txt
+  jmatio-1.0.jar
+    License: BSD-2-Clause
+    Text: jmatio_license.txt
+  jna-5.13.0.jar
+    License: Apache-2.0 OR LGPL-2.1-or-later
+    Text: jna_license.txt, Apache_2.0_License.txt, mariadb_license.txt
+  jna-platform-5.13.0.jar
+    License: Apache-2.0 OR LGPL-2.1-or-later
+    Text: jna_license.txt, Apache_2.0_License.txt, mariadb_license.txt
+  json-20230227.jar
+    License: Public Domain
+    Text: json_license.txt
+  jython-standalone-2.7.4.jar
+    License: Jython/PSF and incorporated licenses
+    Text: jython_license.txt
+  mariadb-java-client-3.3.3.jar
+    License: LGPL-2.1
+    Text: mariadb_license.txt
+  protobuf-java-4.36.1.jar
+    License: BSD-3-Clause
+    Text: protobuf_license.txt
+  slf4j-api-2.0.19.jar
+    License: MIT
+    Text: slf4j_license.txt
+  waffle-jna-3.3.0.jar
+    License: MIT
+    Text: waffle_license.txt
 
-These components are included under the terms of the MIT license agreement, a local copy of which can be found in the file jquery_license.txt
-jquery-1.8.2.min.js
-jquery-ui-1.9.1.custom.zip
-jquery.flot.js
-require.js
-require.min.js
+JCA's Maven metadata declares the EPICS Open License. Its bundled
+com.cosylab.epics.caj classes refer to LICENSE-CAJ; the jca-2.4.12 source
+release supplies GPL version 2 in caj/LICENSE-CAJ. Both texts are retained.
+CAJ copyright: Copyright (c) 2004 by Cosylab.
+JCA source archive:
+  https://repo.maven.apache.org/maven2/org/epics/jca/2.4.12/jca-2.4.12-sources.jar
+JDBM 2's author's release announcement identifies Apache-2.0:
+  https://kotek.net/blog/jdbm2_released/
+Jython includes additional licenses in LICENSE and META-INF. Hazelcast includes
+LICENSE-ClassGraph.txt, META-INF/FastDoubleParser-LICENSE,
+META-INF/FastDoubleParser-NOTICE, META-INF/NOTICE and
+META-INF/thirdparty-LICENSE. These bundled notices must be preserved.
+The Waffle source license contains a literal copyright-year template variable;
+the original text is reproduced without substituting an inferred date.
 
-These components are included under the DocumentCloud license, a local copy of which can be found in the file documentcloud_license.txt
-underscore.js
-unserscore-min.js
+Browser assets
+--------------
 
-This component is included under the jedis license, a local copy of which can be found in the file jedis_license.txt
-jedis-2.7.2.jar
+Common UI (source: src/main/org/epics/archiverappliance/staticcontent/js;
+WAR location: ui/comm/js):
 
+  jquery-1.8.2.min.js: MIT; jquery_license.txt
+  jquery-ui-1.9.1.custom.zip: MIT; jquery_ui_license.txt
+    The ZIP also contains jQuery 1.8.2, covered by jquery_license.txt.
+  jquery.flot.js and jquery.flot.navigate.js (Flot 0.7): MIT; flot_license.txt
+  dateformat.js (Date Format 1.2.3): MIT; dateformat_license.txt
+    The appliance's own copyright header also applies to this source file.
 
+SVG Viewer v1.2.1 (retrieval WAR: ui/viewer.zip):
+  https://github.com/archiver-appliance/svg_viewer/tree/v1.2.1
+
+  lib/jquery-3.1.0.min.js: MIT; jquery-3.1.0_license.txt
+  lib/lodash-4.17.10.min.js: MIT; lodash_license.txt
+    Includes the Underscore.js 1.8.3 / DocumentCloud attribution and terms.
+  lib/mustache-3.0.0.min.js: MIT; mustache_license.txt
+  lib/noty_3.1.4.min.js and lib/noty_3.1.4.css: MIT; noty_license.txt
+  lib/plotly-2.35.2.min.js: MIT; plotly_license.txt
+    Additional bundled notices: plotly_bundled_notices.txt
+  lib/bootstrap-3.3.7 (Bootstrap CSS, JS and Glyphicons Halflings fonts):
+    MIT; bootstrap_license.txt
+  lib/bootstrap-3.3.7/js/bootstrap-datetimepicker.min.js and corresponding CSS
+    (4.17.42): MIT; bootstrap_datetimepicker_license.txt
+  lib/bootstrap-3.3.7/js/moment.js (2.14.1): MIT; moment_license.txt
+
+Generated documentation (mgmt WAR: ui/help/_static):
+
+  Sphinx 7.2.6 browser assets: BSD-2-Clause; sphinx_license.txt
+  _sphinx_javascript_frameworks_compat.js (sphinxcontrib-jquery):
+    Copyright Sphinx contributors; BSD-2-Clause; sphinx_license.txt
+  jquery.js (jQuery 3.6.0): MIT; jquery-3.6.0_license.txt
+  sphinx_rtd_theme 1.3.0rc1: MIT; sphinx_rtd_theme_license.txt
+  html5shiv / html5shiv-printshiv 3.7.3: MIT OR GPL-2.0;
+    html5shiv_licenses.md
+  Lato fonts: SIL OFL 1.1; sphinx_theme_font_licenses.txt
+  Roboto Slab fonts: Apache-2.0; sphinx_theme_roboto_license.txt
+  Font Awesome 4.7.0: fonts SIL OFL 1.1, CSS MIT; fontawesome_license.txt
+
+Unresolved upstream declarations
+--------------------------------
+
+SVG Viewer v1.2.1 does not include a license for its own viewer code.
+Its lib/fapaths.json contains Font Awesome icon paths, but the archive does
+not declare the originating version or license for this derived asset.
+The third-party licenses above do not establish permission for these two
+items. Their license declarations require confirmation from the upstream
+project; no license is assigned here by inference.
+
+License text sources
+--------------------
+
+  GNU_GPL_license.txt
+    https://raw.githubusercontent.com/epics-base/jca/jca-2.4.12/caj/LICENSE-CAJ
+  bootstrap_license.txt
+    https://raw.githubusercontent.com/twbs/bootstrap/v3.3.7/LICENSE
+  bouncycastle_license.html
+    https://raw.githubusercontent.com/bcgit/bc-java/r1rv82/LICENSE.html
+  flot_license.txt
+    https://raw.githubusercontent.com/flot/flot/v0.7/LICENSE.txt
+  html5shiv_licenses.md
+    https://raw.githubusercontent.com/aFarkas/html5shiv/3.7.3/MIT%20and%20GPL2%20licenses.md
+  jca_license.txt
+    https://raw.githubusercontent.com/epics-base/jca/jca-2.4.12/LICENSE.txt
+  jedis_license.txt
+    https://raw.githubusercontent.com/redis/jedis/v4.4.0/LICENSE.txt
+  jquery-3.1.0_license.txt
+    https://raw.githubusercontent.com/jquery/jquery/3.1.0/LICENSE.txt
+  jquery-3.6.0_license.txt
+    https://raw.githubusercontent.com/jquery/jquery/3.6.0/LICENSE.txt
+  jquery_license.txt
+    https://raw.githubusercontent.com/jquery/jquery/1.8.2/MIT-LICENSE.txt
+  json_license.txt
+    https://raw.githubusercontent.com/stleary/JSON-java/20230227/LICENSE
+  jython_license.txt
+    https://raw.githubusercontent.com/jython/jython/v2.7.4/LICENSE.txt
+  lodash_license.txt
+    https://raw.githubusercontent.com/lodash/lodash/4.17.10/LICENSE
+  mariadb_license.txt
+    https://raw.githubusercontent.com/mariadb-corporation/mariadb-connector-j/3.3.3/LICENSE
+  moment_license.txt
+    https://raw.githubusercontent.com/moment/moment/2.14.1/LICENSE
+  mustache_license.txt
+    https://raw.githubusercontent.com/janl/mustache.js/v3.0.0/LICENSE
+  noty_license.txt
+    https://raw.githubusercontent.com/needim/noty/v3.1.4/LICENSE.txt
+  phoebus_license.txt
+    https://raw.githubusercontent.com/ControlSystemStudio/phoebus/v5.0.5/LICENSE
+  plotly_bundled_notices.txt
+    https://cdn.plot.ly/plotly-2.35.2.min.js.LICENSE.txt
+  plotly_license.txt
+    https://raw.githubusercontent.com/plotly/plotly.js/v2.35.2/LICENSE
+  protobuf_license.txt
+    https://raw.githubusercontent.com/protocolbuffers/protobuf/v36.1/LICENSE
+  sphinx_theme_font_licenses.txt
+    https://raw.githubusercontent.com/readthedocs/sphinx_rtd_theme/1.3.0rc1/OFL-License.txt
+  sphinx_theme_roboto_license.txt
+    https://raw.githubusercontent.com/readthedocs/sphinx_rtd_theme/1.3.0rc1/Apache-License-2.0.txt
+  waffle_license.txt
+    https://raw.githubusercontent.com/Waffle/waffle/waffle-parent-3.3.0/LICENSE
+
+  checker_qual_license.txt: checker-qual-3.32.0.jar!/META-INF/LICENSE.txt
+  slf4j_license.txt: slf4j-api-2.0.19.jar!/META-INF/LICENSE.txt
+  jna_license.txt: jna-5.13.0.jar!/META-INF/LICENSE
+  jmatio_license.txt: JMatIO attribution supplied with this repository;
+    artifact metadata: net.sourceforge.jmatio:jmatio:1.0 (BSD).
+  jquery_ui_license.txt:
+    jquery-ui-1.9.1.custom.zip!/development-bundle/MIT-LICENSE.txt
+  bootstrap_datetimepicker_license.txt:
+    viewer.zip!/lib/bootstrap-3.3.7/js/bootstrap-datetimepicker.min.js
+    (complete embedded license comment)
+  sphinx_license.txt: Sphinx 7.2.6 distribution LICENSE
+  sphinx_rtd_theme_license.txt: sphinx_rtd_theme 1.3.0rc1 distribution LICENSE
+  dateformat_license.txt: copyright and MIT declaration in dateformat.js;
+    standard MIT terms, also reproduced in jquery-3.6.0_license.txt.
+    https://blog.stevenlevithan.com/archives/date-time-format
+  fontawesome_license.txt: copyright from the distributed SVG font metadata;
+    license selection from the Font Awesome v4.7.0 README and theme CSS header.
+    https://github.com/FortAwesome/Font-Awesome/blob/v4.7.0/README.md
+    Standard OFL and MIT terms are also reproduced in
+    sphinx_theme_font_licenses.txt and jquery-3.6.0_license.txt, respectively.
+  lodash_license.txt also preserves the complete Underscore.js 1.8.3
+    copyright and MIT notice supplied with this repository.

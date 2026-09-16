@@ -1,5 +1,35 @@
-		    GNU GENERAL PUBLIC LICENSE
-		       Version 2, June 1991
+Copyright (c) 2014 Alexander Farkas (aFarkas).
+
+This software is licensed under a dual license system (MIT or GPL version 2). 
+This means you are free to choose with which of both licenses (MIT or 
+GPL version 2) you want to use this library. 
+
+The license texts of the MIT license and the GPL version 2 are as follows:
+
+
+## MIT License
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a
+ copy of this software and associated documentation files (the "Software"),
+ to deal in the Software without restriction, including without limitation
+ the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ and/or sell copies of the Software, and to permit persons to whom the
+ Software is furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ DEALINGS IN THE SOFTWARE.
+
+
+
+## GNU GENERAL PUBLIC LICENSE Version 2, June 1991
 
  Copyright (C) 1989, 1991 Free Software Foundation, Inc.
                        59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -56,7 +86,6 @@ patent must be licensed for everyone's free use or not licensed at all.
   The precise terms and conditions for copying, distribution and
 modification follow.
 
-
 		    GNU GENERAL PUBLIC LICENSE
    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
@@ -111,7 +140,6 @@ above, provided that you also meet all of these conditions:
     License.  (Exception: if the Program itself is interactive but
     does not normally print such an announcement, your work based on
     the Program is not required to print an announcement.)
-
 
 These requirements apply to the modified work as a whole.  If
 identifiable sections of that work are not derived from the Program,
@@ -281,7 +309,6 @@ POSSIBILITY OF SUCH DAMAGES.
 
 		     END OF TERMS AND CONDITIONS
 
-		     
 	    How to Apply These Terms to Your New Programs
 
   If you develop a new program, and you want it to be of the greatest
@@ -293,8 +320,10 @@ to attach them to the start of each source file to most effectively
 convey the exclusion of warranty; and each file should have at least
 the "copyright" line and a pointer to where the full notice is found.
 
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    <Html5shiv, The HTML5 Shiv enables use of HTML5 sectioning elements in 
+    legacy Internet Explorer and provides basic HTML5 styling for Internet Explorer 6-9, 
+    Safari 4.x (and iPhone 3.x), and Firefox 3.x.>
+    Copyright (C) 2014  Alexander Farkas (aFarkas)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -316,7 +345,7 @@ Also add information on how to contact you by electronic and paper mail.
 If the program is interactive, make it output a short notice like this
 when it starts in an interactive mode:
 
-    Gnomovision version 69, Copyright (C) year name of author
+    Gnomovision version 69, Copyright (C) 2014  Alexander Farkas (aFarkas)
     Gnomovision comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
     This is free software, and you are welcome to redistribute it
     under certain conditions; type `show c' for details.
