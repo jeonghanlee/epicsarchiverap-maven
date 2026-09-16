@@ -80,7 +80,7 @@ public class FailoverScoreAPITest {
     private void generateMTSData(String applURL, String applianceName, Instant theMonth, boolean morningp)
             throws Exception {
         int genEventCount = 0;
-        String folderName = "build/tomcats/tomcat_" + this.getClass().getSimpleName() + "/" + applianceName + "/mts";
+        String folderName = new File(TomcatSetup.getApplianceFolder(this.getClass().getSimpleName(), applianceName), "mts").getPath();
         logger.info("Generating data into folder " + Paths.get(folderName).toAbsolutePath().toString());
         StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(
                 "pb://localhost?name=LTS&rootFolder=" + folderName

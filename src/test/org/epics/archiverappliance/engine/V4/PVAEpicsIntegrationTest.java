@@ -2,6 +2,7 @@ package org.epics.archiverappliance.engine.V4;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.awaitility.Awaitility;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.SIOCSetup;
@@ -17,8 +18,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +34,8 @@ public class PVAEpicsIntegrationTest {
 
 
     private static final Logger logger = LogManager.getLogger(PVAEpicsIntegrationTest.class.getName());
+    private static final Duration RETRIEVAL_TIMEOUT = Duration.ofMinutes(2);
+    private static final Duration RETRIEVAL_POLL_INTERVAL = Duration.ofSeconds(1);
     TomcatSetup tomcatSetup = new TomcatSetup();
     SIOCSetup siocSetup = new SIOCSetup();
 
@@ -75,34 +80,36 @@ public class PVAEpicsIntegrationTest {
         siocSetup.stopSIOC();
         Thread.sleep(61 * 1000);
         logger.info("Restart the ioc");
+        Instant restartedAt = Instant.now();
         siocSetup.startSIOCWithDefaultDB();
-        Thread.sleep(samplingPeriodMilliSeconds);
-        // Need to wait for the writer to write all the received data.
-        Thread.sleep((long) secondsToBuffer * 1000);
+        Awaitility.await()
+                .atMost(RETRIEVAL_TIMEOUT)
+                .pollInterval(RETRIEVAL_POLL_INTERVAL)
+                .untilAsserted(() -> Assertions.assertTrue(
+                        retrieveValues(pvName, restartedAt, Instant.now()).keySet().stream()
+                                .filter(timestamp -> !timestamp.isBefore(restartedAt))
+                                .count() > secondsToBuffer,
+                        "Expected samples generated after the IOC restarted"));
         Instant end = Instant.now();
 
+        Map<Instant, SampleValue> actualValues = retrieveValues(pvName, start, end);
+        logger.info("Data was {}", actualValues);
+        Assertions.assertTrue(actualValues.size() > secondsToBuffer);
+    }
+
+    private Map<Instant, SampleValue> retrieveValues(String pvName, Instant start, Instant end) throws IOException {
         RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");
 
-        EventStream stream = null;
         Map<Instant, SampleValue> actualValues = new HashMap<>();
-        try {
-            stream = rawDataRetrieval.getDataForPVS(new String[]{pvName}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()));
-
-            // Make sure we get the DBR type we expect
+        try (EventStream stream = rawDataRetrieval.getDataForPVS(
+                new String[]{pvName}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()))) {
+            Assertions.assertNotNull(stream);
             Assertions.assertEquals(ArchDBRTypes.DBR_SCALAR_DOUBLE, stream.getDescription().getArchDBRType());
-
-            // We are making sure that the stream we get back has times in sequential order...
             for (Event e : stream) {
                 actualValues.put(e.getEventTimeStamp(), e.getSampleValue());
             }
-        } finally {
-            if (stream != null) try {
-                stream.close();
-            } catch (Throwable ignored) {
-            }
         }
-        logger.info("Data was {}", actualValues);
-        Assertions.assertTrue(actualValues.size() > secondsToBuffer);
+        return actualValues;
     }
 
 }

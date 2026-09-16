@@ -59,6 +59,26 @@ public class PVNameRegexTest {
         Assertions.assertEquals(pvName, PVNames.normalizeChannelName(pvName));
     }
 
+    private static Stream<Arguments> provideFieldTransfers() {
+        return Stream.of(
+                Arguments.of("source:pv", "dest:pv", "dest:pv"),
+                Arguments.of("source:pv.VAL", "dest:pv", "dest:pv"),
+                Arguments.of("source:pv.DESC", "dest:pv", "dest:pv.DESC"),
+                Arguments.of("source:pv.{'dbnd':{'abs':0.1}}", "dest:pv", "dest:pv.{'dbnd':{'abs':0.1}}"),
+                Arguments.of("source:pv.{'dbnd':{'abs':0.1}}", "source:pv", "source:pv.{'dbnd':{'abs':0.1}}"),
+                Arguments.of("source:pv.VAL.{'dbnd':{'abs':0.1}}", "dest:pv", "dest:pv.VAL.{'dbnd':{'abs':0.1}}"),
+                Arguments.of("source:pv.HIHI.{'dbnd':{'abs':0.1}}", "dest:pv", "dest:pv.HIHI.{'dbnd':{'abs':0.1}}"),
+                Arguments.of("source:pv.[3:5]", "dest:pv", "dest:pv.[3:5]"),
+                Arguments.of("source:pv.{'dbnd':{'abs':0.1}}", "dest:pv.DESC", "dest:pv.{'dbnd':{'abs':0.1}}"),
+                Arguments.of("source:pv.{'dbnd':{'abs':0.1}}", "", ""));
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideFieldTransfers")
+    public void testTransferField(String source, String destination, String expected) {
+        Assertions.assertEquals(expected, PVNames.transferField(source, destination));
+    }
+
     private static Stream<Arguments> providePVNames() {
         return validPVNames.stream().flatMap(pvName -> validFieldModifiers.stream()
                 .map(fieldModifier -> Arguments.of(pvName, fieldModifier)));

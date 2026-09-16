@@ -2,6 +2,7 @@ package org.epics.archiverappliance.engine.V4;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.awaitility.Awaitility;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.TomcatSetup;
@@ -22,8 +23,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +42,8 @@ import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusCh
 public class PVAFlakyIntegrationTest {
 
     private static final Logger logger = LogManager.getLogger(PVAFlakyIntegrationTest.class.getName());
+    private static final Duration RETRIEVAL_TIMEOUT = Duration.ofMinutes(2);
+    private static final Duration RETRIEVAL_POLL_INTERVAL = Duration.ofSeconds(1);
     TomcatSetup tomcatSetup = new TomcatSetup();
     private PVAServer pvaServer;
 
@@ -98,6 +103,7 @@ public class PVAFlakyIntegrationTest {
         serverPV.update(pvaStructure);
 
         expectedValues.put(instantFirstChange, pvaStructure.cloneData());
+        awaitValues(pvName, start, expectedValues);
 
         // Disconnect the pv
         serverPV.close();
@@ -118,35 +124,31 @@ public class PVAFlakyIntegrationTest {
 
         expectedValues.put(instantSecondChange, pvaStructure.cloneData());
 
-        Thread.sleep(samplingPeriodMilliSeconds);
-        double secondsToBuffer = 5.0;
-        // Need to wait for the writer to write all the received data.
-        Thread.sleep((long) secondsToBuffer * 1000);
-        Instant end = Instant.now();
+        awaitValues(pvName, start, expectedValues);
+    }
 
+    private void awaitValues(String pvName, Instant start, Map<Instant, PVAStructure> expectedValues) {
+        Awaitility.await()
+                .atMost(RETRIEVAL_TIMEOUT)
+                .pollInterval(RETRIEVAL_POLL_INTERVAL)
+                .untilAsserted(() -> Assertions.assertEquals(
+                        expectedValues, convertBytesToPVAStructure(retrieveValues(pvName, start, Instant.now()))));
+    }
+
+    private Map<Instant, SampleValue> retrieveValues(String pvName, Instant start, Instant end) throws IOException {
         RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(
                 "http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");
 
-        EventStream stream = null;
         Map<Instant, SampleValue> actualValues = new HashMap<>();
-        try {
-            stream = rawDataRetrieval.getDataForPVS(new String[]{pvName}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()));
-
-            // Make sure we get the DBR type we expect
+        try (EventStream stream = rawDataRetrieval.getDataForPVS(
+                new String[]{pvName}, start, end, desc -> logger.info("Getting data for PV " + desc.getPvName()))) {
+            Assertions.assertNotNull(stream);
             Assertions.assertEquals(ArchDBRTypes.DBR_V4_GENERIC_BYTES, stream.getDescription().getArchDBRType());
-
-            // We are making sure that the stream we get back has times in sequential order...
             for (Event e : stream) {
                 actualValues.put(e.getEventTimeStamp(), e.getSampleValue());
             }
-        } finally {
-            if (stream != null) try {
-                stream.close();
-            } catch (Throwable ignored) {
-            }
         }
-
-        Assertions.assertEquals(expectedValues, convertBytesToPVAStructure(actualValues));
+        return actualValues;
     }
 
 

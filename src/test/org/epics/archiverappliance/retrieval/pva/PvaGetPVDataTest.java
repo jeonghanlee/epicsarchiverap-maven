@@ -72,11 +72,16 @@ public class PvaGetPVDataTest {
 
     @AfterAll
     public static void tearDown() throws Exception {
-        pvaMgmtChannel.close();
-        pvaRetrievalChannel.close();
-        tomcatSetup.tearDown();
-        pvaServer.close();
-        pvaClient.close();
+        Assertions.assertAll("PVA retrieval fixture cleanup",
+                () -> { if (pvaMgmtChannel != null) pvaMgmtChannel.close(); },
+                () -> { if (pvaRetrievalChannel != null) pvaRetrievalChannel.close(); },
+                () -> { if (pvaClient != null) pvaClient.close(); },
+                () -> { if (pvaServer != null) pvaServer.close(); },
+                tomcatSetup::tearDown);
+        pvaMgmtChannel = null;
+        pvaRetrievalChannel = null;
+        pvaClient = null;
+        pvaServer = null;
     }
 
     /**

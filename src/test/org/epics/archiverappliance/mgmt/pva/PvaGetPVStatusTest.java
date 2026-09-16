@@ -1,6 +1,5 @@
 package org.epics.archiverappliance.mgmt.pva;
 
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.awaitility.Awaitility;
@@ -22,8 +21,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,33 +48,25 @@ public class PvaGetPVStatusTest {
     private static PVAChannel pvaChannel;
 
 	@BeforeAll
-    public static void setup() {
-        logger.info("Set up for the PvaGetArchivedPVsTest");
-        try {
-            siocSetup.startSIOCWithDefaultDB();
-            tomcatSetup.setUpWebApps(PvaTest.class.getSimpleName());
-
-            logger.info(ZonedDateTime.now(ZoneId.systemDefault())
-                    + " Waiting three mins for the service setup to complete");
-            pvaClient = new PVAClient();
-            pvaChannel = pvaClient.getChannel(PVA_MGMT_SERVICE);
-            pvaChannel.connect().get(5, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            logger.log(Level.FATAL, e.getMessage(), e);
-        }
+    public static void setup() throws Exception {
+        logger.info("Set up for the PvaGetPVStatusTest");
+        siocSetup.startSIOCWithDefaultDB();
+        tomcatSetup.setUpWebApps(PvaGetPVStatusTest.class.getSimpleName());
+        pvaClient = new PVAClient();
+        pvaChannel = pvaClient.getChannel(PVA_MGMT_SERVICE);
+        pvaChannel.connect().get(5, TimeUnit.SECONDS);
     }
 
 	@AfterAll
     public static void tearDown() {
-        logger.info("Tear Down for the PvaGetArchivedPVsTest");
-        try {
-            pvaChannel.close();
-            pvaClient.close();
-            tomcatSetup.tearDown();
-            siocSetup.stopSIOC();
-        } catch (Exception e) {
-            logger.log(Level.FATAL, e.getMessage(), e);
-        }
+        logger.info("Tear Down for the PvaGetPVStatusTest");
+        Assertions.assertAll("PVA management fixture cleanup",
+                () -> { if (pvaChannel != null) pvaChannel.close(); },
+                () -> { if (pvaClient != null) pvaClient.close(); },
+                tomcatSetup::tearDown,
+                siocSetup::stopSIOC);
+        pvaChannel = null;
+        pvaClient = null;
     }
 
     private PVAStructure getCurrentStatus(List<String> pvNames, PVAChannel pvaChannel) throws ExecutionException,

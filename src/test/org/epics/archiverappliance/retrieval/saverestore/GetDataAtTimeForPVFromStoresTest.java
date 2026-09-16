@@ -10,6 +10,8 @@ package org.epics.archiverappliance.retrieval.saverestore;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.Period;
 import java.time.temporal.ChronoUnit;
@@ -198,6 +200,22 @@ public class GetDataAtTimeForPVFromStoresTest {
         testGetDataAsOf(when, expectedFieldVals);
     }
 
+    @ParameterizedTest
+    @MethodSource("provideTimesAndFields")
+    public void testGetDataFromMergedStore(Instant when, Map<String, String> expectedFieldVals) throws Exception {
+        PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
+        String[] originalStores = typeInfo.getDataStores();
+        String encodedStore = URLEncoder.encode(storagePBPluginString, StandardCharsets.UTF_8);
+        try {
+            typeInfo.setDataStores(new String[] {
+                "merge://localhost?name=MTS&dest=" + encodedStore + "&other=" + encodedStore
+            });
+            testGetDataAsOf(when, expectedFieldVals);
+        } finally {
+            typeInfo.setDataStores(originalStores);
+        }
+    }
+
     public void testGetDataAsOf(Instant when, Map<String, String> expectedFieldVals) throws Exception {
         Period searchPeriod = Period.parse("P1D");
         try (BasicContext context = new BasicContext()) {
@@ -208,6 +226,7 @@ public class GetDataAtTimeForPVFromStoresTest {
                 "Getting at time " + when + " returns null?"
                 );
             logger.info(JSONValue.toJSONString(pvDatas));
+            Assertions.assertEquals((long) pvData.get("secs"), ((Number) pvData.get("val")).longValue());
             Assertions.assertTrue(
                 Math.abs(((long)pvData.get("secs")) - when.getEpochSecond()) < 2,
                 "Expected " + when.getEpochSecond() + " got " + pvData.get("secs")

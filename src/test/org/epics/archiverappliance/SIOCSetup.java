@@ -6,6 +6,7 @@ import java.io.OutputStreamWriter;
 import java.io.PipedOutputStream;
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,6 +24,8 @@ import gov.aps.jca.configuration.ConfigurationException;
  */
 public class SIOCSetup {
 	private static Logger logger = LogManager.getLogger(SIOCSetup.class.getName());
+	private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
+	private static final String PVA_LISTEN_ADDRESSES = "224.0.1.1,1@127.0.0.1";
 	Process watchedProcess;
 	PipedOutputStream osforstdin = new PipedOutputStream();
 	PrintWriter writerforstdin = new PrintWriter(new OutputStreamWriter(osforstdin));
@@ -47,13 +50,13 @@ public class SIOCSetup {
 		
 		String softIocExecutable = System.getProperty("archappl.softioc", "softIocPVX");
 		ProcessBuilder pb = new ProcessBuilder(softIocExecutable, "-m", "P=" + prefix, "-d", f.getAbsolutePath());
-		// Keep the soft IOC's CA and PVA servers on the loopback interface so the fixture never
-		// advertises to, or is discovered from, IOCs on the wider network. Clients are pinned to
-		// 127.0.0.1 by the Surefire environment (see pom.xml).
+		// Keep CA and PVA traffic on loopback. PVA also receives the direct multicast searches
+		// sent by the Surefire clients, regardless of which local server starts last.
+		// PVXS adds the group's loopback interface for TCP; an explicit entry would duplicate it.
 		Map<String, String> env = pb.environment();
 		env.put("EPICS_CAS_INTF_ADDR_LIST", "127.0.0.1");
 		env.put("EPICS_CAS_BEACON_ADDR_LIST", "127.0.0.1");
-		env.put("EPICS_PVAS_INTF_ADDR_LIST", "127.0.0.1");
+		env.put("EPICS_PVAS_INTF_ADDR_LIST", PVA_LISTEN_ADDRESSES);
 		pb.redirectErrorStream(true);
 		pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 		pb.redirectInput(ProcessBuilder.Redirect.PIPE);
@@ -61,13 +64,22 @@ public class SIOCSetup {
 	}
 	
 	public void stopSIOC() throws Exception {
-		PrintWriter writer = new PrintWriter(watchedProcess.getOutputStream());
-		writer.println("exit");
-		writer.flush();
-		writer.close();
-		try {Thread.sleep(5*1000);} catch(Exception ex) {}
-		if(watchedProcess.isAlive()) {
+		if (watchedProcess == null || !watchedProcess.isAlive()) return;
+		try (PrintWriter writer = new PrintWriter(watchedProcess.getOutputStream())) {
+			writer.println("exit");
+			writer.flush();
+		}
+		try {
+			if (!watchedProcess.waitFor(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+				watchedProcess.destroyForcibly();
+				if (!watchedProcess.waitFor(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+					throw new IOException("Soft IOC process " + watchedProcess.pid() + " did not stop");
+				}
+			}
+		} catch (InterruptedException ex) {
 			watchedProcess.destroyForcibly();
+			Thread.currentThread().interrupt();
+			throw ex;
 		}
 	}
 	

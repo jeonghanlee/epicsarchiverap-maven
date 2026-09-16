@@ -28,8 +28,10 @@ import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Setup Tomcat without having to import all the tomcat jars into your project.
@@ -38,6 +40,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class TomcatSetup {
 	private static final Logger logger = LogManager.getLogger(TomcatSetup.class.getName());
+	private static final int STARTUP_TIMEOUT_SECONDS = 120;
+	private static final int SHUTDOWN_TIMEOUT_SECONDS = 15;
+	private static final int FORCED_SHUTDOWN_TIMEOUT_SECONDS = 5;
+	private static final File TEST_PROPERTIES_FILE = new File("src/sitespecific/tests/classpathfiles/archappl.properties");
 	LinkedList<Process> watchedProcesses = new LinkedList<Process>();
 	LinkedList<File> cleanupFolders = new LinkedList<File>();
 	protected static final int DEFAULT_SERVER_STARTUP_PORT = 16000;
@@ -106,7 +112,8 @@ public class TomcatSetup {
 	}
 
 	private void initialSetup(String testName) throws IOException {
-		File testFolder = new File("build/tomcats/tomcat_" + testName);
+		stopping = false;
+		File testFolder = testFolder(testName);
 		if (testFolder.exists()) {
 			FileUtils.deleteDirectory(testFolder);
 		}
@@ -116,37 +123,48 @@ public class TomcatSetup {
 	}
 	public void tearDown() throws Exception {
 		stopping = true;
+		boolean interrupted = Thread.interrupted();
+		IOException failure = null;
 		for(Process process : watchedProcesses) {
-			// First try to kill the process cleanly
+			if (!process.isAlive()) continue;
 			process.destroy();
 			logger.info("Sending a signal to " + process.pid());
-			try {
-				Thread.sleep(15 * 1000);
-			} catch (Exception ignored) {
+			for (int attempt = 0; attempt < 2 && process.isAlive(); attempt++) {
+				int timeout = attempt == 0 ? SHUTDOWN_TIMEOUT_SECONDS : FORCED_SHUTDOWN_TIMEOUT_SECONDS;
+				try {
+					if (process.waitFor(timeout, TimeUnit.SECONDS)) break;
+				} catch (InterruptedException ex) {
+					interrupted = true;
+				}
+				process.destroyForcibly();
 			}
 			if (process.isAlive()) {
-				logger.warn("Tomcat process did not stop properly within time. Forcibly stopping it.");
-				process.destroyForcibly();
-				try {
-					Thread.sleep(60 * 1000);
-				} catch (Exception ignored) {
-				}
+				IOException ex = new IOException("Tomcat process " + process.pid() + " did not stop");
+				if (failure == null) failure = ex;
+				else failure.addSuppressed(ex);
 			}
 		}
+		if (interrupted) Thread.currentThread().interrupt();
+		if (failure != null) throw failure;
 	}
 
-	private void catchApplianceLog(String applianceName, Process p, CountDownLatch latch, BufferedReader li) {
+	private void catchApplianceLog(String applianceName, Process p, CompletableFuture<Void> startup, BufferedReader li) {
 		Logger applianceLogger = LogManager.getLogger("APP" + applianceName);
-		try {
+		try (li) {
 			String msg;
 			while((msg = li.readLine()) != null && p.isAlive()) {
 				applianceLogger.info(applianceName + " | " + msg);
+				if (msg.contains("Failed to initialize component [Connector[")) {
+					startup.completeExceptionally(new IOException(msg));
+				}
 				if(msg.contains("All components in this appliance have started up")) {
 					logger.info(applianceName + " has started up.");
-					latch.countDown();
+					startup.complete(null);
 				}
 			}
+			startup.completeExceptionally(new IOException("Tomcat log ended before startup completed"));
 		} catch(IOException ex) {
+			startup.completeExceptionally(ex);
 			// tearDown destroys the process, which closes this stream while readLine is blocked;
 			// that is an expected shutdown artifact, not a startup failure.
 			if(stopping || !p.isAlive()) {
@@ -155,35 +173,50 @@ public class TomcatSetup {
 				logger.error("Error reading the appliance log for " + applianceName, ex);
 			}
 		} catch(Exception ex) {
+			startup.completeExceptionally(ex);
 			logger.error("Unexpected error reading the appliance log for " + applianceName, ex);
 		}
 	}
 
 	private void createAndStartTomcatInstance(String testName, final String applianceName,
 	                                          int port, int startupPort, Path appliancesXML) throws IOException {
-		File workFolder = makeTomcatFolders(testName, applianceName, port, startupPort);
-		File logsFolder = new File(workFolder, "logs");
-		assert (logsFolder.exists());
+		try {
+			File workFolder = makeTomcatFolders(testName, applianceName, port, startupPort);
+			File logsFolder = new File(workFolder, "logs");
+			assert (logsFolder.exists());
 
-		ProcessBuilder pb = new ProcessBuilder(System.getenv("TOMCAT_HOME") + File.separator + "bin" + File.separator + "catalina.sh", "run");
-		createEnvironment(testName, applianceName, pb.environment(), appliancesXML);
-		pb.directory(logsFolder);
-		pb.redirectErrorStream(true);
-		pb.redirectOutput(ProcessBuilder.Redirect.PIPE);
-		Process p = pb.start();
-		watchedProcesses.add(p);
+			ProcessBuilder pb = new ProcessBuilder(System.getenv("TOMCAT_HOME") + File.separator + "bin" + File.separator + "catalina.sh", "run");
+			createEnvironment(testName, applianceName, pb.environment(), appliancesXML);
+			pb.directory(logsFolder);
+			pb.redirectErrorStream(true);
+			pb.redirectOutput(ProcessBuilder.Redirect.PIPE);
+			Process p = pb.start();
+			watchedProcesses.add(p);
 
-		final CountDownLatch latch = new CountDownLatch(1);
+			final CompletableFuture<Void> startup = new CompletableFuture<>();
+			p.onExit().thenAccept(process -> startup.completeExceptionally(
+					new IOException("Tomcat exited with status " + process.exitValue())));
 
-		final BufferedReader li = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		Thread t = new Thread(() -> {
-			catchApplianceLog(applianceName, p, latch, li);
-		});
-		t.start();
+			final BufferedReader li = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			Thread t = new Thread(() -> {
+				catchApplianceLog(applianceName, p, startup, li);
+			});
+			t.start();
 
-		// We wait for some time to make sure the server started up
-		try { latch.await(2, TimeUnit.MINUTES); } catch(InterruptedException ignored) {}
-		logger.info("Done starting " + applianceName + " Releasing latch");
+			startup.get(STARTUP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+			if (!p.isAlive()) throw new IOException("Tomcat exited during startup");
+			logger.info("Done starting " + applianceName);
+		} catch (IOException | InterruptedException | ExecutionException | TimeoutException ex) {
+			Throwable cause = ex instanceof ExecutionException ? ex.getCause() : ex;
+			IOException failure = new IOException("Could not start Tomcat appliance " + applianceName, cause);
+			try {
+				tearDown();
+			} catch (Exception cleanupFailure) {
+				failure.addSuppressed(cleanupFailure);
+			}
+			if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
+			throw failure;
+		}
 	}
 
 	/**
@@ -202,6 +235,17 @@ public class TomcatSetup {
 		return new File(System.getProperty("archappl.tomcat.dir", "target/tomcats"));
 	}
 
+	private static File testFolder(String testName) {
+		return new File(tomcatBaseDir(), "tomcat_" + testName);
+	}
+
+	/**
+	 * Resolves the shared appliance directory for Tomcat and generated storage data.
+	 */
+	public static File getApplianceFolder(String testName, String applianceName) {
+		return new File(testFolder(testName), applianceName);
+	}
+
 	/**
 	 * The built WAR for a component, resolved from the build-supplied output directory and final name.
 	 * archappl.war.dir defaults to target and archappl.final.name to the Maven project final name.
@@ -213,8 +257,7 @@ public class TomcatSetup {
 	}
 
 	private File makeTomcatFolders(String testName, String applianceName, int port, int startupPort) throws IOException {
-		File testFolder = new File(tomcatBaseDir(), "tomcat_" + testName);
-		File workFolder = new File(testFolder, applianceName);
+		File workFolder = getApplianceFolder(testName, applianceName);
 		// Start from a clean work folder so a leftover from an earlier run does not fail the setup.
 		if(workFolder.exists()) FileUtils.deleteDirectory(workFolder);
 		File webAppsFolder = new File(workFolder, "webapps");
@@ -258,7 +301,7 @@ public class TomcatSetup {
 		environment.putAll(System.getenv());
 		environment.remove("CLASSPATH");
 		environment.put("CATALINA_HOME", System.getenv("TOMCAT_HOME"));
-		File workFolder = new File(new File(tomcatBaseDir(), "tomcat_" + testName), applianceName);
+		File workFolder = getApplianceFolder(testName, applianceName);
 		assert (workFolder.exists());
 		environment.put("CATALINA_BASE", workFolder.getAbsolutePath());
         environment.put("CATALINA_OPTS", "-Deaatag=eaatesttm"); // The tag is for pkill during testing
@@ -266,6 +309,7 @@ public class TomcatSetup {
 		environment.put("LOG4J_CONFIGURATION_FILE", (new File("src/resources/test/log4j2.xml")).getAbsolutePath());
 		environment.put(ConfigService.ARCHAPPL_CONFIGSERVICE_IMPL, ConfigServiceForTests.class.getName());
 		environment.put(DefaultConfigService.SITE_FOR_UNIT_TESTS_NAME, DefaultConfigService.SITE_FOR_UNIT_TESTS_VALUE);
+		environment.put(ConfigService.ARCHAPPL_PROPERTIES_FILENAME, TEST_PROPERTIES_FILE.getAbsolutePath());
 
 		environment.put(ConfigService.ARCHAPPL_MYIDENTITY, applianceName);
 		if (!System.getProperties().containsKey(ConfigService.ARCHAPPL_APPLIANCES)) {
@@ -290,6 +334,7 @@ public class TomcatSetup {
 		overrideEnvWithSystemProperty(environment, "ARCHAPPL_MEDIUM_TERM_FOLDER");
 		overrideEnvWithSystemProperty(environment, "ARCHAPPL_LONG_TERM_FOLDER");
 		overrideEnvWithSystemProperty(environment, "ARCHAPPL_POLICIES");
+		overrideEnvWithSystemProperty(environment, ConfigService.ARCHAPPL_PROPERTIES_FILENAME);
 
 		if (logger.isDebugEnabled()) {
 			for (String key : environment.keySet()) {

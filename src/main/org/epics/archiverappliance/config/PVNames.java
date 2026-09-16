@@ -161,7 +161,7 @@ public class PVNames {
     }
 
     /**
-     * Transfer any fields from the source name to the dest name
+     * Transfer fields and channel modifiers from the source name to the dest name.
      * Transferring ABC:123 onto DEF:456 should give DEF:456
      * Transferring ABC:123.DESC onto DEF:456 should give DEF:456.DESC
      * @param srcName The source name
@@ -170,7 +170,7 @@ public class PVNames {
      */
     public static String transferField(String srcName, String destName) {
         if (isFieldOrFieldModifier(srcName)) {
-            return normalizePVNameWithField(destName, getGroupMatch(srcName, GROUP_FIELD_NAME));
+            return normalizePVNameWithField(destName, StringUtils.substringAfter(srcName, "."));
         } else {
             return destName;
         }

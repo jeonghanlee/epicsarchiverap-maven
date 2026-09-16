@@ -14,9 +14,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Instant;
 
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
@@ -26,9 +28,14 @@ public class DbdArchiveTest {
     private static final Logger logger = LogManager.getLogger(DbdArchiveTest.class.getName());
     private static final TomcatSetup tomcatSetup = new TomcatSetup();
     private SIOCSetup ioc = null;
+    @TempDir
+    Path storageFolder;
 
     @BeforeEach
     public void setUp() throws Exception {
+        System.setProperty("ARCHAPPL_SHORT_TERM_FOLDER", storageFolder.resolve("sts").toString());
+        System.setProperty("ARCHAPPL_MEDIUM_TERM_FOLDER", storageFolder.resolve("mts").toString());
+        System.setProperty("ARCHAPPL_LONG_TERM_FOLDER", storageFolder.resolve("lts").toString());
         ioc = new SIOCSetup();
         ioc.startSIOCWithDefaultDB();
 
@@ -76,18 +83,19 @@ public class DbdArchiveTest {
             Instant end = Instant.now();
             RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(
                     "http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");
-            EventStream stream = rawDataRetrieval.getDataForPVS(
+            try (EventStream stream = rawDataRetrieval.getDataForPVS(
                     new String[] {pvURLName},
                     firstInstant,
                     end,
-                    desc -> logger.info("Getting data for PV " + desc.getPvName()));
+                    desc -> logger.info("Getting data for PV " + desc.getPvName()))) {
 
-            int totalEvents = 0;
-            for (Event e : stream) {
-                logger.info("event " + e.getSampleValue().toString());
-                totalEvents++;
+                int totalEvents = 0;
+                for (Event e : stream) {
+                    logger.info("event " + e.getSampleValue().toString());
+                    totalEvents++;
+                }
+                Assertions.assertEquals(3, totalEvents, "We should have some events in the current samples " + totalEvents);
             }
-            Assertions.assertEquals(3, totalEvents, "We should have some events in the current samples " + totalEvents);
 
         } catch (Exception e) {
             //

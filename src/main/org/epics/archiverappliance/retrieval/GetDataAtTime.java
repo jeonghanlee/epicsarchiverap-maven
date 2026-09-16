@@ -3,6 +3,7 @@ package org.epics.archiverappliance.retrieval;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
+import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.BiDirectionalIterable;
@@ -17,6 +18,7 @@ import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.mgmt.bpl.PVsMatchingParameter;
+import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MetaFields;
 import org.json.simple.JSONValue;
@@ -37,6 +39,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.concurrent.ExecutionException;
@@ -385,6 +388,59 @@ public class GetDataAtTime {
     }
 
     /**
+     * Uses the Reader last-known-value contract for stores without reverse iteration.
+     * Metadata is read from the preceding day; only the latest value of each field is retained.
+     */
+    private static void getDataFromForwardStore(BasicContext context, StoragePlugin storagePlugin,
+            String pvName, Instant atTime, Period searchPeriod, GetDataPredicate result) throws Exception {
+        List<Callable<EventStream>> streams = storagePlugin.getDataForPV(
+                context, pvName, atTime, atTime, new DefaultRawPostProcessor());
+        if (streams == null) return;
+        Event latest = null;
+        for (Callable<EventStream> callable : streams) {
+            try (EventStream stream = callable.call()) {
+                if (stream == null) continue;
+                for (Event event : stream) {
+                    Instant timestamp = event.getEventTimeStamp();
+                    if (!timestamp.isAfter(atTime)
+                            && (latest == null || timestamp.isAfter(latest.getEventTimeStamp()))) {
+                        latest = event.makeClone();
+                    }
+                }
+            }
+        }
+        if (latest == null || latest.getEventTimeStamp().isBefore(atTime.minus(searchPeriod.plusDays(31)))) return;
+        result.test(latest);
+
+        Instant sampleTime = latest.getEventTimeStamp();
+        Instant metadataStart = sampleTime.minus(1, ChronoUnit.DAYS);
+        Map<String, Instant> fieldTimes = new HashMap<>();
+        Map<String, String> fieldValues = new HashMap<>();
+        streams = storagePlugin.getDataForPV(
+                context, pvName, metadataStart, sampleTime, new DefaultRawPostProcessor());
+        if (streams == null) return;
+        for (Callable<EventStream> callable : streams) {
+            try (EventStream stream = callable.call()) {
+                if (stream == null) continue;
+                for (Event event : stream) {
+                    Instant timestamp = event.getEventTimeStamp();
+                    if (timestamp.isBefore(metadataStart) || timestamp.isAfter(sampleTime)) continue;
+                    var fields = ((DBRTimeEvent) event).getFields();
+                    if (fields == null) continue;
+                    for (Map.Entry<String, String> field : fields.entrySet()) {
+                        Instant previousTime = fieldTimes.get(field.getKey());
+                        if (previousTime == null || timestamp.isAfter(previousTime)) {
+                            fieldTimes.put(field.getKey(), timestamp);
+                            fieldValues.put(field.getKey(), field.getValue());
+                        }
+                    }
+                }
+            }
+        }
+        fieldValues.forEach((name, value) -> MetaFields.addMetaFieldValue(result.evnt, name, value));
+    }
+
+    /**
      * Async method for getting data for a pv from its list of stores.
      * Walk thru the store till you find the closest sample before the requested time.
      * @param pvName
@@ -427,7 +483,11 @@ public class GetDataAtTime {
                             return new PVWithData(nameFromUser, thePredicate.evnt);
                         }                        
                     } else {
-                        logger.info("Plugin {} does not implement the BiDirectionalIterable interface", storagePlugin.getName());
+                        GetDataPredicate thePredicate = new GetDataPredicate(pvName, atTime);
+                        getDataFromForwardStore(context, storagePlugin, pvName, atTime, searchPeriod, thePredicate);
+                        if (thePredicate.pickedUpValue) {
+                            return new PVWithData(nameFromUser, thePredicate.evnt);
+                        }
                     }
                 }
             }

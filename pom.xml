@@ -323,7 +323,9 @@
             <EPICS_CA_AUTO_ADDR_LIST>NO</EPICS_CA_AUTO_ADDR_LIST>
             <EPICS_CA_ADDR_LIST>127.0.0.1</EPICS_CA_ADDR_LIST>
             <EPICS_PVA_AUTO_ADDR_LIST>NO</EPICS_PVA_AUTO_ADDR_LIST>
-            <EPICS_PVA_ADDR_LIST>127.0.0.1</EPICS_PVA_ADDR_LIST>
+            <!-- Direct multicast reaches all local Java PVA servers without relying on
+                 unicast forwarding; the explicit interface keeps searches on loopback. -->
+            <EPICS_PVA_ADDR_LIST>127.0.0.1 224.0.1.1,1@127.0.0.1</EPICS_PVA_ADDR_LIST>
           </environmentVariables>
           <trimStackTrace>false</trimStackTrace>
         </configuration>
