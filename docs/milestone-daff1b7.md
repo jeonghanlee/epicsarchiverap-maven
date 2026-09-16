@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M4 implementation and verification are complete locally; commit and push remain before closure. All four open-range declarations are pinned, and final clean verify passed with documentation, four WARs, and every dependency check. The updated dependencies passed 749 default tests and 45 selected integration tests (794 unique tests, zero failures/errors/skips). Review the pom and M4 evidence below for landing; keep M4 In progress until the changes reach origin/modernize. M8 is Complete.
+Next session entry point: M4 is Complete; implementation and verification evidence landed in origin/modernize as 977edf3d0f1bb12b0a5bb3a9793cb0dfcd0de868. Next is M5 plan review for Maven-centric CI and docs builds. D9 assigns GitHub Actions workflow authorship to the owner; read M5's scope and draft plan with that decision before implementation. M5 remains Not started, with plan acceptance and implementation authorization pending. M8 is Complete.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -23,7 +23,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M1 | Gradle removal (complete erasure) | Milestone | Complete | No | | `git grep -i gradle` returns only this register on the committed tree (2026-09-12); [detail](#m1---gradle-removal-complete-erasure) |
 | Phase 1 | M2 | Maven Wrapper as the build entry | Milestone | Complete | No | | Fresh clone of c1dd0b1 builds four WARs through mvnw (2026-09-11); [detail](#m2---maven-wrapper-as-the-build-entry) |
 | Phase 1 | M3 | Canonical pom as single source of truth | Milestone | Complete | No | D6 | Fresh clone of 9be652c builds four WARs from the tracked pom with no system scope (2026-09-12); [detail](#m3---canonical-pom-as-single-source-of-truth) |
-| Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | In progress | No | M3, M8 | Fixed versions, build and dependency checks pass; 749 default and 45 integration tests pass; landing pending; [detail](#m4---dependency-refresh-to-stable-current-versions) |
+| Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | Complete | No | M3, M8 | Fixed versions, build and dependency checks pass; 749 default and 45 integration tests pass; landed as 977edf3d (2026-09-16); [detail](#m4---dependency-refresh-to-stable-current-versions) |
 | Phase 1 | M5 | Maven-centric CI and docs build | Milestone | Not started | Yes | | Owner-authored GitHub Actions on mvnw; readthedocs on mvnw; [detail](#m5---maven-centric-ci-and-docs-build) |
 | Phase 1 | M6 | Upstream core features: cherry-pick policy and application | Milestone | Not started | Yes | | Policy accepted and selected upstream changes applied; [detail](#m6---upstream-core-features-cherry-pick-policy-and-application) |
 | Phase 1 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; [detail](#m7---site-required-features-and-fixes) |
@@ -274,7 +274,7 @@ Last Compared: never
 Origin: daff1b7 / M4
 Identity History: none
 GitHub Issue: none
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -368,7 +368,8 @@ Final verification: Maven summaries, XML suite totals, and individual testcase e
 ##### Closure Evidence
 
 - Local implementation satisfies the accepted scope and T1-T4 all passed. Source code and test assertions are unchanged.
-- Commit and upstream landing are pending; M4 remains In progress.
+- Complete 2026-09-16, implementation commit 977edf3d0f1bb12b0a5bb3a9793cb0dfcd0de868. Review confirmed the fixed versions, build and dependency checks, and recorded 794-test pass against the accepted scope; no blocking finding remains.
+- Landing observed at 2026-09-16 15:08:52 UTC: after fetching origin, HEAD and origin/modernize both resolved to 977edf3d0f1bb12b0a5bb3a9793cb0dfcd0de868. Comparing that commit with origin/modernize for pom.xml and docs/milestone-daff1b7.md returned no difference. No linked issue or external gate is required for M4 closure.
 
 ##### GitHub Projection
 
