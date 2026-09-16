@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M5 workflow and documentation commands passed local verification under D24: 749 default tests, documentation, four WARs, and all dependency checks pass. Commit and push the workflow, Read the Docs configuration, and this record under separate authorization, then observe both hosted builds for that revision. Read the Docs is not connected, as confirmed by the owner on 2026-09-16; complete project setup through M5's hosted verification procedure before T2. M5 remains In progress until GitHub Actions and Read the Docs pass; local runs do not substitute for those results. M4 and M8 are Complete.
+Next session entry point: M6 has an owner-confirmed set of 28 upstream PR units from the 105-unit survey. Open docs/archiverap-carry-d12382d1.md, resolve the selected dependency chains, build the ordered implementation plan, and obtain separate implementation authorization before applying source changes. M5 hosted verification remains to be recorded; Read the Docs is not connected. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -25,7 +25,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M3 | Canonical pom as single source of truth | Milestone | Complete | No | D6 | Fresh clone of 9be652c builds four WARs from the tracked pom with no system scope (2026-09-12); [detail](#m3---canonical-pom-as-single-source-of-truth) |
 | Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | Complete | No | M3, M8 | Fixed versions, build and dependency checks pass; 749 default and 45 integration tests pass; landed as 977edf3d (2026-09-16); [detail](#m4---dependency-refresh-to-stable-current-versions) |
 | Phase 1 | M5 | Maven-centric CI and docs build | Milestone | In progress | No | D24 | Workflow and docs checks pass locally, including 749 tests; landing and hosted builds pending; [detail](#m5---maven-centric-ci-and-docs-build) |
-| Phase 1 | M6 | Upstream core features: cherry-pick policy and application | Milestone | Not started | Yes | | Policy accepted and selected upstream changes applied; [detail](#m6---upstream-core-features-cherry-pick-policy-and-application) |
+| Phase 1 | M6 | Upstream core features: cherry-pick policy and application | Milestone | In progress | No | D25 | 105 PRs classified; 72 scored by five reviewers; 28 PRs owner-confirmed; implementation plan and source changes pending; [detail](#m6---upstream-core-features-cherry-pick-policy-and-application) |
 | Phase 1 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; [detail](#m7---site-required-features-and-fixes) |
 | Phase 1 | M8 | Maven test platform | Milestone | Complete | No | | Fresh clone of eb047c57 compiles and passes 749 default tests; integration 98 and localEpics 26 pass (2026-09-15); [detail](#m8---maven-test-platform) |
 | Phase 1 | M9 | Documentation for the Maven build | Milestone | Not started | Yes | | Build, test, and deploy docs match the Maven-only reality; [detail](#m9---documentation-for-the-maven-build) |
@@ -65,6 +65,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | D22 | The 29 Selenium browser integration tests are rewritten to exercise the mgmt BPL HTTP endpoints directly (archivePV, getPVStatus, areWeArchivingPV, getMatchingPVs), not the mgmt UI DOM. They verify server behavior, not the UI, so the browser, chromedriver, and WebDriverManager dependencies are dropped; the UI itself is EPICS-Arche's concern. | 2026-09-12 |
 | D23 | aa-maven's test platform is complete at single-instance scope. Of the 29 browser tests, 20 were rewritten to HTTP; the remaining 9 (multi-appliance cluster and large-volume data) are deleted rather than rewritten, because multi-appliance clustering is not carried forward by the EPICS-Arche successor and large-volume verification is owned by Arche (storage-path done in Arche M1 at the 100k-signal scale; network-borne end-to-end large-volume is Arche Phase 2, ahead). The appliance's own 100k-PV performance campaign remains the historical end-to-end large-volume record. | 2026-09-14 |
 | D24 | M5 CI implementation is delegated; this supersedes D9's owner-only CI authorship. The scope remains Maven build and test automation plus Read the Docs, with no release publishing. | 2026-09-16 |
+| D25 | M6 owner selection confirms 28 upstream PR units for ordered, selective adoption on the Maven, Java 21 and Tomcat 9 fork; Parquet/Hadoop units remain excluded, PR400 requires adaptation to the current PlainPB structure, and no source patch is authorized yet. | 2026-09-16 |
 
 ### Milestone Details
 
@@ -476,11 +477,11 @@ Last Compared: never
 Origin: daff1b7 / M6
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: In progress
 
 ##### Summary
 
-Define the policy for selecting upstream changes since the fork base a81b5e4 and bring the core ones into aa-maven during Phase 1. Verified in a local clone of upstream (archiver-appliance/epicsarchiverap) on 2026-09-11: master f86b573 (2026-09-02) is exactly 565 commits past a81b5e4; releases 2.3.1, 2.4.0, and 2.4.1 (2025-07-21) fall in that range; upstream now tags weekly, builds with Gradle Kotlin DSL on a Java 25 toolchain, and runs jakarta on Tomcat 11, none of which is a target here (D13).
+Define the policy for selecting upstream changes since the fork base a81b5e4 and bring the core ones into aa-maven during Phase 1. Verified in a local clone of upstream (archiver-appliance/epicsarchiverap) on 2026-09-11: master f86b573 (2026-09-02) is exactly 565 commits past a81b5e4; releases 2.3.1, 2.4.0, and 2.4.1 (tag target committed 2026-07-21) fall in that range; upstream now tags weekly, builds with Gradle Kotlin DSL on a Java 25 toolchain, and runs jakarta on Tomcat 11, none of which is a target here (D13).
 
 ##### Scope
 
@@ -495,32 +496,46 @@ Out of scope: wholesale upstream merges (D1); build-system or servlet-API change
 
 ##### Dependencies And Decisions
 
-- D1; D11 (Phase 1).
+- D1; D11; D25 (Phase 1).
 
 ##### Implementation Plan
 
 Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
+Plan Acceptance: Survey method and owner selection accepted 2026-09-16; ordered implementation plan pending
+Implementation Authorization: Survey and independent panel only; no source patch authorization
+Superseded Plan Artifacts: Initial six-candidate draft, superseded by the complete merge-unit survey
 
-1. Draft the pick/skip policy.
-2. Produce the candidate list from the upstream range.
-3. Apply the accepted picks and verify.
+1. Follow EPICS-env `docs/upstream-fix-carry-procedure.md` for the full upstream range. Use the owner's merge-unit selection rule: 104 merge commits and one squash integration cover all 565 commits without duplication.
+2. Classify actual diffs. Remove only exclusively documentation, CI or test changes; defer absent target implementations with prerequisites. Keep tool changes, refactors, formatting and features in the assessment. Preserve the Maven, Java 21 and Tomcat 9 adoption constraints.
+3. Verify application and inspect build prerequisites. Give all surviving candidates to five independent reviewers in the owner-approved waves of three and two. Compute the eight per-axis medians and recommendation rule in code.
+4. Present every score and dependency to the owner. The owner-confirmed set contains 28 PR units; record exceptions and prepare the ordered application list before generating patches.
+5. After separate implementation authorization, reproduce accepted defects on the real code and shipped fixtures, apply the required source changes, and run only the focused regressions and affected existing tests. Broaden verification only for an observed failure or a newly affected path.
+
+###### Complete merge-unit survey
+
+The [decision evidence](archiverap-carry-d12382d1.md) covers aa-maven d12382d1 and upstream f86b5738e308e4482eb6dc8cf7aca852275cfcbc: 105 PR units, 19 exclusively documentation/CI/test exclusions, 14 absent-target deferrals, and 72 scoring candidates. All 565 commits are accounted for exactly once. Five independent reviewers supplied 360 assessments and 2,880 integer axis values. Code-computed per-axis medians place 21 PRs above at least one rule threshold and 51 below every threshold; all scores and raw vectors are retained in the evidence document. Owner decisions confirm 28 PRs for selective adoption, including the recorded re-review outcomes and PR400 adaptation; no source patch has been applied.
+
+The panel is a static assessment with explicit reading and execution limits. Large formatting/generated/test/documentation payloads were not uniformly read line by line; source and lexical inspection do not establish runtime behavior. Candidate defects, platform conflicts and minimum prerequisites remain part of owner selection, including for rule-passing PRs.
+
+Unmodified whole-PR application checks passed for 14 of 105 units. PR #409 then failed a bounded three-file compiler check on the missing `ConfigService.queryPVTypeInfos` API introduced by PR #368. The evidence document distinguishes these checks from complete project builds and runtime reproduction; the remaining dependency notes are static minimum requirements, not proven complete chains.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Review | Owner review of the policy and candidate list | document | Accepted policy and list |
-| T2 | Integration | ./mvnw -B clean package and test after applying picks | JDK 21, wrapper Maven | Build and tests pass |
+| T1 | Review | Owner selection from complete PR scores and prerequisites | decision evidence | Accepted PR set and named implementation scope |
+| T2 | Regression | Reproduce accepted defects on real shipped paths, apply fixes, run affected tests | JDK 21, Maven Wrapper; real Tomcat/IOC fixture where required | Focused regression fails before correction and passes afterward; affected tests pass |
+| T3 | Static / compiler | Enumerate and classify all PR units; check original diff application and build prerequisites | local Git objects and target fork d12382d1 | No omitted commits; explicit application results, prerequisites and limits |
+| T4 | Independent review | Five reviewers assess the same 72 PRs; validate keys/axes and compute medians and OR rule | frozen candidate SHA256 and raw score files | Five complete independent score sets and a reproducible complete table |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | document | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-09-16 | decision evidence | Pass | Owner confirmed 28 PR units; the selected set and exceptions are recorded in archiverap-carry-d12382d1.md. |
+| T2 | Not run | JDK 21, wrapper Maven | Pending | No source patch applied; no runtime reproduction. |
+| T3 | 2026-09-16 | aa-maven d12382d1; upstream f86b5738 | Partial | All 565 commits mapped to 105 PR units; 105 original apply checks completed. PR #409 compiler check confirmed its missing method. Static minimum dependencies recorded; complete chain verification remains candidate-specific. |
+| T4 | 2026-09-16 20:45 UTC | fixed 72-candidate set; five independent reviewers in two groups | Pass | Final raw files passed exact membership/hash/schema validation; panel.mjs computed all eight medians and the OR rule: 21 of 72 meet it. The complete table and 360 raw score vectors are in the decision evidence. This verifies score coverage/arithmetic, not runtime behavior or exhaustive line-by-line review. |
 
 ##### Closure Evidence
 
