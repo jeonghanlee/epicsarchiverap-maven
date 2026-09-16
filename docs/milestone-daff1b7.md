@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M4 is Complete; implementation and verification evidence landed in origin/modernize as 977edf3d0f1bb12b0a5bb3a9793cb0dfcd0de868. Next is M5 plan review for Maven-centric CI and docs builds. D9 assigns GitHub Actions workflow authorship to the owner; read M5's scope and draft plan with that decision before implementation. M5 remains Not started, with plan acceptance and implementation authorization pending. M8 is Complete.
+Next session entry point: M5 workflow and documentation commands passed local verification under D24: 749 default tests, documentation, four WARs, and all dependency checks pass. Commit and push the workflow, Read the Docs configuration, and this record under separate authorization, then observe both hosted builds for that revision. Read the Docs is not connected, as confirmed by the owner on 2026-09-16; complete project setup through M5's hosted verification procedure before T2. M5 remains In progress until GitHub Actions and Read the Docs pass; local runs do not substitute for those results. M4 and M8 are Complete.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -24,7 +24,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M2 | Maven Wrapper as the build entry | Milestone | Complete | No | | Fresh clone of c1dd0b1 builds four WARs through mvnw (2026-09-11); [detail](#m2---maven-wrapper-as-the-build-entry) |
 | Phase 1 | M3 | Canonical pom as single source of truth | Milestone | Complete | No | D6 | Fresh clone of 9be652c builds four WARs from the tracked pom with no system scope (2026-09-12); [detail](#m3---canonical-pom-as-single-source-of-truth) |
 | Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | Complete | No | M3, M8 | Fixed versions, build and dependency checks pass; 749 default and 45 integration tests pass; landed as 977edf3d (2026-09-16); [detail](#m4---dependency-refresh-to-stable-current-versions) |
-| Phase 1 | M5 | Maven-centric CI and docs build | Milestone | Not started | Yes | | Owner-authored GitHub Actions on mvnw; readthedocs on mvnw; [detail](#m5---maven-centric-ci-and-docs-build) |
+| Phase 1 | M5 | Maven-centric CI and docs build | Milestone | In progress | No | D24 | Workflow and docs checks pass locally, including 749 tests; landing and hosted builds pending; [detail](#m5---maven-centric-ci-and-docs-build) |
 | Phase 1 | M6 | Upstream core features: cherry-pick policy and application | Milestone | Not started | Yes | | Policy accepted and selected upstream changes applied; [detail](#m6---upstream-core-features-cherry-pick-policy-and-application) |
 | Phase 1 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; [detail](#m7---site-required-features-and-fixes) |
 | Phase 1 | M8 | Maven test platform | Milestone | Complete | No | | Fresh clone of eb047c57 compiles and passes 749 default tests; integration 98 and localEpics 26 pass (2026-09-15); [detail](#m8---maven-test-platform) |
@@ -64,6 +64,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | D21 | Build artifact final name is the variable scheme aa-<yyyyMMdd>-<git short hash> (maven.build.timestamp plus git-commit-id), replacing archappl-<version>; the WAR and assembly names use the one project finalName, ending the earlier dash/underscore split. Tests resolve it through the archappl.final.name system property; aa-env will be notified on the commit because it deploys the WARs and the name change affects its deploy paths. | 2026-09-12 |
 | D22 | The 29 Selenium browser integration tests are rewritten to exercise the mgmt BPL HTTP endpoints directly (archivePV, getPVStatus, areWeArchivingPV, getMatchingPVs), not the mgmt UI DOM. They verify server behavior, not the UI, so the browser, chromedriver, and WebDriverManager dependencies are dropped; the UI itself is EPICS-Arche's concern. | 2026-09-12 |
 | D23 | aa-maven's test platform is complete at single-instance scope. Of the 29 browser tests, 20 were rewritten to HTTP; the remaining 9 (multi-appliance cluster and large-volume data) are deleted rather than rewritten, because multi-appliance clustering is not carried forward by the EPICS-Arche successor and large-volume verification is owned by Arche (storage-path done in Arche M1 at the 100k-signal scale; network-borne end-to-end large-volume is Arche Phase 2, ahead). The appliance's own 100k-PV performance campaign remains the historical end-to-end large-volume record. | 2026-09-14 |
+| D24 | M5 CI implementation is delegated; this supersedes D9's owner-only CI authorship. The scope remains Maven build and test automation plus Read the Docs, with no release publishing. | 2026-09-16 |
 
 ### Milestone Details
 
@@ -386,15 +387,15 @@ Last Compared: never
 Origin: daff1b7 / M5
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: In progress
 
 ##### Summary
 
-Rebuild continuous integration around the Maven Wrapper. The Gradle workflows are gone (M1); the owner authors the new GitHub Actions workflows (D9). The readthedocs javadoc step already runs on mvnw.
+Build and test through the Maven Wrapper on GitHub Actions, and generate Javadoc and Sphinx documentation on Read the Docs. M5 implementation is delegated under D24.
 
 ##### Scope
 
-Owner-authored GitHub Actions workflows that build and test with `./mvnw` (JAVA_HOME exported, JDK 21). Keep .readthedocs.yaml on `./mvnw -B -q javadoc:javadoc`.
+One GitHub Actions workflow at `.github/workflows/maven.yml` builds and tests with `./mvnw -B -ntp clean verify` on JDK 21. It runs the default test selection, generates documentation and WARs, and checks dependencies. `.readthedocs.yaml` runs `compile javadoc:javadoc` through the same wrapper with JAVA_HOME set; compile generates the management mappings consumed by the Javadoc taglets.
 
 Out of scope: publishing WAR artifacts as releases (owner decision pending).
 
@@ -404,35 +405,61 @@ Out of scope: publishing WAR artifacts as releases (owner decision pending).
 
 ##### Dependencies And Decisions
 
-- D9 (owner authors the CI); D8.
+- D24 (delegated CI implementation, superseding D9's CI authorship restriction); D8.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: owner, 2026-09-16 (M5 scope and delegated execution)
+Implementation Authorization: owner, 2026-09-16 (M5 execution)
 Superseded Plan Artifacts: none
 
-1. Owner writes the Maven-centric workflow(s) under .github/workflows.
-2. Trigger on a branch push and confirm the build and tests pass.
+1. Add one workflow for push, pull_request, and workflow_dispatch. Use a read-only repository token, cancel superseded runs, and allow 45 minutes for the build. Fetch full history because the existing release-notes step reads origin/master.
+2. Set up Temurin JDK 21 and Python 3.10 (matching Read the Docs), cache Maven and pip dependencies, and install the existing docs requirements. Pin official actions to the verified release commit: checkout v7.0.1, setup-java v6.0.1, setup-python v7.0.0, and upload-artifact v7.0.1.
+3. Execute `./mvnw -B -ntp clean verify` with the pom's default test exclusions. Preserve Surefire reports for 14 days even on failure. Tomcat/IOC integration provisioning and release publishing remain outside this workflow.
+4. Correct the Read the Docs version field to numeric 2 and run `JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ./mvnw -B -q compile javadoc:javadoc` before Sphinx. Require a nonempty `target/site/apidocs/index.html` because the existing pom tolerates Javadoc errors. Use Ubuntu 26.04 LTS as requested on 2026-09-16; retain the Python selection and docs requirements. The hosted OS remains to be verified by T2.
+5. Validate workflow syntax and the Read the Docs schema, then execute the shipped commands in fresh checkouts. Record local environment differences and confirm generated outputs as well as exit codes.
+6. After authorized commit and push, observe the GitHub Actions run for that revision. For Read the Docs, identify the project and follow the hosted verification procedure below. Keep M5 In progress until both real services pass.
+
+###### Read the Docs hosted verification
+
+- Dashboard: [Read the Docs project dashboard](https://app.readthedocs.org/dashboard/).
+- Repository connection: not configured, as confirmed by the owner on 2026-09-16. No connected project URL is available. Project setup is required before T2.
+- Expected source repository: `https://github.com/jeonghanlee/epicsarchiverap-maven` (an equivalent SSH URL is acceptable).
+- Git branch to verify: `modernize`. Confirm the corresponding Read the Docs version in the project; do not infer it from the default `latest` version.
+
+1. Complete project setup with the owner and connect the expected source repository. Sign in to the dashboard, open the project, and confirm its repository settings. Record the actual project URL and the connection observation date here. Keep T2 Pending until setup is complete.
+2. In the project's Versions tab, locate the version backed by Git branch `modernize` and confirm that it is Active. Record the version URL or identifier here. If absent or inactive, resolve version setup before running T2. Read the Docs documents branch/version mapping and activation in [Versions](https://docs.readthedocs.com/platform/stable/versions.html).
+3. Open the project's Builds page and select the build for that version and the exact pushed commit. If no matching build exists, keep T2 Pending until it is run. Check the commit hash, completed status, and success result; a successful build of another commit does not satisfy T2. The platform exposes these values in its [build details](https://docs.readthedocs.com/platform/stable/api/v3.html#build-details).
+4. Read the build log and confirm that the configured Maven compile/Javadoc command, nonempty Javadoc index check, and Sphinx build succeeded. Record the project URL, version, build URL, full commit hash, completion time, and result in M5 / T2. Only then mark T2 Pass.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
 | T1 | Integration | Trigger the workflow on a branch push | GitHub Actions | mvnw build and tests succeed |
-| T2 | Integration | readthedocs build | readthedocs | javadoc builds through mvnw |
+| T2 | Integration | Follow the Read the Docs hosted verification procedure above for the pushed commit on modernize | Confirmed project and active version | Maven compile/Javadoc, index check, and Sphinx succeed; project/build URLs and commit are recorded |
+| T3 | Static | actionlint and the official Read the Docs v2 JSON schema | Local validation tools | Workflow and configuration validate |
+| T4 | Integration | Execute the workflow's pip install and clean verify commands in a fresh checkout | Local JDK 21, Python 3.13; hosted Python 3.10 checked by T1 | Default tests, docs, WARs, and dependency checks pass |
+| T5 | Integration | Execute the Read the Docs pre_build command and Sphinx in a separate fresh checkout | Local JDK 21, Python 3.13; hosted Python 3.10 checked by T2 | Management mappings, Javadoc, and Sphinx output are generated without Javadoc errors |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | Not run | GitHub Actions | Pending | none |
-| T2 | Not run | readthedocs | Pending | local goal verified under M1 / T3 on 2026-09-11 |
+| T2 | Not run | Read the Docs not connected; owner confirmation on 2026-09-16 | Pending | Complete project setup, record its URL, confirm the repository and active modernize version, then record the matching hosted build's URL, full commit hash, completion time, and result. |
+| T3 | 2026-09-16 15:19 UTC | actionlint 1.7.12, official Read the Docs v2 JSON schema | Pass | actionlint exits 0; the Read the Docs configuration with the original Ubuntu 22.04 selection validates. The baseline string version fails the schema's numeric version constraint. Schema and tool checksum evidence are under /tmp/aa-m5.agygNtL7/. |
+| T4 | 2026-09-16 15:31:25 UTC | Local JDK 21.0.12.1, Maven 3.9.9, Python 3.13.5 | Pass | Fresh checkout of 15892297: the workflow's pip install and clean verify commands exit 0. All 749 tests in 67 classes pass with zero failures/errors/skips; Maven takes 15 min 34 s wall time. Documentation, four WARs, all three enforcer rules, and dependency analysis pass. /tmp/aa-m5.agygNtL7/ci-result.json and ci-step-4.log retain the actual commands and results. |
+| T5 | 2026-09-16 15:19:22 UTC | Local JDK 21.0.12.1, Python 3.13.5, Sphinx 7.2.6 | Pass | Fresh checkout of 15892297 plus the corrected commands (configuration still selected Ubuntu 22.04): compile/Javadoc, the output-file check, and Sphinx each exit 0. Management mappings, Javadoc index and scriptables, and Sphinx index are nonempty; no Javadoc error is present. Sphinx reports 45 existing document warnings. Actual commands and timestamps: /tmp/aa-m5.agygNtL7/rtd-final-result.json. |
+
+Fresh-checkout baseline: the previous `javadoc:javadoc` command returned exit 0 despite a taglet FileNotFoundException for docs/api/mgmtpathmappings.txt, and generated no Javadoc index. The final output-file check exits 1 against that actual baseline and 0 against the corrected build. The fix runs the existing compile path to produce the required mappings; no fixture or generated file is substituted. Baseline evidence: /tmp/aa-m5.agygNtL7/rtd-baseline-pre-build-0.log. Local checks do not execute hosted setup actions or prove either hosted service passed.
+
+Final audit: the XML suite totals and 749 testcase elements agree, and test identities match the M4 default-test baseline. The final workflow's pip and Maven commands match the executed snapshot; its report upload targets the generated Surefire directory. The current Read the Docs configuration differs from that snapshot only in build.os (Ubuntu 26.04 instead of 22.04). Its commands are unchanged; YAML parsing and the supported OS value were checked, but no Ubuntu 26.04 hosted build has run. Consolidated evidence and configuration hashes: /tmp/aa-m5.agygNtL7/verification.json.
 
 ##### Closure Evidence
 
-- none
+- Local implementation and T3-T5 passed review on 2026-09-16. Commit, upstream landing, GitHub Actions T1, and hosted Read the Docs T2 remain pending; M5 remains In progress.
 
 ##### GitHub Projection
 
