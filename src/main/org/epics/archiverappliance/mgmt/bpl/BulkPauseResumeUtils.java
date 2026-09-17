@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.json.simple.JSONArray;
@@ -46,8 +47,10 @@ public class BulkPauseResumeUtils {
         HashMap<String, HashMap<String, String>> retValMap = new HashMap<String, HashMap<String, String>>();
         HashMap<String, LinkedList<String>> pvsByAppliance = new HashMap<String, LinkedList<String>>();
         for (String pvName : pvNames) {
-            String realName = configService.getRealNameForAlias(pvName);
+            String normalizedPVName = PVNames.normalizeChannelName(pvName);
+            String realName = configService.getRealNameForAlias(normalizedPVName);
             if (realName != null) pvName = realName;
+            else pvName = normalizedPVName;
 
             HashMap<String, String> pvPauseResumeStatus = new HashMap<String, String>();
             pvPauseResumeStatus.put("pvName", pvName);
