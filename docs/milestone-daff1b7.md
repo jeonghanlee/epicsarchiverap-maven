@@ -535,7 +535,7 @@ Tier D, missing-prerequisite adaptation: 448 (retrieval boundary fix; port the b
 
 ###### Application status
 
-Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. Applied 9 (compile-verified; runtime IOC verification pending the fixture environment), queued 4 for owner decision, pending 17. Each retained unit's applied or skipped status is recorded here as it proceeds through the Tier A to D order above.
+Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. Applied 10 (compile-verified; runtime IOC verification pending the fixture environment), queued 8 for owner decision, pending 17. Each retained unit's applied or skipped status is recorded here as it proceeds through the Tier A to D order above.
 
 | Unit | Disposition | Reason | Decision |
 | --- | --- | --- | --- |
@@ -555,6 +555,11 @@ Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. A
 | PR516 | Applied | EPICS_V4_PV subscribes with RecordOptions.dbeMask(DBE_ARCHIVE); core-pva 5.0.5 provides the API (verified). libs.versions.toml hunk omitted. test-compile pass; runtime IOC pending | - |
 | PR474 | Queued (owner decision) | Fork docs diverged (admin.md conflict) and the ProcessMgmtScriptables hunk is broader than the href-prefix change; low-value doc tooling needing a second-person doc pass. Owner decides scope | pending |
 | PR501 | Queued (owner decision) | Fork ArrayListCollectorEventStream already tracks currentYear; 501 adds a ChangeInYearsException throw on year crossing, changing retrieval behavior that needs judgment on the fork's multi-year handling, plus PR489 import drift. PR505 depends on it | pending |
+| PR425 | Applied | EPICS_V3_PV clears subscription and archive-field state inside a scheduled Runnable and drops the synchronized block around the field clear, per upstream disconnect handling. test-compile pass; runtime IOC pending | - |
+| PR433 | Queued (owner decision) | Fork BulkPauseResumeUtils is restructured (realName resolved in a different loop; retValMap read via an extracted mainResponse), so the incoming2real alias mapping does not map onto it cleanly. PR461 depends on it | pending |
+| PR480 | Queued (owner decision) | Overlaps the applied PR445 in FieldValuesCache.getUpdatedFieldValues (445 guards null on put; 480 uses containsKey and skips null v3 values). Reconciling the two takes on the same null path is an owner call | pending |
+| PR461 | Queued (owner decision) | Depends on PR433 (incoming2real) and conflicts in the diverged PauseArchivingPV. Blocked until PR433 is resolved | pending |
+| PR505 | Queued (owner decision) | Depends on PR501 (queued): consumes the ArrayListCollectorEventStream year-crossing wrapper | pending |
 
 ##### Test Plan
 
