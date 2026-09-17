@@ -47,18 +47,17 @@ Every axis uses integers from 0 to 10. Higher values indicate more benefit, bett
 | Added by owner decision | 8 |
 | Rejected from numerical recommendations after re-review | 1 |
 | Owner-resolved re-review PRs | 11 |
-| Owner-selected PRs | 26 |
-| Excluded by owner after single-instance review | 2 |
+| Owner-selected PRs | 25 |
+| Excluded by owner during application review | 3 |
 
 All 565 commit identities are assigned exactly once. The frozen candidate data has SHA256 `caa12d722b412adce8ddebeea62ee422cf374c81be2ccefb12e7a21ab9cc48f1`.
 
 ## Owner-confirmed selection
 
-The owner confirmed 20 numerical recommendations and added eight previously non-recommended PRs. All eleven re-review decisions are resolved. On single-instance review (2026-09-16), PR429 and PR458 were excluded, leaving 26 retained units.
+The owner confirmed 20 numerical recommendations and added eight previously non-recommended PRs. All eleven re-review decisions are resolved. During application review (2026-09-16), PR429, PR458 and PR359 were excluded, leaving 25 retained units.
 
 | PR | Selection basis |
 | ---: | --- |
-| 359 | Panel recommendation confirmed by owner after re-review |
 | 360 | Panel recommendation confirmed by owner |
 | 364 | Panel recommendation confirmed by owner |
 | 385 | Panel recommendation confirmed by owner |
@@ -214,6 +213,8 @@ Merge/squash: `2a3cf8d36a625aab8f589d799094130f79667b15`. Removes runtime alias 
 ArchivePVState.convertAliasToRealWorkflow becomes unconditional for distinct real names.
 
 Owner decision: Accepted after re-review. Treat a differing NAME value as the real PV name regardless of site separator presence.
+
+Owner decision (application review, 2026-09-16): Skipped. The fork commit 103dab65 already fixes the alias-conversion bug (containsSiteSeparators find versus matches) while retaining the plain-name guard; the owner keeps the fork approach rather than removing the guard (D27).
 
 ### PR364
 
