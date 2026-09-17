@@ -404,7 +404,10 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
             logger.error("exception when disconnecting pv", e);
         }
 
-        fireDisconnected();
+        if (state != PVConnectionState.Disconnected) {
+            state = PVConnectionState.Disconnected;
+            fireDisconnected();
+        }
     }
 
     private void handleDisconnected() {
