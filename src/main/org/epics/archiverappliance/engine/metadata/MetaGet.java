@@ -146,9 +146,7 @@ public class MetaGet implements Runnable {
 				
 			}
 
-			if(this.usePVAccess) {
-				logger.debug("Skipping getting meta fields for a PVAccess PV " + this.pvName);
-			} else {
+			{
 				new FieldListener("NAME").genFieldPV();
 				new FieldListener("NAME$").genFieldPV();
 				if (metadatafields != null) {
@@ -171,9 +169,7 @@ public class MetaGet implements Runnable {
 		try {
 			PV pvMain = pvList.get("main");
 			MetaInfo mainMeta = pvMain.getTotalMetaInfo();
-			if(this.usePVAccess) { 
-				logger.debug(this.pvName + " is a PVAccess PV; so we are pretty much done with the metaget");
-			} else { 
+			{
 				// Per Dirk Zimoch, we first check the NAME$.
 				// If that exists, we use it. If not, we use the NAME
 				DBRTimeEvent nameDollarValue = fieldValues.get("NAME$");
