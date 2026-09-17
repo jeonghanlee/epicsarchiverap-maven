@@ -535,7 +535,7 @@ Tier D, missing-prerequisite adaptation: 448 (retrieval boundary fix; port the b
 
 ###### Application status
 
-Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. Applied 2 (compile-verified; runtime IOC verification pending the fixture environment), pending 23. Each retained unit's applied or skipped status is recorded here as it proceeds through the Tier A to D order above.
+Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. Applied 6 (compile-verified; runtime IOC verification pending the fixture environment), queued 2 for owner decision, pending 17. Each retained unit's applied or skipped status is recorded here as it proceeds through the Tier A to D order above.
 
 | Unit | Disposition | Reason | Decision |
 | --- | --- | --- | --- |
@@ -544,6 +544,12 @@ Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. A
 | PR359 | Excluded | Superseded: fork commit 103dab65 already fixes the alias-conversion bug with a retained guard | D27 |
 | PR364 | Applied (semantic-only) | Alias/.NAME workflow enabled for PVAccess PVs: two usePVAccess short-circuits removed, MetaTest parameterized; spotless churn not adopted. test-compile pass; runtime IOC pending. Third-person review 2026-09-17: complete and faithful, compile-proven. Below-floor (owner nod): anonymous blocks and assertTrue kept | - |
 | PR360 | Applied | EPICS_V4_PV connection-lifecycle fix: handleMonitor routes to handleDisconnected and returns on null data (was falling through to GotMonitor), centralized idempotent handleDisconnected, connected set under lock; log info to debug. build.gradle core-pva bump omitted (fork at 5.0.5). test-compile pass; runtime IOC pending | - |
+| PR385 | Queued (owner decision) | Fork-diverged GetDataAtTime and FileStreamCreator conflict. 385 removes the Collections.reverse of datastores and adds a boundary iterator (new ArrayListEventStreamWithPositionedIterator) for the chunk-boundary value bug. Reconciling with the fork's reworked store iteration is a judgment call, and the fix is retrieval correctness needing IOC runtime verification unavailable here. All-or-nothing: partial apply of a boundary fix is unsafe | pending |
+| PR396 | Queued (owner decision) | Conflict between the carry-doc acceptance (carry the bounded StaticContentServlet cleanup) and this session's formatting policy (do not adopt reformats, keep tab style). 396 is a 1025-line whole-file reformat to 4-space plus small lints (drop unused MimeResponse import, @Serial, final modifiers, EXPIRES constant). Applies clean. Owner reconciles: adopt whole as a bounded exception, or lint-only keeping tabs | pending |
+| PR408 | Applied | Remove the redundant guarded startup loop that populates applianceAggregateInfo in DefaultConfigService; the aggregate is still built on the per-PV paths. test-compile pass; regression suite pending | - |
+| PR417 | Applied | Lower the two EPICS_V3_PV post-stop and post-cleanup "ignoring monitor events" logs from error to debug; behavior unchanged. test-compile pass | - |
+| PR423 | Applied | MetaInfo emits the array-count metadata key as EAA_COUNT instead of NELM (upstream #386). No in-tree consumer of the NELM key; external API readers of NELM are affected. test-compile pass | - |
+| PR445 | Applied (semantic-only) | Guard a null cached value before putting it into the changed map in FieldValuesCache.getUpdatedFieldValues; reformat/import churn not adopted. test-compile pass | - |
 
 ##### Test Plan
 
