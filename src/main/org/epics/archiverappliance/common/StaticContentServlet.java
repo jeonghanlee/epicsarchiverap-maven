@@ -34,7 +34,6 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigService.STARTUP_SEQUENCE;
 import org.epics.archiverappliance.mgmt.bpl.SyncStaticContentHeadersFooters;
-import org.epics.archiverappliance.retrieval.mimeresponses.MimeResponse;
 
 /**
  * Serves static content in the web app...
