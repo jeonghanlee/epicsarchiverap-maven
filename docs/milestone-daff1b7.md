@@ -535,7 +535,7 @@ Tier D, missing-prerequisite adaptation: 448 (retrieval boundary fix; port the b
 
 ###### Application status
 
-Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. Applied 6 (compile-verified; runtime IOC verification pending the fixture environment), queued 2 for owner decision, pending 17. Each retained unit's applied or skipped status is recorded here as it proceeds through the Tier A to D order above.
+Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. Applied 9 (compile-verified; runtime IOC verification pending the fixture environment), queued 4 for owner decision, pending 17. Each retained unit's applied or skipped status is recorded here as it proceeds through the Tier A to D order above.
 
 | Unit | Disposition | Reason | Decision |
 | --- | --- | --- | --- |
@@ -550,6 +550,11 @@ Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. A
 | PR417 | Applied | Lower the two EPICS_V3_PV post-stop and post-cleanup "ignoring monitor events" logs from error to debug; behavior unchanged. test-compile pass | - |
 | PR423 | Applied | MetaInfo emits the array-count metadata key as EAA_COUNT instead of NELM (upstream #386). No in-tree consumer of the NELM key; external API readers of NELM are affected. test-compile pass | - |
 | PR445 | Applied (semantic-only) | Guard a null cached value before putting it into the changed map in FieldValuesCache.getUpdatedFieldValues; reformat/import churn not adopted. test-compile pass | - |
+| PR454 | Applied | Include the PV name in the EPICS_V4_PV monitor conversion error log. test-compile pass | - |
+| PR481 | Applied | Remove the getPVNames function and its button from the mgmt static content (index.html, mgmt.js). No compiled code | - |
+| PR516 | Applied | EPICS_V4_PV subscribes with RecordOptions.dbeMask(DBE_ARCHIVE); core-pva 5.0.5 provides the API (verified). libs.versions.toml hunk omitted. test-compile pass; runtime IOC pending | - |
+| PR474 | Queued (owner decision) | Fork docs diverged (admin.md conflict) and the ProcessMgmtScriptables hunk is broader than the href-prefix change; low-value doc tooling needing a second-person doc pass. Owner decides scope | pending |
+| PR501 | Queued (owner decision) | Fork ArrayListCollectorEventStream already tracks currentYear; 501 adds a ChangeInYearsException throw on year crossing, changing retrieval behavior that needs judgment on the fork's multi-year handling, plus PR489 import drift. PR505 depends on it | pending |
 
 ##### Test Plan
 
