@@ -535,7 +535,7 @@ Tier D, missing-prerequisite adaptation: 448 (retrieval boundary fix; port the b
 
 ###### Application status
 
-Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. Applied 1 (compile-verified; runtime IOC verification pending the fixture environment), pending 24. Each retained unit's applied or skipped status is recorded here as it proceeds through the Tier A to D order above.
+Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. Applied 2 (compile-verified; runtime IOC verification pending the fixture environment), pending 23. Each retained unit's applied or skipped status is recorded here as it proceeds through the Tier A to D order above.
 
 | Unit | Disposition | Reason | Decision |
 | --- | --- | --- | --- |
@@ -543,6 +543,7 @@ Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. A
 | PR458 | Excluded | Redundant: fork ConvertPVNameToKey already prefers the stored PVTypeInfo chunkKey | D26 |
 | PR359 | Excluded | Superseded: fork commit 103dab65 already fixes the alias-conversion bug with a retained guard | D27 |
 | PR364 | Applied (semantic-only) | Alias/.NAME workflow enabled for PVAccess PVs: two usePVAccess short-circuits removed, MetaTest parameterized; spotless churn not adopted. test-compile pass; runtime IOC pending. Third-person review 2026-09-17: complete and faithful, compile-proven. Below-floor (owner nod): anonymous blocks and assertTrue kept | - |
+| PR360 | Applied | EPICS_V4_PV connection-lifecycle fix: handleMonitor routes to handleDisconnected and returns on null data (was falling through to GotMonitor), centralized idempotent handleDisconnected, connected set under lock; log info to debug. build.gradle core-pva bump omitted (fork at 5.0.5). test-compile pass; runtime IOC pending | - |
 
 ##### Test Plan
 
