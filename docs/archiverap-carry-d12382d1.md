@@ -47,13 +47,14 @@ Every axis uses integers from 0 to 10. Higher values indicate more benefit, bett
 | Added by owner decision | 8 |
 | Rejected from numerical recommendations after re-review | 1 |
 | Owner-resolved re-review PRs | 11 |
-| Owner-selected PRs | 28 |
+| Owner-selected PRs | 26 |
+| Excluded by owner after single-instance review | 2 |
 
 All 565 commit identities are assigned exactly once. The frozen candidate data has SHA256 `caa12d722b412adce8ddebeea62ee422cf374c81be2ccefb12e7a21ab9cc48f1`.
 
 ## Owner-confirmed selection
 
-The owner confirmed 20 numerical recommendations and added eight previously non-recommended PRs. All eleven re-review decisions are resolved.
+The owner confirmed 20 numerical recommendations and added eight previously non-recommended PRs. All eleven re-review decisions are resolved. On single-instance review (2026-09-16), PR429 and PR458 were excluded, leaving 26 retained units.
 
 | PR | Selection basis |
 | ---: | --- |
@@ -68,13 +69,11 @@ The owner confirmed 20 numerical recommendations and added eight previously non-
 | 417 | Added by unanimous three-reviewer re-review |
 | 423 | Panel recommendation confirmed by owner |
 | 425 | Panel recommendation confirmed by owner |
-| 429 | Panel recommendation confirmed by owner |
 | 433 | Panel recommendation confirmed by owner |
 | 445 | Panel recommendation confirmed by owner |
 | 448 | Panel recommendation confirmed by owner |
 | 452 | Panel recommendation confirmed by owner |
 | 454 | Added by unanimous three-reviewer re-review |
-| 458 | Panel recommendation confirmed by owner |
 | 461 | Panel recommendation confirmed by owner |
 | 474 | Added by owner decision |
 | 480 | Added by owner decision |
@@ -564,6 +563,8 @@ Merge/squash: `70770ecbfe6a48e0bbabeda2cd0541192007fb3b`. Runtime reassign behav
 
 Prerequisites: PR376 introduces ReassignAppliance, absent from fork. ConfigService/DefaultConfigService signature edits alone do not supply that endpoint.
 
+Owner decision: Excluded on single-instance review (2026-09-16). A single instance never reassigns a PV between appliances, and the ReassignAppliance endpoint (PR376) is absent from the fork.
+
 ### PR433
 
 Merge/squash: `d1d9b81a1cb09ab27447e11e21f3680d37be4c7a`. Runtime bulk pause/resume alias handling changes.
@@ -687,6 +688,8 @@ Merge/squash: `b631a8ceb28e2751a999742ab9e1eae4d5090269`. Runtime stored chunk-k
 065-PR458.patch introduces ChunkKeyKeyMapping implements PVNameToKeyMapping and overrides overrideTerminator; PlainStoragePlugin instantiates it.
 
 Prerequisites: PR410 introduces overrideTerminator and removes containsSiteSeparators. Fork interface still requires containsSiteSeparators and has no overrideTerminator, so new class alone is incompatible.
+
+Owner decision: Excluded on single-instance review (2026-09-16). The fork's ConvertPVNameToKey already returns the stored PVTypeInfo chunkKey before generating one, so the fix is already present; adopting it would duplicate the behavior and require the absent overrideTerminator interface method (PR410).
 
 ### PR436
 
