@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M6 is applying its ordered plan of 25 upstream PR units one at a time, in four tiers (A independent, B in-set ordering, C PlainPB adaptation, D missing-prerequisite adaptation), after the D26 exclusions (PR429, PR458) and D27 (PR359). Applied so far: PR364 (compile-verified; runtime IOC pending). Skipped: PR359. Next unit: PR360, then the rest of Tier A; progress is tracked in the Application status of the M6 detail. Source-patch application is authorized and proceeds unit by unit. M5 hosted verification remains to be recorded; Read the Docs is not connected. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
+Next session entry point: M6 Tier A and B are triaged. Ten units are applied and committed (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR481, PR516; compile-verified, runtime IOC verification pending the fixture environment). Eight are queued for owner decision, each with its reason in the M6 Application status (PR385, PR396, PR433, PR461, PR474, PR480, PR501, PR505). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: resolve the eight queued decisions, then reach Tier C and D (PR400, PR405, PR448, PR452, PR520, PR521, PR527), not yet started. M5 hosted verification remains to be recorded; Read the Docs is not connected. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -535,7 +535,7 @@ Tier D, missing-prerequisite adaptation: 448 (retrieval boundary fix; port the b
 
 ###### Application status
 
-Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. Applied 10 (compile-verified; runtime IOC verification pending the fixture environment), queued 8 for owner decision, pending 17. Each retained unit's applied or skipped status is recorded here as it proceeds through the Tier A to D order above.
+Totals: 28 owner-confirmed, 3 excluded during application review, 25 retained. Applied 10 (compile-verified; runtime IOC verification pending the fixture environment), queued 8 for owner decision, pending 17. Each retained unit's applied or skipped status is recorded here as it proceeds through the Tier A to D order above. Regression after the Tier A and B applications: the non-IOC default suite ran 747 tests with zero failures; the single error is PvaTest, which needs a PVA soft IOC absent in this environment and is normally excluded from the default run. No regression is attributable to the applied changes; the applied units' own runtime behavior still awaits the fixture environment.
 
 | Unit | Disposition | Reason | Decision |
 | --- | --- | --- | --- |
