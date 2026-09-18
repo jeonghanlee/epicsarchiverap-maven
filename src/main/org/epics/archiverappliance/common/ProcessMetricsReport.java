@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
@@ -23,6 +24,7 @@ import org.json.simple.JSONValue;
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Combine the process metrics from the various wars and send as json.")
 public class ProcessMetricsReport implements BPLAction {
 	private static Logger logger = LogManager.getLogger(ProcessMetricsReport.class.getName());
 

@@ -2,6 +2,8 @@ package org.epics.archiverappliance.mgmt.bpl.reports;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
@@ -20,6 +22,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+@BPLEndpoint(
+        summary = "Report of the PVs most recently modified on this instance.",
+        params = {
+            @BPLParam(name = "limit", description = "Optional; the maximum number of entries to return.")
+        })
 public class RecentlyChangedPVsforThisInstance implements BPLAction {
 	private static Logger logger = LogManager.getLogger(RecentlyChangedPVsforThisInstance.class.getName());
 

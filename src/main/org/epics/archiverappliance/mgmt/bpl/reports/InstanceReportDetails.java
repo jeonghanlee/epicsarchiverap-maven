@@ -2,6 +2,8 @@ package org.epics.archiverappliance.mgmt.bpl.reports;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceInfo;
@@ -20,6 +22,11 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+@BPLEndpoint(
+        summary = "Instance metrics report for the specified appliance.",
+        params = {
+            @BPLParam(name = "appliance", description = "The identity of the appliance in the cluster.")
+        })
 public class InstanceReportDetails implements BPLAction {
     private static final Logger logger = LogManager.getLogger(InstanceReportDetails.class.getName());
 

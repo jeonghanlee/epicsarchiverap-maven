@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.reports.Metrics;
 import org.epics.archiverappliance.config.ConfigService;
@@ -30,6 +31,7 @@ import org.json.simple.JSONValue;
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Metrics for the mgmt web application on the specified appliance.")
 public class MgmtMetrics implements Metrics {
     private static final Logger logger = LogManager.getLogger(MgmtMetrics.class);
 

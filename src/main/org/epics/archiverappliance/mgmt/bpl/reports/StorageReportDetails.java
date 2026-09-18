@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -17,6 +19,11 @@ import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 
+@BPLEndpoint(
+        summary = "Storage metrics report for the specified appliance.",
+        params = {
+            @BPLParam(name = "appliance", description = "The identity of the appliance in the cluster.")
+        })
 public class StorageReportDetails implements BPLAction {
 	private static Logger logger = LogManager.getLogger(StorageReportDetails.class.getName());
 	@Override

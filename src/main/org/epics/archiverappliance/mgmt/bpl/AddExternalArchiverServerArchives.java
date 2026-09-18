@@ -16,6 +16,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -27,6 +29,12 @@ import org.json.simple.JSONValue;
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Add specific archives of a Channel Archiver server to proxy data from.",
+        params = {
+            @BPLParam(name = "archives", description = "The archives on the Channel Archiver server, as a comma separated list."),
+            @BPLParam(name = "channelarchiverserverurl", description = "The URL of the Channel Archiver server.")
+        })
 public class AddExternalArchiverServerArchives implements BPLAction {
 	private static Logger logger = LogManager.getLogger(AddExternalArchiverServerArchives.class.getName());
 

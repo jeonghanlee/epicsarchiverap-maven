@@ -19,6 +19,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.mgmt.bpl.cahdlers.ArchivesHandler;
@@ -37,6 +39,12 @@ import org.json.simple.JSONValue;
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Add an external archiver server (a Channel Archiver or another appliance cluster) to proxy data from.",
+        params = {
+            @BPLParam(name = "externalServerType", description = "For Channel Archivers, this is the string <code>CA_XMLRPC</code>. For other EPICS Archiver Appliance clusters, this is the string <code>ARCHAPPL_PBRAW</code>."),
+            @BPLParam(name = "externalarchiverserverurl", description = "For Channel Archivers, this is the URL to the XML-RPC server. For other EPICS Archiver Appliance clusters, this is the <code>data_retrieval_url</code> of the cluster as defined in the <code>appliances.xml</code>.")
+        })
 public class AddExternalArchiverServer implements BPLAction {
 	private static Logger logger = LogManager.getLogger(AddExternalArchiverServer.class.getName());
 	

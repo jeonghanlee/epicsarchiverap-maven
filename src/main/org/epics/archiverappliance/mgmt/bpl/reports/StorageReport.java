@@ -2,6 +2,7 @@ package org.epics.archiverappliance.mgmt.bpl.reports;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -17,6 +18,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+@BPLEndpoint(summary = "Storage metrics report for the cluster.")
 public class StorageReport implements BPLAction {
     private static Logger logger = LogManager.getLogger(StorageReport.class.getName());
 

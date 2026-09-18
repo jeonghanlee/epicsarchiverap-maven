@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 
@@ -15,6 +16,7 @@ import org.epics.archiverappliance.config.ConfigService;
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Returns the text of the policies for this installation as a text file...")
 public class GetPolicyText implements BPLAction {
 
 	@Override

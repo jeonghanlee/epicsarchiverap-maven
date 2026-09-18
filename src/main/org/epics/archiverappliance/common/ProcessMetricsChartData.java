@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
@@ -21,6 +23,11 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+@BPLEndpoint(
+        summary = "Process metrics chart data for the specified appliance, proxied from its engine.",
+        params = {
+            @BPLParam(name = "appliance", description = "The identity of the appliance in the cluster.")
+        })
 public class ProcessMetricsChartData implements BPLAction {
 	private static Logger logger = LogManager.getLogger(ProcessMetricsChartData.class.getName());
 

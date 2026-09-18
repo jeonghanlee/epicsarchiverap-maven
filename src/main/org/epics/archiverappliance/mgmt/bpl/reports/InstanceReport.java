@@ -3,6 +3,7 @@ package org.epics.archiverappliance.mgmt.bpl.reports;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -21,6 +22,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+@BPLEndpoint(summary = "Instance metrics report for the cluster.")
 public class InstanceReport implements BPLAction {
     private static final Logger logger = LogManager.getLogger(InstanceReport.class.getName());
 

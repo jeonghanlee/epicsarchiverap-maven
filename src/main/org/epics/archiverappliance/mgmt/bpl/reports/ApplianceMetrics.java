@@ -9,6 +9,7 @@ package org.epics.archiverappliance.mgmt.bpl.reports;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -31,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Summary metrics (identity and PV count) for each appliance in the cluster.")
 public class ApplianceMetrics implements BPLAction {
     private static final Logger logger = LogManager.getLogger(ApplianceMetrics.class);
 

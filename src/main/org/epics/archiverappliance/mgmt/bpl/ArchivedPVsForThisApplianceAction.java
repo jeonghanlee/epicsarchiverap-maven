@@ -9,6 +9,7 @@ package org.epics.archiverappliance.mgmt.bpl;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -28,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Given a list of PVs sent as the POST body, return those that are archived on this appliance.")
 public class ArchivedPVsForThisApplianceAction implements BPLAction {
     private static final Logger logger = LogManager.getLogger(ArchivedPVsForThisApplianceAction.class);
 

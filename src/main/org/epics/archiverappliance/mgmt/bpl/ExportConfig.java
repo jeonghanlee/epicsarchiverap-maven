@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -21,6 +22,7 @@ import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Export the archiving configuration (PVTypeInfo's) as a JSON file.")
 public class ExportConfig implements BPLAction {
 	private static Logger logger = LogManager.getLogger(ExportConfig.class.getName());
 	@Override

@@ -2,6 +2,8 @@ package org.epics.archiverappliance.mgmt.bpl;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
@@ -27,6 +29,15 @@ import java.util.HashMap;
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Import data using another plugin given the plugin definition URL for a PV and store in the specified store.",
+        params = {
+            @BPLParam(name = "dest", description = "The name of the destination storage plugin to store the imported data in."),
+            @BPLParam(name = "from", description = "The start of the time range, as an ISO 8601 timestamp."),
+            @BPLParam(name = "pv", description = "The name of the PV."),
+            @BPLParam(name = "src", description = "The definition URL of the source storage plugin to import data from."),
+            @BPLParam(name = "to", description = "The end of the time range, as an ISO 8601 timestamp.")
+        })
 public class ImportDataFromPlugin implements BPLAction {
 	private static Logger logger = LogManager.getLogger(ImportDataFromPlugin.class.getName());
 	@Override

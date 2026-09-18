@@ -7,6 +7,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -19,6 +21,11 @@ import org.epics.archiverappliance.utils.ui.GetUrlContent;
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "The other web apps tell the mgmt webapp when they have started using this call.",
+        params = {
+            @BPLParam(name = "webapp", description = "The identity of the web application reporting that it has started.")
+        })
 public class WebappReady implements BPLAction {
 	private static Logger configlogger = LogManager.getLogger("config." + WebappReady.class.getName());
 

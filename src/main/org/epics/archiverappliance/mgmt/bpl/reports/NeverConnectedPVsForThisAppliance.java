@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
@@ -19,6 +20,7 @@ import org.epics.archiverappliance.mgmt.MgmtRuntimeState.NeverConnectedRequestSt
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
+@BPLEndpoint(summary = "Report of the PVs on this appliance that have never connected since the appliance started.")
 public class NeverConnectedPVsForThisAppliance implements BPLAction {
 	private static Logger logger = LogManager.getLogger(NeverConnectedPVsForThisAppliance.class.getName());
 
