@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (MariaDB removal) is now unblocked. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done; remaining milestone items are M5 hosted verification and any release-cycle work. M5 hosted verification remains to be recorded; Read the Docs is not connected. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
+Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 narrows to svg_viewer vendoring. M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (MariaDB removal) is now unblocked. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done; remaining milestone items are M5 hosted verification and any release-cycle work. M5 hosted verification remains to be recorded; Read the Docs is not connected. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -31,6 +31,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M9 | Documentation for the Maven build | Milestone | Not started | Yes | | Build, test, and deploy docs match the Maven-only reality; [detail](#m9---documentation-for-the-maven-build) |
 | Phase 1 | M14 | Build self-sufficiency (no build-time network, pip, or scp) | Milestone | Not started | Yes | | Build runs offline: no svg_viewer download, no per-build sphinx pip install, no scp; [detail](#m14---build-self-sufficiency-no-build-time-network-pip-or-scp) |
 | Phase 1 | M15 | Separate non-test utilities out of src/test | Milestone | Not started | Yes | | The 20 main() dev/generator utilities move out of the test source tree; [detail](#m15---separate-non-test-utilities-out-of-srctest) |
+| Phase 1 | M16 | mgmt API reference generated from code | Milestone | Complete | No | D14 | mgmt WAR ships ui/api generated from the BPL registry and annotations; no scp, taglet, or sphinx in package; registry to document agreement test passes; [detail](#m16---mgmt-api-reference-generated-from-code) |
 | Phase 1 | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; [detail](#m10---ant-removal-final-maven-only-consolidation) |
 | Phase 2 | M11 | sqlite-jdbc runtime dependency | Milestone | Complete | No | | Driver org.xerial:sqlite-jdbc 3.53.4.0 added (runtime) and allowlisted; SQLite persistence path verified by SQLitePersistenceTest and the 777/777 regression; [detail](#m11---sqlite-jdbc-runtime-dependency) |
 | Phase 2 | M12 | Persistence and storage backend pruning | Milestone | Not started | Yes | | Owner-approved backends removed, build and tests pass; [detail](#m12---persistence-and-storage-backend-pruning) |
@@ -1165,6 +1166,7 @@ Out of scope: the Sphinx content itself (M9); the antrun executions as such (M10
 ##### Dependencies And Decisions
 
 - D11 (Phase 1); D14 (small and strong).
+- The scp and sphinx items are superseded by M16 (2026-09-18); this row retains the svg_viewer vendoring (owner decision 2026-09-18: vendor the built viewer.zip and let the build copy it).
 
 ##### Implementation Plan
 
@@ -1290,6 +1292,76 @@ D2 and D3 require one GitHub issue per M row in this repository. GitHub issues a
 ##### Closure Evidence
 
 - none
+
+#### M16 - mgmt API reference generated from code
+
+Origin: daff1b7 / M16
+Identity History: none
+GitHub Issue: none
+Status: Complete
+
+##### Summary
+
+The mgmt API reference is produced by a relay of nine build steps across four folders: `BPLServlet` dumps the action registry to `docs/api`, a javadoc taglet emits marker text, `scp` copies it, `ProcessMgmtScriptables` stitches a template, and sphinx renders the result into the mgmt WAR's `ui/help`, using java, scp, and Python. Replace the relay with one Java generator that reads the `BPLServlet` action registry and a `@BPLEndpoint` annotation on each action and writes the API reference directly into the mgmt WAR stage, so the reference is a byproduct of compilation with no intermediate files, no scp, and no Python.
+
+##### Scope
+
+Define `@BPLEndpoint` (with `@Param`) carrying summary, parameters, and the scriptable flag; annotate the BPL action classes with the descriptions now held in taglet comments, incrementally (an unannotated action still lists by path); one exec-java generator at `process-classes` that joins the registry (paths) with the annotations (metadata) and writes `ui/api/index.html` and `api.json` into the mgmt staticcontent stage; remove the relay executions (`generateBPLActionsMappings`, `copy-mgmtpathmappings-for-processing`, `check-mappings-file-before-javadoc`, `copy-mgmt_scriptables-for-package`, `generateJavaDocTagletScriptables`), the taglet wiring, the `docs/api` text handoffs and template, and the sphinx execution from the package phase. Optional: a `/mgmt/bpl/getEndpoints` action serving the same data at runtime.
+
+Out of scope: the narrative Sphinx content and its delivery (M9, M5); svg_viewer vendoring (M14); plain javadoc for the Java API (may remain, off the critical path).
+
+##### Completion Criteria
+
+- `./mvnw -B clean package -DskipTests` produces the four WARs with no scp, taglet, sphinx, or network step for documentation.
+- The mgmt WAR contains `ui/api/index.html` listing every action registered in `BPLServlet` (GET and POST) with its annotation metadata.
+- A test asserts that every registered action appears in the generated reference (registry to document agreement).
+
+##### Dependencies And Decisions
+
+- D14 (small and strong). Supersedes the scp and sphinx items of M14; M14 retains svg_viewer vendoring.
+
+##### Implementation Plan
+
+Plan Status: accepted; implementation authorized
+Plan Acceptance: Design accepted by owner 2026-09-18 (code as the single source, one generator, in-place output, sphinx decoupled from package)
+Implementation Authorization: owner, 2026-09-18
+Superseded Plan Artifacts: none
+
+1. Add the `@BPLEndpoint` and `@Param` annotations.
+2. Write the generator that reads the `BPLServlet` registries and annotations and emits `ui/api/index.html` and `api.json` into the mgmt staticcontent stage.
+3. Wire one exec-java execution at `process-classes`; remove the five relay executions, the taglet wiring, the scp exec, and the sphinx exec from package.
+4. Annotate the BPL actions, moving descriptions out of the taglet comments.
+5. Add the registry to document agreement test.
+6. Optional: add the `/mgmt/bpl/getEndpoints` action.
+7. Verify the offline package and the mgmt WAR content.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit | Run the generator against the `BPLServlet` registries and compare with the emitted reference | JDK 21 | Every registered GET and POST action appears in the generated HTML and JSON |
+| T2 | Integration | `./mvnw -B clean package -DskipTests` with outbound network blocked | JDK 21, wrapper Maven, offline | Four WARs; mgmt WAR contains `ui/api/index.html`; no scp, taglet, or sphinx step runs |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-09-18 | JDK 21 | Pass | ApiReferenceGeneratorTest: all 90 registered actions (GET and POST) appear in generated index.html and api.json |
+| T2 | 2026-09-18 | JDK 21, wrapper Maven, offline (-o) | Pass | mvn -o package -DskipTests: four WARs; mgmt WAR ui/api/index.html + api.json with 90 documented endpoints; no scp/taglet/sphinx step; javadoc clean |
+
+##### Closure Evidence
+
+- ApiReferenceGenerator emits ui/api into the mgmt staticcontent stage; 53 taglet descriptions moved to @BPLEndpoint and 37 undocumented actions annotated (summaries from javadoc, action logs, or execute behavior; nothing invented); relay executions, taglet, scp, and package-phase sphinx removed; default suite 778/778; Help link points at ui/api
+
+##### GitHub Projection
+
+Title: Generate the mgmt API reference from code
+Labels: none
+GitHub Milestone: none
+Observed State: none
+Observed Labels: none
+Observed Milestone: none
+Last Compared: never
 
 ## Backlog
 
