@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -328,6 +329,7 @@ public class AppendDataStateData {
         this.previousYear = info.getDataYear();
         if (info.getLastEvent() != null) {
             this.lastKnownTimeStamp = info.getLastEvent().getEventTimeStamp();
+            truncateCorruptFile(pvPath, info.getTruncationPoint());
         } else {
             logger.error("Cannot determine last known timestamp when updating state for PV " + pvName + " and path "
                     + pvPath.toString());
@@ -335,6 +337,20 @@ public class AppendDataStateData {
         this.os = new BufferedOutputStream(
                 Files.newOutputStream(pvPath, StandardOpenOption.CREATE, StandardOpenOption.APPEND));
         this.previousFileName = pvPath.getFileName().toString();
+    }
+
+    private static void truncateCorruptFile(Path pvPath, long truncationPoint) throws IOException {
+        long fileSize = Files.size(pvPath);
+        if (truncationPoint < fileSize) {
+            logger.warn(
+                    "Incomplete record detected at end of {} (likely a crash mid-write); truncating {} -> {} bytes before appending",
+                    pvPath,
+                    fileSize,
+                    truncationPoint);
+            try (FileChannel fc = FileChannel.open(pvPath, StandardOpenOption.WRITE)) {
+                fc.truncate(truncationPoint);
+            }
+        }
     }
 
     /**

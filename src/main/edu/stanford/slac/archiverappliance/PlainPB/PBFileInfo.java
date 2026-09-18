@@ -37,6 +37,7 @@ public class PBFileInfo {
     DBRTimeEvent lastEvent = null;
     long positionOfFirstSample = 0L;
     long positionOfLastSample = 0;
+    private long truncationPoint = 0;
 
     @Override
     public String toString() {
@@ -61,6 +62,7 @@ public class PBFileInfo {
             positionOfFirstSample = lis.getCurrentPosition();
             // This is not strictly correct; but this will be adjusted below.
             positionOfLastSample = Files.size(path);
+            truncationPoint = Files.size(path);
 
             ArchDBRTypes type = ArchDBRTypes.valueOf(info.getType());
             Constructor<? extends DBRTimeEvent> unmarshallingConstructor =
@@ -119,6 +121,10 @@ public class PBFileInfo {
         return positionOfLastSample;
     }
 
+    public long getTruncationPoint() {
+        return truncationPoint;
+    }
+
     /**
      * Checks the payload info and makes sure we are using appropriate files.
      * This assumes that the lis is positioned at the start and subsequently positions the lis just past the first line.
@@ -150,7 +156,7 @@ public class PBFileInfo {
         int lineTries = 0;
         byte[] lastLine = lis.readLine();
         while (lastLine == null && posn > 0 && lineTries < 1000) {
-            lis.seekToBeforePreviousLine(posn - 2);
+            lis.seekToBeforePreviousLine(posn);
             posn = lis.getCurrentPosition();
             lastLine = lis.readLine();
             lineTries++;
@@ -163,6 +169,7 @@ public class PBFileInfo {
                 lastEvent = (DBRTimeEvent) unmarshallingConstructor.newInstance(getDataYear(), new ByteArray(lastLine));
                 lastEvent.getEventTimeStamp();
                 positionOfLastSample = posn;
+                truncationPoint = lis.getCurrentPosition();
                 return;
             } catch (PBParseException ex) {
                 logger.warn(
@@ -170,12 +177,12 @@ public class PBFileInfo {
                                 + " seems to have some data corruption at the end of the file; moving onto the previous line",
                         ex);
                 lastEvent = null;
-                lis.seekToBeforePreviousLine(posn - 2);
+                lis.seekToBeforePreviousLine(posn);
                 posn = lis.getCurrentPosition();
                 lineTries = 0;
                 lastLine = lis.readLine();
                 while (lastLine == null && posn > 0 && lineTries < 1000) {
-                    lis.seekToBeforePreviousLine(posn - 2);
+                    lis.seekToBeforePreviousLine(posn);
                     posn = lis.getCurrentPosition();
                     lastLine = lis.readLine();
                     lineTries++;
