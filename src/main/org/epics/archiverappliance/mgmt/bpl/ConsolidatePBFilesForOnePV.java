@@ -5,6 +5,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -28,15 +30,17 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  *
- * @epics.BPLAction - Consolidate the data for this PV until the specified store. The PV needs to be paused first.
- * @epics.BPLActionParam pv - The name of the pv.
- * @epics.BPLActionParam storage - The name of the store until which we'll consolidate data. This is typically a string like STS or MTS. To get a list of names of stores for a PV, please see /getStoresForPV
- * @epics.BPLActionParam date - Optional date to run the ETL process against, default is one year in the future.
- * @epics.BPLActionEnd
  *
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Consolidate the data for this PV until the specified store. The PV needs to be paused first.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv."),
+            @BPLParam(name = "storage", description = "The name of the store until which we'll consolidate data. This is typically a string like STS or MTS. To get a list of names of stores for a PV, please see /getStoresForPV"),
+            @BPLParam(name = "date", description = "Optional date to run the ETL process against, default is one year in the future.")
+        })
 public class ConsolidatePBFilesForOnePV implements BPLAction {
     private static final Logger logger = LogManager.getLogger(ConsolidatePBFilesForOnePV.class.getName());
 

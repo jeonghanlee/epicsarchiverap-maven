@@ -10,14 +10,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 
 /**
  * 
- * @epics.BPLAction - Reset the failover caches for all the retrieval components in this cluster.  
- * @epics.BPLActionEnd
  *
  * Each retrieval component in a cluster caches the PV's from remote failover appliances.
  * These caches contain one entry for each PV in this appliance indicating if the PV is being archived in the remote appliance.
@@ -27,6 +26,7 @@ import org.epics.archiverappliance.utils.ui.GetUrlContent;
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Reset the failover caches for all the retrieval components in this cluster.")
 public class ResetFailoverCaches implements BPLAction {
 	private static Logger logger = LogManager.getLogger(ResetFailoverCaches.class.getName());
 

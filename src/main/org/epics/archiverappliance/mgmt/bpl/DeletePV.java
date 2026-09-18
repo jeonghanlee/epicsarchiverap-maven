@@ -3,6 +3,8 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -24,14 +26,16 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  *
- * @epics.BPLAction - Stop archiving the specified PV. The PV needs to be paused first.
- * @epics.BPLActionParam pv - The name of the pv.
- * @epics.BPLActionParam deleteData - Should we delete the data that has already been recorded. Optional, by default, we do not delete the data for this PV. Can be <code>true</code> or <code>false</code>.
- * @epics.BPLActionEnd
  *
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Stop archiving the specified PV. The PV needs to be paused first.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv."),
+            @BPLParam(name = "deleteData", description = "Should we delete the data that has already been recorded. Optional, by default, we do not delete the data for this PV. Can be <code>true</code> or <code>false</code>.")
+        })
 public class DeletePV implements BPLAction {
     private static Logger logger = LogManager.getLogger(DeletePV.class.getName());
 

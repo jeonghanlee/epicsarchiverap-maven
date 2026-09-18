@@ -17,6 +17,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -27,13 +29,15 @@ import org.json.simple.JSONValue;
 /**
  * Event rate report.
  * 
- * @epics.BPLAction - Return a list of PVs sorted by descending event rate. 
- * @epics.BPLActionParam limit - Limit this report to this many PVs per appliance in the cluster. Optional, if unspecified, there are no limits enforced.
- * @epics.BPLActionEnd
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Return a list of PVs sorted by descending event rate.",
+        params = {
+            @BPLParam(name = "limit", description = "Limit this report to this many PVs per appliance in the cluster. Optional, if unspecified, there are no limits enforced.")
+        })
 public class EventRateReport implements BPLAction {
 	private static final Logger logger = LogManager.getLogger(EventRateReport.class);
 	@Override

@@ -10,18 +10,18 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
 
 /**
  * 
- * @epics.BPLAction - Get all the named flags in the system and their values as a JSON dict
- * @epics.BPLActionEnd
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Get all the named flags in the system and their values as a JSON dict")
 public class NamedFlagsAll implements BPLAction {
 	private static Logger logger = LogManager.getLogger(NamedFlagsAll.class.getName());
 	@Override

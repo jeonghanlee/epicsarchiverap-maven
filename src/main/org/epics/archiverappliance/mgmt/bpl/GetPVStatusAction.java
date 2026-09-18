@@ -10,6 +10,8 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
@@ -31,13 +33,15 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Get the status of a PV.
  *
- * @epics.BPLAction - Get the status of a PV.
- * @epics.BPLActionParam pv - The name(s) of the pv for which status is to be determined. If a pv is not being archived, you should get back a simple JSON object with a status string of "Not being archived." You can also pass in GLOB wildcards here and multiple PVs as a comma separated list. If you have more PVs that can fit in a GET, send the pv's as a CSV <code>pv=pv1,pv2,pv3</code> as the body of a POST.
- * @epics.BPLActionEnd
  *
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Get the status of a PV.",
+        params = {
+            @BPLParam(name = "pv", description = "The name(s) of the pv for which status is to be determined. If a pv is not being archived, you should get back a simple JSON object with a status string of \"Not being archived.\" You can also pass in GLOB wildcards here and multiple PVs as a comma separated list. If you have more PVs that can fit in a GET, send the pv's as a CSV <code>pv=pv1,pv2,pv3</code> as the body of a POST.")
+        })
 public class GetPVStatusAction implements BPLAction {
     private static final Logger logger = LogManager.getLogger(GetPVStatusAction.class);
 

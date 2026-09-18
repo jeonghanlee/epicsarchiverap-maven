@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -27,12 +28,11 @@ import org.json.simple.JSONValue;
 /**
  * Details for the PV's that are currently in METAINFO_REQUESTED requested state in the archive workflow.
  * 
- * @epics.BPLAction - Get a list of PVs that are currently in METAINFO_REQUESTED state.
- * @epics.BPLActionEnd
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Get a list of PVs that are currently in METAINFO_REQUESTED state.")
 public class MetaGetsAction implements BPLAction {
 	private static final Logger logger = LogManager.getLogger(MetaGetsAction.class);
 

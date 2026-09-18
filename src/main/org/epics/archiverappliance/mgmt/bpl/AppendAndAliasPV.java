@@ -6,6 +6,8 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
@@ -48,16 +50,18 @@ import java.util.concurrent.Callable;
  * </ol>
  * </div>
  * 
- * @epics.BPLAction - This BPL appends the data for an older PV into a newer PV. The older PV is deleted and an alias mapping the older PV name to the new PV is added.
- * @epics.BPLActionParam olderpv - The name of the older pv. The data for this PV will be appended to the newer PV and then deleted.
- * @epics.BPLActionParam newerpv - The name of the newer pv. 
- * @epics.BPLActionParam storage - The name of the store until which we'll consolidate data before appending. This is typically a string like LTS.
- * @epics.BPLActionEnd
  *
  *
  * 
  * @author mshankar
  */
+@BPLEndpoint(
+        summary = "This BPL appends the data for an older PV into a newer PV. The older PV is deleted and an alias mapping the older PV name to the new PV is added.",
+        params = {
+            @BPLParam(name = "olderpv", description = "The name of the older pv. The data for this PV will be appended to the newer PV and then deleted."),
+            @BPLParam(name = "newerpv", description = "The name of the newer pv."),
+            @BPLParam(name = "storage", description = "The name of the store until which we'll consolidate data before appending. This is typically a string like LTS.")
+        })
 public class AppendAndAliasPV implements BPLAction {
 	private static Logger logger = LogManager.getLogger(AppendAndAliasPV.class.getName());
 

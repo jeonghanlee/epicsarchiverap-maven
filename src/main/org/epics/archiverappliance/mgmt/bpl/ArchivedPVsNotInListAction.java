@@ -10,6 +10,8 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
@@ -24,13 +26,15 @@ import javax.servlet.http.HttpServletResponse;
  * Given a list of PVs, determine those that are being archived but are not in the incoming list.
  * Useful if you generate a list of PV's to be archived from the IOC configuration somehow and need to make sure that PV's being archived are only those in this list.
  *
- * @epics.BPLAction - Given a list of PVs, determine those that are being archived but are not in the incoming list.
- * @epics.BPLActionParam pv - A list of pv names. Send as a CSV using a POST, or as a JSON.
- * @epics.BPLActionEnd
  *
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Given a list of PVs, determine those that are being archived but are not in the incoming list.",
+        params = {
+            @BPLParam(name = "pv", description = "A list of pv names. Send as a CSV using a POST, or as a JSON.")
+        })
 public class ArchivedPVsNotInListAction implements BPLAction {
     private static final Logger logger = LogManager.getLogger(ArchivedPVsNotInListAction.class);
 

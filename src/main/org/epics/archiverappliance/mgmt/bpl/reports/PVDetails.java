@@ -10,6 +10,8 @@ package org.epics.archiverappliance.mgmt.bpl.reports;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.reports.Details;
 import org.epics.archiverappliance.config.ApplianceInfo;
@@ -35,13 +37,15 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Detailed statistics for a PV.
  *
- * @epics.BPLAction - Get a lot of detailed statistics for a PV. The returned JSON is very UI friendly; but should be usable in a scripting environment.
- * @epics.BPLActionParam pv - The name of the pv.
- * @epics.BPLActionEnd
  *
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Get a lot of detailed statistics for a PV. The returned JSON is very UI friendly; but should be usable in a scripting environment.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv.")
+        })
 public class PVDetails implements BPLAction {
     private static final Logger logger = LogManager.getLogger(PVDetails.class);
 

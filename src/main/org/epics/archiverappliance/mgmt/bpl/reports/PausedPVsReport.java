@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -23,13 +25,15 @@ import org.json.simple.JSONArray;
  * Generate a report of PVs that are currently paused.
  * 
  * 
- * @epics.BPLAction - Return a list of PVs that are currently paused. 
- * @epics.BPLActionParam limit - Limit this report to this many PVs per appliance in the cluster. Optional, if unspecified, there are no limits enforced.
- * @epics.BPLActionEnd
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Return a list of PVs that are currently paused.",
+        params = {
+            @BPLParam(name = "limit", description = "Limit this report to this many PVs per appliance in the cluster. Optional, if unspecified, there are no limits enforced.")
+        })
 public class PausedPVsReport implements BPLAction {
 	private static Logger logger = LogManager.getLogger(PausedPVsReport.class.getName());
 	@Override

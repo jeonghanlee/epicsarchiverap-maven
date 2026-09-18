@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -21,14 +23,16 @@ import org.json.simple.JSONValue;
  * A report that looks at the potentially slow changing PV's that have dropped events. This is basically those PV's whose "How many events lost totally so far?" is greater than the "How many events so far?". For now, we restrict to event losses from incorrect timestamps.
  * 
  * 
- * @epics.BPLAction - Return a list of PVs which have lost more events than events from the IOC sorted by number of times we've lost events. This does not include PVs that have been paused.   
- * @epics.BPLActionParam limit - Limit this report to this many PVs per appliance in the cluster. Optional, if unspecified, there are no limits enforced.
- * @epics.BPLActionEnd
  * 
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Return a list of PVs which have lost more events than events from the IOC sorted by number of times we've lost events. This does not include PVs that have been paused.",
+        params = {
+            @BPLParam(name = "limit", description = "Limit this report to this many PVs per appliance in the cluster. Optional, if unspecified, there are no limits enforced.")
+        })
 public class SlowChangingPVsWithDroppedEvents implements BPLAction {
 	private static Logger logger = LogManager.getLogger(SlowChangingPVsWithDroppedEvents.class.getName());
 	@Override

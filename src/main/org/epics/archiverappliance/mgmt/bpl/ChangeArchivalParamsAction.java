@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -24,15 +26,17 @@ import org.json.simple.JSONValue;
  * Change the archival parameters for a PV. 
  * For now, we support changing the sampling period.
  * 
- * @epics.BPLAction - Change the archival parameters for a PV. 
- * @epics.BPLActionParam pv - The name of the pv.
- * @epics.BPLActionParam samplingperiod - The new sampling period in seconds. 
- * @epics.BPLActionParam samplingmethod - The new sampling method - For now, this is one of SCAN or MONITOR.
- * @epics.BPLActionEnd
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Change the archival parameters for a PV.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv."),
+            @BPLParam(name = "samplingperiod", description = "The new sampling period in seconds."),
+            @BPLParam(name = "samplingmethod", description = "The new sampling method - For now, this is one of SCAN or MONITOR.")
+        })
 public class ChangeArchivalParamsAction implements BPLAction {
 	private static Logger logger = LogManager.getLogger(ChangeArchivalParamsAction.class.getName());
 

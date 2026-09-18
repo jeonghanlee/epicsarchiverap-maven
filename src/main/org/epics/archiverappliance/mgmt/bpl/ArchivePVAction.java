@@ -10,6 +10,8 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -63,19 +65,21 @@ import javax.servlet.http.HttpServletResponse;
  *
  *</code></pre>
  *
- * @epics.BPLAction - Archive one or more PV's.
- * @epics.BPLActionParam pv - The name of the pv to be archived. If archiving more than one PV, use a comma separated list. You can also send the PV list as part of the POST body using standard techniques. If you need to specify different archiving parameters for each PV, send the data as a JSON array (remember to send the content type correctly).
- * @epics.BPLActionParam samplingperiod - The sampling period to be used. Optional, default value is 1.0 seconds.
- * @epics.BPLActionParam samplingmethod - The sampling method to be used. For now, this is one of SCAN or MONITOR. Optional, default value is MONITOR.
- * @epics.BPLActionParam controllingPV - The controlling PV for coditional archiving. Optional; if unspecified, we do not use conditional archiving.
- * @epics.BPLActionParam policy - Override the policy execution process and use this policy instead. Optional; if unspecified, we go thru the normal policy execution process.
- * @epics.BPLActionParam appliance - Optional; you can specify an appliance in a cluster. If specified (value is the identity of the appliance), the sampling and archiving are done on the specified appliance.
- * @epics.BPLActionEnd
  *
  *
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Archive one or more PV's.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv to be archived. If archiving more than one PV, use a comma separated list. You can also send the PV list as part of the POST body using standard techniques. If you need to specify different archiving parameters for each PV, send the data as a JSON array (remember to send the content type correctly)."),
+            @BPLParam(name = "samplingperiod", description = "The sampling period to be used. Optional, default value is 1.0 seconds."),
+            @BPLParam(name = "samplingmethod", description = "The sampling method to be used. For now, this is one of SCAN or MONITOR. Optional, default value is MONITOR."),
+            @BPLParam(name = "controllingPV", description = "The controlling PV for coditional archiving. Optional; if unspecified, we do not use conditional archiving."),
+            @BPLParam(name = "policy", description = "Override the policy execution process and use this policy instead. Optional; if unspecified, we go thru the normal policy execution process."),
+            @BPLParam(name = "appliance", description = "Optional; you can specify an appliance in a cluster. If specified (value is the identity of the appliance), the sampling and archiving are done on the specified appliance.")
+        })
 public class ArchivePVAction implements BPLAction {
     public static final Logger logger = LogManager.getLogger(ArchivePVAction.class);
 

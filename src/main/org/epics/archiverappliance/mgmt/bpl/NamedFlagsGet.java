@@ -10,19 +10,23 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONObject;
 
 /**
  * 
- * @epics.BPLAction - Get the value of the named flag specified by name 
- * @epics.BPLActionParam name - the name of the named flag.
- * @epics.BPLActionEnd
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Get the value of the named flag specified by name",
+        params = {
+            @BPLParam(name = "name", description = "the name of the named flag.")
+        })
 public class NamedFlagsGet implements BPLAction {
 	private static Logger logger = LogManager.getLogger(NamedFlagsGet.class.getName());
 	@Override

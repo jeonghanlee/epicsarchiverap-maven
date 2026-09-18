@@ -12,6 +12,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
@@ -22,14 +24,16 @@ import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 /**
  * Modifies the specified store for this PV using the new definition. The PV needs to be paused first.
  * 
- * @epics.BPLAction - Changes the store for this particular PV. Note this only changes the PVTypeInfo; it does not change any data/files so one could lose data using this call. 
- * @epics.BPLActionParam pv - The name of the pv
- * @epics.BPLActionParam storage - The name of the store to change ( for example, MTS )
- * @epics.BPLActionParam plugin_url - The new URL specification for this store; this is what you would have used in the policy file and is something that can be understood by <a href="../api/org/epics/archiverappliance/config/StoragePluginURLParser.html">StoragePluginURLParser</a>.
- * @epics.BPLActionEnd
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Changes the store for this particular PV. Note this only changes the PVTypeInfo; it does not change any data/files so one could lose data using this call.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv"),
+            @BPLParam(name = "storage", description = "The name of the store to change ( for example, MTS )"),
+            @BPLParam(name = "plugin_url", description = "The new URL specification for this store; this is what you would have used in the policy file and is something that can be understood by <a href=\"../api/org/epics/archiverappliance/config/StoragePluginURLParser.html\">StoragePluginURLParser</a>.")
+        })
 public class ModifyStoreURLForPV implements BPLAction {
 	private static Logger logger = LogManager.getLogger(ModifyStoreURLForPV.class.getName());
 

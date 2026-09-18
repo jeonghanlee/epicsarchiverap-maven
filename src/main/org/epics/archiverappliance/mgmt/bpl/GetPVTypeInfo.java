@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.utils.ui.JSONEncoder;
@@ -17,12 +19,14 @@ import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 /**
  * Gets the type info for a PV as a JSON object
  * 
- * @epics.BPLAction - Get the type info for a given PV. In the archiver appliance terminology, the PVTypeInfo contains the various archiving parameters for a PV. 
- * @epics.BPLActionParam pv - The name of the pv.
- * @epics.BPLActionEnd
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Get the type info for a given PV. In the archiver appliance terminology, the PVTypeInfo contains the various archiving parameters for a PV.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv.")
+        })
 public class GetPVTypeInfo implements BPLAction {
 	private static Logger logger = LogManager.getLogger(GetPVTypeInfo.class.getName());
 

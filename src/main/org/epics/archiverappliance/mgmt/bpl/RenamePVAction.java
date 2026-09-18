@@ -12,6 +12,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
@@ -25,10 +27,6 @@ import org.json.simple.JSONValue;
 
 /**
  * 
- * @epics.BPLAction - Rename this pv to a new name. The PV needs to be paused first.
- * @epics.BPLActionParam pv - The current name of the PV.
- * @epics.BPLActionParam newname - The new name of the PV.
- * @epics.BPLActionEnd
  * 
  * Note - Renames are not transactional; to accommodate a safer process for renaming PV's, this action functions more like a "copyPV" action.
  * When you rename PV <code>old</code> to <code>new</code>, the PVTypeInfo and data for <code>old</code> are copied into <code>new</code>.
@@ -39,6 +37,12 @@ import org.json.simple.JSONValue;
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Rename this pv to a new name. The PV needs to be paused first.",
+        params = {
+            @BPLParam(name = "pv", description = "The current name of the PV."),
+            @BPLParam(name = "newname", description = "The new name of the PV.")
+        })
 public class RenamePVAction implements BPLAction {
 	private static Logger logger = LogManager.getLogger(RenamePVAction.class.getName());
 
