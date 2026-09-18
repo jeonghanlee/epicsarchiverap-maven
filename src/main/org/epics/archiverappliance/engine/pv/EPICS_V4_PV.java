@@ -362,7 +362,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
                         }
                     }
                 } catch (Exception e) {
-                    logger.error("exception when connecting pv", e);
+                    logger.error("exception when connecting pv " + name, e);
                 }
             }
         });
@@ -401,7 +401,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
         try {
             channelCopy.close();
         } catch (final Exception e) {
-            logger.error("exception when disconnecting pv", e);
+            logger.error("exception when disconnecting pv " + this.name, e);
         }
 
         if (state != PVConnectionState.Disconnected) {
@@ -443,7 +443,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
                 saveAllMetaData(dbrTimeEvent);
                 fireValueUpdate(dbrTimeEvent);
             } catch (Exception e) {
-                logger.error("exception when reading pv", e);
+                logger.error("exception when reading pv " + this.name, e);
             }
             try {
                 if (pvaChannel.getState() != ClientChannelState.CONNECTED) {
@@ -462,7 +462,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
                                 .build(),
                         this);
             } catch (final Exception ex) {
-                logger.error("exception when subscribing pv", ex);
+                logger.error("exception when subscribing pv " + this.name, ex);
             }
         }
     }
@@ -484,7 +484,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
         try {
             subCopy.close();
         } catch (final Exception ex) {
-            logger.error("exception when unsubscribing pv", ex);
+            logger.error("exception when unsubscribing pv " + this.name, ex);
         }
     }
 
