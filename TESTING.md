@@ -36,6 +36,16 @@ Most integration tests carry both `integration` and `localEpics`: they need Tomc
 ./mvnw test -P localEpics      # the EPICS-only subset that needs no Tomcat (localEpics & !integration)
 ```
 
+### Heap sizing on large-memory hosts
+
+The JVM ergonomic default caps the maximum heap at 25% of host RAM (`MaxRAMPercentage=25`). Each JVM the run starts — the Maven process and every forked Surefire JVM — therefore reserves a heap proportional to total RAM (about 23 GB on a 93 GB host) irrespective of what the tests need. Several such JVMs commit far more memory than the run uses and can exhaust the host. Bound the heaps explicitly on a large-memory host:
+
+```bash
+MAVEN_OPTS=-Xmx1g ./mvnw -o test -DargLine=-Xmx2g -DforkCount=1 -DreuseForks=true
+```
+
+`MAVEN_OPTS` bounds the Maven process, `-DargLine` bounds each Surefire fork, and `forkCount=1` with `reuseForks=true` keeps a single reused fork. `-o` runs offline once the dependencies are cached. The pom sets no Surefire `argLine`, so `-DargLine` replaces nothing.
+
 ## EPICS-dependent tests
 
 The site standard for PVA serving is QSRV2 on pvxs. The fixture IOC is `softIocPVX` (pvxs module); `softIocPVA` remains only as a compatibility fallback for unconverted tests.
