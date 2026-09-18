@@ -165,7 +165,7 @@ public class SummaryStatsCollectorEventStream implements EventStream, RemotableO
 			Event next = strm.get(currentEvent);
 			short eventYear = TimeUtils.computeYearForEpochSeconds(next.getEpochSeconds());
 			if(eventYear != currentYear) { 
-				logger.info("Detected a change in years eventYear " + eventYear + " and currentYear is " + eventYear);
+				logger.info("Detected a change in years eventYear " + eventYear + " and currentYear is " + currentYear);
 				SummaryStatsCollectorEventStream.this.desc.setYear(eventYear);
 				short tempCurrentYear = currentYear;
 				currentYear = eventYear;
