@@ -101,8 +101,10 @@ import org.epics.archiverappliance.mgmt.policy.GetPolicyList;
 import org.epics.archiverappliance.mgmt.policy.GetPolicyText;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -265,22 +267,29 @@ public class BPLServlet extends HttpServlet {
     }
 
     /**
-     * The main method here is used only to generate documentation for the scripting guide.
-     * No other functionality is provided
-     * @param args  &emsp;
-     * @throws IOException  &emsp;
+     * Every registered path in registration order. The generated API reference
+     * lists actions in this order.
+     * @return an unmodifiable ordered list of paths
      */
-    public static void main(String[] args) throws IOException {
-        System.out.println("#Path mappings for mgmt BPLs");
-        for (String path : actionsSequenceForDocs) {
-            Class<? extends BPLAction> classObj = getActions.get(path);
-            if (classObj == null) {
-                classObj = postActions.get(path);
-            }
-            if (classObj == null) {
-                System.err.println("Invalid registration for " + path);
-            }
-            System.out.println(path + "=" + classObj.getName());
-        }
+    public static List<String> getRegisteredPaths() {
+        return Collections.unmodifiableList(actionsSequenceForDocs);
+    }
+
+    /**
+     * The action class registered for a path under GET.
+     * @param path the BPL path
+     * @return the action class, or null when the path has no GET action
+     */
+    public static Class<? extends BPLAction> getGetAction(String path) {
+        return getActions.get(path);
+    }
+
+    /**
+     * The action class registered for a path under POST.
+     * @param path the BPL path
+     * @return the action class, or null when the path has no POST action
+     */
+    public static Class<? extends BPLAction> getPostAction(String path) {
+        return postActions.get(path);
     }
 }

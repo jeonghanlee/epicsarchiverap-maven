@@ -21,9 +21,7 @@
     <test.excludes>**/PvaTest.java</test.excludes>
     <src.main.dir>${project.basedir}/src/main</src.main.dir>
     <docs.dir>${project.basedir}/docs</docs.dir>
-    <api.docs.dir>${docs.dir}/api</api.docs.dir>
     <classes.dir>${project.build.directory}/build/classes</classes.dir>
-    <java.docs.output.path>${project.build.directory}/site/apidocs/docs/api</java.docs.output.path>
     <stage.dir>${project.build.directory}/stage</stage.dir>
     <!--
  intermediate files .txt lost thier path, so we have to define it specifically
@@ -36,7 +34,6 @@
     <log4j.version>2.26.1</log4j.version>
     <commons-io.version>2.22.0</commons-io.version>
     <commons-lang3.version>3.20.0</commons-lang3.version>
-    <sphinx.skip>false</sphinx.skip>
   </properties>
   <repositories>
     <repository>
@@ -498,37 +495,6 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <version>3.0.0</version>
         <executions>
-          <execution>
-            <id>create-api-docs-directory</id>
-            <phase>initialize</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <echo message="ANT: Ensuring directory ${api.docs.dir} exists."/>
-                <mkdir dir="${api.docs.dir}"/>
-              </target>
-            </configuration>
-          </execution>
-          <execution>
-            <id>check-mappings-file-before-javadoc</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <property name="mappings.file.abs.path" value="${project.basedir}/docs/api/mgmtpathmappings.txt"/>
-                <echo message="ANT DIAGNOSTIC: Project base directory is: ${project.basedir}"/>
-                <echo message="ANT DIAGNOSTIC: Expecting mgmtpathmappings.txt at: ${mappings.file.abs.path}"/>
-                <available file="${mappings.file.abs.path}" property="mappings.file.is.available.by.ant"/>
-                <echo message="ANT DIAGNOSTIC RESULT: Is ${mappings.file.abs.path} available? ${mappings.file.is.available.by.ant}"/>
-                <fail message="ANT DIAGNOSTIC FAIL: mgmtpathmappings.txt NOT found by Ant at ${mappings.file.abs.path} during prepare-package phase!" unless="mappings.file.is.available.by.ant"/>
-                <echo message="ANT DIAGNOSTIC SUCCESS: mgmtpathmappings.txt IS found by Ant at ${mappings.file.abs.path}."/>
-              </target>
-            </configuration>
-          </execution>
         <execution>
             <id>download-unpack-and-stage-svg-viewer</id>
             <phase>prepare-package</phase> <goals>
@@ -592,55 +558,20 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.3.0</version>
         <executions>
-          <!--
-                    JAVA_HOME=/opt/java-env/JDK /opt/java-env/MAVEN/bin/mvn dependency:build-classpath -Dmdep.outputFile=cp.txt
-                    FULL_CLASSPATH="target/classes:$(cat cp.txt)"
-                     /opt/java-env/JDK/bin/java -cp "$FULL_CLASSPATH" org.epics.archiverappliance.mgmt.BPLServlet
-          -->
+          <!-- The mgmt API reference is generated from the BPLServlet registry and the
+               BPLEndpoint annotations straight into the mgmt staticcontent stage, which the
+               mgmt WAR ships under ui/api. -->
           <execution>
-            <id>generateBPLActionsMappings</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <executable>${env.JAVA_HOME}/bin/java</executable>
-              <workingDirectory>${project.basedir}</workingDirectory>
-              <arguments>
-                <argument>-classpath</argument>
-                <classpath/>
-                <argument>org.epics.archiverappliance.mgmt.BPLServlet</argument>
-              </arguments>
-              <outputFile>${api.docs.dir}/mgmtpathmappings.txt</outputFile>
-            </configuration>
-          </execution>
-          <execution>
-            <id>copy-mgmt_scriptables-for-package</id>
-            <phase>package</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <executable>scp</executable>
-              <arguments>
-                <argument>${java.docs.output.path}/mgmt_scriptables.txt</argument>
-                <argument>${api.docs.dir}</argument>
-              </arguments>
-            </configuration>
-          </execution>
-          <!--
-                     we need to copy ${java.docs.output.path}/docs/api/mgmt_scriptables.txt to ${api.docs.dir} in prepare-pacakges
-          -->
-          <execution>
-            <id>generateJavaDocTagletScriptables</id>
-            <phase>package</phase>
+            <id>generateApiReference</id>
+            <phase>process-classes</phase>
             <goals>
               <goal>java</goal>
             </goals>
             <configuration>
-              <workingDirectory>${project.basedir}</workingDirectory>
-              <mainClass>org.epics.archiverappliance.common.taglets.ProcessMgmtScriptables</mainClass>
-              <arguments/>
+              <mainClass>org.epics.archiverappliance.mgmt.bpl.ApiReferenceGenerator</mainClass>
+              <arguments>
+                <argument>${stage.dir}/org/epics/archiverappliance/mgmt/staticcontent/api</argument>
+              </arguments>
               <classpathScope>compile</classpathScope>
             </configuration>
           </execution>
@@ -675,18 +606,6 @@
               <outputFile>${stage.dir}/RELEASE_NOTES</outputFile>
             </configuration>
           </execution>
-          <execution>
-            <id>sphinx</id>
-            <phase>package</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <skip>${sphinx.skip}</skip>
-              <workingDirectory>${docs.dir}</workingDirectory>
-              <executable>${docs.dir}/build_docs.sh</executable>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -719,24 +638,6 @@
             </configuration>
           </execution>
           <execution>
-            <id>copy-mgmtpathmappings-for-processing</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${java.docs.output.path}</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${api.docs.dir}</directory>
-                  <includes>
-                    <include>mgmtpathmappings.txt</include>
-                  </includes>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-          <execution>
             <id>stage-resources</id>
             <phase>prepare-package</phase>
             <goals>
@@ -745,13 +646,6 @@
             <configuration>
               <outputDirectory>${stage.dir}</outputDirectory>
               <resources>
-                <resource>
-                  <directory>${docs.dir}</directory>
-                  <includes>
-                    <include>*.*</include>
-                  </includes>
-                  <targetPath>${api.docs.dir}</targetPath>
-                </resource>
                 <resource>
                   <directory>${src.main.dir}/org/epics/archiverappliance/staticcontent</directory>
                   <targetPath>org/epics/archiverappliance/staticcontent</targetPath>
@@ -786,22 +680,6 @@
           <links>
             <link>https://docs.oracle.com/en/java/javase/${java.version}/docs/api/</link>
           </links>
-          <taglets>
-            <taglet>
-              <tagletClass>org.epics.archiverappliance.taglets.BPLActionTaglet</tagletClass>
-            </taglet>
-            <taglet>
-              <tagletClass>org.epics.archiverappliance.taglets.BPLActionParamTaglet</tagletClass>
-            </taglet>
-            <taglet>
-              <tagletClass>org.epics.archiverappliance.taglets.BPLActionEndTaglet</tagletClass>
-            </taglet>
-          </taglets>
-          <tagletArtifact>
-            <groupId>local.org.epics</groupId>
-            <artifactId>BPLTaglets</artifactId>
-            <version>1.0</version>
-          </tagletArtifact>
           <destDir>${javadoc.output.dir}</destDir>
           <verbose>true</verbose>
           <show>protected</show>
@@ -880,10 +758,6 @@
                 -->
                   <directory>${stage.dir}/org/epics/archiverappliance/mgmt/staticcontent</directory>
                   <targetPath>ui</targetPath>
-                </resource>
-                <resource>
-                  <directory>${docs.dir}/docs/build</directory>
-                  <targetPath>ui/help</targetPath>
                 </resource>
                 <resource>
                 <!--
@@ -1019,9 +893,6 @@
         <version>3.4.0</version>
         <configuration>
           <filesets>
-            <fileset>
-              <directory>${api.docs.dir}</directory>
-            </fileset>
             <fileset>
               <directory>${docs.dir}</directory>
               <includes>
