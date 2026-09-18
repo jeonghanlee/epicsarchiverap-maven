@@ -184,8 +184,6 @@ is over, you can turn `LTS` back on by setting the `SKIP_LTS_FOR_RETRIEVAL`
 named flag to `false`. Named flags are `false` by default; so restarting the
 appliances should also accomplish the same.
 
-
-
 Use a named flag based on the storage plugin's name.
     For example, if the name is LTS, the named flag
     SKIP_LTS_FOR_RETRIEVAL can used to temporarily turn off
