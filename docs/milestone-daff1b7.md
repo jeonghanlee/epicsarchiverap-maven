@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M6 Tier A and B are triaged. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done; remaining milestone items are M5 hosted verification and any release-cycle work. M5 hosted verification remains to be recorded; Read the Docs is not connected. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
+Next session entry point: M6 is complete: upstream selective adoption done. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done; remaining milestone items are M5 hosted verification and any release-cycle work. M5 hosted verification remains to be recorded; Read the Docs is not connected. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -25,7 +25,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M3 | Canonical pom as single source of truth | Milestone | Complete | No | D6 | Fresh clone of 9be652c builds four WARs from the tracked pom with no system scope (2026-09-12); [detail](#m3---canonical-pom-as-single-source-of-truth) |
 | Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | Complete | No | M3, M8 | Fixed versions, build and dependency checks pass; 749 default and 45 integration tests pass; landed as 977edf3d (2026-09-16); [detail](#m4---dependency-refresh-to-stable-current-versions) |
 | Phase 1 | M5 | Maven-centric CI and docs build | Milestone | In progress | No | D24 | Workflow and docs checks pass locally, including 749 tests; landing and hosted builds pending; [detail](#m5---maven-centric-ci-and-docs-build) |
-| Phase 1 | M6 | Upstream core features: cherry-pick policy and application | Milestone | In progress | No | D25 | 105 PRs classified; 72 scored by five reviewers; 25 PRs owner-confirmed after exclusions (D26, D27); ordered application plan recorded; source changes pending; [detail](#m6---upstream-core-features-cherry-pick-policy-and-application) |
+| Phase 1 | M6 | Upstream core features: cherry-pick policy and application | Milestone | Complete | No | D25 | 105 PRs classified; 72 scored by five reviewers; 25 PRs owner-confirmed after exclusions (D26, D27); 28 PRs triaged: 19 applied, 6 skipped, 3 excluded; Tier A-D complete, committed and pushed; coherence sweep at 71d15083 recorded in docs/CLOSED_DOORS.md; [detail](#m6---upstream-core-features-cherry-pick-policy-and-application) |
 | Phase 1 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; [detail](#m7---site-required-features-and-fixes) |
 | Phase 1 | M8 | Maven test platform | Milestone | Complete | No | | Fresh clone of eb047c57 compiles and passes 749 default tests; integration 98 and localEpics 26 pass (2026-09-15); [detail](#m8---maven-test-platform) |
 | Phase 1 | M9 | Documentation for the Maven build | Milestone | Not started | Yes | | Build, test, and deploy docs match the Maven-only reality; [detail](#m9---documentation-for-the-maven-build) |
@@ -491,7 +491,7 @@ Last Compared: never
 Origin: daff1b7 / M6
 Identity History: none
 GitHub Issue: none
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -514,9 +514,9 @@ Out of scope: wholesale upstream merges (D1); build-system or servlet-API change
 
 ##### Implementation Plan
 
-Plan Status: accepted; application in progress
+Plan Status: accepted; application complete
 Plan Acceptance: Survey method and owner selection accepted 2026-09-16; ordered application plan recorded 2026-09-16 (25 units in four tiers, after the D26 and D27 exclusions); source-patch application authorized 2026-09-16
-Implementation Authorization: Source-patch application authorized and underway from 2026-09-16, one unit at a time under owner direction; each unit is curated by hunk and compile-verified, with runtime verification deferred to the fixture environment. This supersedes D25's no-patch state.
+Implementation Authorization: Source-patch application authorized 2026-09-16 and completed, one unit at a time under owner direction; each unit was curated by hunk and compile-verified, with per-unit runtime verification recorded in the Application status. This superseded D25's no-patch state.
 Superseded Plan Artifacts: Initial six-candidate draft, superseded by the complete merge-unit survey
 
 1. Follow EPICS-env `docs/upstream-fix-carry-procedure.md` for the full upstream range. Use the owner's merge-unit selection rule: 104 merge commits and one squash integration cover all 565 commits without duplication.
