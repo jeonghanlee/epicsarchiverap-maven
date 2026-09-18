@@ -495,34 +495,15 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <version>3.0.0</version>
         <executions>
-        <execution>
-            <id>download-unpack-and-stage-svg-viewer</id>
-            <phase>prepare-package</phase> <goals>
-                <goal>run</goal>
-            </goals>
-            <configuration>
-                <target>
-                    <property name="svg.viewer.zip.dir" value="${project.build.directory}/dependencies/svg_viewer_zip"/>
-                    <property name="svg.viewer.zip.file" value="${svg.viewer.zip.dir}/svg_viewer-v1.2.1.zip"/>
-                    <property name="svg.viewer.url" value="https://github.com/archiver-appliance/svg_viewer/archive/v1.2.1.zip"/>
-                    <property name="svg.viewer.unpacked.base.dir" value="${project.build.directory}/dependencies/unpacked"/>
-                    <property name="svg.viewer.unpacked.content.dir" value="${svg.viewer.unpacked.base.dir}/svg_viewer-1.2.1"/>
-                    <property name="stage.dir" value="${project.build.directory}/stage"/>
-                    <property name="final.zip.output.dir" value="${stage.dir}/org/epics/archiverappliance/retrieval/staticcontent"/>
-                    <property name="final.zip.file" value="${final.zip.output.dir}/viewer.zip"/>
-                    <echo message="Downloading SVG Viewer from ${svg.viewer.url} to ${svg.viewer.zip.file}"/>
-                    <mkdir dir="${svg.viewer.zip.dir}"/>
-                    <get src="${svg.viewer.url}" dest="${svg.viewer.zip.file}" skipexisting="true"/>
-                    <echo message="Unpacking SVG Viewer to ${svg.viewer.unpacked.base.dir}"/>
-                    <mkdir dir="${svg.viewer.unpacked.base.dir}"/>
-                    <unzip src="${svg.viewer.zip.file}" dest="${svg.viewer.unpacked.base.dir}"/>
-                    <echo message="Creating final viewer.zip at ${final.zip.file}"/>
-                    <zip destfile="${final.zip.file}" basedir="${svg.viewer.unpacked.content.dir}" defaultexcludes="false">
-                        <include name="**/*"/>
-                    </zip>
-                </target>
-            </configuration>
-        </execution>
+        <!--
+          The SVG viewer asset is vendored as a committed resource at
+          src/main/org/epics/archiverappliance/retrieval/staticcontent/viewer.zip
+          (source: https://github.com/archiver-appliance/svg_viewer, tag v1.2.1),
+          so the build needs no outbound network. The stage-resources execution
+          below copies that directory into the stage, which places viewer.zip
+          where the retrieval WAR expects it. The refresh procedure for a new
+          upstream version is documented in docs/svg-viewer.md.
+        -->
           <execution>
             <id>create-version-txt</id>
             <phase>package</phase>
