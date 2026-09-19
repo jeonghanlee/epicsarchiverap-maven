@@ -20,7 +20,6 @@ import java.util.HashMap;
  * Out-of-band events (such as transitions into another PV's data) are passed as events on the RetrievalEventProcessor.
  * 
  * @author mshankar
- * @see DataRetrieval
  * @see Reader
  */
 public interface DataRetrievalForPVs {
