@@ -140,7 +140,7 @@ pushd $TOMCAT_HOME/webapps && rm -rf etl*; popd
 pushd $TOMCAT_HOME/webapps && rm -rf retrieval*; popd
 
 
-pushd ${PROJECT_DIR}; ant clean; ant; popd; 
+pushd ${PROJECT_DIR}; ./mvnw -B clean package -DskipTests; popd;
 pushd ${PROJECT_DIR}; ./deployMultipleTomcats.py ${DEPLOY_DIR}; if [[ $? != 0 ]]; then echo "Multiple deploy did not succeed; aborting"; exit 1; fi; popd
 
 pushd ${DEPLOY_DIR}/mgmt/webapps && rm -rf mgmt*; cp ${PROJECT_DIR}/../mgmt.war .; popd; 

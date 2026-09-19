@@ -2,7 +2,7 @@
 
 The EPICS Archiver Appliance comes with a client plugin for the
 ArchiveViewer that enables the user to retrieve and display data in the
-ArchiveViewer using the [PB/HTTP](../developer/pb_pbraw) protocol. To download a
+ArchiveViewer using the [PB/HTTP](../developer/pb_pbraw.md) protocol. To download a
 version of the Archive Viewer with the client plugin for the EPICS
 Archiver Appliance, please see the
 [Download](https://github.com/slacmshankar/epicsarchiverap/releases/)\'s

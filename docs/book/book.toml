@@ -1,0 +1,21 @@
+[book]
+title = "EPICS Archiver Appliance"
+authors = ["EPICS Archiver Appliance contributors"]
+description = "Documentation for the EPICS Archiver Appliance, built and deployed by the Maven modernization fork."
+language = "en"
+text-direction = "ltr"
+src = "src"
+
+[build]
+build-dir = "book"
+
+[output.html]
+git-repository-url = "https://github.com/jeonghanlee/epicsarchiverap-maven"
+site-url = "/epicsarchiverap-maven/"
+additional-css = ["./mdbook-admonish.css"]
+
+[preprocessor]
+
+[preprocessor.admonish]
+command = "mdbook-admonish"
+assets_version = "3.1.0" # do not edit: managed by `mdbook-admonish install`

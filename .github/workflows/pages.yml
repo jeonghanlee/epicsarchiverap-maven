@@ -1,0 +1,47 @@
+name: Deploy docs to GitHub Pages
+
+# Builds the mdBook documentation with the repository's pinned Dockerfile
+# (docs/book/Dockerfile) and publishes it to GitHub Pages. The Pages source
+# must be set to "GitHub Actions" (build_type=workflow) or a branch-source
+# Jekyll build will shadow this output.
+
+on:
+  push:
+    branches: [modernize]
+    paths:
+      - docs/book/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the documentation image
+        run: docker build -t aa-mdbook docs/book
+      - name: Build the book
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs/book:/book" aa-mdbook build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/book/book
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

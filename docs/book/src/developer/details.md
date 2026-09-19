@@ -8,7 +8,7 @@ Here are the main features.
 
 - Ability to cluster appliances and to scale by adding appliances to
   the cluster.
-  - Limited support for [redundancy](../sysadmin/redundancy).
+  - Limited support for [redundancy](../sysadmin/redundancy.md).
 - Multiple stages and an inbuilt process to move data between the
   stages.
   - This supports the ability to use faster storage (which is
@@ -37,8 +37,8 @@ Here are the main features.
     responses.
 - Support for EPICS aliases.
 - Support for EPICS 7/PVAccess/Structured data.
-- Support for retrieval of data using [CS-Studio](../user/cstudio), the
-  [ArchiveViewer](../user/archiveviewer) and Matlab.
+- Support for retrieval of data using [CS-Studio](../user/cstudio.md), the
+  [ArchiveViewer](../user/archiveviewer.md) and Matlab.
 - Limited integration with existing Channel Archiver data sources.
 
 ## System requirements
@@ -86,15 +86,15 @@ S3](https://github.com/Upplication/Amazon-S3-FileSystem-NIO2), a
 database BLOB per chunk or a key/value pair per chunk in any
 key/value store).
 
-    :::{note}
+    ```admonish note
     By default, the PlainPBStoragePlugin maps PV names to keys using a
     simple algorithm that relies on the presence of a good PV naming
-    convention. To use your own mapping scheme, see the [Key Mapping](../sysadmin/customization#key_mapping) section in the
+    convention. To use your own mapping scheme, see the [Key Mapping](../sysadmin/customization.md#key-mapping) section in the
     customization guide.
-    :::
+    ```
 
 To add support for other storage technologies - see the [customization
-guide](../sysadmin/customization) for details.
+guide](../sysadmin/customization.md) for details.
 
 ## Architecture
 
@@ -123,18 +123,14 @@ commonly deployed configuration. There is no necessity for the
 appliances to share any storage; so both of these configurations are
 possible.
 
-```{figure} ../images/clusterinto1lts.png
-:alt: Multiple appliances into one long term store
+![Multiple appliances into one long term store](../images/clusterinto1lts.png)
 
-Multiple appliances sending data into one long term store
-```
+*Multiple appliances sending data into one long term store*
 
-```{figure} ../images/clusterintodifflts.png
-:alt: Multiple appliances into different long term stores
+![Multiple appliances into different long term stores](../images/clusterintodifflts.png)
 
-Multiple appliances sending data into different long term
-stores
-```
+*Multiple appliances sending data into different long term
+stores*
 
 ## Policies
 

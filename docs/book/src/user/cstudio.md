@@ -7,7 +7,7 @@ databrowser.
 ## Configuring CS-Studio
 
 CS-Studio communicates with the appliance using the
-[PB/HTTP](../developer/pb_pbraw) protocol. The databrowser can be configured to
+[PB/HTTP](../developer/pb_pbraw.md) protocol. The databrowser can be configured to
 use the appliance by including the client retrieval URL to the list of
 Archive data servers. From the top menu select
 `Edit` > `Preferences` > `CSS Applications` > `Trends`

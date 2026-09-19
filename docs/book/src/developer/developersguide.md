@@ -135,8 +135,8 @@ equivalent.
 
 ## Side projects
 
-The sources for the [Archive Viewer](sysadmin/archiveviewer) integration and
-the client library for the [PB/HTTP](developer/pb_pbraw) protocol are in
+The sources for the [Archive Viewer](../user/archiveviewer.md) integration and
+the client library for the [PB/HTTP](pb_pbraw.md) protocol are in
 separate projects in the same repository.
 
 1. [PB/HTTP](https://github.com/slacmshankar/epicsarchiverap_pbrawclient/)
@@ -190,5 +190,5 @@ separate projects in the same repository.
    - The
      [ConfigService](../_static/javadoc/org/epics/archiverappliance/config/ConfigService.html)
      class does all configuration management.
-   - The [customization guide](../sysadmin/customization) is also a good
+   - The [customization guide](../sysadmin/customization.md) is also a good
      guide to way in which this product can be customized.
