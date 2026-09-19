@@ -29,6 +29,7 @@ import java.time.Instant;
  * 
  */
 public class ConvertGnuplotData {
+	private static final String DATA_DIR = System.getProperty("archappl.tools.dataDir", System.getProperty("java.io.tmpdir"));
 
 	/**
 	 * @param args
@@ -47,7 +48,7 @@ public class ConvertGnuplotData {
 			pvName = args[0];
 		}
 		
-		String dataFileName = "/tmp/archappdat";
+		String dataFileName = DATA_DIR + "/archappdat";
 		if(args.length > 1) {
 			dataFileName = args[1];
 		}

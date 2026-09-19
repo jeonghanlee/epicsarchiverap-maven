@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 public class GeneratePBFileAndCompress {
 	private static Logger logger = LogManager.getLogger(GeneratePBFileAndCompress.class.getName());
+	private static final String DATA_DIR = System.getProperty("archappl.tools.dataDir", System.getProperty("java.io.tmpdir"));
 
         //pb://localhost?name=STS&rootFolder=${ARCHAPPL_SHORT_TERM_FOLDER}&partitionGranularity=PARTITION_HOUR
         /**
@@ -15,7 +16,7 @@ public class GeneratePBFileAndCompress {
          */
         public static void main(String[] args) {
                 try {
-                	GeneratePBFileAndCompress.packAllPBFiles("/scratch/200000pvsforoneday/","2012_01_01.zip",true);
+                	GeneratePBFileAndCompress.packAllPBFiles(DATA_DIR + "/200000pvsforoneday/","2012_01_01.zip",true);
                 } catch (Exception e) {
                 	logger.error("exception", e);
                 }

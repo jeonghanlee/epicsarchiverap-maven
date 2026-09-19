@@ -453,22 +453,4 @@ public class GZIPUtil {
      }
 
 
-    public static void main(String[] args) {
-
-      /* File[] sources = new File[] { new File("E:/a.txt"),
-
-              new File("E:/b.txt") };
-
-       File target = new File("E:/test.tar.gz");
-
-       compress(pack(sources, target));
-       
-       */
-         
-         File source = new File("/scratch/new_pv54:2012_03_31_11.pb");
-         compressGZ(source,"/scratch/");
-         
-       
-
-    }
 }

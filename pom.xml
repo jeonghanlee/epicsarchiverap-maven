@@ -917,5 +917,37 @@
         <test.groups>integration | localEpics</test.groups>
       </properties>
     </profile>
+    <profile>
+      <!--
+        Opt-in compilation of the standalone developer and data-generation
+        utilities under src/tools. These carry a main() and are not tests, so
+        they are excluded from the default build and from every WAR. Build them
+        with -Ptools when a utility is needed.
+      -->
+      <id>tools</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.6.0</version>
+            <executions>
+              <execution>
+                <id>add-tools-source</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>add-test-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>${project.basedir}/src/tools</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
