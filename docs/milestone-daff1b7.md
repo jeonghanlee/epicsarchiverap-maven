@@ -30,7 +30,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M8 | Maven test platform | Milestone | Complete | No | | Fresh clone of eb047c57 compiles and passes 749 default tests; integration 98 and localEpics 26 pass (2026-09-15); [detail](#m8---maven-test-platform) |
 | Phase 1 | M9 | Documentation for the Maven build | Milestone | Not started | Yes | | Build, test, and deploy docs match the Maven-only reality; [detail](#m9---documentation-for-the-maven-build) |
 | Phase 1 | M14 | Build self-sufficiency (no build-time network, pip, or scp) | Milestone | Complete | No | | Build runs offline: no svg_viewer download, no per-build sphinx pip install, no scp; [detail](#m14---build-self-sufficiency-no-build-time-network-pip-or-scp) |
-| Phase 1 | M15 | Separate non-test utilities out of src/test | Milestone | Not started | Yes | | The 20 main() dev/generator utilities move out of the test source tree; [detail](#m15---separate-non-test-utilities-out-of-srctest) |
+| Phase 1 | M15 | Separate non-test utilities out of src/test | Milestone | Complete | No | | 16 of the 20 main() utilities move to src/tools; 4 @Test-referenced fixtures stay in src/test; [detail](#m15---separate-non-test-utilities-out-of-srctest) |
 | Phase 1 | M16 | mgmt API reference generated from code | Milestone | Complete | No | D14 | mgmt WAR ships ui/api generated from the BPL registry and annotations; no scp, taglet, or sphinx in package; registry to document agreement test passes; [detail](#m16---mgmt-api-reference-generated-from-code) |
 | Phase 1 | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; [detail](#m10---ant-removal-final-maven-only-consolidation) |
 | Phase 2 | M11 | sqlite-jdbc runtime dependency | Milestone | Complete | No | | Driver org.xerial:sqlite-jdbc 3.53.4.0 added (runtime) and allowlisted; SQLite persistence path verified by SQLitePersistenceTest and the 777/777 regression; [detail](#m11---sqlite-jdbc-runtime-dependency) |
@@ -687,7 +687,7 @@ Wire the test tree into Maven and rebuild the test selection the removed Gradle 
 
 ##### Scope
 
-Stage 1: testSourceDirectory and test resources, test-scope dependencies the tree needs (JUnit 5 with the platform suite, selenium-java and webdrivermanager for the browser tests, awaitility, jinjava for the AppliancesXMLGenerator helper), conversion of the one JUnit 4 suite (PvaTest.java) to a JUnit 5 suite, and Surefire configured so `./mvnw test` runs only the untagged set while `-Dgroups` can select the others. Stage 2: an `integration` profile that runs `integration & !localEpics` against a user-owned Tomcat 9.0.121 through TOMCAT_HOME, a `localEpics` profile that runs the softIoc-based tests with EPICS base on PATH, and the documented invocations.
+Stage 1: testSourceDirectory and test resources, test-scope dependencies the tree needs (JUnit 5 with the platform suite, selenium-java and webdrivermanager for the browser tests, awaitility, jinjava for the AppliancesXMLGenerator helper), conversion of the one JUnit 4 suite (PvaTest.java) to a JUnit 5 suite, and Surefire configured so `./mvnw test` runs only the untagged set while the profiles select the others. Stage 2: an `integration` profile that runs `integration & !localEpics` against a user-owned Tomcat 9.0.121 through TOMCAT_HOME, a `localEpics` profile that runs the softIoc-based tests with EPICS base on PATH, and the documented invocations.
 
 Out of scope: CI wiring (M5); the pythontests scripts.
 
@@ -716,7 +716,7 @@ Stage 1
 1. pom: `<testSourceDirectory>${project.basedir}/src/test</testSourceDirectory>` and a testResources entry for src/test excluding `**/*.java`, so the data files beside the tests reach target/test-classes.
 2. pom: test-scope dependencies at the current stable releases (verified at execution, versions recorded here): junit-jupiter (api, params, engine) and junit-platform-suite through the JUnit BOM; selenium-java and io.github.bonigarcia:webdrivermanager; org.awaitility:awaitility; com.hubspot.jinjava:jinjava. Add whatever else test-compile reports missing, one at a time, recording each.
 3. Convert PvaTest.java from the JUnit 4 Suite runner to a JUnit 5 `@Suite` (junit-platform-suite-api) with `@SelectClasses`, and replace @BeforeClass/@AfterClass with @BeforeAll/@AfterAll or a suite-level extension; no JUnit 4 dependency is added.
-4. pom: maven-surefire-plugin at the current 3.x with `<excludedGroups>integration,localEpics,slow,flaky</excludedGroups>` as the default, so `./mvnw test` is the unit set and `-Dgroups=...` still selects any set.
+4. pom: maven-surefire-plugin at the current 3.x with `<excludedGroups>integration,localEpics,slow,flaky</excludedGroups>` as the default, so `./mvnw test` is the unit set and the profiles (`-P integration`, `-P localEpics`) select the environment-dependent sets by clearing the exclusions.
 5. Run `./mvnw -B test-compile` until every test source compiles; then `./mvnw -B test` and record the unit baseline counts (this is also M4 step 0).
 6. Fresh clone: repeat step 5 on the committed tree.
 
@@ -1211,11 +1211,11 @@ Last Compared: never
 Origin: daff1b7 / M15
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: Complete
 
 ##### Summary
 
-The test source tree holds 20 classes that are not tests but main() dev and data-generation utilities (for example GenerateData, Generate100KPerfHarness, GetFileTime, GZIPUtil, GenerateLargeDB). They are compiled with the tests and four of them carry hard-coded /scratch or /tmp paths. They are not run by Surefire but do not belong in src/test.
+The test source tree holds 20 classes that are not tests but main() dev and data-generation utilities (for example GenerateData, Generate100KPerfHarness, GetFileTime, GZIPUtil, GenerateLargeDB). They are compiled with the tests and four of them carry hard-coded /scratch or /tmp paths. They are not run by Surefire; the standalone ones do not belong in src/test, though a few support @Test classes and stay as fixtures.
 
 ##### Scope
 
@@ -1225,7 +1225,7 @@ Out of scope: the actual @Test classes; the 17665 literal cleanup (M8 reinforcem
 
 ##### Completion Criteria
 
-- src/test contains only JUnit test classes and their support; the utilities live elsewhere or are removed; no kept utility carries a hard-coded absolute path.
+- src/test contains only JUnit test classes and their support; standalone utilities live under src/tools or are removed. A test-referenced fixture may stay in src/test and retain a documented main(); no kept utility carries a hard-coded absolute path.
 
 ##### Dependencies And Decisions
 
@@ -1233,32 +1233,33 @@ Out of scope: the actual @Test classes; the 17665 literal cleanup (M8 reinforcem
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: owner, 2026-09-18
+Implementation Authorization: owner, 2026-09-18
 Superseded Plan Artifacts: none
 
-1. Inventory the 20 main() utilities and their callers.
-2. Move the kept ones out of src/test and drop the unused; fix absolute paths.
-3. Confirm test-compile and the unit set are unaffected.
+1. Move the 16 utilities not referenced by any @Test to a new src/tools source root, compiled only under the opt-in -Ptools profile (build-helper add-test-source), out of the default build and the WARs.
+2. Keep the four @Test-referenced fixtures (GenerateData, PVCaPut, GenerateLargeDB, GZIPUtil) in src/test; drop the dead GZIPUtil.main() and parameterize the /scratch and /tmp paths via the archappl.tools.dataDir system property (default java.io.tmpdir).
+3. Confirm default test-compile and the unit set are unaffected, and that src/tools compiles under -Ptools.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Static | Search src/test for `static void main` and absolute /scratch or /tmp paths | source tree | None remain under src/test |
-| T2 | Unit | ./mvnw -B test | JDK 21, wrapper Maven | Same unit-set result as before the move |
+| T1 | Static | Search src/test for `static void main` in non-fixture classes and for absolute /scratch or /tmp paths | source tree | Only @Test-referenced fixtures retain main(); no absolute path remains |
+| T2 | Unit | ./mvnw -o test with bounded heaps | JDK 21, wrapper Maven | Same unit-set result as before the move |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | source tree | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-09-18 | source tree | Pass | 16 utilities moved to src/tools; the four remaining src/test main() are @Test-referenced fixtures; no /scratch or /tmp absolute path remains in src/test or src/tools (grep) |
+| T2 | 2026-09-18 | JDK 21, wrapper Maven, offline capped heaps | Pass | ./mvnw -o test (MAVEN_OPTS=-Xmx1g, -DargLine=-Xmx2g, -DforkCount=1, -DreuseForks=true): 778 tests, 0 failures, 0 errors, identical to the pre-move unit set; default test-compile 169 and -Ptools 185 both SUCCESS |
 
 ##### Closure Evidence
 
-- none
+- Deliverable: 16 non-test main() utilities relocated from src/test to a new src/tools source root, compiled only under the opt-in -Ptools profile and excluded from the WARs. The four @Test-referenced fixtures stay in src/test; GZIPUtil.main() (dead demo) removed; hard-coded /scratch and /tmp paths in ConvertGnuplotData, GetFileTime, and GeneratePBFileAndCompress parameterized via the archappl.tools.dataDir system property.
+- Verification: T1 Pass and T2 Pass (778/778) on 2026-09-18, both observed by execution.
 
 ##### GitHub Projection
 
