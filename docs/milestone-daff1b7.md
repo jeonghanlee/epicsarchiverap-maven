@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done; remaining milestone items are M5 hosted verification and any release-cycle work. M5 hosted verification remains to be recorded; Read the Docs is not connected. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
+Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is in progress: docs migrated to an mdBook published on GitHub Pages (D29), the book builds cleanly (T1 Pass), with live Pages pending push plus setting the Pages source to GitHub Actions. This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow (landing pending). Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -24,11 +24,11 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M2 | Maven Wrapper as the build entry | Milestone | Complete | No | | Fresh clone of c1dd0b1 builds four WARs through mvnw (2026-09-11); [detail](#m2---maven-wrapper-as-the-build-entry) |
 | Phase 1 | M3 | Canonical pom as single source of truth | Milestone | Complete | No | D6 | Fresh clone of 9be652c builds four WARs from the tracked pom with no system scope (2026-09-12); [detail](#m3---canonical-pom-as-single-source-of-truth) |
 | Phase 1 | M4 | Dependency refresh to stable current versions | Milestone | Complete | No | M3, M8 | Fixed versions, build and dependency checks pass; 749 default and 45 integration tests pass; landed as 977edf3d (2026-09-16); [detail](#m4---dependency-refresh-to-stable-current-versions) |
-| Phase 1 | M5 | Maven-centric CI and docs build | Milestone | In progress | No | D24 | Workflow and docs checks pass locally, including 749 tests; landing and hosted builds pending; [detail](#m5---maven-centric-ci-and-docs-build) |
+| Phase 1 | M5 | Maven-centric CI and docs build | Milestone | In progress | No | D24 | Maven CI builds and tests through mvnw on GitHub Actions (749 tests locally); docs build moved to M9 (D29); landing pending; [detail](#m5---maven-centric-ci-and-docs-build) |
 | Phase 1 | M6 | Upstream core features: cherry-pick policy and application | Milestone | Complete | No | D25 | 105 PRs classified; 72 scored by five reviewers; 25 PRs owner-confirmed after exclusions (D26, D27); 28 PRs triaged: 19 applied, 6 skipped, 3 excluded; Tier A-D complete, committed and pushed; coherence sweep at 71d15083 recorded in docs/CLOSED_DOORS.md; [detail](#m6---upstream-core-features-cherry-pick-policy-and-application) |
 | Phase 1 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; [detail](#m7---site-required-features-and-fixes) |
 | Phase 1 | M8 | Maven test platform | Milestone | Complete | No | | Fresh clone of eb047c57 compiles and passes 749 default tests; integration 98 and localEpics 26 pass (2026-09-15); [detail](#m8---maven-test-platform) |
-| Phase 1 | M9 | Documentation for the Maven build | Milestone | Not started | Yes | | Build, test, and deploy docs match the Maven-only reality; [detail](#m9---documentation-for-the-maven-build) |
+| Phase 1 | M9 | Documentation for the Maven build | Milestone | In progress | No | D29 | Docs migrated to an mdBook published on GitHub Pages; the book builds cleanly and describes the Maven build/test/deploy; live Pages pending; [detail](#m9---documentation-for-the-maven-build) |
 | Phase 1 | M14 | Build self-sufficiency (no build-time network, pip, or scp) | Milestone | Complete | No | | Build runs offline: no svg_viewer download, no per-build sphinx pip install, no scp; [detail](#m14---build-self-sufficiency-no-build-time-network-pip-or-scp) |
 | Phase 1 | M15 | Separate non-test utilities out of src/test | Milestone | Complete | No | | 16 of the 20 main() utilities move to src/tools; 4 @Test-referenced fixtures stay in src/test; [detail](#m15---separate-non-test-utilities-out-of-srctest) |
 | Phase 1 | M16 | mgmt API reference generated from code | Milestone | Complete | No | D14 | mgmt WAR ships ui/api generated from the BPL registry and annotations; no scp, taglet, or sphinx in package; registry to document agreement test passes; [detail](#m16---mgmt-api-reference-generated-from-code) |
@@ -65,11 +65,12 @@ This register covers the minimal modernization of the existing Java appliance on
 | D21 | Build artifact final name is the variable scheme aa-<yyyyMMdd>-<git short hash> (maven.build.timestamp plus git-commit-id), replacing archappl-<version>; the WAR and assembly names use the one project finalName, ending the earlier dash/underscore split. Tests resolve it through the archappl.final.name system property; aa-env will be notified on the commit because it deploys the WARs and the name change affects its deploy paths. | 2026-09-12 |
 | D22 | The 29 Selenium browser integration tests are rewritten to exercise the mgmt BPL HTTP endpoints directly (archivePV, getPVStatus, areWeArchivingPV, getMatchingPVs), not the mgmt UI DOM. They verify server behavior, not the UI, so the browser, chromedriver, and WebDriverManager dependencies are dropped; the UI itself is EPICS-Arche's concern. | 2026-09-12 |
 | D23 | aa-maven's test platform is complete at single-instance scope. Of the 29 browser tests, 20 were rewritten to HTTP; the remaining 9 (multi-appliance cluster and large-volume data) are deleted rather than rewritten, because multi-appliance clustering is not carried forward by the EPICS-Arche successor and large-volume verification is owned by Arche (storage-path done in Arche M1 at the 100k-signal scale; network-borne end-to-end large-volume is Arche Phase 2, ahead). The appliance's own 100k-PV performance campaign remains the historical end-to-end large-volume record. | 2026-09-14 |
-| D24 | M5 CI implementation is delegated; this supersedes D9's owner-only CI authorship. The scope remains Maven build and test automation plus Read the Docs, with no release publishing. | 2026-09-16 |
+| D24 | M5 CI implementation is delegated; this supersedes D9's owner-only CI authorship. The scope remains Maven build and test automation plus Read the Docs, with no release publishing. (Read the Docs clause superseded by D29, 2026-09-18: narrative docs moved to an mdBook on GitHub Pages, M9.) | 2026-09-16 |
 | D25 | M6 owner selection confirms 28 upstream PR units for ordered, selective adoption on the Maven, Java 21 and Tomcat 9 fork; Parquet/Hadoop units remain excluded, PR400 requires adaptation to the current PlainPB structure, and no source patch is authorized yet. | 2026-09-16 |
 | D26 | Single-instance scope reduces the M6 selection from 28 to 26 upstream PR units. PR429 (appliance-to-appliance reassignment; ReassignAppliance absent) and PR458 (stored-chunkKey handling already implemented by the fork's ConvertPVNameToKey) are excluded. | 2026-09-16 |
 | D27 | PR359 skipped during application review. The fork commit 103dab65 already fixes the underlying alias-conversion bug with a retained plain-name guard; the owner keeps the fork approach rather than PR359's guard removal. Selection reduces to 25 units. | 2026-09-16 |
 | D28 | Phase 2 persistence store is selectable, not SQLite-only: both mariadb-java-client and sqlite-jdbc stay shipped and the backend is chosen at install by the JNDI DataSource. This supersedes the SQLite-only end state of D11 and D13 and aligns with the aa-env owner's parallel/selectable decision (2026-09-18); aa-env relies on both drivers shipping in the WARs. | 2026-09-18 |
+| D29 | Narrative documentation publishes as an mdBook on GitHub Pages, not Sphinx on Read the Docs. The book lives at docs/book, is built by a pinned Dockerfile (mdBook 0.4.52 + mdbook-admonish 1.20.0, sha256-pinned), and deploys through the pages.yml workflow with the Pages source set to GitHub Actions. This supersedes the Sphinx/Read the Docs docs build and hosting of M5, which folds into M9; M5 retains only the Maven CI workflow. mdBook pins to 0.4.x until an mdbook-admonish release supports mdBook 0.5. | 2026-09-18 |
 
 ### Conceptual-integrity findings
 
@@ -408,28 +409,28 @@ Status: In progress
 
 ##### Summary
 
-Build and test through the Maven Wrapper on GitHub Actions, and generate Javadoc and Sphinx documentation on Read the Docs. M5 implementation is delegated under D24.
+Build and test through the Maven Wrapper on GitHub Actions. The documentation build and hosting moved to M9 (mdBook on GitHub Pages, D29), so M5 now covers only the Maven CI workflow. M5 implementation is delegated under D24.
 
 ##### Scope
 
-One GitHub Actions workflow at `.github/workflows/maven.yml` builds and tests with `./mvnw -B -ntp clean verify` on JDK 21. It runs the default test selection, generates documentation and WARs, and checks dependencies. `.readthedocs.yaml` runs `compile javadoc:javadoc` through the same wrapper with JAVA_HOME set; compile generates the management mappings consumed by the Javadoc taglets.
+One GitHub Actions workflow at `.github/workflows/maven.yml` builds and tests with `./mvnw -B -ntp clean verify` on JDK 21. It runs the default test selection, generates WARs, and checks dependencies. Documentation build and hosting are out of scope here: they moved to M9 (D29), and the Sphinx/Read the Docs pipeline and its `.readthedocs.yaml` are retired.
 
 Out of scope: publishing WAR artifacts as releases (owner decision pending).
 
 ##### Completion Criteria
 
-- CI builds and tests run through mvnw on GitHub Actions, and readthedocs builds javadoc through mvnw.
+- CI builds and tests run through mvnw on GitHub Actions. (Documentation build and hosting moved to M9, D29.)
 
 ##### Dependencies And Decisions
 
-- D24 (delegated CI implementation, superseding D9's CI authorship restriction); D8.
+- D24 (delegated CI implementation, superseding D9's CI authorship restriction); D8; D29 (docs build/hosting moved to M9).
 
 ##### Implementation Plan
 
 Plan Status: accepted
 Plan Acceptance: owner, 2026-09-16 (M5 scope and delegated execution)
 Implementation Authorization: owner, 2026-09-16 (M5 execution)
-Superseded Plan Artifacts: none
+Superseded Plan Artifacts: the Read the Docs parts of steps 2, 4, and 5 and the Read the Docs hosted verification are superseded by D29 (2026-09-18); documentation build and hosting moved to M9 (mdBook on GitHub Pages). The Maven CI parts of this plan stand.
 
 1. Add one workflow for push, pull_request, and workflow_dispatch. Use a read-only repository token, cancel superseded runs, and allow 45 minutes for the build. Fetch full history because the existing release-notes step reads origin/master.
 2. Set up Temurin JDK 21 and Python 3.10 (matching Read the Docs), cache Maven and pip dependencies, and install the existing docs requirements. Pin official actions to the verified release commit: checkout v7.0.1, setup-java v6.0.1, setup-python v7.0.0, and upload-artifact v7.0.1.
@@ -835,49 +836,53 @@ Last Compared: never
 Origin: daff1b7 / M9
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: In progress
 
 ##### Summary
 
-Bring the documentation in line with the Maven-only reality: build, test, customization, and deployment on Tomcat 9, and the readthedocs pipeline. The Gradle-era text was rewritten minimally under M1; this row completes the documentation.
+Bring the documentation in line with the Maven-only reality and change how it publishes: the narrative docs move from Sphinx/Read the Docs to an mdBook served on GitHub Pages (D29). The pages describe mvnw, the test platform (M8), and Phase 1 deployment on Tomcat 9. The Gradle-era text was rewritten minimally under M1; this row completes the documentation and its publishing pipeline.
 
 ##### Scope
 
-Developer guide, sysadmin customization and install guides, README.md, and the Sphinx pipeline, all describing mvnw, the test platform (M8), and the Phase 1 deployment.
+The 18 narrative pages migrate to an mdBook under docs/book (book.toml + SUMMARY.md); MyST directives are converted to CommonMark plus mdbook-admonish. A pinned Dockerfile (docs/book/Dockerfile: mdBook 0.4.52 + mdbook-admonish 1.20.0) builds the book locally and in CI, and the pages.yml workflow deploys it to GitHub Pages. The Sphinx/Read the Docs pipeline is retired (build_docs scripts, docs/docs, .readthedocs.yaml). README and the developer/sysadmin guides are corrected to the mvnw build.
 
 Out of scope: EPICS-Arche architecture docs.
 
 ##### Completion Criteria
 
-- Docs describe the actual build, test, and deploy procedure, and the Sphinx site builds cleanly.
+- The docs describe the actual build, test, and deploy procedure; the mdBook builds cleanly from the pinned Dockerfile; and GitHub Pages serves the book (Pages source set to GitHub Actions).
 
 ##### Dependencies And Decisions
 
-- D11 (Phase 1); D8.
+- D11 (Phase 1); D8; D29 (mdBook on GitHub Pages, superseding the Sphinx/RTD docs pipeline of M5).
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
+Plan Status: accepted
+Plan Acceptance: owner, 2026-09-18
+Implementation Authorization: owner, 2026-09-18
+Superseded Plan Artifacts: the earlier Sphinx-audit plan (superseded 2026-09-18 by the mdBook/Pages pivot)
 
-1. Audit the docs against the Maven build and the M8 test platform.
-2. Rewrite the affected pages and verify the Sphinx build.
+1. Migrate the 18 pages to docs/book/src, convert MyST directives, and build SUMMARY.md and book.toml.
+2. Author docs/book/Dockerfile with pinned mdBook + mdbook-admonish, and the pages.yml GitHub Pages workflow.
+3. Retire the Sphinx/RTD pipeline; correct README, the guides, and the sample build command to mvnw.
+4. Verify the book builds cleanly from the Dockerfile; after push and setting the Pages source to GitHub Actions, verify the live site.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Integration | docs/build_docs.sh | Python 3, Sphinx | Site builds with no errors |
-| T2 | Review | Second-person pass on the rewritten pages | document | A cold reader can build, test, and deploy from the docs |
+| T1 | Integration | docker build docs/book, then mdbook build | Docker | Book builds with no errors or broken links |
+| T2 | Review | Second-person pass on the migrated pages | document | A cold reader can build, test, and deploy from the docs |
+| T3 | Integration | pages.yml run, then fetch the live Pages URL | GitHub Actions | Live site serves the mdBook (mdBook markers, no Jekyll) |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | Python 3, Sphinx | Pending | none |
+| T1 | 2026-09-18 | Docker (alpine 3.24, mdBook 0.4.52, admonish 1.20.0) | Pass | Clean `mdbook build` rc=0, 22 HTML pages, admonish rendered, no broken-link or error warnings |
 | T2 | Not run | document | Pending | none |
+| T3 | Not run | GitHub Actions | Pending | needs push + Pages source set to GitHub Actions (build_type=workflow) |
 
 ##### Closure Evidence
 
