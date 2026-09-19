@@ -425,6 +425,7 @@ Out of scope: publishing WAR artifacts as releases (owner decision pending).
 ##### Dependencies And Decisions
 
 - D24 (delegated CI implementation, superseding D9's CI authorship restriction); D8; D29 (docs build/hosting moved to M9).
+- Note (2026-09-19): `mvnw clean verify` was broken from M15/M9 and fixed. M15 moved TestRun (commons-cli's sole user) to src/tools, leaving commons-cli unused-declared, so it moved to the tools profile. M9 deleted docs/docs/source, breaking the mgmt-war deploy-script webResource (repointed to docs/book/src/samples) and the maven.yml docs-Python step (removed). Cause of the miss: M15/M9 were checked with `test`/`package`/mdbook, not `verify`; the analyze-only gate runs at `verify`.
 
 ##### Implementation Plan
 
