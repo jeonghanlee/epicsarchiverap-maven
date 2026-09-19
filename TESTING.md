@@ -22,12 +22,14 @@ Tests are selected by JUnit 5 tags. Untagged tests need no external environment.
 | slow / flaky | `@Tag("slow")` / `@Tag("flaky")` | as tagged |
 
 ```bash
+MAVEN_OPTS=-Xmx1g ./mvnw -o test -DargLine=-Xmx2g -DforkCount=1 -DreuseForks=true  # unit set, bounded heaps
 ./mvnw test                                       # unit set only (default)
-./mvnw test -Dgroups='integration & !localEpics'  # by tag: Tomcat-only tests, excludes IOC-needing ones
 ./mvnw test -Dtest=PolicyExecutionTest            # a single test class
 ```
 
-The default run executes the unit set only. Any tagged set is opted into with `-Dgroups`; the `-Dgroups` above selects one tag combination directly, whereas the profiles below name the common environment-based sets.
+On a large-memory host, run the first form: `MAVEN_OPTS` bounds the Maven process and `-DargLine` bounds each reused Surefire fork, so the JVM ergonomic default (25% of host RAM per JVM) cannot exhaust memory; `-o` runs offline once dependencies are cached (drop `-o` on the first run to populate `~/.m2`). The pom sets no Surefire `argLine`, so `-DargLine` replaces nothing.
+
+The default run executes the unit set only; the default `excludedGroups` (`integration,localEpics,slow,flaky`) keeps every tagged set out, and those exclusions take precedence over an include filter. A tagged set is opted into with the Maven profiles below, which clear the exclusions and select the set.
 
 Most integration tests carry both `integration` and `localEpics`: they need Tomcat and a local IOC. Two Maven profiles select the environment-dependent sets, each requiring the environment its tests use:
 
@@ -35,16 +37,6 @@ Most integration tests carry both `integration` and `localEpics`: they need Tomc
 ./mvnw test -P integration    # every test needing Tomcat and/or a local EPICS IOC (integration | localEpics)
 ./mvnw test -P localEpics      # the EPICS-only subset that needs no Tomcat (localEpics & !integration)
 ```
-
-### Heap sizing on large-memory hosts
-
-The JVM ergonomic default caps the maximum heap at 25% of host RAM (`MaxRAMPercentage=25`). Each JVM the run starts — the Maven process and every forked Surefire JVM — therefore reserves a heap proportional to total RAM (about 23 GB on a 93 GB host) irrespective of what the tests need. Several such JVMs commit far more memory than the run uses and can exhaust the host. Bound the heaps explicitly on a large-memory host:
-
-```bash
-MAVEN_OPTS=-Xmx1g ./mvnw -o test -DargLine=-Xmx2g -DforkCount=1 -DreuseForks=true
-```
-
-`MAVEN_OPTS` bounds the Maven process, `-DargLine` bounds each Surefire fork, and `forkCount=1` with `reuseForks=true` keeps a single reused fork. `-o` runs offline once the dependencies are cached. The pom sets no Surefire `argLine`, so `-DargLine` replaces nothing.
 
 ## EPICS-dependent tests
 
