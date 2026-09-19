@@ -93,7 +93,7 @@ The `appliances.xml` is a file that lists all the appliances in a
 cluster of archiver appliance. While it is not necessary to point to the
 same physical file, the contents are expected to be identical across all
 appliances in the cluster. The details of the file are outlined in the
-[ConfigService](../_static/javadoc/org/epics/archiverappliance/config/ConfigService.html#ARCHAPPL_APPLIANCES){.external}
+ConfigService
 javadoc. A sample `appliances.xml` with two appliances looks like
 
 ```xml
@@ -209,15 +209,15 @@ The EPICS archiver appliance ships with a sample
 that creates a three stage storage environment. These are
 
 1. **STS** - A datastore that uses the
-   [PlainPBStoragePlugin](../_static/javadoc/edu/stanford/slac/archiverappliance/PlainPB/PlainPBStoragePlugin.html){.external}
+   PlainPBStoragePlugin
    to store data in a folder specified by the environment variable
    `ARCHAPPL_SHORT_TERM_FOLDER` at the granularity of an hour.
 2. **MTS** - A datastore that uses the
-   [PlainPBStoragePlugin](../_static/javadoc/edu/stanford/slac/archiverappliance/PlainPB/PlainPBStoragePlugin.html){.external}
+   PlainPBStoragePlugin
    to store data in a folder specified by the environment variable
    `ARCHAPPL_MEDIUM_TERM_FOLDER` at the granularity of a day.
 3. **LTS** - A datastore that uses the
-   [PlainPBStoragePlugin](../_static/javadoc/edu/stanford/slac/archiverappliance/PlainPB/PlainPBStoragePlugin.html){.external}
+   PlainPBStoragePlugin
    to store data in a folder specified by the environment variable
    `ARCHAPPL_LONG_TERM_FOLDER` at the granularity of an year.
 

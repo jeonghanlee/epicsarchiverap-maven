@@ -72,7 +72,7 @@ medium term storage.
 Out of the box, the following storage technologies/plugins are
 supported.
 
-[PlainPBStoragePlugin](../_static/javadoc/edu/stanford/slac/archiverappliance/PlainPB/PlainPBStoragePlugin.html){.external}
+PlainPBStoragePlugin
 : This plugin serializes samples using Google\'s
 [ProtocolBuffers](https://developers.google.com/protocol-buffers)
 and stores data in chunks. Each chunk has a well defined key and
@@ -137,7 +137,7 @@ stores*
 All of the various configurations can get quite tricky for end users to
 navigate. Rather than expose all of this variation to the end users and
 to provide a simple interface to end users, the archiver appliance uses
-[policies](../_static/javadoc/org/epics/archiverappliance/mgmt/policy/package-summary.html){.external}.
+policies.
 Policies are Python scripts that make these decisions on behalf of the
 users. Policies are site-specific and identical across all appliances in
 the cluster. When a user requests a new PV to be archived, the archiver
@@ -183,7 +183,7 @@ functionality to route/proxy the request accordingly.
 In addition, users do not need to allocate PVs to appliances when
 requesting for new PVs be archived. The appliances maintain a small set
 of metrics during their operation and use this in addition to the
-measured event and storage rates to do an automated [Capacity Planning](../_static/javadoc/org/epics/archiverappliance/mgmt/archivepv/CapacityPlanningBPL.html)/load
+measured event and storage rates to do an automated Capacity Planning/load
 balancing.
 
 ## Scripting

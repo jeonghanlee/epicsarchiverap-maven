@@ -15,12 +15,12 @@ To add a PV to the archiver,
    `Archive (specify sampling period)` button instead.
 4. When adding a new PV to the cluster, the archiver appliance measures
    various parameters about the PV. This takes about 4-5 minutes during
-   which the PV is in an `Initial sampling`{.sample} state.
+   which the PV is in an `Initial sampling` state.
 5. Once the PV\'s characteristics have been measured, the appliance
    assigns the PV to an appliance in the cluster and the PV transitions
-   to a `Being archived`{.sample} state.
+   to a `Being archived` state.
 6. If the archiver appliance is not able to connect to a PV, the PV
-   stays in the `Initial sampling`{.sample} state until it is able to
+   stays in the `Initial sampling` state until it is able to
    connect.
 7. You an request a PV to be archived before it is available on the
    network. The request to archive the PV is stored in the persistent

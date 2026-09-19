@@ -71,7 +71,7 @@ Here are the steps to get started quickly.
 6. This should start the Tomcat process in the foreground. Once all the
    webapps have been initialized (it takes about 2-5 minutes), you
    should see a log message in the console
-   `All components in this appliance have started up. We should be ready to start accepting UI requests`{.sample}
+   `All components in this appliance have started up. We should be ready to start accepting UI requests`
    like so
 
    ```bash

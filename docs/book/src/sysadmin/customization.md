@@ -27,7 +27,7 @@ extensible for other distributions.
    generated WARS.
 
    1. When you set this environment variable, you should see a message
-      `Building the archiver appliance for the site`{.sample}`YourSite`{.variable}
+      `Building the archiver appliance for the site``YourSite`
    2. If this variable is not set, by default, we use the material in
       the `tests` site.
    3. The quickstart package `archappl_vx.x.x.tar.gz` available in the
@@ -91,15 +91,15 @@ other parameters. In addition, various fields of the PV like `.NAME`,
 `.ADEL`, `.MDEL`, `.RTYP` etc are also determined. All of these
 parameters are passed to the `policies.py` python script as a dictionary
 argument to a method in `policies.py` called `determinePolicy`; see the
-[javadoc](../_static/javadoc/org/epics/archiverappliance/mgmt/policy/ExecutePolicy.html)
+javadoc
 for more details. This method is expected to use all of this information
 to make decisions on various archiving parameters including storage
 locations, storage technologies used etc and return these decisions as
 another dictionary. For example, the resulting dictionary contains a
 field called `dataStores` which is an array of
-[StoragePlugin](../_static/javadoc/org/epics/archiverappliance/StoragePlugin.html)
+StoragePlugin
 URL\'s that can be parsed by the
-[StoragePluginURLParser](../_static/javadoc/org/epics/archiverappliance/config/StoragePluginURLParser.html).
+StoragePluginURLParser.
 This is converted into a sequence of StoragePlugin\'s that is used like
 so
 
@@ -107,7 +107,7 @@ so
    sequence, i.e. `dataStores[0]`
 2. The ETL webapp schedules data transfers from one StoragePlugin to
    the next in the sequence according to their
-   [PartitionGranularity](../_static/javadoc/org/epics/archiverappliance/common/PartitionGranularity.html)\'s
+   PartitionGranularity\'s
 3. When servicing a data retrieval request, the retrieval webapp
    retrieves data from all of the datastores and then combines them
    using a merge/dedup operator.
@@ -152,7 +152,7 @@ key. The key is based on
 2. The time partition of the chunk
 
 For example, using the
-[default](../_static/javadoc/org/epics/archiverappliance/config/ConvertPVNameToKey.html)
+default
 key mapping strategy, data for the PV `EIOC:LI30:MP01:HEARTBEAT` for the
 timeframe `2012-08-24T16:xx:xx.xxxZ` on an hourly partition is stored
 under the key `EIOC/LI30/MP01/HEARTBEAT:2012_08_24_16.pb`. Data for the
@@ -161,17 +161,17 @@ same PV in a daily partition is stored under the key
 `2012-08-24Txx:xx:xx.xxxZ`.
 
 To use the
-[default](../_static/javadoc/org/epics/archiverappliance/config/ConvertPVNameToKey.html)
+default
 key mapping strategy, it is important (for performance reasons) that the
 PV names follow a good naming convention that distributes the chunks
 into many folders - see the
-[Javadoc](../_static/javadoc/org/epics/archiverappliance/config/ConvertPVNameToKey.html)
+Javadoc
 for more details. If the _key/file structure reflecting the PV naming
 convention_ feature is not important to you, you can choose to use an
 alternate key mapping strategy by implementing the
-[PVNameToKeyMapping](../_static/javadoc/org/epics/archiverappliance/config/PVNameToKeyMapping.html)
+PVNameToKeyMapping
 interface and setting this
-[property](../_static/javadoc/org/epics/archiverappliance/config/DefaultConfigService.html#ARCHAPPL_PVNAME_TO_KEY_MAPPING_CLASSNAME)
+property
 to name of the implementing class.
 
 ## Persistence
@@ -184,28 +184,28 @@ access, one can also configure Tomcat to use a [SQLite](sqlite)
 backend.\
 Alternate mechanisms for persisting archiver configuration are possible;
 see the
-[ConfigPersistence](../_static/javadoc/org/epics/archiverappliance/config/ConfigPersistence.html)
+ConfigPersistence
 interface. To save your configuration in a different location, create an
 implementation of this interface and use the
-[ARCHAPPL_PERSISTENCE_LAYER](../_static/javadoc/org/epics/archiverappliance/config/ConfigService.html#ARCHAPPL_PERSISTENCE_LAYER)
+ARCHAPPL_PERSISTENCE_LAYER
 environment in your startup scripts.
 
 ## Storage Plugins
 
 The starting point for using an alternate storage technology is to
 create implementations of the
-[StoragePlugin](../_static/javadoc/org/epics/archiverappliance/StoragePlugin.html)
+StoragePlugin
 interface and register them in
-[StoragePluginURLParser](../_static/javadoc/org/epics/archiverappliance/config/StoragePluginURLParser.html).
+StoragePluginURLParser.
 In addition to the StoragePlugin interface, additional optional
 interfaces facilitate additional functionality
 
-1. [ETLSource](../_static/javadoc/org/epics/archiverappliance/etl/ETLSource.html) \--
+1. ETLSource \--
    The lets a StoragePlugin act as a source of data in the ETL process.
-2. [ETLDest](../_static/javadoc/org/epics/archiverappliance/etl/ETLDest.html) \-- The
+2. ETLDest \-- The
    lets a StoragePlugin act as a destination of data in the ETL
    process.
-3. [StorageMetrics](../_static/javadoc/org/epics/archiverappliance/etl/StorageMetrics.html)
+3. StorageMetrics
    \-- The lets a StoragePlugin provide metrics that are displayed in
    the UI and participate in capacity planning.
 
@@ -216,9 +216,9 @@ technologies. For more details, please see the Javadoc.
 ## NIO2
 
 The
-[PlainPBStoragePlugin](../_static/javadoc/edu/stanford/slac/archiverappliance/PlainPB/PlainPBStoragePlugin.html){.external}
+PlainPBStoragePlugin
 can be viewed as a chunking
-[StoragePlugin](../_static/javadoc/org/epics/archiverappliance/StoragePlugin.html){.external}. It
+StoragePlugin. It
 chunks data into `Time instant t ↔ Chunk key`,
 well-defined time-partitions (instead of individual samples) and various
 business processes in the archiver appliance understand these
@@ -239,7 +239,7 @@ PlainPBStoragePlugin using storage technologies like
 
 To add custom NIO2 file system providers for use in the archiver
 appliance, please look at the JavaDoc for our version of Java\'s
-[Paths](../_static/javadoc/org/epics/archiverappliance/utils/nio/ArchPaths.html).
+Paths.
 
 ## Type systems
 
@@ -249,7 +249,7 @@ serialization scheme. There are plenty of other algorithms that offer
 the same functionality, of great interest is the serialization scheme
 used in the [EPICS V4 protocol](http://epics-pvdata.sourceforge.net/pvAccess_Protocol_Specification.html).
 Support for alternate serialization mechanisms is possible by adding
-support for [alternate type systems](../_static/javadoc/org/epics/archiverappliance/config/TypeSystem.html). Please
+support for alternate type systems. Please
 contact the collaboration if you\'d want to consider using alternate
 serialization mechanisms.
 
@@ -257,9 +257,9 @@ serialization mechanisms.
 
 All of the configuration in the archiver appliance is handled thru
 implementations of the
-[ConfigService](../_static/javadoc/org/epics/archiverappliance/config/ConfigService.html)
+ConfigService
 interface. Each webapp has one instance of this interface and this
 instance is dependency injected into the classes that need it. If all
 else fails, you can create your implementation of the ConfigService and
 register it in the servlet context
-[listener](../_static/javadoc/org/epics/archiverappliance/config/ArchServletContextListener.html).
+listener.

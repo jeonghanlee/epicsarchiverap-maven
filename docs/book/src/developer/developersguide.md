@@ -152,7 +152,7 @@ separate projects in the same repository.
    - Please do use Eclipse/Netbeans/Intelij to navigate the code.
      This makes life so much easier.
    - To get a quick sense of what a class/interface does, you can use
-     the [javadoc](../_static/javadoc/index.html). Some attempts have been made to
+     the javadoc. Some attempts have been made to
      have some Javadoc in most classes and all interfaces
    - We use Tomcat purely as a servlet container; that is, a quick
      way of servicing HTTP requests using Java code.
@@ -185,10 +185,10 @@ separate projects in the same repository.
      `PVTypeInfo`; you can see what one looks like by looking at
      <http://machine:17665/mgmt/bpl/getPVTypeInfo?pv=MYPV:111:BDES>
    - The main interfaces are the ones in the
-     [`org.epics.archiverappliance`](../_static/javadoc/org/epics/archiverappliance/package-summary.html)
+     `org.epics.archiverappliance`
      package.
    - The
-     [ConfigService](../_static/javadoc/org/epics/archiverappliance/config/ConfigService.html)
+     ConfigService
      class does all configuration management.
    - The [customization guide](../sysadmin/customization.md) is also a good
      guide to way in which this product can be customized.
