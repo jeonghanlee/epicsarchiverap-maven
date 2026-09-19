@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is in progress: docs migrated to an mdBook published on GitHub Pages (D29), the book builds cleanly (T1 Pass), with live Pages pending push plus setting the Pages source to GitHub Actions. This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow (landing pending). Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
+Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow (landing pending). Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -28,7 +28,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M6 | Upstream core features: cherry-pick policy and application | Milestone | Complete | No | D25 | 105 PRs classified; 72 scored by five reviewers; 25 PRs owner-confirmed after exclusions (D26, D27); 28 PRs triaged: 19 applied, 6 skipped, 3 excluded; Tier A-D complete, committed and pushed; coherence sweep at 71d15083 recorded in docs/CLOSED_DOORS.md; [detail](#m6---upstream-core-features-cherry-pick-policy-and-application) |
 | Phase 1 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; [detail](#m7---site-required-features-and-fixes) |
 | Phase 1 | M8 | Maven test platform | Milestone | Complete | No | | Fresh clone of eb047c57 compiles and passes 749 default tests; integration 98 and localEpics 26 pass (2026-09-15); [detail](#m8---maven-test-platform) |
-| Phase 1 | M9 | Documentation for the Maven build | Milestone | In progress | No | D29 | Docs migrated to an mdBook published on GitHub Pages; the book builds cleanly and describes the Maven build/test/deploy; live Pages pending; [detail](#m9---documentation-for-the-maven-build) |
+| Phase 1 | M9 | Documentation for the Maven build | Milestone | Complete | No | D29 | Docs migrated to an mdBook published on GitHub Pages; the book builds cleanly, is served on GitHub Pages (T3 Pass), and describes the Maven build/test/deploy; content modernization deferred to M17 (D30); [detail](#m9---documentation-for-the-maven-build) |
 | Phase 1 | M14 | Build self-sufficiency (no build-time network, pip, or scp) | Milestone | Complete | No | | Build runs offline: no svg_viewer download, no per-build sphinx pip install, no scp; [detail](#m14---build-self-sufficiency-no-build-time-network-pip-or-scp) |
 | Phase 1 | M15 | Separate non-test utilities out of src/test | Milestone | Complete | No | | 16 of the 20 main() utilities move to src/tools; 4 @Test-referenced fixtures stay in src/test; [detail](#m15---separate-non-test-utilities-out-of-srctest) |
 | Phase 1 | M16 | mgmt API reference generated from code | Milestone | Complete | No | D14 | mgmt WAR ships ui/api generated from the BPL registry and annotations; no scp, taglet, or sphinx in package; registry to document agreement test passes; [detail](#m16---mgmt-api-reference-generated-from-code) |
@@ -71,6 +71,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | D27 | PR359 skipped during application review. The fork commit 103dab65 already fixes the underlying alias-conversion bug with a retained plain-name guard; the owner keeps the fork approach rather than PR359's guard removal. Selection reduces to 25 units. | 2026-09-16 |
 | D28 | Phase 2 persistence store is selectable, not SQLite-only: both mariadb-java-client and sqlite-jdbc stay shipped and the backend is chosen at install by the JNDI DataSource. This supersedes the SQLite-only end state of D11 and D13 and aligns with the aa-env owner's parallel/selectable decision (2026-09-18); aa-env relies on both drivers shipping in the WARs. | 2026-09-18 |
 | D29 | Narrative documentation publishes as an mdBook on GitHub Pages, not Sphinx on Read the Docs. The book lives at docs/book, is built by a pinned Dockerfile (mdBook 0.4.52 + mdbook-admonish 1.20.0, sha256-pinned), and deploys through the pages.yml workflow with the Pages source set to GitHub Actions. This supersedes the Sphinx/Read the Docs docs build and hosting of M5, which folds into M9; M5 retains only the Maven CI workflow. mdBook pins to 0.4.x until an mdbook-admonish release supports mdBook 0.5. | 2026-09-18 |
+| D30 | M9 covers the docs publishing migration (mdBook on GitHub Pages) and build/test/deploy command accuracy, not modernizing the narrative content itself. The migrated pages are largely upstream-era (clustering, multi-appliance, CS-Studio, MySQL-first) and conflict with the single-instance scope (D23, D26) and the EPICS-Arche boundary (D12); content modernization is deferred to backlog item M17 pending an owner keep/cut list. | 2026-09-19 |
 
 ### Conceptual-integrity findings
 
@@ -836,7 +837,7 @@ Last Compared: never
 Origin: daff1b7 / M9
 Identity History: none
 GitHub Issue: none
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -846,15 +847,15 @@ Bring the documentation in line with the Maven-only reality and change how it pu
 
 The 18 narrative pages migrate to an mdBook under docs/book (book.toml + SUMMARY.md); MyST directives are converted to CommonMark plus mdbook-admonish. A pinned Dockerfile (docs/book/Dockerfile: mdBook 0.4.52 + mdbook-admonish 1.20.0) builds the book locally and in CI, and the pages.yml workflow deploys it to GitHub Pages. The Sphinx/Read the Docs pipeline is retired (build_docs scripts, docs/docs, .readthedocs.yaml). README and the developer/sysadmin guides are corrected to the mvnw build.
 
-Out of scope: EPICS-Arche architecture docs.
+Out of scope: EPICS-Arche architecture docs; modernizing the narrative content itself. The migrated pages remain upstream-era, and reconciling their substance to the single-instance fork is deferred to backlog item M17 per D30.
 
 ##### Completion Criteria
 
-- The docs describe the actual build, test, and deploy procedure; the mdBook builds cleanly from the pinned Dockerfile; and GitHub Pages serves the book (Pages source set to GitHub Actions).
+- The docs describe the actual build, test, and deploy procedure; the mdBook builds cleanly from the pinned Dockerfile; and GitHub Pages serves the book (Pages source set to GitHub Actions). Narrative content currency is out of scope (M17, D30).
 
 ##### Dependencies And Decisions
 
-- D11 (Phase 1); D8; D29 (mdBook on GitHub Pages, superseding the Sphinx/RTD docs pipeline of M5).
+- D11 (Phase 1); D8; D29 (mdBook on GitHub Pages, superseding the Sphinx/RTD docs pipeline of M5); D30 (content modernization deferred to M17).
 
 ##### Implementation Plan
 
@@ -881,12 +882,14 @@ Superseded Plan Artifacts: the earlier Sphinx-audit plan (superseded 2026-09-18 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | 2026-09-18 | Docker (alpine 3.24, mdBook 0.4.52, admonish 1.20.0) | Pass | Clean `mdbook build` rc=0, 22 HTML pages, admonish rendered, no broken-link or error warnings |
-| T2 | Not run | document | Pending | none |
-| T3 | Not run | GitHub Actions | Pending | needs push + Pages source set to GitHub Actions (build_type=workflow) |
+| T2 | 2026-09-19 | document (cold-reader pass) | Pass | Build and test procedures follow from the mvnw commands in developersguide/customization; the migration left 36 dead `_static/javadoc` links and 15 stray MyST attribute markers, now removed (0 residual, b12bb76a) and the book rebuilds clean. Deploy-artifact naming is upstream-era and deferred to M17 (D30), out of this scope. |
+| T3 | 2026-09-19 | GitHub Actions + live Pages | Pass | pages.yml run for 263805a1 succeeded; https://jeonghanlee.github.io/epicsarchiverap-maven/index.html returns 200 with mdBook markers (mdBook, elasticlunr) and no Jekyll marker; subpages resolve. Required adding modernize to the github-pages environment deployment branches (Pages source was already build_type=workflow). |
 
 ##### Closure Evidence
 
-- none
+- Deliverable: the 18 narrative pages publish as an mdBook at https://jeonghanlee.github.io/epicsarchiverap-maven/ (9668591f, 263805a1); Sphinx/Read the Docs retired; README and guides corrected to mvnw; 36 migration-broken javadoc links and 15 stray MyST attribute markers removed (b12bb76a).
+- Verification: T1 Pass (clean Docker build, 22 pages), T3 Pass (live Pages serves the mdBook), T2 Pass (cold-reader pass on build/test procedures), 2026-09-18/19.
+- Scope boundary: narrative content currency for the single-instance fork is deferred to backlog M17 (D30).
 
 ##### GitHub Projection
 
@@ -1378,12 +1381,32 @@ Last Compared: never
 
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-
-No unassigned work in this generation.
+| | M17 | Modernize the narrative doc content for the single-instance fork | Milestone | Not started | No | | Upstream-era content reconciled to the single-instance scope and the EPICS-Arche boundary per an owner keep/cut list; [detail](#m17---modernize-the-narrative-doc-content-for-the-single-instance-fork) |
 
 ### Backlog Details
 
-None.
+#### M17 - Modernize the narrative doc content for the single-instance fork
+
+Origin: daff1b7 / M17
+Status: Not started
+
+##### Summary
+
+The mdBook pages migrated by M9 are largely upstream (SLAC) content and describe features and assumptions this fork does not carry: appliance clustering and multi-appliance deployment (retired by D23, D26), CS-Studio and ArchiveViewer integration, MySQL-first persistence, and other pre-modernization material. M9 migrated their format and corrected the build/test/deploy commands but did not modernize the substance (D30).
+
+##### Scope
+
+Reconcile the narrative content to the single-instance fork and the EPICS-Arche boundary (D12): correct or remove clustering/multi-appliance material, retired integrations, and stale runtime assumptions, and update the feature overview. The exact keep/cut list is the owner's to provide, as with M7 and M12.
+
+Out of scope: the docs publishing pipeline (M9, done); EPICS-Arche architecture docs.
+
+##### Dependencies And Decisions
+
+- D30 (content modernization deferred here); D12, D23, D26 (scope basis). Not Ready until the owner supplies the keep/cut list.
+
+##### Completion Criteria
+
+- Each page reflects the single-instance fork: no content describes a retired feature as current, and the owner-approved keep/cut list is fully applied and verified.
 
 ## History
 
