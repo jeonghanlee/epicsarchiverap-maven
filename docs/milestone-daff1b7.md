@@ -8,13 +8,13 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (MariaDB removal) is now unblocked. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done; remaining milestone items are M5 hosted verification and any release-cycle work. M5 hosted verification remains to be recorded; Read the Docs is not connected. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
+Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done; remaining milestone items are M5 hosted verification and any release-cycle work. M5 hosted verification remains to be recorded; Read the Docs is not connected. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
 ## Milestone
 
-This register covers the minimal modernization of the existing Java appliance on its current architecture (D12): Phase 1 consolidates the build on Maven against Tomcat 9 and ends with Ant removal; Phase 2 replaces MariaDB with SQLite and prunes unused backends, so the appliance runs as WARs on Tomcat 9 under aa-env's systemd units with no external database. Tomcat 9 is fixed and names stay as they are (D13, D14). Everything beyond this, the architecture replacement, lives in the EPICS-Arche register. Every row follows D8 (stable, current technology) and D10 (small and strong).
+This register covers the minimal modernization of the existing Java appliance on its current architecture (D12): Phase 1 consolidates the build on Maven against Tomcat 9 and ends with Ant removal; Phase 2 makes the persistence store selectable (MariaDB or SQLite, both drivers kept) and prunes unused backends, so the appliance runs as WARs on Tomcat 9 under aa-env's systemd units against either store (D28). Tomcat 9 is fixed and names stay as they are (D13, D14). Everything beyond this, the architecture replacement, lives in the EPICS-Arche register. Every row follows D8 (stable, current technology) and D10 (small and strong).
 
 ### Work
 
@@ -35,7 +35,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; [detail](#m10---ant-removal-final-maven-only-consolidation) |
 | Phase 2 | M11 | sqlite-jdbc runtime dependency | Milestone | Complete | No | | Driver org.xerial:sqlite-jdbc 3.53.4.0 added (runtime) and allowlisted; SQLite persistence path verified by SQLitePersistenceTest and the 777/777 regression; [detail](#m11---sqlite-jdbc-runtime-dependency) |
 | Phase 2 | M12 | Persistence and storage backend pruning | Milestone | Not started | Yes | | Owner-approved backends removed, build and tests pass; [detail](#m12---persistence-and-storage-backend-pruning) |
-| Phase 2 | M13 | MariaDB dependency removal | Milestone | Not started | Yes | M11 | No mariadb-java-client dependency; SQLite is the store; Phase 2 closes here; [detail](#m13---mariadb-dependency-removal) |
+| Phase 2 | M13 | Selectable persistence backend: MariaDB and SQLite | Milestone | Not started | Yes | M11 | Both drivers ship; the backend is chosen by the JNDI DataSource; MariaDB and SQLite paths verified; [detail](#m13---selectable-persistence-backend-mariadb-and-sqlite) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Open | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 
 ### Decisions
@@ -52,9 +52,9 @@ This register covers the minimal modernization of the existing Java appliance on
 | D8 | Modernization principle: use stable, current technology throughout. Each row's plan selects the current stable release of its toolchain and libraries at execution time and records the chosen versions as evidence. | 2026-09-11 |
 | D9 | Gradle is removed because it is not used: the build is Maven. Its GitHub Actions workflows, the docker tree with the top-level Dockerfile, and the legacy upstream README are removed as unused; the owner rewrites CI and .gitignore Maven-centric. | 2026-09-11 |
 | D10 | Design principle: small and strong. Minimize dependencies, components, and languages; never concede performance or robustness. | 2026-09-11 |
-| D11 | Phase order: Phase 1 (Maven modernization on the existing Tomcat 9 environment, ending with Ant removal), then Phase 2 (SQLite replacing MariaDB, backend pruning). aa-env implements the runtime as systemd template units. | 2026-09-11 |
+| D11 | Phase order: Phase 1 (Maven modernization on the existing Tomcat 9 environment, ending with Ant removal), then Phase 2 (SQLite replacing MariaDB, backend pruning). aa-env implements the runtime as systemd template units. (Store clause superseded by D28, 2026-09-18: MariaDB and SQLite are parallel/selectable, not SQLite-only.) | 2026-09-11 |
 | D12 | This register covers only the minimal modernization of the existing architecture through Phase 2. The architecture replacement (storage, query, services, engine, API, MCP, viewer) is EPICS-Arche work and is not tracked here. | 2026-09-11 |
-| D13 | Tomcat 9 is fixed for the existing appliance through the end of Phase 2. The jakarta/Tomcat 11 migration and the embedded-Tomcat runnable jars are retired (recorded in the prior generation at the History commit); tomcat-servlet-api tracks the current 9.0.x as a final value. Phase 2 end state: WARs on Tomcat 9, systemd-run by aa-env, SQLite (sqlite3) as the only store. | 2026-09-11 |
+| D13 | Tomcat 9 is fixed for the existing appliance through the end of Phase 2. The jakarta/Tomcat 11 migration and the embedded-Tomcat runnable jars are retired (recorded in the prior generation at the History commit); tomcat-servlet-api tracks the current 9.0.x as a final value. Phase 2 end state: WARs on Tomcat 9, systemd-run by aa-env, SQLite (sqlite3) as the only store. (Store clause superseded by D28, 2026-09-18: the store is selectable MariaDB or SQLite.) | 2026-09-11 |
 | D14 | Naming stays as it is through Phase 2: artifact names archappl-<version>-<component>.war, ARCHAPPL_* variables, and the instance layout are not renamed. | 2026-09-11 |
 | D15 | jython-standalone 2.7 stays through Phase 2: it is the execution engine for policies.py, which is Python 2 syntax, and no Python 3 Jython exists. Replacing the policy engine is EPICS-Arche work, not minimal modernization. | 2026-09-12 |
 | D16 | redisnio (the Redis NIO FileSystemProvider jar) is removed. ArchPaths resolves only `jar:file://` (zip) specially and everything else on the default filesystem; no code, configuration, template, or document names a redis scheme, so the provider is unreachable. | 2026-09-12 |
@@ -69,6 +69,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | D25 | M6 owner selection confirms 28 upstream PR units for ordered, selective adoption on the Maven, Java 21 and Tomcat 9 fork; Parquet/Hadoop units remain excluded, PR400 requires adaptation to the current PlainPB structure, and no source patch is authorized yet. | 2026-09-16 |
 | D26 | Single-instance scope reduces the M6 selection from 28 to 26 upstream PR units. PR429 (appliance-to-appliance reassignment; ReassignAppliance absent) and PR458 (stored-chunkKey handling already implemented by the fork's ConvertPVNameToKey) are excluded. | 2026-09-16 |
 | D27 | PR359 skipped during application review. The fork commit 103dab65 already fixes the underlying alias-conversion bug with a retained plain-name guard; the owner keeps the fork approach rather than PR359's guard removal. Selection reduces to 25 units. | 2026-09-16 |
+| D28 | Phase 2 persistence store is selectable, not SQLite-only: both mariadb-java-client and sqlite-jdbc stay shipped and the backend is chosen at install by the JNDI DataSource. This supersedes the SQLite-only end state of D11 and D13 and aligns with the aa-env owner's parallel/selectable decision (2026-09-18); aa-env relies on both drivers shipping in the WARs. | 2026-09-18 |
 
 ### Conceptual-integrity findings
 
@@ -970,7 +971,7 @@ Add the sqlite-jdbc runtime dependency. The SQLite dialect already exists in MyS
 
 Add sqlite-jdbc (current stable) as a runtime dependency in the canonical pom and confirm the SQLite persistence path loads.
 
-Out of scope: dialect or schema code changes; MariaDB removal (M13).
+Out of scope: dialect or schema code changes; the selectable MariaDB/SQLite backend (M13).
 
 ##### Completion Criteria
 
@@ -1031,7 +1032,7 @@ Remove persistence or storage code aa-maven does not need. Owner wording: unusua
 
 Inventory the persistence and storage backends first, then remove the ones the owner selects.
 
-Out of scope: removing anything before the owner approves the drop list; MariaDB removal (M13).
+Out of scope: removing anything before the owner approves the drop list; the selectable MariaDB/SQLite backend (M13).
 
 ##### Completion Criteria
 
@@ -1077,7 +1078,7 @@ Observed Labels: none
 Observed Milestone: none
 Last Compared: never
 
-#### M13 - MariaDB dependency removal
+#### M13 - Selectable persistence backend: MariaDB and SQLite
 
 Origin: daff1b7 / M13
 Identity History: none
@@ -1086,39 +1087,40 @@ Status: Not started
 
 ##### Summary
 
-Drop the MariaDB dependency once SQLite is the configuration store, so the runtime needs no external database server. This row closes Phase 2 (D11, D13): after it, the appliance runs as WARs on Tomcat 9 under aa-env's systemd units with SQLite and no external database.
+Ship both mariadb-java-client and sqlite-jdbc and let the persistence backend be selected at install, rather than removing MariaDB. MySQLPersistence already detects the SQLite vs MySQL dialect from the DataSource (M11), so the selection is made by the JNDI DataSource wired per instance. This row completes Phase 2's persistence scope (alongside M12's backend pruning): the appliance runs as WARs on Tomcat 9 under aa-env's systemd units against either MariaDB or SQLite.
 
 ##### Scope
 
-Remove mariadb-java-client and the MariaDB-specific configuration paths after the SQLite path (M11) is verified, make SQLite the default persistence, and update the per-instance context.xml DataSource guidance for aa-env accordingly.
+Keep both drivers shipped; confirm the persistence layer works against both the MariaDB and SQLite dialects; document the selectable-backend contract (which DataSource selects which backend) for aa-env. The backend selector itself lives in aa-env (context.xml DB_BACKEND).
 
-Out of scope: the SQLite dialect itself (exists); backend pruning (M12).
+Out of scope: removing either driver; the SQLite dialect itself (exists, M11); backend pruning (M12).
 
 ##### Completion Criteria
 
-- No mariadb-java-client dependency in the pom; the components run with SQLite persistence and pass tests; the DataSource guidance sent to aa-env reflects SQLite.
+- Both mariadb-java-client and sqlite-jdbc ship in the WARs; the persistence path is verified against MariaDB and against SQLite; the selectable-backend contract is documented and agrees with aa-env's parallel model.
 
 ##### Dependencies And Decisions
 
-- M11 (SQLite must work first); D11; D13; D8.
+- M11 (SQLite path, Complete); D8.
+- D28 (2026-09-18): keep MariaDB and SQLite in parallel and select the backend at install, superseding the SQLite-only end state of D11 and D13. Aligns with the aa-env owner's parallel/selectable decision (2026-09-18); aa-env relies on both drivers staying in the WARs.
 
 ##### Implementation Plan
 
 Plan Status: draft
 Plan Acceptance: none
 Implementation Authorization: none
-Superseded Plan Artifacts: none
+Superseded Plan Artifacts: the earlier remove-MariaDB plan (superseded 2026-09-18)
 
-1. Make SQLite the default persistence configuration.
-2. Remove the MariaDB dependency and configuration; update the DataSource guidance.
-3. Build and test.
+1. Keep both drivers in the pom; confirm MySQLPersistence handles the MariaDB and SQLite dialects.
+2. Document the selectable-backend contract (a JNDI DataSource per backend) for aa-env.
+3. Verify archive and retrieve on each backend and confirm both drivers ship in the WARs.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Static | grep for mariadb in pom.xml and config | repository | No matches |
-| T2 | Integration | Run the components on SQLite only | JDK 21, Tomcat 9 | Archive and retrieve a test PV without MariaDB |
+| T1 | Static | Confirm both mariadb-java-client and sqlite-jdbc are declared and ship in the WARs | repository | Both present |
+| T2 | Integration | Archive and retrieve a test PV on MariaDB, then on SQLite, selected by the DataSource | JDK 21, Tomcat 9 | Each backend archives and retrieves the PV |
 
 ##### Verification Results
 
@@ -1133,7 +1135,7 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: Remove the MariaDB dependency in favor of SQLite
+Title: Support MariaDB and SQLite as selectable persistence backends
 Labels: none
 GitHub Milestone: none
 Observed State: none
