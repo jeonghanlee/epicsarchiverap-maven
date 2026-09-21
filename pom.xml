@@ -258,6 +258,21 @@
       <version>3.53.4.0</version>
       <scope>runtime</scope>
     </dependency>
+    <!-- JNA backs mariadb-java-client's Unix domain socket (localSocket) connection path.
+         Declared explicitly so a change in the mariadb/waffle dependency chain that drops it
+         surfaces as a visible dependency change rather than a runtime-only socket failure. -->
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>5.13.0</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna-platform</artifactId>
+      <version>5.13.0</version>
+      <scope>runtime</scope>
+    </dependency>
     <dependency>
       <groupId>com.opencsv</groupId>
       <artifactId>opencsv</artifactId>
@@ -476,6 +491,8 @@
                 <dependency>com.lmax:disruptor</dependency>
                 <dependency>org.mariadb.jdbc:mariadb-java-client</dependency>
                 <dependency>org.xerial:sqlite-jdbc</dependency>
+                <dependency>net.java.dev.jna:jna</dependency>
+                <dependency>net.java.dev.jna:jna-platform</dependency>
                 <!-- Aggregate dependencies supply the Jupiter and suite engines. -->
                 <dependency>org.junit.jupiter:junit-jupiter</dependency>
                 <dependency>org.junit.platform:junit-platform-suite</dependency>
