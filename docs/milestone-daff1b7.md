@@ -986,6 +986,7 @@ Out of scope: removing either driver; the SQLite dialect itself (exists, M11); b
 
 - M11 (SQLite path, Complete); D8.
 - D28 (2026-09-18): keep MariaDB and SQLite in parallel and select the backend at install, superseding the SQLite-only end state of D11 and D13. Aligns with the aa-env owner's parallel/selectable decision (2026-09-18); aa-env relies on both drivers staying in the WARs.
+- 2026-09-21: jna and jna-platform (5.13.0, runtime) are declared explicitly in the pom and allowlisted for analyze-only, so the MariaDB Unix-socket (localSocket) path no longer relies on jna arriving transitively through mariadb-java-client and waffle-jna; a future drop now shows as a visible dependency change rather than a runtime-only socket failure. Landed 85f0f179; coordinated with the aa-env JNA gate.
 
 ##### Implementation Plan
 
