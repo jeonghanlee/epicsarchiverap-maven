@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite).
+Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite). On 2026-09-22 the backlog (M17, M7, M10) was assigned to Phase 2, so Phase 2 now carries M12, M13, M17, M7, and the deferred M10, and the Backlog is empty.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -34,6 +34,9 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M11 | sqlite-jdbc runtime dependency | Milestone | Complete | No | | Driver org.xerial:sqlite-jdbc 3.53.4.0 added (runtime) and allowlisted; SQLite persistence path verified by SQLitePersistenceTest and the 777/777 regression; [detail](#m11---sqlite-jdbc-runtime-dependency) |
 | Phase 2 | M12 | Persistence and storage backend pruning | Milestone | Not started | Yes | | Owner-approved backends removed, build and tests pass; [detail](#m12---persistence-and-storage-backend-pruning) |
 | Phase 2 | M13 | Selectable persistence backend: MariaDB and SQLite | Milestone | Not started | Yes | M11 | Both drivers ship; the backend is chosen by the JNDI DataSource; MariaDB and SQLite paths verified; [detail](#m13---selectable-persistence-backend-mariadb-and-sqlite) |
+| Phase 2 | M17 | Modernize the narrative doc content for the single-instance fork | Milestone | Not started | Yes | | Upstream-era content reconciled to the single-instance scope and the EPICS-Arche boundary per an owner keep/cut list; [detail](#m17---modernize-the-narrative-doc-content-for-the-single-instance-fork) |
+| Phase 2 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; awaiting the owner's item list; [detail](#m7---site-required-features-and-fixes) |
+| Phase 2 | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; deferred per D7; [detail](#m10---ant-removal-final-maven-only-consolidation) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Open | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 
 ### Decisions
@@ -1251,18 +1254,6 @@ Observed Labels: none
 Observed Milestone: none
 Last Compared: never
 
-## Backlog
-
-### Work
-
-| Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| | M17 | Modernize the narrative doc content for the single-instance fork | Milestone | Not started | No | | Upstream-era content reconciled to the single-instance scope and the EPICS-Arche boundary per an owner keep/cut list; [detail](#m17---modernize-the-narrative-doc-content-for-the-single-instance-fork) |
-| | M7 | Site-required features and fixes | Milestone | Not started | No | | Owner-identified items implemented and verified; awaiting the owner's item list; [detail](#m7---site-required-features-and-fixes) |
-| | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; deferred per D7; [detail](#m10---ant-removal-final-maven-only-consolidation) |
-
-### Backlog Details
-
 #### M17 - Modernize the narrative doc content for the single-instance fork
 
 Origin: daff1b7 / M17
@@ -1280,7 +1271,7 @@ Out of scope: the docs publishing pipeline (M9, done); EPICS-Arche architecture 
 
 ##### Dependencies And Decisions
 
-- D30 (content modernization deferred here); D12, D23, D26 (scope basis). Not Ready until the owner supplies the keep/cut list.
+- D30 (content modernization deferred here); D12, D23, D26 (scope basis). Execution waits on the owner's keep/cut list.
 
 ##### Completion Criteria
 
@@ -1372,6 +1363,7 @@ Out of scope: exec-maven-plugin steps that are not antrun.
 
 - D7: deferred to run last in Phase 1, after the other build work completes.
 - 2026-09-19: moved to backlog in the Phase 1 closeout; "run last in Phase 1" is superseded, and M10 is now unassigned backlog work.
+- 2026-09-22: moved into Phase 2 with the rest of the backlog; remains Deferred under D7 until a new dated decision returns it to Not started.
 - Open item: the sitespecificantscript execution runs each site's own build.xml via Ant (build.xml target sitespecificbuild, which runs `ant` in src/sitespecific/<siteid>). The classpathfiles half of the site overlay is pure Maven (webResources into all four WARs) and survives; the per-site build.xml execution is the Ant-coupled half. Removing Ant requires defining how the Maven build consumes a site's build step, or retiring per-site build.xml in favor of pure classpathfiles resources. aa-env's Ant-cleanup row is gated on this.
 
 ##### Implementation Plan
@@ -1411,12 +1403,24 @@ Observed Labels: none
 Observed Milestone: none
 Last Compared: never
 
+## Backlog
+
+### Work
+
+| Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+### Backlog Details
+
 ## Assignment History
 
 | Date | ID | From | To | Sync Commit | Note |
 | --- | --- | --- | --- | --- | --- |
-| 2026-09-19 | M7 | Milestone (Phase 1) | Backlog | pending (this commit) | No owner item list yet; unassigned until the site-required list is provided. |
-| 2026-09-19 | M10 | Milestone (Phase 1) | Backlog | pending (this commit) | Ant removal deferred (D7); moved to backlog to close out Phase 1's active work. |
+| 2026-09-19 | M7 | Milestone (Phase 1) | Backlog | 3c96141d | No owner item list yet; unassigned until the site-required list is provided. |
+| 2026-09-19 | M10 | Milestone (Phase 1) | Backlog | 3c96141d | Ant removal deferred (D7); moved to backlog to close out Phase 1's active work. |
+| 2026-09-22 | M17 | Backlog | Milestone (Phase 2) | pending (this commit) | Assigned to Phase 2 with the rest of the backlog; execution still waits on the owner's keep/cut list. |
+| 2026-09-22 | M7 | Backlog | Milestone (Phase 2) | pending (this commit) | Assigned to Phase 2 with the rest of the backlog; execution still waits on the owner's item list. |
+| 2026-09-22 | M10 | Backlog | Milestone (Phase 2) | pending (this commit) | Assigned to Phase 2 with the rest of the backlog; remains Deferred under D7. |
 
 ## History
 
