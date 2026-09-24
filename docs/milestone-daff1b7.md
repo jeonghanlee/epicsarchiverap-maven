@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite). On 2026-09-22 the backlog (M17, M7, M10) was assigned to Phase 2, so Phase 2 now carries M12, M13, M17, M7, and the deferred M10, and the Backlog is empty. Sustained-operation evidence (2026-09-23, ansible-provision soak pilot at 3c96141d): 31.5 h continuous, STS-to-MTS ETL observed for all 11 pilot PVs including the jeonghanlee/epicsarchiverap-env#25 name shape, MTS-to-LTS pending 2026-09-24/25, zero restarts and flat memory; the pilot exposed an aa-env provisioning gap (jeonghanlee/epicsarchiverap-env#47: configuration schema not loaded, so PV configuration is not persisted there) that M13's contract documentation must close. Single host, light workload and a 256M heap override, so capacity, retention, retrieval under load, connection pool and restart survival remain unmeasured.
+Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite). On 2026-09-22 the backlog (M17, M7, M10) was assigned to Phase 2, so Phase 2 now carries M12, M13, M17, M7, and the deferred M10, and the Backlog is empty. Sustained-operation evidence (2026-09-23, ansible-provision soak pilot at 3c96141d): 31.5 h continuous, STS-to-MTS ETL observed for all 11 pilot PVs including the jeonghanlee/epicsarchiverap-env#25 name shape, MTS-to-LTS pending 2026-09-24/25, zero restarts and flat memory; the pilot exposed an aa-env provisioning gap (jeonghanlee/epicsarchiverap-env#47: configuration schema not loaded, so PV configuration is not persisted there) that M13's contract documentation must close. Single host, light workload and a 256M heap override, so capacity, retention, retrieval under load, connection pool and restart survival remain unmeasured. Current (2026-09-23): M13 is Blocked on G2 for its SQLite check; its plan is a draft awaiting owner acceptance, and its MariaDB check (T2) is being rerun on the real deploy path by LAB-epicsarchiverap-maven. M18 (logging model, D31) is recorded and Ready; its layout commit releases aa-env's gate G14. Next action: record M13 / T2 from that rerun in docs/milestone-daff1b7.md.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -33,12 +33,13 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M16 | mgmt API reference generated from code | Milestone | Complete | No | D14 | mgmt WAR ships ui/api generated from the BPL registry and annotations; no scp, taglet, or sphinx in package; registry to document agreement test passes; [detail](#m16---mgmt-api-reference-generated-from-code) |
 | Phase 2 | M11 | sqlite-jdbc runtime dependency | Milestone | Complete | No | | Driver org.xerial:sqlite-jdbc 3.53.4.0 added (runtime) and allowlisted; SQLite persistence path verified by SQLitePersistenceTest and the 777/777 regression; [detail](#m11---sqlite-jdbc-runtime-dependency) |
 | Phase 2 | M12 | Persistence and storage backend pruning | Milestone | Not started | Yes | | Owner-approved backends removed, build and tests pass; [detail](#m12---persistence-and-storage-backend-pruning) |
-| Phase 2 | M13 | Selectable persistence backend: MariaDB and SQLite | Milestone | Not started | Yes | M11 | Both drivers ship; the backend is chosen by the JNDI DataSource; MariaDB and SQLite paths verified; [detail](#m13---selectable-persistence-backend-mariadb-and-sqlite) |
+| Phase 2 | M13 | Selectable persistence backend: MariaDB and SQLite | Milestone | Blocked | No | M11, G2 | Both drivers ship; the backend is chosen by the JNDI DataSource; MariaDB and SQLite paths verified; [detail](#m13---selectable-persistence-backend-mariadb-and-sqlite) |
 | Phase 2 | M17 | Modernize the narrative doc content for the single-instance fork | Milestone | Not started | Yes | | Upstream-era content reconciled to the single-instance scope and the EPICS-Arche boundary per an owner keep/cut list; [detail](#m17---modernize-the-narrative-doc-content-for-the-single-instance-fork) |
 | Phase 2 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; awaiting the owner's item list; [detail](#m7---site-required-features-and-fixes) |
 | Phase 2 | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; deferred per D7; [detail](#m10---ant-removal-final-maven-only-consolidation) |
 | Phase 2 | M18 | Appliance logging model: journald-first log4j2 layout and lifecycle | Milestone | Not started | Yes | D31 | The shipped log4j2.xml emits the <N> priority prefix with a ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO} root level and a capped, commented RollingFile fallback; the operating-model page and the faq/install-guide fixes land; [detail](#m18---appliance-logging-model-journald-first-log4j2-layout-and-lifecycle) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Open | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
+| Tracking | G2 | aa-env SQLite deploy path | External gate | Open | No | | aa-env deploys the appliance with the SQLite backend (jeonghanlee/epicsarchiverap-env#43 closed with a landed commit); [detail](#g2---aa-env-sqlite-deploy-path) |
 
 ### Decisions
 
@@ -972,7 +973,7 @@ Last Compared: never
 Origin: daff1b7 / M13
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: Blocked
 
 ##### Summary
 
@@ -994,6 +995,8 @@ Out of scope: removing either driver; the SQLite dialect itself (exists, M11); b
 - D28 (2026-09-18): keep MariaDB and SQLite in parallel and select the backend at install, superseding the SQLite-only end state of D11 and D13. Aligns with the aa-env owner's parallel/selectable decision (2026-09-18); aa-env relies on both drivers staying in the WARs.
 - 2026-09-21: jna and jna-platform (5.13.0, runtime) are declared explicitly in the pom and allowlisted for analyze-only, so the MariaDB Unix-socket (localSocket) path no longer relies on jna arriving transitively through mariadb-java-client and waffle-jna; a future drop now shows as a visible dependency change rather than a runtime-only socket failure. Landed 85f0f179; coordinated with the aa-env JNA gate.
 - Observation (2026-09-23, ansible-provision soak pilot: one Rocky Linux 8.10 VM, aa-maven 3c96141d built by aa-env 6a026d4, four instances, 11 scalar PVs at 1 Hz, 31.5 h continuous): archiving, STS-to-MTS ETL and spot retrieval ran against MariaDB 10.3.39 over loopback TCP through the JNDI DataSource jdbc/archappl with zero JVM restarts and flat memory. The configuration schema had not been loaded on that deployment (SHOW TABLES empty; mgmt logs Table 'archappl.PVTypeInfo' doesn't exist, and the same for PVAliases), so every MySQLPersistence write failed and PV configuration lived only in memory, which would not survive an appliance restart; archiving, ETL and retrieval were unaffected, which is why functional checks pass. The cause is in the aa-env provisioning path, confirmed by aa-env and filed as jeonghanlee/epicsarchiverap-env#47 (open as of 2026-09-23): sql.fill checks the database through an admin account that the externally provisioned mode never creates, so the check fails and sql.fill exits 0 without loading the schema. The artifact is not the cause: the 3c96141d release tarball ships install_scripts/archappl_mysql.sql and install_scripts/archappl_sqlite.sql, and archappl_mysql.sql defines PVTypeInfo, PVAliases, ArchivePVRequests and ExternalDataServers (verified 2026-09-23). Scope implication for plan step 2: the documented selectable-backend contract must state that the matching schema file is loaded at install and name a post-load table check. Related jeonghanlee/epicsarchiverap-env#21 and jeonghanlee/epicsarchiverap-env#30. Recheck: SHOW TABLES on the deployed config database; ansible-provision's written soak report (received 2026-09-23); the state of jeonghanlee/epicsarchiverap-env#47.
+- G2 (2026-09-23): SQLite on the deploy path needs aa-env's SQLite deploy path (jeonghanlee/epicsarchiverap-env#43, open). This row is Blocked on G2; resume as Not started.
+- Observation (2026-09-24 02:18-02:37 UTC, LAB-epicsarchiverap-maven on a lab VM, not the deploy path): with a hand-built four-instance Tomcat 9.0.120 layout, the jdbc/archappl DataSource on mgmt only, no JDBC driver in any Tomcat lib directory, and WARs built at b7d4b1e4, both backends loaded the four tables from the shipped schema files, reported SQL Dialect MySQL and SQL Dialect SQLite, archived and retrieved a softIocPVX PV (71 and 96 samples), held its PVTypeInfo row, and kept archiving after a restart, with no SQLITE_BUSY, driver-loading or persistence error. The owner directed a rerun on the real deploy path, so this is not recorded as T2; it shows the artifact's persistence path works when the environment is wired as the contract states. The harness scripts were held in that session and the VM is destroyed, so this observation cannot be rechecked as run.
 
 ##### Implementation Plan
 
@@ -1002,23 +1005,29 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: the earlier remove-MariaDB plan (superseded 2026-09-18)
 
-1. Keep both drivers in the pom; confirm MySQLPersistence handles the MariaDB and SQLite dialects.
-2. Document the selectable-backend contract (a JNDI DataSource per backend) for aa-env.
-3. Verify archive and retrieve on each backend and confirm both drivers ship in the WARs.
+Owner direction (2026-09-23): the contract is a new single page covering both backends. Owner direction (2026-09-23): the integration checks run on the real deploy path, ansible-provision (archiver_dev) plus aa-env, on a lab VM, executed by LAB-epicsarchiverap-maven on this session's request; nothing in the deployment is built by hand. MariaDB runs now (T2); SQLite runs once aa-env has a SQLite deploy path (T4, gated by G2).
+
+1. No code change for backend selection: MySQLPersistence already chooses the dialect from the JNDI DataSource's database product name (MySQLPersistence.java lines 69-77), and the DataSource name is jdbc/<dbname>, where <dbname> is the ARCHAPPL_DB_NAME environment variable and defaults to archappl (lines 54-62). Keep both drivers in the pom. Closes with T1.
+2. Add docs/book/src/sysadmin/persistence-backends.md, listed in docs/book/src/SUMMARY.md, stating the selectable-backend contract: ARCHAPPL_PERSISTENCE_LAYER unset (MySQLPersistence is the default, DefaultConfigService.java lines 1948-1950) or set to the full class name org.epics.archiverappliance.config.persistence.MySQLPersistence; one JNDI DataSource named jdbc/<dbname> (ARCHAPPL_DB_NAME, default jdbc/archappl) whose driver selects MariaDB or SQLite, required only by the mgmt WAR, the only WAR that initializes the persistence layer (DefaultConfigService.java line 725, MGMT branch); the JDBC drivers come from the WARs (mariadb-java-client and sqlite-jdbc in each WAR's WEB-INF/lib) and are not copied into the Tomcat lib directory; the matching schema file shipped in the mgmt WAR (install/archappl_mysql.sql or install/archappl_sqlite.sql) loaded at install; a post-load check that PVTypeInfo, PVAliases, ArchivePVRequests and ExternalDataServers exist; and the consequence of a missing schema (configuration writes fail and PV configuration does not survive a restart). In installguide.md and sqlite.md, replace the backend setup procedure (schema load, connection pool, and the instructions to copy a JDBC driver into the Tomcat lib directory) with a short pointer to the new page; the rest of each page is unchanged (owner decision 2026-09-23). Compare the contract with the context.xml template and DB_BACKEND selection that aa-env deploys (read from jeonghanlee/epicsarchiverap-env), including where it places the JDBC drivers, and record each difference. Closes with T3.
+3. Deploy the appliance on a lab VM with ansible-provision and aa-env, aa-env at ansible-provision's pinned commit (archiver_env_ref, 1fc20a8 as of 2026-09-24) and aa-maven at the commit under test (archiver_maven_src_tag, whose default 3c96141d must be overridden), and record both commits with the result. The test PV comes from softIocPVX run on the VM as a test input; it is not part of the deployment under test, so preparing it is not a hand-built deployment step. Check, on the deployed appliance: the deploy loaded the schema itself, the mgmt log reports the matching SQL Dialect, where the JDBC driver is loaded from, archive and retrieve of a softIocPVX PV, its PVTypeInfo row, and archiving after a restart through the deployed service. MariaDB closes with T2; SQLite closes with T4 after G2.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Static | Confirm both mariadb-java-client and sqlite-jdbc are declared and ship in the WARs | repository | Both present |
-| T2 | Integration | Archive and retrieve a test PV on MariaDB, then on SQLite, selected by the DataSource | JDK 21, Tomcat 9 | Each backend archives and retrieves the PV |
+| T1 | Static | Confirm both mariadb-java-client and sqlite-jdbc are declared and ship in the WARs | repository and built WARs | Both present |
+| T2 | Integration | MariaDB on the deploy path: deploy with ansible-provision and aa-env (aa-env at the pinned commit, aa-maven at the commit under test); serve one PV from softIocPVX on the VM; SHOW TABLES; mgmt log RDB Engine and SQL Dialect lines; driver source (WAR WEB-INF/lib or a Tomcat lib jar); archivePV, getPVStatus, getData.json; PVTypeInfo row (mysql); restart through the deployed service, then getPVStatus and getData.json; error scan of every instance log | Lab VM (Rocky Linux 8.10) deployed by ansible-provision and aa-env | The deployed aa-env and aa-maven commits are recorded; the deploy loaded the four tables; SQL Dialect MySQL; the PV archives and retrieves; PVTypeInfo holds its row; the PV is still archived after the restart; no driver-loading, persistence or ConfigException line |
+| T3 | Review | Second-person pass on persistence-backends.md and the two trimmed pages; mdbook build | docs/book Docker build | A cold reader can select either backend, load its schema and confirm the tables; the contract agrees with aa-env's deployed context.xml and DB_BACKEND selection, or each difference is recorded; the book builds with no broken links |
+| T4 | Integration | SQLite on the deploy path: T2's checks with aa-env's SQLite backend (sqlite3 .tables and query) | Lab VM deployed by ansible-provision and aa-env, after G2 | Same as T2 with SQL Dialect SQLite and no SQLITE_BUSY line |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | repository | Pending | none |
-| T2 | Not run | JDK 21, Tomcat 9 | Pending | none |
+| T1 | Not run | repository and built WARs | Pending | none |
+| T2 | Not run | Lab VM deployed by ansible-provision and aa-env | Pending (rerun requested 2026-09-23) | none |
+| T3 | Not run | docs/book Docker build | Pending | none |
+| T4 | Not run | Lab VM deployed by ansible-provision and aa-env | Pending (gated by G2) | none |
 
 ##### Closure Evidence
 
@@ -1183,6 +1192,30 @@ D2 and D3 require one GitHub issue per M row in this repository. GitHub issues a
 | Observed At | Result | Evidence |
 | --- | --- | --- |
 | 2026-09-11 | Pending | gh api reports has_issues=false |
+
+##### Closure Evidence
+
+- none
+
+#### G2 - aa-env SQLite deploy path
+
+Origin: daff1b7 / G2
+GitHub Issue: none
+Status: Open
+
+##### Summary
+
+M13 verifies each backend on the real deploy path. aa-env deploys only MariaDB today; its selectable-backend work (jeonghanlee/epicsarchiverap-env#43) adds the SQLite path. Until then M13 / T4 cannot run.
+
+##### Completion Criteria
+
+- jeonghanlee/epicsarchiverap-env#43 is closed by a landed aa-env commit that deploys the appliance with the SQLite backend.
+
+##### Verification Results
+
+| Observed At | Result | Evidence |
+| --- | --- | --- |
+| 2026-09-23 | Pending | gh api reports jeonghanlee/epicsarchiverap-env#43 open |
 
 ##### Closure Evidence
 
