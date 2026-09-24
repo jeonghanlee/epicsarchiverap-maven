@@ -65,6 +65,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.build.directory}/tomcat-log4j</directory>
+            <outputDirectory>tomcat-log4j</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${src.main.dir}/org/epics/archiverappliance/config/persistence</directory>
             <outputDirectory>install_scripts</outputDirectory>
             <includes>

@@ -37,7 +37,7 @@ line per event:
 | Stream | Destination | Bounded by |
 | --- | --- | --- |
 | Application log (log4j2), one per JVM | journal, identifier `archappl-<component>` | the host's journald retention, set on provisioned hosts to 8 weeks and capped by `SystemMaxUse` |
-| Tomcat's own log (JULI `ConsoleHandler`) | same journal stream | same |
+| Tomcat's own log and `java.util.logging`, through log4j2 | same journal stream | same |
 | Process stdout and stderr | same journal stream | same |
 | Service launcher messages | journal, the service unit's own lines | same |
 | Tomcat access log, one per instance | file, `logs/localhost_access_log.<yyyy-MM-dd>.txt` | Tomcat deletes files older than 90 days (`maxDays="90"`, set by epicsarchiverap-env) |
@@ -108,5 +108,15 @@ it is enabled in a copy of the file:
   message or stack trace spans several entries; only its first line
   carries the priority, and the continuation lines arrive at the default
   priority 6 (INFO).
-- Tomcat's own log lines carry no priority prefix: no formatter shipped
-  with Tomcat 9 emits one, so these lines arrive at priority 6 (INFO).
+- Tomcat's own log lines and `java.util.logging` lines (the CA client's
+  beacon messages among them) carry a priority only through log4j2: the
+  deployment puts the `log4j-api`, `log4j-core`, `log4j-appserver` and
+  `log4j-jul` jars that the build writes to `target/tomcat-log4j` (and
+  ships in the release tarball's `tomcat-log4j/`) on Tomcat's `CLASSPATH`, sets the `java.util.logging` manager to
+  `org.apache.logging.log4j.jul.LogManager`, and supplies a
+  `log4j2-tomcat.xml` with the same pattern. Without them, Tomcat's JULI
+  writes these lines with no prefix, at priority 6, because no formatter
+  shipped with Tomcat 9 emits one.
+- The `java.util.logging` manager is JVM-wide, so `java.util.logging`
+  lines raised inside a WAR are formatted by `log4j2-tomcat.xml`, not by
+  the WAR's `log4j2.xml`.

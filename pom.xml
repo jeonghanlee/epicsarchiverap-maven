@@ -476,6 +476,41 @@
         <version>3.11.0</version>
         <executions>
           <execution>
+            <!-- Tomcat-level log4j jar set: routes Tomcat's internal logging (log4j-appserver)
+                 and java.util.logging (log4j-jul) through log4j2 at the WARs' own log4j version,
+                 so both log4j copies in one JVM come from one build. Copied, not declared. -->
+            <id>copy-tomcat-log4j</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/tomcat-log4j</outputDirectory>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.apache.logging.log4j</groupId>
+                  <artifactId>log4j-api</artifactId>
+                  <version>${log4j.version}</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.apache.logging.log4j</groupId>
+                  <artifactId>log4j-core</artifactId>
+                  <version>${log4j.version}</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.apache.logging.log4j</groupId>
+                  <artifactId>log4j-appserver</artifactId>
+                  <version>${log4j.version}</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.apache.logging.log4j</groupId>
+                  <artifactId>log4j-jul</artifactId>
+                  <version>${log4j.version}</version>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+          <execution>
             <id>analyze-dependencies</id>
             <goals>
               <goal>analyze-only</goal>
