@@ -39,6 +39,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; deferred per D7; [detail](#m10---ant-removal-final-maven-only-consolidation) |
 | Phase 2 | M18 | Appliance logging model: journald-first log4j2 layout and lifecycle | Milestone | Blocked | No | D31, G3 | The shipped log4j2.xml emits the <N> priority prefix with a ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO} root level and a capped, commented RollingFile fallback; the operating-model page and the faq/install-guide fixes land; [detail](#m18---appliance-logging-model-journald-first-log4j2-layout-and-lifecycle) |
 | Phase 2 | M19 | Tomcat log4j jar set from the build | Milestone | Complete | No | D32 | The build writes log4j-api, log4j-core, log4j-appserver and log4j-jul at ${log4j.version} to target/tomcat-log4j and the release tarball carries them; the logging page describes Tomcat and java.util.logging lines through log4j2; [detail](#m19---tomcat-log4j-jar-set-from-the-build) |
+| Phase 2 | M20 | Runtime log-level control per component | Milestone | Not started | Yes | D31 | mgmt BPL getLogLevel and setLogLevel change a named logger or the root level in one running component without a restart, forwarded to that component's own BPL; [detail](#m20---runtime-log-level-control-per-component) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Open | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Open | No | | aa-env deploys the appliance with the SQLite backend (jeonghanlee/epicsarchiverap-env#43 closed with a landed commit); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Open | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -1588,6 +1589,65 @@ Superseded Plan Artifacts: none
 ##### Closure Evidence
 
 - Landed 2026-09-24 19:28 UTC: commit 9bbd69bf (pom.xml, src/assembly/release.xml, docs/book/src/sysadmin/logging.md, docs/milestone-daff1b7.md) is an ancestor of the fetched origin/modernize (9bbd69bf); T1, T2 and T3 passed. Reported to aa-env for its G15 on 2026-09-24. Closed by owner decision 2026-09-24 on this row's own checks; the deployed-host observation of the jars is aa-env M35's.
+
+#### M20 - Runtime log-level control per component
+
+Origin: daff1b7 / M20
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+aa-env asked, for its owner, for a way to raise one running component (mgmt, engine, etl or retrieval) to DEBUG while a problem is live and lower it again, without a restart. Today levels are fixed from log4j2.xml at startup: nothing in src/main calls Configurator.setLevel, uses LoggerContext or sets monitorInterval (verified 2026-09-24). Each WAR carries its own log4j-core, so a level change applies only inside the JVM and webapp that makes it; mgmt therefore forwards the request to the target component's own BPL, as ChangeArchivalParamsAction and BulkPauseResumeUtils already forward to engine and ETL.
+
+##### Scope
+
+- mgmt BPL actions getLogLevel and setLogLevel (component, logger or root, level), forwarded to the component's BPLServlet.
+- A matching action in each component's BPLServlet (mgmt, engine, etl, retrieval) that reads or sets the level with log4j-core's Configurator (setLevel, setRootLevel) in its own LoggerContext.
+- Documentation on the operating-model page.
+
+Out of scope: a PVA interface to the same control (a separate decision); an automatic revert timer (a candidate the owner has not accepted); Tomcat-level loggers.
+
+##### Completion Criteria
+
+- On the four real WARs, setLogLevel raises one component's logger to DEBUG, its DEBUG lines appear only for that component, getLogLevel reports the change, and setting it back stops them, all without a restart; the operating-model page documents the actions.
+
+##### Dependencies And Decisions
+
+- D31 (the logging model); aa-env's request relayed on 2026-09-23, with BPL first and PVA later as the aa-maven recommendation (owner has not yet chosen the shape).
+- Hypothesis to check in T2: once aa-env M35 routes java.util.logging through the Tomcat-level log4j2 context, loggers that arrive through java.util.logging (the CA client under com.cosylab) belong to that context, not the WAR's, so a WAR-side setLevel would not change them.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Add the component-side get and set actions to each BPLServlet and the forwarding mgmt actions; unit-test the level parsing and the logger lookup. Closes with T1.
+2. Run the four real WARs, change one component's level through mgmt, and read the journal. Closes with T2.
+3. Document the actions on the logging page; mdbook build. Closes with T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit | ./mvnw test for the new actions' parameter handling | JDK 21, wrapper Maven | Invalid component or level is rejected; a valid request maps to the named logger or the root |
+| T2 | Integration | Four real WARs under systemd-cat, with one softIocPVX PV archived so that engine sampling produces DEBUG lines once raised; setLogLevel on engine for org.epics.archiverappliance.engine to DEBUG, getLogLevel, then back to INFO; then, with the Tomcat-level jar set configured as in M19 / T2 (setenv.sh CLASSPATH, LOGGING_MANAGER, log4j2-tomcat.xml), repeat for com.cosylab | JDK 21, Tomcat 9.0.121, journald | DEBUG lines appear only under the engine identifier while raised and stop after reset; the com.cosylab result settles the hypothesis |
+| T3 | Review | Second-person pass on the logging page; mdbook build | docs/book Docker build | An operator can raise and lower one component's level from the page |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T2 | Not run | Tomcat 9.0.121, journald | Pending | none |
+| T3 | Not run | docs/book Docker build | Pending | none |
+
+##### Closure Evidence
+
+- none
 
 ## Backlog
 
