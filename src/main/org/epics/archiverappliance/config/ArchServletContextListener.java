@@ -24,7 +24,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class ArchServletContextListener implements ServletContextListener {
 	private static final Logger logger = LogManager.getLogger(ArchServletContextListener.class);
-	private static final Logger configlogger = LogManager.getLogger("config." + ArchServletContextListener.class);
+	private static final Logger configlogger = LogManager.getLogger("config." + ArchServletContextListener.class.getName());
 	@Override
 	public void contextInitialized(ServletContextEvent sce) {
 		// This should hopefully trigger the log4j2 initialization
