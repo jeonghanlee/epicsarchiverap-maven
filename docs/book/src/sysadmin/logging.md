@@ -1,0 +1,112 @@
+# Logging
+
+The appliance runs as four Tomcat JVMs, one each for the `mgmt`,
+`engine`, `etl` and `retrieval` components. Each JVM writes its log to
+standard output only. The service that launches the JVMs passes each
+stream to the systemd journal, and journald timestamps, stores and
+rotates the lines. The appliance writes no log files of its own.
+
+```admonish note
+This page describes the target layout. It applies once
+[epicsarchiverap-env](https://github.com/jeonghanlee/epicsarchiverap-env)
+runs the four JVMs in the foreground through `systemd-cat` and stops
+shipping its own `log4j2.xml`; until then the WAR layout below is not in
+effect. On a deployment that still starts Tomcat in the background,
+application lines go to `logs/catalina.out` and Tomcat's own lines go to
+the dated `logs/catalina.<date>.log` and `logs/localhost.<date>.log`
+files under each `CATALINA_BASE`.
+```
+
+## Line format
+
+The shipped `log4j2.xml` (in each WAR's `WEB-INF/classes`) writes one
+line per event:
+
+```text
+<3>ERROR [http-nio-17665-exec-1] org.epics.archiverappliance.mgmt.bpl.ModifyMetaFieldsAction - Cannot find typeinfo for pv ...
+```
+
+- The leading `<N>` is a syslog priority prefix: `<2>` FATAL, `<3>`
+  ERROR, `<4>` WARN, `<6>` INFO, `<7>` DEBUG and TRACE. `systemd-cat`
+  strips it and stores it as the journal `PRIORITY` field.
+- The line carries the level, the thread and the logger name. It
+  carries no timestamp; the journal records one for every entry.
+
+## Streams and their bounds
+
+| Stream | Destination | Bounded by |
+| --- | --- | --- |
+| Application log (log4j2), one per JVM | journal, identifier `archappl-<component>` | the host's journald retention, set on provisioned hosts to 8 weeks and capped by `SystemMaxUse` |
+| Tomcat's own log (JULI `ConsoleHandler`) | same journal stream | same |
+| Process stdout and stderr | same journal stream | same |
+| Service launcher messages | journal, the service unit's own lines | same |
+| Tomcat access log, one per instance | file, `logs/localhost_access_log.<yyyy-MM-dd>.txt` | Tomcat deletes files older than 90 days (`maxDays="90"`, set by epicsarchiverap-env) |
+
+In the journal layout there is no `catalina.out` and no `logrotate`
+configuration. The service unit, the launcher and Tomcat's
+`logging.properties` and `server.xml` are installed by the deployment
+repository
+([epicsarchiverap-env](https://github.com/jeonghanlee/epicsarchiverap-env)).
+The journald retention and rate limits are host settings.
+
+## Reading the logs
+
+```bash
+journalctl -u epicsarchiverap-maven.service -t archappl-etl
+```
+```bash
+journalctl -u epicsarchiverap-maven.service -t archappl-mgmt -p err
+```
+```bash
+journalctl -u epicsarchiverap-maven.service -t archappl-engine -f
+```
+
+`epicsarchiverap-maven.service` is the unit that epicsarchiverap-env
+installs.
+
+`-t` selects one component, `-p err` shows only ERROR and FATAL lines,
+and `-f` follows new lines.
+
+## Log levels
+
+The root level comes from the `ARCHAPPL_ROOT_LOGGER_LEVEL` environment
+variable and defaults to `INFO`. Setting it to `WARN` drops INFO lines
+from every component.
+
+The shipped file lists the loggers operators most often tune, commented
+out:
+
+| Logger | Covers |
+| --- | --- |
+| `config` | startup and configuration (`config.*`) |
+| `cluster` | cluster membership (`cluster.*`) |
+| `org.epics.archiverappliance.engine` | PV connection and sampling |
+| `org.epics.archiverappliance.etl` | store-to-store data movement |
+| `org.epics.archiverappliance.retrieval` | data retrieval requests |
+| `com.hazelcast` | the embedded cluster library |
+
+To change a logger's level, copy the shipped `log4j2.xml`, edit the copy,
+and point the `LOG4J_CONFIGURATION_FILE` environment variable at it. A
+level change takes effect when the component restarts.
+
+## File fallback without a collector
+
+On a host with no journal (a container or a developer machine), the
+shipped `log4j2.xml` carries a commented `RollingFile` appender. After
+it is enabled in a copy of the file:
+
+- each JVM writes `logs/archappl.log` under its `CATALINA_BASE`, with its
+  own timestamp on every line;
+- the file rolls at 50 MB into `archappl-<n>.log.gz`, and at most ten
+  archives are kept, so one JVM holds at most about 550 MB of log files;
+- each JVM needs its own `fileName` when several components share one
+  `CATALINA_BASE`.
+
+## Known limits
+
+- The journal records each output line as its own entry. A multi-line
+  message or stack trace spans several entries; only its first line
+  carries the priority, and the continuation lines arrive at the default
+  priority 6 (INFO).
+- Tomcat's own log lines carry no priority prefix: no formatter shipped
+  with Tomcat 9 emits one, so these lines arrive at priority 6 (INFO).

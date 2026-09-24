@@ -43,12 +43,13 @@
 
 3.  **Where are the logs?**
 
-    Most deployment have four tomcat containers per appliance - one each
-    for the engine, ETL, retrieval and mgmt components. All the logs
-    typically are sent to `arch.log` or similar files in the
-    `CATALINA_HOME/logs` of these containers. Log levels are typically
-    controlled using a `log4j2.xml` file in the `TOMCAT_HOME/lib` folder
-    of these containers.
+    Each appliance runs four Tomcat JVMs, one each for the engine, ETL,
+    retrieval and mgmt components. Each writes its log to standard output,
+    and the service passes it to the systemd journal under the identifier
+    `archappl-<component>`, for example
+    `journalctl -u epicsarchiverap-maven.service -t archappl-etl`. The root log level
+    comes from the `ARCHAPPL_ROOT_LOGGER_LEVEL` environment variable. See
+    [Logging](sysadmin/logging.md).
 
 4.  **What\'s the difference between SCAN and MONITOR?**
 
@@ -143,7 +144,7 @@
     For aliased PV\'s, the PVDetails of the PV should an a line
     indicating that this PV is an alias for the _real_ PV.
 
-    Also, in the mgmt webapp\'s arch.log, there should be an entry
+    Also, in the mgmt log (`journalctl -t archappl-mgmt`), there should be an entry
     indicating this like so _Aborting archive request for pv
     ABC:DEF:ALIAS Reason: Aborting this pv ABC:DEF:ALIAS (which is an
     alias) and using the real name ABC:DEF:REAL instead._

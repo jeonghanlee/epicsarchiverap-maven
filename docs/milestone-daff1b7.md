@@ -37,9 +37,10 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M17 | Modernize the narrative doc content for the single-instance fork | Milestone | Not started | Yes | | Upstream-era content reconciled to the single-instance scope and the EPICS-Arche boundary per an owner keep/cut list; [detail](#m17---modernize-the-narrative-doc-content-for-the-single-instance-fork) |
 | Phase 2 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; awaiting the owner's item list; [detail](#m7---site-required-features-and-fixes) |
 | Phase 2 | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; deferred per D7; [detail](#m10---ant-removal-final-maven-only-consolidation) |
-| Phase 2 | M18 | Appliance logging model: journald-first log4j2 layout and lifecycle | Milestone | Not started | Yes | D31 | The shipped log4j2.xml emits the <N> priority prefix with a ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO} root level and a capped, commented RollingFile fallback; the operating-model page and the faq/install-guide fixes land; [detail](#m18---appliance-logging-model-journald-first-log4j2-layout-and-lifecycle) |
+| Phase 2 | M18 | Appliance logging model: journald-first log4j2 layout and lifecycle | Milestone | Blocked | No | D31, G3 | The shipped log4j2.xml emits the <N> priority prefix with a ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO} root level and a capped, commented RollingFile fallback; the operating-model page and the faq/install-guide fixes land; [detail](#m18---appliance-logging-model-journald-first-log4j2-layout-and-lifecycle) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Open | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Open | No | | aa-env deploys the appliance with the SQLite backend (jeonghanlee/epicsarchiverap-env#43 closed with a landed commit); [detail](#g2---aa-env-sqlite-deploy-path) |
+| Tracking | G3 | Journald layout observed on a deployed host | External gate | Open | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
 
 ### Decisions
 
@@ -1221,6 +1222,30 @@ M13 verifies each backend on the real deploy path. aa-env deploys only MariaDB t
 
 - none
 
+#### G3 - Journald layout observed on a deployed host
+
+Origin: daff1b7 / G3
+GitHub Issue: none
+Status: Open
+
+##### Summary
+
+M18's layout and its page take effect only on a deployment where epicsarchiverap-env runs the four JVMs in the foreground through systemd-cat and no longer ships its own log4j2.xml. That observation belongs to aa-env's second logging item, which is itself gated on M18's layout commit (aa-env G14).
+
+##### Completion Criteria
+
+- epicsarchiverap-env reports, for a deployed host running a WAR at or after M18's layout commit, that each archappl-<component> identifier carries ERROR lines at PRIORITY 3 and INFO lines at PRIORITY 6.
+
+##### Verification Results
+
+| Observed At | Result | Evidence |
+| --- | --- | --- |
+| 2026-09-24 | Pending | aa-env's first logging item awaits its owner's acceptance; the second follows it |
+
+##### Closure Evidence
+
+- none
+
 #### M16 - mgmt API reference generated from code
 
 Origin: daff1b7 / M16
@@ -1445,7 +1470,7 @@ Last Compared: never
 Origin: daff1b7 / M18
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: Blocked
 
 ##### Summary
 
@@ -1467,16 +1492,18 @@ Out of scope: the aa-env unit, launcher, logging.properties and access-log chang
 
 - D31 (2026-09-23): the model and the ownership split. Owner decisions (2026-09-23): root level INFO through ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO}; fallback caps 50 MB x 10 with gzip.
 - Coordination with aa-env (2026-09-23): aa-env enables systemd-cat --level-prefix=true in its first logging item, so Tomcat JULI lines map to a journal priority at once and application lines take the default priority 6 until this layout lands. aa-env's second item (drop its site log4j2.xml, export ARCHAPPL_ROOT_LOGGER_LEVEL) is gated on this row's layout commit (aa-env G14). The commit hash is sent to aa-env when it lands.
+- G3 (2026-09-24): the operating-model page describes a layout that exists only after aa-env's two logging items land, so M18 closes on observing it: aa-env's second logging item checks, on a deployed host with a WAR at or after this row's layout commit, each archappl-<component> identifier's ERROR and INFO lines at PRIORITY 3 and 6 and reports the result here. This row is Blocked on G3; resume as In progress.
+- Observation (2026-09-24, verified here against Tomcat 9.0.121's tomcat-juli.jar): org.apache.juli.SystemdFormatter, which aa-env's logging.properties names, does not exist; the jar ships JdkLoggerFormatter, JsonFormatter, OneLineFormatter and VerbatimFormatter only, so Tomcat's own lines carry no priority prefix and arrive at priority 6. The page states this. Recheck: unzip -l $CATALINA_HOME/bin/tomcat-juli.jar.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
+Plan Status: accepted
+Plan Acceptance: owner accepted 2026-09-24; T2 revision accepted 2026-09-24
+Implementation Authorization: owner authorized 2026-09-24, including the T2 revision
+Superseded Plan Artifacts: T2 with the mgmt WAR alone (superseded 2026-09-24: BasicDispatcher refuses every BPL action until all four components report started, so the WARN and ERROR requests never reach their actions)
 
 1. Rewrite the default site log4j2.xml as scoped above; build the WARs and confirm the file ships in each WAR's classpath. Closes with T1.
-2. Run the mgmt WAR under systemd-cat --level-prefix=true and read the journal: priorities map per level, the root level follows the variable, and the fallback enabled once caps and rotates. Closes with T2.
+2. Run the four WARs in one Tomcat base under systemd-cat --level-prefix=true and read the journal: priorities map per level, the root level follows the variable, and the fallback enabled once caps and rotates. Closes with T2.
 3. Write the operating-model page and correct faq.md and the install-guide sample; mdbook build. Closes with T3.
 
 ##### Test Plan
@@ -1484,16 +1511,16 @@ Superseded Plan Artifacts: none
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
 | T1 | Static | ./mvnw -B clean package -DskipTests; unzip -p each WAR's log4j2.xml and compare with the source | JDK 21, wrapper Maven | The four WARs carry the new log4j2.xml |
-| T2 | Integration | Start the real mgmt WAR in Tomcat 9 under a one-appliance appliances.xml (ARCHAPPL_APPLIANCES, ARCHAPPL_MYIDENTITY), with stdout piped to systemd-cat --identifier=archappl-test --level-prefix=true; produce INFO lines from startup, a WARN line from mgmt/bpl/getPVTypeInfo for an unknown PV (GetPVTypeInfo.java line 48, Cannot find typeinfo) and an ERROR line from mgmt/bpl/modifyMetaFields for an unknown PV with any command value (ModifyMetaFieldsAction.java line 55, Cannot find typeinfo for pv; route registered at mgmt BPLServlet.java line 154); journalctl -t archappl-test -p err and -o verbose; repeat with ARCHAPPL_ROOT_LOGGER_LEVEL=WARN; enable the fallback with a small size cap | JDK 21, Tomcat 9, systemd journald | -p err shows only ERROR lines; PRIORITY matches each level; WARN hides INFO; the fallback rolls at the cap and keeps at most the configured file count |
+| T2 | Integration | Start the four real WARs in one Tomcat 9 base under a one-appliance appliances.xml, and wait until mgmt reports all components started (ARCHAPPL_APPLIANCES, ARCHAPPL_MYIDENTITY), with stdout piped to systemd-cat --identifier=archappl-test --level-prefix=true; produce INFO lines from startup, a WARN line from mgmt/bpl/getPVTypeInfo for an unknown PV (GetPVTypeInfo.java line 48, Cannot find typeinfo) and an ERROR line from mgmt/bpl/modifyMetaFields for an unknown PV with any command value (ModifyMetaFieldsAction.java line 55, Cannot find typeinfo for pv; route registered at mgmt BPLServlet.java line 154); journalctl -t archappl-test -p err and -o verbose; repeat with ARCHAPPL_ROOT_LOGGER_LEVEL=WARN; enable the fallback with a small size cap | JDK 21, Tomcat 9, systemd journald | -p err shows only ERROR lines; PRIORITY matches each level; WARN hides INFO; the fallback rolls at the cap and keeps at most the configured file count |
 | T3 | Review | Second-person pass on the operating-model page, faq.md and the install-guide sample; mdbook build | docs/book Docker build | A cold reader can find and filter each component's log and knows each stream's bound; the book builds with no broken links |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
-| T2 | Not run | JDK 21, Tomcat 9, journald | Pending | none |
-| T3 | Not run | docs/book Docker build | Pending | none |
+| T1 | 2026-09-24 08:50 UTC | JDK 21.0.12.1, wrapper Maven, working tree on d82ffac5 with the new log4j2.xml | Pass | ./mvnw -B clean package -DskipTests exit 0; aa-20260924-d82ffac5-{mgmt,engine,etl,retrieval}.war each carry exactly one WEB-INF/classes/log4j2.xml, byte-identical to src/sitespecific/default/classpathfiles/log4j2.xml (cmp) |
+| T2 | 2026-09-24 08:57-09:01 UTC | Debian 13 host, systemd 257, JDK 21.0.12.1, Tomcat 9.0.121; the four real WARs in one CATALINA_BASE with a one-appliance appliances.xml and InMemoryPersistence; catalina.sh run piped to systemd-cat --identifier=archappl-m18-<run> --level-prefix=true | Pass | Default run: journal PRIORITY 3 for all 10 ERROR lines, 4 for all 32 WARN, 6 for all 253 INFO, no message kept a leading <N>; getPVTypeInfo for an unknown PV logged WARN Cannot find typeinfo at PRIORITY 4 and modifyMetaFields logged ERROR Cannot find typeinfo for pv at PRIORITY 3; journalctl -p err returned only the 10 ERROR lines. ARCHAPPL_ROOT_LOGGER_LEVEL=WARN run: zero INFO lines, the same WARN and ERROR lines. Fallback (mgmt WAR, LOG4J_CONFIGURATION_FILE pointing at a copy of the shipped file with the RollingFile block uncommented, size 20 KB, max 3): archappl.log rolled at about 20.5 KB to archappl-1..3.log.gz and older archives were deleted, so at most three archives remained while stdout kept flowing to the journal. Tomcat's own JULI lines and stack-trace continuation lines arrive at the default PRIORITY 6 |
+| T3 | 2026-09-24 17:00 UTC | docs/book Docker build (mdBook 0.4.52) | Pass | Second-person passes on sysadmin/logging.md, faq.md and installguide.md converged after the applied findings (a target-layout note stating that the page applies once aa-env runs the JVMs in the foreground and stops shipping its own log4j2.xml, with today's catalina.out and dated JULI files; the unit name; host-owned retention; the access-log bound as aa-env's setting; Tomcat's own lines at priority 6 because no Tomcat 9 formatter emits a prefix; the qualified catalina.out sentence); mdbook build exit 0; sysadmin/logging.html is generated and the faq.md and installguide.md links resolve to it |
 
 ##### Closure Evidence
 

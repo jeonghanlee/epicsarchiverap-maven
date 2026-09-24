@@ -1,13 +1,55 @@
+<!--
+    Appliance logging for the journald collection model.
+
+    Each component JVM writes to stdout only; the service manager collects the
+    stream and journald stamps, stores and rotates it. Every line starts with a
+    syslog priority prefix (<2> FATAL, <3> ERROR, <4> WARN, <6> INFO, <7> DEBUG
+    and TRACE) that systemd-cat maps to the journal PRIORITY field, so the
+    pattern carries no timestamp. Continuation lines of a multi-line message
+    or stack trace become separate journal entries at the default priority.
+
+    The root level is read from the ARCHAPPL_ROOT_LOGGER_LEVEL environment
+    variable and defaults to INFO.
+-->
 <Configuration>
     <Appenders>
         <Console name="STDOUT" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+            <PatternLayout pattern="%level{FATAL=&lt;2&gt;, ERROR=&lt;3&gt;, WARN=&lt;4&gt;, INFO=&lt;6&gt;, DEBUG=&lt;7&gt;, TRACE=&lt;7&gt;}%-5level [%t] %c - %m%n"/>
         </Console>
+        <!--
+            File fallback for hosts without a log collector. Each JVM keeps at
+            most one active file plus ten gzip archives of 50 MB, so the files
+            are bounded by size and count. To enable it, uncomment this appender
+            and the matching AppenderRef below, and set a fileName per component.
+
+        <RollingFile name="FILE"
+                     fileName="${sys:catalina.base}/logs/archappl.log"
+                     filePattern="${sys:catalina.base}/logs/archappl-%i.log.gz">
+            <PatternLayout pattern="%d{ISO8601} %-5level [%t] %c - %m%n"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="50 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+        -->
     </Appenders>
     <Loggers>
         <Logger name="org.apache.log4j.xml" level="info"/>
-        <Root level="info">
+        <!--
+            Loggers operators commonly tune; uncomment and set a level to
+            override the root level for one area:
+            config                          startup and configuration (config.*)
+            cluster                         cluster membership (cluster.*)
+            org.epics.archiverappliance.engine     PV connection and sampling
+            org.epics.archiverappliance.etl        store-to-store data movement
+            org.epics.archiverappliance.retrieval  data retrieval requests
+            com.hazelcast                   embedded cluster library
+
+        <Logger name="config" level="debug"/>
+        -->
+        <Root level="${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO}">
             <AppenderRef ref="STDOUT"/>
+            <!-- <AppenderRef ref="FILE"/> -->
         </Root>
     </Loggers>
 </Configuration>

@@ -17,6 +17,7 @@
 - [Administration Guide](sysadmin/admin.md)
 - [Customization](sysadmin/customization.md)
 - [Install Guide](sysadmin/installguide.md)
+- [Logging](sysadmin/logging.md)
 - [Quick Start Guide](sysadmin/quickstart.md)
 - [Redundancy in the EPICS Archiver Appliance](sysadmin/redundancy.md)
 - [Making simple site-specific content changes](sysadmin/site_specific.md)

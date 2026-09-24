@@ -263,26 +263,11 @@ Installing Tomcat consists of
       `conf/server.xml` file, one for the HTTP connector and the other
       for the `SHUTDOWN` command.
 
-3. Setting the appropriate log4j configuration level by
-   creating/editing the `lib/log4j2.xml`. Here\'s a sample that logs
-   exceptions and errors with one exception - log messages logged to
-   the `config` namespace are logged at INFO level.
-
-   ```xml
-   <Configuration>
-      <Appenders>
-           <Console name="STDOUT" target="SYSTEM_OUT">
-               <PatternLayout pattern="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
-           </Console>
-       </Appenders>
-       <Loggers>
-           <Logger name="org.apache.log4j.xml" level="info"/>
-           <Root level="info">
-               <AppenderRef ref="STDOUT"/>
-           </Root>
-       </Loggers>
-   </Configuration>
-   ```
+3. Logging needs no file in the Tomcat `lib` folder: each WAR ships its
+   `log4j2.xml`, which writes to standard output for the systemd journal.
+   Set the root level with the `ARCHAPPL_ROOT_LOGGER_LEVEL` environment
+   variable (default `INFO`). See [Logging](logging.md) for the line
+   format, the journal identifiers and the file fallback.
 
 4. To use [Apache Commons Daemon](http://commons.apache.org/daemon/),
    unzip the `${TOMCAT_HOME}/bin/commons-daemon-native.tar.gz` and
