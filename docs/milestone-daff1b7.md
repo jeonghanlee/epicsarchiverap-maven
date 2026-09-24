@@ -37,6 +37,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M17 | Modernize the narrative doc content for the single-instance fork | Milestone | Not started | Yes | | Upstream-era content reconciled to the single-instance scope and the EPICS-Arche boundary per an owner keep/cut list; [detail](#m17---modernize-the-narrative-doc-content-for-the-single-instance-fork) |
 | Phase 2 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; awaiting the owner's item list; [detail](#m7---site-required-features-and-fixes) |
 | Phase 2 | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; deferred per D7; [detail](#m10---ant-removal-final-maven-only-consolidation) |
+| Phase 2 | M18 | Appliance logging model: journald-first log4j2 layout and lifecycle | Milestone | Not started | Yes | D31 | The shipped log4j2.xml emits the <N> priority prefix with a ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO} root level and a capped, commented RollingFile fallback; the operating-model page and the faq/install-guide fixes land; [detail](#m18---appliance-logging-model-journald-first-log4j2-layout-and-lifecycle) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Open | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 
 ### Decisions
@@ -73,6 +74,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | D28 | Phase 2 persistence store is selectable, not SQLite-only: both mariadb-java-client and sqlite-jdbc stay shipped and the backend is chosen at install by the JNDI DataSource. This supersedes the SQLite-only end state of D11 and D13 and aligns with the aa-env owner's parallel/selectable decision (2026-09-18); aa-env relies on both drivers shipping in the WARs. | 2026-09-18 |
 | D29 | Narrative documentation publishes as an mdBook on GitHub Pages, not Sphinx on Read the Docs. The book lives at docs/book, is built by a pinned Dockerfile (mdBook 0.4.52 + mdbook-admonish 1.20.0, sha256-pinned), and deploys through the pages.yml workflow with the Pages source set to GitHub Actions. This supersedes the Sphinx/Read the Docs docs build and hosting of M5, which folds into M9; M5 retains only the Maven CI workflow. mdBook pins to 0.4.x until an mdbook-admonish release supports mdBook 0.5. | 2026-09-18 |
 | D30 | M9 covers the docs publishing migration (mdBook on GitHub Pages) and build/test/deploy command accuracy, not modernizing the narrative content itself. The migrated pages are largely upstream-era (clustering, multi-appliance, CS-Studio, MySQL-first) and conflict with the single-instance scope (D23, D26) and the EPICS-Arche boundary (D12); content modernization is deferred to backlog item M17 pending an owner keep/cut list. | 2026-09-19 |
+| D31 | Appliance logging model, agreed with aa-env: journald collects; one service whose launcher runs the four Tomcats in the foreground with systemd-cat --identifier=archappl-<component> --level-prefix=true; no catalina.out, no JULI FileHandlers, no logrotate; journald retention 8 weeks with the size cap winning; the access log kept as a file with maxDays=90; aa-maven owns the log4j2 layout, root level, fallback and operating-model docs, aa-env owns the unit, launcher, JULI configuration and the access-log bound. | 2026-09-23 |
 
 ### Conceptual-integrity findings
 
@@ -1404,6 +1406,65 @@ Observed State: none
 Observed Labels: none
 Observed Milestone: none
 Last Compared: never
+
+#### M18 - Appliance logging model: journald-first log4j2 layout and lifecycle
+
+Origin: daff1b7 / M18
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The appliance's four Tomcat JVMs today write three file streams each: catalina.out (the application log4j2 output and process stdout together), the Tomcat JULI dated files, and the access log; catalina.out grows without bound. D31 moves collection and rotation to journald. This row delivers the aa-maven half: the one shipped log4j2.xml and the documentation of the operating model. The aa-env half (unit type, launcher, JULI configuration, access-log bound) is aa-env register work.
+
+##### Scope
+
+- src/sitespecific/default/classpathfiles/log4j2.xml: a Console PatternLayout that emits the journald priority prefix (FATAL <2>, ERROR <3>, WARN <4>, INFO <6>, DEBUG and TRACE <7>), level, logger and thread, with no in-line timestamp; Root level ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO}; the named loggers operators tune; a commented RollingFile fallback bounded by SizeBasedTriggeringPolicy 50 MB, DefaultRolloverStrategy max=10 and gzip.
+- An operating-model page in docs/book/src/sysadmin: the stream inventory and the bound on each stream, filtering by identifier and priority, the fallback, and the known limit that a multi-line stack trace spans several journal entries.
+- docs/book/src/faq.md lines 48 and 146 (arch.log) and the install-guide logging sample corrected to the model.
+
+Out of scope: the aa-env unit, launcher, logging.properties and access-log changes; journald host settings (LAB-ansible-provision); runtime log-level control (a separate request, not yet a row).
+
+##### Completion Criteria
+
+- The shipped log4j2.xml produces lines whose priority journald records correctly, the root level follows ARCHAPPL_ROOT_LOGGER_LEVEL with INFO as the default, the fallback is present and commented out, and the documentation matches the shipped configuration.
+
+##### Dependencies And Decisions
+
+- D31 (2026-09-23): the model and the ownership split. Owner decisions (2026-09-23): root level INFO through ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO}; fallback caps 50 MB x 10 with gzip.
+- Coordination with aa-env (2026-09-23): aa-env enables systemd-cat --level-prefix=true in its first logging item, so Tomcat JULI lines map to a journal priority at once and application lines take the default priority 6 until this layout lands. aa-env's second item (drop its site log4j2.xml, export ARCHAPPL_ROOT_LOGGER_LEVEL) is gated on this row's layout commit (aa-env G14). The commit hash is sent to aa-env when it lands.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Rewrite the default site log4j2.xml as scoped above; build the WARs and confirm the file ships in each WAR's classpath. Closes with T1.
+2. Run the mgmt WAR under systemd-cat --level-prefix=true and read the journal: priorities map per level, the root level follows the variable, and the fallback enabled once caps and rotates. Closes with T2.
+3. Write the operating-model page and correct faq.md and the install-guide sample; mdbook build. Closes with T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Static | ./mvnw -B clean package -DskipTests; unzip -p each WAR's log4j2.xml and compare with the source | JDK 21, wrapper Maven | The four WARs carry the new log4j2.xml |
+| T2 | Integration | Start the real mgmt WAR in Tomcat 9 under a one-appliance appliances.xml (ARCHAPPL_APPLIANCES, ARCHAPPL_MYIDENTITY), with stdout piped to systemd-cat --identifier=archappl-test --level-prefix=true; produce INFO lines from startup, a WARN line from mgmt/bpl/getPVTypeInfo for an unknown PV (GetPVTypeInfo.java line 48, Cannot find typeinfo) and an ERROR line from mgmt/bpl/modifyMetaFields for an unknown PV with any command value (ModifyMetaFieldsAction.java line 55, Cannot find typeinfo for pv; route registered at mgmt BPLServlet.java line 154); journalctl -t archappl-test -p err and -o verbose; repeat with ARCHAPPL_ROOT_LOGGER_LEVEL=WARN; enable the fallback with a small size cap | JDK 21, Tomcat 9, systemd journald | -p err shows only ERROR lines; PRIORITY matches each level; WARN hides INFO; the fallback rolls at the cap and keeps at most the configured file count |
+| T3 | Review | Second-person pass on the operating-model page, faq.md and the install-guide sample; mdbook build | docs/book Docker build | A cold reader can find and filter each component's log and knows each stream's bound; the book builds with no broken links |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T2 | Not run | JDK 21, Tomcat 9, journald | Pending | none |
+| T3 | Not run | docs/book Docker build | Pending | none |
+
+##### Closure Evidence
+
+- none
 
 ## Backlog
 
