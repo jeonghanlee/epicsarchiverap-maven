@@ -20,7 +20,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.BasicDispatcher;
+import org.epics.archiverappliance.common.GetLogLevel;
 import org.epics.archiverappliance.common.GetVersion;
+import org.epics.archiverappliance.common.SetLogLevel;
 import org.epics.archiverappliance.common.ProcessMetricsReport;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.engine.bpl.ArchiveChannelObjectDetailsAction;
@@ -90,6 +92,8 @@ public class BPLServlet extends HttpServlet {
 		getActions.put("/pausePVsonShutdown", PausePVsOnShutdown.class);
 		getActions.put("/cleanUpAnyImmortalChannels", CleanUpAnyImmortalChannels.class);
 		getActions.put("/getVersion", GetVersion.class);
+		getActions.put("/getLogLevel", GetLogLevel.class);
+		getActions.put("/setLogLevel", SetLogLevel.class);
 		getActions.put("/getArchivedWaveforms", WaveformPVsAction.class);
 		getActions.put("/getArchiveChannelObjectDetails", ArchiveChannelObjectDetailsAction.class);
 		getActions.put("/getLastKnownTimeStampReport", LastKnownTimeStampReport.class);

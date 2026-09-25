@@ -91,6 +91,41 @@ file carries `monitorInterval="30"`, so log4j2 rereads the copy and an
 edited level takes effect within 30 seconds, without a restart. Every WAR
 ships the same `log4j2.xml`, whatever the site the build was made for.
 
+## Changing a level while the appliance runs
+
+The mgmt BPL reads and sets a logger's level in one running component,
+with no restart and no file edit:
+
+```bash
+curl -s "http://localhost:17665/mgmt/bpl/getLogLevel?component=engine&logger=org.epics.archiverappliance.engine"
+```
+```bash
+curl -s "http://localhost:17665/mgmt/bpl/setLogLevel?component=engine&logger=org.epics.archiverappliance.engine&level=DEBUG"
+```
+```bash
+curl -s "http://localhost:17665/mgmt/bpl/setLogLevel?component=engine&logger=org.epics.archiverappliance.engine&level=INFO"
+```
+
+- `component` is `mgmt` (the default), `engine`, `etl` or `retrieval`;
+  mgmt forwards the request to that component, because each WAR keeps its
+  own log4j2 configuration. A change in one component leaves the others
+  unchanged.
+- `logger` is a logger name; empty or `root` selects the root logger.
+  `level` is one of `OFF`, `FATAL`, `ERROR`, `WARN`, `INFO`, `DEBUG`,
+  `TRACE`, `ALL`. An unknown level or component returns HTTP 400.
+- The reply is a JSON object with `component`, `logger`, `level` and, for
+  a change, `previousLevel`. Each change also writes a WARN line naming
+  the logger and both levels, so the change is visible in the journal.
+- A change lasts until the next change, a reread of an edited site copy,
+  or a restart of the component.
+- DEBUG on a busy logger can exceed the host's journald rate limit for
+  the unit, which then drops lines; set the level back when the
+  investigation ends.
+- Tomcat's own lines and `java.util.logging` lines, the CA client's
+  (`com.cosylab`) among them, do not follow these requests: they are
+  formatted by the Tomcat-level configuration (`log4j2-tomcat.xml` when
+  the deployment routes them through log4j2), which is JVM-wide.
+
 ## File fallback without a collector
 
 On a host with no journal (a container or a developer machine), the

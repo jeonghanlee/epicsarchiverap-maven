@@ -232,7 +232,6 @@
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
       <version>${log4j.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.lmax</groupId>
@@ -528,7 +527,6 @@
                 <dependency>org.apache.logging.log4j:log4j-slf4j2-impl</dependency>
                 <dependency>org.apache.logging.log4j:log4j-jul</dependency>
                 <dependency>org.apache.logging.log4j:log4j-1.2-api</dependency>
-                <dependency>org.apache.logging.log4j:log4j-core</dependency>
                 <dependency>com.lmax:disruptor</dependency>
                 <dependency>org.mariadb.jdbc:mariadb-java-client</dependency>
                 <dependency>org.xerial:sqlite-jdbc</dependency>
