@@ -1397,7 +1397,7 @@ Owner decisions (2026-09-25) that shape this plan: in sysadmin/installguide.md, 
 
 ##### Closure Evidence
 
-- none
+- Step 1 landed 2026-09-25 09:23 UTC: commits 4aebc724 (release tarball WARs), 39d92baa (removed samples, slacdev and quickstart page with the page edits) and 6b34d0a3 (this plan and its checks) are ancestors of the fetched origin/modernize (6b34d0a3); the Maven workflow run 36118161053 and the Pages run 36118161044 on 6b34d0a3 succeeded. Steps 2 and 3 and T3 and T5 remain.
 
 ##### GitHub Projection
 
