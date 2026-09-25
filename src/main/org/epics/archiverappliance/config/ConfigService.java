@@ -81,7 +81,7 @@ public interface ConfigService {
 	public static final String ARCHAPPL_MYIDENTITY = "ARCHAPPL_MYIDENTITY";
 	
 	/**
-	 * This is the environment variable that identifies the site (LCLS, LCLSII, slacdev, NSLSII etc) to be used when generating the war files.
+	 * This is the environment variable that identifies the site (LCLS, LCLSII, NSLSII etc) to be used when generating the war files.
 	 * This is primarily a build-time property; the build.xml has various site specific hooks which let you change the appliances.xml, policies, images etc on a per site basis.
 	 * The unit tests use the <code>tests</code> site which is also the default site if this environment variable is not specified.
 	 * Files for a site are stored in the sitespecific/&lt;site&gt; folder. 

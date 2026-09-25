@@ -802,16 +802,6 @@
                 </resource>
                 <resource>
                 <!--
-                    copies deployMultipleTomcats.py from directory (docs.dir/book/src/samples) to the install folder
-                -->
-                  <directory>${docs.dir}/book/src/samples</directory>
-                  <includes>
-                    <include>deployMultipleTomcats.py</include>
-                  </includes>
-                  <targetPath>install</targetPath>
-                </resource>
-                <resource>
-                <!--
                     copies
                     pb2json.sh
                     printTime.sh

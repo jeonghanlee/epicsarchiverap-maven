@@ -4,17 +4,7 @@ While the [Customization Guide](customization) has details on a
 more flexible mechanism to customize the EPICS archiver appliance on a
 per-site basis, often what is required is a simple replacement of the
 images and text that are on the various pages. This can be done after
-unpacking the WAR file during deployment. The `quickstart.sh` and
-`single_machine_install.sh` scripts has some sample code that does this
-that can be used as a starting point.
-
-- These rely on the presence of a folder `site_specific_content` in
-  the deployment folder.
-- All images in the folder `site_specific_content/img` is copied into
-  the mgmt webapp\'s `ui/comm/img` folder and can be used for site
-  logos and so on.
-- The SyncStaticContentHeadersFooters
-  is run on a file called `template_changes.html`
+unpacking the WAR file during deployment.
 
 At a high level, after unzipping the `mgmt.war` into the Tomcat
 `webapps` folder, one can replace/modify the files to implement some

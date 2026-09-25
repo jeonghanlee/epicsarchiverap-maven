@@ -1,7 +1,7 @@
 # Install Guide
 
-If you want to simply test the system and quickly get going, please see
-the [Quickstart](quickstart) section.
+This fork is deployed through
+[epicsarchiverap-env](https://github.com/jeonghanlee/epicsarchiverap-env).
 
 ## Customize preexisting VM\'s
 
@@ -24,46 +24,6 @@ an excellent starting off point for folks who wish to build their own
 deployment bundles. This is tested against Debian/CentOS; but should be
 easily extensible for other distributions.
 
-## Using an install script
-
-If you plan to have only one machine in the cluster, you can consider
-using the `install_scripts/single_machine_install.sh` install script
-that comes with the installation bundle. This install script
-accommodates installations with a \"standard\" set of parameters and
-installs the EPICS archiver appliance on one machine. In addition to the
-[System requirements](../developer/details.md#system-requirements), the
-`install_scripts/single_machine_install.sh` will ask for
-
-1. Location of the Tomcat distribution.
-
-2. Location of the MySQL client jar - usually a file with a name like
-   `mysql-connector-java-5.1.21-bin.jar`
-
-3. A MySQL connection string that looks like so
-   `--user=archappl --password=archappl --database=archappl` that can
-   be used with the MySQL client like so
-   `mysql ${MYSQL_CONNECTION_STRING} -e "SHOW DATABASES"`. This implies
-   that the MySQL schema has already been created using something like
-
-   ```bash
-   mysql --user=root --password=*****
-   CREATE DATABASE archappl;
-   GRANT ALL ON archappl.* TO 'archappl' identified by 'archappl';
-   ```
-
-The `install_scripts/single_machine_install.sh` install script creates a
-couple of scripts in the deployment folder that can be customized for
-your site.
-
-1. **`sampleStartup.sh`** - This is a script in the fashion of scripts
-   in `/etc/init.d` that can be used to start and stop the four Tomcat
-   processes of your archiver appliance.
-2. **`deployRelease.sh`** - This can be used to upgrade your
-   installation to a new release of the EPICS archiver appliance. The
-   `deployRelease.sh` also includes some post install hooks to deploy
-   your site specific content as outlined
-   [here](site_specific).
-
 ## Details
 
 For a finer control over your installation, installation and
@@ -80,9 +40,8 @@ In addition to installing the JDK, EPICS (see [System requirements](../developer
    1. Create the tables
    2. Create a connection pool in Tomcat
 3. Set up storage
-4. Create individual Tomcats for each of the WAR files using the
-   provided python script that copies a single Tomcat installation into
-   four individual Tomcats - one for each WAR.
+4. Create one Tomcat instance for each of the four WAR files (see
+   [Stopping and starting the individual Tomcats](#stopping-and-starting-the-individual-tomcats)).
 5. Deploy the WAR files into their respective containers - This is the
    deployment step that will be run when you upgrade to a new release.
 6. Stop/Start each of the Tomcats
@@ -408,61 +367,6 @@ the locations within `/arch`. For example,
     export ARCHAPPL_LONG_TERM_FOLDER=/arch/lts/ArchiverStore
 ```
 
-## Create individual Tomcat containers for each of the web apps
-
-The `mgmt.war` file contains a script `deployMultipleTomcats.py` in the
-`install` folder that will use the information in the `appliances.xml`
-file and the identity of this appliance to generate individual Tomcat
-containers from a single Tomcat install (identified by the environment
-variable `TOMCAT_HOME`). To run this script, set the following
-environment variables
-
-1. `TOMCAT_HOME` - This is the Tomcat installation that you prepared in
-   the previous steps.
-2. `ARCHAPPL_APPLIANCES` - This points to the `appliances.xml` that you
-   created in the previous steps.
-3. `ARCHAPPL_MYIDENTITY` - This is the identity of the current
-   appliance, for example `appliance0`. If this is not set, the system
-   will default to using the machine\'s hostname as determined by
-   making a call to
-   `InetAddress.getLocalHost().getCanonicalHostName()`. However, this
-   makes `ARCHAPPL_MYIDENTITY` a physical entity and not a logical
-   entity; so, if you can, use a logical name for this entry. Note,
-   this must match the `identity` element of this appliance as it is
-   defined in the `appliances.xml`.
-
-and then run the `deployMultipleTomcats.py` script passing in one
-argument that identifies the parent folder of the individual Tomcat
-containers.
-
-```bash
-$ export TOMCAT_HOME=/arch/single_machine_install/tomcats/apache-tomcat-9.0.20
-$ export ARCHAPPL_APPLIANCES=/arch/single_machine_install/sample_appliances.xml
-$ export ARCHAPPL_MYIDENTITY=appliance0
-$ ./install_scripts/deployMultipleTomcats.py /arch/single_machine_install/tomcats
-Using
-    tomcat installation at /arch/single_machine_install/tomcats/apache-tomcat-9.0.20
-    to generate deployments for appliance appliance0
-    using configuration info from /arch/single_machine_install/sample_appliances.xml
-    into folder /arch/single_machine_install/tomcats
-The start/stop port is the standard Tomcat start/stop port. Changing it to something else random - 16000
-The stop/start ports for the new instance will being at  16001
-Generating tomcat folder for  mgmt  in location /arch/single_machine_install/tomcats/mgmt
-Commenting connector with protocol  AJP/1.3 . If you do need this connector, you should un-comment this.
-Generating tomcat folder for  engine  in location /arch/single_machine_install/tomcats/engine
-Commenting connector with protocol  AJP/1.3 . If you do need this connector, you should un-comment this.
-Generating tomcat folder for  etl  in location /arch/single_machine_install/tomcats/etl
-Commenting connector with protocol  AJP/1.3 . If you do need this connector, you should un-comment this.
-Generating tomcat folder for  retrieval  in location /arch/single_machine_install/tomcats/retrieval
-Commenting connector with protocol  AJP/1.3 . If you do need this connector, you should un-comment this.
-$
-```
-
-This is the last of the steps that are install specific; that is,
-you\'ll execute these only on installation of a new appliance. The
-remaining steps are those that will be executed on deployment of new
-release, start/stop etc.
-
 ## Deploy the WAR files onto their respective containers
 
 Deploying/upgrading a WAR file in a Tomcat container is very easy. Each
@@ -599,10 +503,6 @@ previous steps
 9. `LD_LIBRARY_PATH` - If you are using JCA, please make sure your
    LD_LIBRARY_PATH includes the paths to the JCA and EPICS base
    `.so`\'s.
-
-A sample startup script using these elements is available
-[here](../samples/sampleStartup.sh). Please modify to suit your
-installation.
 
 ## Other containers
 

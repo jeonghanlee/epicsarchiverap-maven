@@ -8,7 +8,9 @@ that are not exposed in the UI) are accessible from within scripts -
 please see the [details](../developer/details.md#scripting) page for more info.
 Click [here](../developer/mgmt_scriptables.md) for a list of
 business logic accessible thru scripting. There are also many scripting
-samples in the _`tomcat_mgmt`_`/webapps/mgmt/ui/help/samples/` folder.
+samples in the
+[`docs/book/src/samples`](https://github.com/jeonghanlee/epicsarchiverap-maven/tree/modernize/docs/book/src/samples)
+folder of the repository.
 
 ## Monitoring
 

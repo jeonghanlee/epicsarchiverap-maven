@@ -16,7 +16,8 @@ At a high level, some features are
 For a more detailed description, please see the [Details](developer/details.md)
 page.
 
-To get started, please see the [Quickstart](sysadmin/quickstart.md) guide.
+To get started, deploy the appliance with
+[epicsarchiverap-env](https://github.com/jeonghanlee/epicsarchiverap-env).
 
 This project is part of the
 [AccelUtils](http://accelutils.sourceforge.net/) collaboration.
