@@ -13,12 +13,11 @@ To add a PV to the archiver,
    on the `Archive` button.
 3. If you wish to specify the sampling period, then click on the
    `Archive (specify sampling period)` button instead.
-4. When adding a new PV to the cluster, the archiver appliance measures
+4. When adding a new PV, the archiver appliance measures
    various parameters about the PV. This takes about 4-5 minutes during
    which the PV is in an `Initial sampling` state.
-5. Once the PV\'s characteristics have been measured, the appliance
-   assigns the PV to an appliance in the cluster and the PV transitions
-   to a `Being archived` state.
+5. Once the PV\'s characteristics have been measured, the PV
+   transitions to a `Being archived` state.
 6. If the archiver appliance is not able to connect to a PV, the PV
    stays in the `Initial sampling` state until it is able to
    connect.
@@ -59,12 +58,11 @@ To check the status of a PV.
    particular request. This may change in the future based on user
    feedback.
 
-## Retrieving data using CS-Studio, Archive Viewer and Matlab
+## Retrieving data using Phoebus and Matlab
 
-1. To retrieve data using the CS-Studio, see the
-   [CS-Studio](./csstudio) section.
-2. To retrieve data using the Archive Viewer, see the [Archive Viewer](./archiveviewer) section.
-3. To retrieve data using Matlab, see the [Matlab](./matlab)
+1. To retrieve data using the Phoebus Data Browser, see the
+   [Phoebus Data Browser](./phoebus.md) section.
+2. To retrieve data using Matlab, see the [Matlab](./matlab)
    section.
 
 ## Retrieving data using other tools
@@ -77,8 +75,7 @@ more can easily be added as needed.
    easily loaded into most browsers using Javascript.
 2. CSV - Can be used for importing into Excel and other spreadsheets.
 3. MAT - This is the file format used for interoperating with Matlab.
-4. RAW - This is a binary format used by the Archive Viewer and is
-   based on the [PB/HTTP](pb_pbraw.html) protocol.
+4. RAW - This is a binary format based on the [PB/HTTP](pb_pbraw.html) protocol.
 5. TXT - A simple text format that is often helpful for debugging.
 6. [SVG](http://www.w3.org/Graphics/SVG/) - A XML format that can also
    be used as a SVG element in tools that support this format.
@@ -87,11 +84,11 @@ In general, getting data into a tool necessitates construction of a data
 retrieval URL as the first step. A data retrieval URL looks something
 like so
 
-<http://archiver.slac.stanford.edu/retrieval/data/getData.json?pv=VPIO%3AIN20%3A111%3AVRAW&from=2012-09-27T08%3A00%3A00.000Z&to=2012-09-28T08%3A00%3A00.000Z>
+<http://archiver.example.org/retrieval/data/getData.json?pv=VPIO%3AIN20%3A111%3AVRAW&from=2012-09-27T08%3A00%3A00.000Z&to=2012-09-28T08%3A00%3A00.000Z>
 
 where
 
-1. `http://archiver.slac.stanford.edu/retrieval` is the
+1. `http://archiver.example.org/retrieval` is the
    `data_retrieval_url` element from your `appliances.xml`
 2. `/data/getData` is the path into the data retrieval servlet and is
    fixed.
@@ -128,7 +125,7 @@ where
         4. For all data retrieval requests, this template PV is
            specified as the value of the `retiredPVTemplate`
            argument. For example,
-           _<http://archiver.slac.stanford.edu/retrieval/data/getData.json?_`pv=LEGACY:PV`_&from=2012-09-27T08%3A00%3A00.000Z&to=2012-09-28T08%3A00%3A00.000Z_&`retiredPVTemplate=TEMPLATE:PV`>.
+           _<http://archiver.example.org/retrieval/data/getData.json?_`pv=LEGACY:PV`_&from=2012-09-27T08%3A00%3A00.000Z&to=2012-09-28T08%3A00%3A00.000Z_&`retiredPVTemplate=TEMPLATE:PV`>.
         5. Because the archiver does not find a PVTypeInfo for
            `LEGACY:PV`, it uses the PVTypeInfo for `TEMPLATE:PV` to
            determine data stores for the `LEGACY:PV`.
@@ -169,10 +166,10 @@ Chaco to render a plot.
 ```python
 import numpy as np
 from chaco.shell import *
-import urllib2
+import urllib.request
 import json
 
-req = urllib2.urlopen("http://archiver.slac.stanford.edu/retrieval/data/getData.json?pv=test%3Apv%3A123&donotchunk")
+req = urllib.request.urlopen("http://archiver.example.org/retrieval/data/getData.json?pv=test%3Apv%3A123&donotchunk")
 data = json.load(req)
 secs = [x['secs'] for x in data[0]['data']]
 vals = [x['val'] for x in data[0]['data']]
@@ -194,13 +191,7 @@ section.
 To process the data during data retrieval, specify the operator during
 the call to `getData`. For example, to get the `mean` of the PV
 `test:pv:123`, ask for
-`http://archiver.slac.stanford.edu/retrieval/data/getData.json?pv=mean(test%3Apv%3A123)`.
-This mechanism should work within the ArchiveViewer as well. That is, if
-you plot `mean(test:pv:123)` in the ArchiveViewer, the EPICS archiver
-appliance applies the `mean` operator to the data for PV `test:pv:123`
-before returning it to the client. To plot `test:pv:123` with the
-`mean_3600` operator in the ArchiveViewer, plot
-`mean_3600(test:pv:123)`.
+`http://archiver.example.org/retrieval/data/getData.json?pv=mean(test%3Apv%3A123)`.
 
 The EPICS archiver appliance uses [Apache Commons Math](http://commons.apache.org/proper/commons-math/) for its data
 processing. Many operators bin the data into bins whose sizes are
@@ -315,7 +306,7 @@ value of several PV\'s as of a point in time. This is primarily aimed at
 save/restore applications where the archiver is often used as quality
 control. To get data for multiple PV\'s as of a point in time, `POST` a
 JSON list of PV names to
-`http://archiver.slac.stanford.edu/retrieval/data/getDataAtTime?at=2018-10-19T15:22:37.000-07:00amp;includeProxies=true`
+`http://archiver.example.org/retrieval/data/getDataAtTime?at=2018-10-19T15:22:37.000-07:00amp;includeProxies=true`
 where
 
 1. `at` - This specifies the point in time in ISO8601 format.
@@ -365,10 +356,10 @@ automation and integration. Some reports that are currently available
 are
 
 - **PV\'s that may not exist** - This report lists all the
-  PVs in the cluster that have never connected. PVs whose names have
+  PVs on the appliance that have never connected. PVs whose names have
   typos in them would be included in this report.
 - **Currently disconnected PVs** - This report lists all
-  the PVs in the cluster that have connected in the past but are
+  the PVs on the appliance that have connected in the past but are
   currently disconnected; perhaps because their IOCs have been turned
   off.
 - **Top PVs by event rate** - These reports contain the PVs
@@ -415,10 +406,9 @@ are
 ## Metrics
 
 The EPICS Archiver Appliance maintains a wide variety of metrics to
-facilitate in capacity planning and load balancing. These metrics can be
-viewed in the Metrics page; a small subset of these metrics can be
-viewed across the cluster. To view more details about the metrics on a
-particular appliance, click on that appliance in the list view.
+facilitate in capacity planning. These metrics can be viewed in the
+Metrics page; to view more details, click on the appliance in the list
+view.
 
 ## Storage
 

@@ -133,8 +133,7 @@ mysql -u userid -p password  archappl < /path/to/backupfile
 
 Restarting the appliance after this should pick up the imported
 configuration. As the JVM can cache DNS lookups, giving your replacement
-appliance the same IP address as the one that was lost should also help
-if you have a cluster of machines.
+appliance the same IP address as the one that was lost should also help.
 
 ## Inspecting the Channel Access ( also PVAccess ) protocol
 
@@ -184,7 +183,7 @@ For example, if you have a data store named `LTS`, you can set the
 to retrieval requests ( both `getData` and `getDataAtTime` ). Once the outage
 is over, you can turn `LTS` back on by setting the `SKIP_LTS_FOR_RETRIEVAL`
 named flag to `false`. Named flags are `false` by default; so restarting the
-appliances should also accomplish the same.
+appliance should also accomplish the same.
 
 Use a named flag based on the storage plugin's name.
     For example, if the name is LTS, the named flag

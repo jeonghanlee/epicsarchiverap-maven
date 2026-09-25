@@ -135,12 +135,10 @@ equivalent.
 
 ## Side projects
 
-The sources for the [Archive Viewer](../user/archiveviewer.md) integration and
-the client library for the [PB/HTTP](pb_pbraw.md) protocol are in
-separate projects in the same repository.
+The sources for the client library for the [PB/HTTP](pb_pbraw.md)
+protocol are in a separate project.
 
 1. [PB/HTTP](https://github.com/slacmshankar/epicsarchiverap_pbrawclient/)
-2. [Archive Viewer](https://github.com/slacmshankar/epicsarchiverap_archiveviewer/)
 
 ## Information useful to developers
 

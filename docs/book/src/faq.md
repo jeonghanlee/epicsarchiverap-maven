@@ -14,7 +14,7 @@
 
     - `ARCHAPPL_APPLIANCES`
 
-      This is mandatory and points to a file containing the list of appliances in this cluster. This must be identical across all members in the cluster.
+      This is mandatory and points to the `appliances.xml` file that describes this appliance.
 
       _Default Value:_ `appliances.xml`
 
@@ -37,8 +37,7 @@
       _Default Value:_ `getCanonicalHostName()` in `InetAddress.getLocalHost()`
 
     In addition to this, the configuration for each PV is stored in the
-    `PVTypeInfo` table in the MySQL configuration database specific to
-    each appliance. The connection pool for the database is typically
+    `PVTypeInfo` table in the configuration database of the appliance. The connection pool for the database is typically
     configured in Tomcat\'s `conf/context.xml`.
 
 3.  **Where are the logs?**
@@ -127,11 +126,7 @@
     received, stored and retrieved as UTC timestamps. Conversion to
     local time zones are to be done at the client/viewer. The various
     viewers handle the transition into and out of daylight savings
-    appropriately. For example, in this case, there are two `01:00`
-    blocks on the x-axis to handle the extra hour inserted when daylight
-    savings comes to an end at 01:00 on Nov/1/2015.
-
-    ![Archive Viewer Day light fall](images/ArchiveViewer_daylight_fall.png)
+    appropriately.
 
 6.  **How are EPICS aliases supported?**
 

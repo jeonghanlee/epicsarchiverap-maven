@@ -7,10 +7,9 @@
 
 # User
 
-- [CS Studio Integration](user/cstudio.md)
+- [Phoebus Data Browser](user/phoebus.md)
 - [Retrieving data using Matlab](user/matlab.md)
 - [User guide](user/userguide.md)
-- [Retrieving data using the ArchiveViewer](user/archiveviewer.md)
 
 # Sysadmin
 

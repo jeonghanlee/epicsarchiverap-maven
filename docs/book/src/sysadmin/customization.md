@@ -124,9 +124,8 @@ few more methods that need to be defined. These include
 There is a site specific properties file called `archappl.properties`
 that is typically present in `WEB-INF/classes` of all the webapps or as
 the environment variable `ARCHAPPL_PROPERTIES_FILENAME`. This contains
-various configuration elements that are common to all machines in the
-cluster and probably common to all deployments of the archiver appliance
-in your infrastructure. One of the advantages of having your site
+various configuration elements that are probably common to all
+deployments of the archiver appliance in your infrastructure. One of the advantages of having your site
 specific properties checked into the source repository is that as the
 system evolves and we add new configuration elements, default values for
 these new configuration elements can be added to `archappl.properties`

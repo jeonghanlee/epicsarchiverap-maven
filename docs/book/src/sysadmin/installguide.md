@@ -3,39 +3,17 @@
 This fork is deployed through
 [epicsarchiverap-env](https://github.com/jeonghanlee/epicsarchiverap-env).
 
-## Customize preexisting VM\'s
-
-A simple way to get an installation going is to clone and customize
-Martin\'s repos for your installation. These consist of three repos that
-are needed to set up the Archiver Appliance environment.
-
-1. [vagrant_archiver_appliance](https://github.com/mark0n/vagrant_archiver_appliance)
-2. [puppet_module_archiver_appliance](https://forge.puppet.com/mark0n/epics_archiverappliance)
-3. [puppet_module_epics_softioc](https://forge.puppet.com/mark0n/epics_softioc)
-
-Simply follow the rules in the README of the first repo and the other
-two repos will be pulled in automatically. The Puppet manifests are
-found in puppet_module_archiver_appliance.
-
-## Site specific installs
-
-Han maintains a set of scripts for [site specific installs](https://github.com/jeonghanlee/epicsarchiverap-env). This is
-an excellent starting off point for folks who wish to build their own
-deployment bundles. This is tested against Debian/CentOS; but should be
-easily extensible for other distributions.
-
 ## Details
 
 For a finer control over your installation, installation and
-configuration consists of these steps. For the cluster
+configuration consists of these steps.
 
 1. Create an appliances.xml
 2. Optionally, create your policies.py file
 
-In addition to installing the JDK, EPICS (see [System requirements](../developer/details.md#system-requirements)), for each appliance
+In addition to installing the JDK, EPICS (see [System requirements](../developer/details.md#system-requirements)), for the appliance
 
 1. Install and configure Tomcat
-   1. Compile the Apache Commons Daemon that is supplied with Tomcat.
 2. Install MySQL (or other persistence provider)
    1. Create the tables
    2. Create a connection pool in Tomcat
@@ -48,34 +26,22 @@ In addition to installing the JDK, EPICS (see [System requirements](../developer
 
 ## Appliances XML
 
-The `appliances.xml` is a file that lists all the appliances in a
-cluster of archiver appliance. While it is not necessary to point to the
-same physical file, the contents are expected to be identical across all
-appliances in the cluster. The details of the file are outlined in the
-ConfigService
-javadoc. A sample `appliances.xml` with two appliances looks like
+The `appliances.xml` file describes the appliance. The details of the
+file are outlined in the ConfigService javadoc. A sample
+`appliances.xml` looks like
 
 ```xml
 <appliances>
    <appliance>
      <identity>appliance0</identity>
-     <cluster_inetport>archappl0.slac.stanford.edu:16670</cluster_inetport>
-     <mgmt_url>http://archappl0.slac.stanford.edu:17665/mgmt/bpl</mgmt_url>
-     <engine_url>http://archappl0.slac.stanford.edu:17666/engine/bpl</engine_url>
-     <etl_url>http://archappl0.slac.stanford.edu:17667/etl/bpl</etl_url>
-     <retrieval_url>http://archappl0.slac.stanford.edu:17668/retrieval/bpl</retrieval_url>
-     <data_retrieval_url>http://archproxy.slac.stanford.edu/archiver/retrieval</data_retrieval_url>
+     <cluster_inetport>archiver.example.org:17670</cluster_inetport>
+     <mgmt_url>http://archiver.example.org:17665/mgmt/bpl</mgmt_url>
+     <engine_url>http://archiver.example.org:17666/engine/bpl</engine_url>
+     <etl_url>http://archiver.example.org:17667/etl/bpl</etl_url>
+     <retrieval_url>http://archiver.example.org:17668/retrieval/bpl</retrieval_url>
+     <data_retrieval_url>http://archiver.example.org:17668/retrieval</data_retrieval_url>
    </appliance>
-   <appliance>
-     <identity>appliance1</identity>
-     <cluster_inetport>archappl1.slac.stanford.edu:16670</cluster_inetport>
-     <mgmt_url>http://archappl1.slac.stanford.edu:17665/mgmt/bpl</mgmt_url>
-     <engine_url>http://archappl1.slac.stanford.edu:17666/engine/bpl</engine_url>
-     <etl_url>http://archappl1.slac.stanford.edu:17667/etl/bpl</etl_url>
-     <retrieval_url>http://archappl1.slac.stanford.edu:17668/retrieval/bpl</retrieval_url>
-     <data_retrieval_url>http://archproxy.slac.stanford.edu/archiver/retrieval</data_retrieval_url>
-   </appliance>
- </appliances>
+</appliances>
 ```
 
 - The archiver appliance looks at the environment variable
@@ -83,83 +49,38 @@ javadoc. A sample `appliances.xml` with two appliances looks like
   Use an export statement like so
 
   ```bash
-      export ARCHAPPL_APPLIANCES=/nfs/epics/archiver/production_appliances.xml
+      export ARCHAPPL_APPLIANCES=/arch/appliances.xml
   ```
 
   to set the location of the `appliances.xml` file.
 
-- The `appliances.xml` has one `<appliance>` section per appliance.
-  Please only define those appliances that are currently in
-  production. Certain BPL, most importantly, the `/archivePV` BPL,
-  are suspended until all the appliances defined in the
-  `appliances.xml` have started up and registered their PVs in the
-  cluster. Previously, we would allow any number of appliances to be
-  defined in the `appliances.xml` regardless of whether they are in
-  production or not. However, it\'s becoming more and more untenable
-  to support this feature. So, from Mar 2023 onwards, please only
-  define live appliances in `appliances.xml`. ~~You can have more
-  entries than you have appliances; that is, if you plan to eventually
-  deploy a cluster of 10 machines but only have a budget for 2, you
-  can go ahead and add entries for the other machines. The cluster
-  should start up even if one or more appliances are missing.~~
+- The `appliances.xml` has one `<appliance>` section. Certain BPL, most
+  importantly, the `/archivePV` BPL, are suspended until all four
+  webapps of the appliance have started up.
 
-- The `identity` for each appliance is unique to each appliance. For
-  example, the string `appliance0` serves to uniquely identify the
-  archiver appliance on the machine `archappl0.slac.stanford.edu`.
+- The `identity` must match the identity the appliance determines for
+  itself: the `ARCHAPPL_MYIDENTITY` Java system property or environment
+  variable, or the machine's fully qualified hostname when neither is set.
 
-- The `cluster_inetport` is the `TCPIP address:port` combination that
-  is used for inter-appliance communication. There is a check made to
-  ensure that the hostname portion of the `cluster_inetport` is either
-  `localhost` or the same as that obtained from a call to
+- The `cluster_inetport` is the `TCPIP address:port` combination on
+  which the `mgmt` webapp listens and to which the other three webapps
+  connect. There is a check made to ensure that the hostname portion of
+  the `cluster_inetport` is either `localhost` or the same as that
+  obtained from a call to
   `InetAddress.getLocalHost().getCanonicalHostName()` which typically
-  returns the fully qualified domain name (FQDN). The intent here is
-  to prevent multiple appliances starting up with the same appliance
-  identity (a situation that could potentially lead to data loss).
+  returns the fully qualified domain name (FQDN).
 
-  1. For a cluster to function correctly, any member `A` of a cluster
-     should be able to communicate with any member `B` of a cluster
-     using `B`\'s `cluster_inetport` as defined in the
-     `appliances.xml`.
-  2. Obviously, `localhost` should be used for the `cluster_inetport`
-     only if you have a cluster with only one appliance. Even in this
-     case, it\'s probably more future-proof to use the FQDN.
-
-- For the ports, it is convenient if
-
-  - The port specified in the `cluster_inetport` is the same on all
-    machines. This is the port on which the appliances talk to each
-    other.
-  - The `mgmt_url` has the smallest port number amongst all the web
-    apps.
-  - The port numbers for the other three web apps increment in the
-    order show above.
-
-    Again, there is no requirement that this be the case. If you follow
-    this convention, you can use the standard deployment scripts with
-    minimal modification.
+- For the ports, it is convenient if the `mgmt_url` has the smallest
+  port number amongst all the web apps and the port numbers for the
+  other three web apps increment in the order shown above. There is no
+  requirement that this be the case.
 
 - There are two URL\'s for the `retrieval` webapp.
 
   1. The `retrieval_url` is the URL used by the `mgmt` webapp to talk
      to the `retrieval` webapp.
   2. The `data_retrieval_url` is used by archive data retrieval
-     clients to talk to the cluster. In this case, we are pointing
-     all clients to a single load-balancer on
-     `archproxy.slac.stanford.edu` on port 80. One can use the
-     [mod_proxy_balancer](http://httpd.apache.org/docs/2.4/mod/mod_proxy_balancer.html)
-     of Apache to load-balance among any of the appliances in the
-     cluster.
-
-     ![Using Apache HTTP on `archiver` to load balance data retrieval between `appliance0` and`appliance1`.](../images/ApacheasLB.png)
-
-     - Note there are also other load-balancing solutions available
-       that load-balance the HTTP protocol that may be more
-       appropriate for your installation.
-     - Also, note that Apache+Tomcat can also use a binary protocol
-       called `AJP` for load-balancing between Apache and Tomcat.
-       For this software, we should use simple HTTP; this workflow
-       does not entail the additional complexity of the `AJP`
-       protocol.
+     clients to talk to the appliance.
 
 ## Create your policies file
 
@@ -196,7 +117,7 @@ the war by setting the `ARCHAPPL_SITEID` during the build using
 something like `export ARCHAPPL_SITEID=YOUR_SITE`. In this case, you do
 not need to specify the `ARCHAPPL_POLICIES` environment variable.
 
-## Installing Tomcat and setting up Apache Commons Daemon
+## Installing Tomcat
 
 Installing Tomcat consists of
 
@@ -227,29 +148,6 @@ Installing Tomcat consists of
    Set the root level with the `ARCHAPPL_ROOT_LOGGER_LEVEL` environment
    variable (default `INFO`). See [Logging](logging.md) for the line
    format, the journal identifiers and the file fallback.
-
-4. To use [Apache Commons Daemon](http://commons.apache.org/daemon/),
-   unzip the `${TOMCAT_HOME}/bin/commons-daemon-native.tar.gz` and
-   follow the instructions. Once you have built this, copy the `jsvc`
-   binary to the Tomcat `bin` folder for convenience. Note, it\'s not
-   required that you use `Apache Commons Daemon` especially, if you are
-   already using system monitoring and management tools like
-   [Nagios](http://www.nagios.org/) or
-   [Hyperic](http://www.hyperic.com/).
-
-   ```bash
-   $ tar zxf commons-daemon-native.tar.gz
-   $ cd commons-daemon-1.1.0-native-src
-   $ cd unix/
-   $ ./configure
-   *** Current host ***
-   checking build system type... x86_64-pc-linux-gnu
-   ...
-   $ make
-   (cd native; make  all)
-   ...
-   $ cp jsvc ../../../bin/
-   ```
 
 ## Installing MySQL
 
@@ -411,69 +309,18 @@ requires two enviromnent variables
    - `${DEPLOY_DIR}/engine`
    - `${DEPLOY_DIR}/retrieval`
 
-If you are using Apache Commons Daemon, then two bash functions for
-stopping and starting Tomcat instance look something like
+Each Tomcat instance runs in the foreground with `catalina.sh run`,
+one per `CATALINA_BASE`, for example
 
 ```bash
-function startTomcatAtLocation() {
-    if [ -z "$1" ]; then echo "startTomcatAtLocation called without any arguments"; exit 1; fi
-    export CATALINA_HOME=${TOMCAT_HOME}
-    export CATALINA_BASE=$1
-    echo "Starting tomcat at location ${CATALINA_BASE}"
-    pushd ${CATALINA_BASE}/logs
-    ${CATALINA_HOME}/bin/jsvc \
-        -server \
-        -cp ${CATALINA_HOME}/bin/bootstrap.jar:${CATALINA_HOME}/bin/tomcat-juli.jar \
-        ${JAVA_OPTS} \
-        -Dcatalina.base=${CATALINA_BASE} \
-        -Dcatalina.home=${CATALINA_HOME} \
-        -cwd ${CATALINA_BASE}/logs \
-        -outfile ${CATALINA_BASE}/logs/catalina.out \
-        -errfile ${CATALINA_BASE}/logs/catalina.err \
-        -pidfile ${CATALINA_BASE}/pid \
-        org.apache.catalina.startup.Bootstrap start
-        popd
-}
-
-function stopTomcatAtLocation() {
-    if [ -z "$1" ]; then echo "stopTomcatAtLocation called without any arguments"; exit 1; fi
-    export CATALINA_HOME=${TOMCAT_HOME}
-    export CATALINA_BASE=$1
-    echo "Stopping tomcat at location ${CATALINA_BASE}"
-    pushd ${CATALINA_BASE}/logs
-    ${CATALINA_HOME}/bin/jsvc \
-        -server \
-        -cp ${CATALINA_HOME}/bin/bootstrap.jar:${CATALINA_HOME}/bin/tomcat-juli.jar \
-        ${JAVA_OPTS} \
-        -Dcatalina.base=${CATALINA_BASE} \
-        -Dcatalina.home=${CATALINA_HOME} \
-        -cwd ${CATALINA_BASE}/logs \
-        -outfile ${CATALINA_BASE}/logs/catalina.out \
-        -errfile ${CATALINA_BASE}/logs/catalina.err \
-        -pidfile ${CATALINA_BASE}/pid \
-        -stop \
-        org.apache.catalina.startup.Bootstrap
-        popd
-}
+CATALINA_HOME=${TOMCAT_HOME} CATALINA_BASE=${DEPLOY_DIR}/mgmt ${TOMCAT_HOME}/bin/catalina.sh run
 ```
 
-and you\'d invoke these using something like
-
-```bash
-    stopTomcatAtLocation ${DEPLOY_DIR}/engine
-    stopTomcatAtLocation ${DEPLOY_DIR}/retrieval
-    stopTomcatAtLocation ${DEPLOY_DIR}/etl
-    stopTomcatAtLocation ${DEPLOY_DIR}/mgmt
-```
-
-and
-
-```bash
-    startTomcatAtLocation ${DEPLOY_DIR}/mgmt
-    startTomcatAtLocation ${DEPLOY_DIR}/engine
-    startTomcatAtLocation ${DEPLOY_DIR}/etl
-    startTomcatAtLocation ${DEPLOY_DIR}/retrieval
-```
+Start `mgmt` first, then `engine`, `etl` and `retrieval`, each in its
+own process, and stop them in the reverse order.
+[epicsarchiverap-env](https://github.com/jeonghanlee/epicsarchiverap-env)
+runs the four instances this way under one systemd service; see
+[Logging](logging.md) for where their output goes.
 
 Remember to set all the appropriate environment variables from the
 previous steps

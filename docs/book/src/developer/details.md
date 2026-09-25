@@ -6,9 +6,7 @@ aims to archive millions of PVs.
 
 Here are the main features.
 
-- Ability to cluster appliances and to scale by adding appliances to
-  the cluster.
-  - Limited support for [redundancy](../sysadmin/redundancy.md).
+- Limited support for [redundancy](../sysadmin/redundancy.md).
 - Multiple stages and an inbuilt process to move data between the
   stages.
   - This supports the ability to use faster storage (which is
@@ -17,8 +15,7 @@ Here are the main features.
 - Focus on data retrieval performance.
 - A management interface giving you the ability to manage and monitor
   the system using a browser. This includes
-  1. The ability to add PVs to a cluster of appliances using a
-     browser (perhaps by users).
+  1. The ability to add PVs using a browser (perhaps by users).
   2. Various metrics to help with capacity planning.
   3. Ability to define system-wide defaults for archiving parameters
      using policies.
@@ -37,8 +34,8 @@ Here are the main features.
     responses.
 - Support for EPICS aliases.
 - Support for EPICS 7/PVAccess/Structured data.
-- Support for retrieval of data using [CS-Studio](../user/cstudio.md), the
-  [ArchiveViewer](../user/archiveviewer.md) and Matlab.
+- Support for retrieval of data using the
+  [Phoebus Data Browser](../user/phoebus.md) and Matlab.
 - Limited integration with existing Channel Archiver data sources.
 
 ## System requirements
@@ -119,18 +116,7 @@ example, if you have a powerful enough NAS/SAN, you could write straight
 to the long term store; bypassing all the stages in between.
 
 The long term store is shown outside the appliance as an example of a
-commonly deployed configuration. There is no necessity for the
-appliances to share any storage; so both of these configurations are
-possible.
-
-![Multiple appliances into one long term store](../images/clusterinto1lts.png)
-
-*Multiple appliances sending data into one long term store*
-
-![Multiple appliances into different long term stores](../images/clusterintodifflts.png)
-
-*Multiple appliances sending data into different long term
-stores*
+commonly deployed configuration.
 
 ## Policies
 
@@ -139,8 +125,7 @@ navigate. Rather than expose all of this variation to the end users and
 to provide a simple interface to end users, the archiver appliance uses
 policies.
 Policies are Python scripts that make these decisions on behalf of the
-users. Policies are site-specific and identical across all appliances in
-the cluster. When a user requests a new PV to be archived, the archiver
+users. Policies are site-specific. When a user requests a new PV to be archived, the archiver
 appliance samples the PV to determine event rate, storage rate and other
 parameters. In addition, various fields of the PV like .NAME, .ADEL,
 .MDEL, .RTYP etc are also obtained. These are passed to the policies
@@ -151,40 +136,17 @@ interpreter. Policies allow system administrators to support a wide
 variety of configurations that are more appropriate to their
 infrastructure without exposing the details to their users.
 
-## Clustering
+## Appliance configuration
 
-While each appliance in a cluster is independent and self-contained, all
-members of a cluster are listed in a special configuration file
-(typically called [appliances.xml](../sysadmin/installguide#appliances_xml))
-that is site-specific and identical across all appliances in the
-cluster. The `appliances.xml` is a simple XML file that contains the
-ports and URLs of the various webapps in that appliance. Each appliance
-has a dedicated TCP/IP endpoint called `cluster_inetport` for cluster
-operations like cluster membership etc.. One startup, the `mgmt` webapp
-uses the `cluster_inetport` of all the appliances in `appliances.xml` to
-discover other members of the cluster. This is done using TCP/IP only
-(no need for broadcast/multicast support).
-
-The business processes are all cluster-aware; the bulk of the
-inter-appliance communication that happens as part of normal operation
-is accomplished using JSON/HTTP on the other URLs defined in
-`appliances.xml`. All the JSON/HTTP calls from the mgmt webapp are also
-available to you for use in scripting, see the section on
-[scripting](#scripting).
-
-The archiving functionality is split across members of the cluster; that
-is, each PV that is being archived is being archived by one appliance in
-the cluster. However, both data retrieval and business requests can be
-dispatched to any random appliance in the cluster; the appliance has the
-functionality to route/proxy the request accordingly.
-
-![Appliance 1 proxies data retrieval request for PV being archived by appliance 2.](../images/proxyrequest.png)
-
-In addition, users do not need to allocate PVs to appliances when
-requesting for new PVs be archived. The appliances maintain a small set
-of metrics during their operation and use this in addition to the
-measured event and storage rates to do an automated Capacity Planning/load
-balancing.
+The appliance is described in a site-specific configuration file
+(typically called [appliances.xml](../sysadmin/installguide.md#appliances-xml)).
+This simple XML file contains the URLs of the four webapps of the
+appliance and its `cluster_inetport`, a dedicated TCP/IP endpoint that
+the `mgmt` webapp opens on startup and the other three webapps connect
+to. The webapps talk to each other using
+JSON/HTTP on the URLs defined in `appliances.xml`. All the JSON/HTTP
+calls from the mgmt webapp are also available to you for use in
+scripting, see the section on [scripting](#scripting).
 
 ## Scripting
 
@@ -196,11 +158,11 @@ external scripting tools like Python.
 
 ```bash
 
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import requests
 
-resp = requests.get("http://archappl.slac.stanford.edu/mgmt/bpl/getAllPVs?pv=VPIO:IN20:111:VRA*")
+resp = requests.get("http://archiver.example.org:17665/mgmt/bpl/getAllPVs?pv=VPIO:IN20:111:VRA*")
 print("\n".join(resp.json()))
 ```
 
