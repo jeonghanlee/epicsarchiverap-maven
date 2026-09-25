@@ -5,17 +5,27 @@
     <formats>
         <format>tar.gz</format>
     </formats>
-    <includeBaseDirectory>false</includeBaseDirectory> <fileSets>
-        <fileSet>
-            <directory>${project.build.directory}</directory>
-            <outputDirectory>/</outputDirectory>
-            <includes>
-                <include>mgmt.war</include>
-                <include>engine.war</include>
-                <include>etl.war</include>
-                <include>retrieval.war</include>
-            </includes>
-        </fileSet>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <!-- The WARs keep their plain names in the bundle so that Tomcat deploys each at its component context path. -->
+    <files>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}-mgmt.war</source>
+            <destName>mgmt.war</destName>
+        </file>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}-engine.war</source>
+            <destName>engine.war</destName>
+        </file>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}-etl.war</source>
+            <destName>etl.war</destName>
+        </file>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}-retrieval.war</source>
+            <destName>retrieval.war</destName>
+        </file>
+    </files>
+    <fileSets>
 
         <fileSet>
             <directory>${project.basedir}</directory>
