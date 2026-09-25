@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite). On 2026-09-22 the backlog (M17, M7, M10) was assigned to Phase 2, so Phase 2 now carries M12, M13, M17, M7, and the deferred M10, and the Backlog is empty. Sustained-operation evidence (2026-09-23, ansible-provision soak pilot at 3c96141d): 31.5 h continuous, STS-to-MTS ETL observed for all 11 pilot PVs including the jeonghanlee/epicsarchiverap-env#25 name shape, MTS-to-LTS pending 2026-09-24/25, zero restarts and flat memory; the pilot exposed an aa-env provisioning gap (jeonghanlee/epicsarchiverap-env#47: configuration schema not loaded, so PV configuration is not persisted there) that M13's contract documentation must close. Single host, light workload and a 256M heap override, so capacity, retention, retrieval under load, connection pool and restart survival remain unmeasured. Current (2026-09-24): M13 / T2 (MariaDB on the real deploy path) passed; M13 stays Blocked on G2 for its SQLite check, and its plan is a draft awaiting owner acceptance. M18 (logging model, D31) has T1 to T4 passed and is Blocked on G3, the deployed-host observation from aa-env; M18's layout landed as a1155ef0, which closed aa-env's G14. M19 (Tomcat log4j jar set, D32) is Complete: 9bbd69bf landed and was reported to aa-env for its G15. M18's layout moved to src/resources/main with monitorInterval in 67be91d7 so every site build ships it (aa-env G16). M20 (runtime log-level control, BPL) is Complete at 3070c518. Next action: record aa-env's deployed-host report (aa-env M34 / T2, its second logging item) that releases G3 and closes M18; M13 waits on G2 and on owner acceptance of its plan.
+Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite). On 2026-09-22 the backlog (M17, M7, M10) was assigned to Phase 2, so Phase 2 now carries M12, M13, M17, M7, and the deferred M10, and the Backlog is empty. Sustained-operation evidence (2026-09-23, ansible-provision soak pilot at 3c96141d): 31.5 h continuous, STS-to-MTS ETL observed for all 11 pilot PVs including the jeonghanlee/epicsarchiverap-env#25 name shape, MTS-to-LTS pending 2026-09-24/25, zero restarts and flat memory; the pilot exposed an aa-env provisioning gap (jeonghanlee/epicsarchiverap-env#47: configuration schema not loaded, so PV configuration is not persisted there) that M13's contract documentation must close. Single host, light workload and a 256M heap override, so capacity, retention, retrieval under load, connection pool and restart survival remain unmeasured. Current (2026-09-24): M13 / T2 (MariaDB on the real deploy path) passed; M13 stays Blocked on G2 for its SQLite check, and its plan is a draft awaiting owner acceptance. M18 (logging model, D31) has T1 to T4 passed and is Blocked on G3, the deployed-host observation from aa-env; M18's layout landed as a1155ef0, which closed aa-env's G14. M19 (Tomcat log4j jar set, D32) is Complete: 9bbd69bf landed and was reported to aa-env for its G15. M18's layout moved to src/resources/main with monitorInterval in 67be91d7 so every site build ships it (aa-env G16). M20 (runtime log-level control, BPL) is Complete at 3070c518. aa-env's deployed-host report for G3 (aa-env M34 / T2, 1400ae7) arrived on 2026-09-24, and a local four-instance run confirmed an ERROR at PRIORITY 3 in every component; the owner has not yet decided whether that closes G3. G1 is Complete (Issues enabled 2026-09-24), and M21 (issue #1, consolidateDataForPV for an unknown PV) is In progress. Next action: implement and verify M21; then close G3 and M18 once the owner decides; M13 waits on G2 and on owner acceptance of its plan.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -40,7 +40,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M18 | Appliance logging model: journald-first log4j2 layout and lifecycle | Milestone | Blocked | No | D31, G3 | The shipped log4j2.xml emits the <N> priority prefix with a ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO} root level and a capped, commented RollingFile fallback; the operating-model page and the faq/install-guide fixes land; [detail](#m18---appliance-logging-model-journald-first-log4j2-layout-and-lifecycle) |
 | Phase 2 | M19 | Tomcat log4j jar set from the build | Milestone | Complete | No | D32 | The build writes log4j-api, log4j-core, log4j-appserver and log4j-jul at ${log4j.version} to target/tomcat-log4j and the release tarball carries them; the logging page describes Tomcat and java.util.logging lines through log4j2; [detail](#m19---tomcat-log4j-jar-set-from-the-build) |
 | Phase 2 | M20 | Runtime log-level control per component | Milestone | Complete | No | D31 | mgmt BPL getLogLevel and setLogLevel change a named logger or the root level in one running component without a restart, forwarded to that component's own BPL; [detail](#m20---runtime-log-level-control-per-component) |
-| Tracking | G1 | aa-maven GitHub issues enabled | External gate | Open | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
+| Phase 2 | M21 | Reject consolidateDataForPV for an unknown PV | Milestone | In progress | No | | consolidateDataForPV for a PV with no PVTypeInfo returns HTTP 400 with one ERROR line instead of HTTP 500 and a NullPointerException; issue #1 closes; [detail](#m21---reject-consolidatedataforpv-for-an-unknown-pv) |
+| Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Open | No | | aa-env deploys the appliance with the SQLite backend (jeonghanlee/epicsarchiverap-env#43 closed with a landed commit); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Open | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
 
@@ -1181,7 +1182,7 @@ Last Compared: never
 
 Origin: daff1b7 / G1
 GitHub Issue: none
-Status: Open
+Status: Complete
 
 ##### Summary
 
@@ -1196,10 +1197,11 @@ D2 and D3 require one GitHub issue per M row in this repository. GitHub issues a
 | Observed At | Result | Evidence |
 | --- | --- | --- |
 | 2026-09-11 | Pending | gh api reports has_issues=false |
+| 2026-09-24 | Complete | gh api reports has_issues=true after the owner enabled Issues; the first issue, #1, was created the same day |
 
 ##### Closure Evidence
 
-- none
+- 2026-09-24: gh api repos/jeonghanlee/epicsarchiverap-maven reports has_issues=true (owner enabled the repository Issues setting); issue #1 exists.
 
 #### G2 - aa-env SQLite deploy path
 
@@ -1655,6 +1657,58 @@ Superseded Plan Artifacts: none
 ##### Closure Evidence
 
 - Landed 2026-09-25 02:40 UTC: commit 3070c518 (the common and mgmt log-level actions, the four BPL registrations, pom.xml, LogLevelsTest, docs/book/src/sysadmin/logging.md, docs/milestone-daff1b7.md) is an ancestor of the fetched origin/modernize (3070c518); the Maven workflow run 36087147476 on 3070c518 succeeded; T1, T2 and T3 passed.
+
+#### M21 - Reject consolidateDataForPV for an unknown PV
+
+Origin: daff1b7 / M21
+Identity History: none
+GitHub Issue: #1
+Status: In progress
+
+##### Summary
+
+`ETLExecutor.runPvETLsBeforeOneStorage` (src/main/org/epics/archiverappliance/etl/ETLExecutor.java lines 67-68) calls `getDataStores()` on the result of `getTypeInfoForPV` without a null check, so `/etl/bpl/consolidateDataForPV` for an unknown PV fails with HTTP 500 and a NullPointerException stack trace at ERROR. The lookup came with upstream 48e373b0 (2024-02-19) and is in the fork baseline. Found on 2026-09-24 while provoking one ERROR per component for the M18 / G3 supplement.
+
+##### Scope
+
+- Throw an IOException naming the PV when `getTypeInfoForPV` returns null, so the existing handler in `ConsolidatePBFilesForOnePV` answers HTTP 400.
+
+Out of scope: other BPL actions that look up a PVTypeInfo.
+
+##### Completion Criteria
+
+- On the real WARs, consolidateDataForPV for an unknown PV returns HTTP 400 with one ERROR line naming the PV and no NullPointerException; consolidation of a known PV is unchanged and the default suite passes; issue #1 is closed by the fix commit.
+
+##### Dependencies And Decisions
+
+- Owner decision (2026-09-24): fix it now as its own row, tracked by issue #1.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: owner accepted 2026-09-24 (issue #1 first, then the fix)
+Implementation Authorization: owner authorized 2026-09-24
+Superseded Plan Artifacts: none
+
+1. Add the null check in `runPvETLsBeforeOneStorage`. Closes with T1 and T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | Four real WARs as four Tomcat instances under systemd-cat; GET /etl/bpl/consolidateDataForPV for an unknown PV and storage=MTS; read the etl identifier's journal | JDK 21, Tomcat 9.0.121, journald | HTTP 400; one ERROR line naming the PV; no NullPointerException |
+| T2 | Unit and integration | ./mvnw -B clean verify, which runs the existing consolidation tests (ConsolidateETLJobsForOnePVTest) | JDK 21, wrapper Maven | All tests pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21, Tomcat 9.0.121, journald | Pending | none |
+| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+
+##### Closure Evidence
+
+- none
 
 ## Backlog
 
