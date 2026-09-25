@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite). On 2026-09-22 the backlog (M17, M7, M10) was assigned to Phase 2, so Phase 2 now carries M12, M13, M17, M7, and the deferred M10, and the Backlog is empty. Sustained-operation evidence (2026-09-23, ansible-provision soak pilot at 3c96141d): 31.5 h continuous, STS-to-MTS ETL observed for all 11 pilot PVs including the jeonghanlee/epicsarchiverap-env#25 name shape, MTS-to-LTS pending 2026-09-24/25, zero restarts and flat memory; the pilot exposed an aa-env provisioning gap (jeonghanlee/epicsarchiverap-env#47: configuration schema not loaded, so PV configuration is not persisted there) that M13's contract documentation must close. Single host, light workload and a 256M heap override, so capacity, retention, retrieval under load, connection pool and restart survival remain unmeasured. Current (2026-09-25): M13 / T2 (MariaDB on the real deploy path) passed; M13 stays Blocked on G2 for its SQLite check, and its plan is a draft awaiting owner acceptance. M18 (logging model, D31) is Complete: its layout landed as a1155ef0, which closed aa-env's G14, and G3 closed on 2026-09-25. M19 (Tomcat log4j jar set, D32) is Complete: 9bbd69bf landed and was reported to aa-env for its G15. M18's layout moved to src/resources/main with monitorInterval in 67be91d7 so every site build ships it (aa-env G16). M20 (runtime log-level control, BPL) is Complete at 3070c518. G1 is Complete (Issues enabled 2026-09-24); the owner decided on 2026-09-25 to project the M rows to GitHub issues, as D2 and D3 require. M21 (issue #1, consolidateDataForPV for an unknown PV) is Complete at 25606494 with #1 closed. The open M rows were projected to GitHub issues on 2026-09-25 as summaries without milestone and decision IDs: M7 #2, M10 #3, M12 #4, M13 #5, M17 #6; completed rows are not projected. Next action: M12 and M17 are Ready; M17 starts once its draft plan is accepted, and its T5 waits for M22, the local launcher that follows M13; M7 is Ready but its items wait on the owner's list; M13 waits on G2 and on owner acceptance of its plan; M10 stays Deferred under D7.
+Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite). On 2026-09-22 the backlog (M17, M7, M10) was assigned to Phase 2, so Phase 2 now carries M12, M13, M17, M7, and the deferred M10, and the Backlog is empty. Sustained-operation evidence (2026-09-23, ansible-provision soak pilot at 3c96141d): 31.5 h continuous, STS-to-MTS ETL observed for all 11 pilot PVs including the jeonghanlee/epicsarchiverap-env#25 name shape, MTS-to-LTS pending 2026-09-24/25, zero restarts and flat memory; the pilot exposed an aa-env provisioning gap (jeonghanlee/epicsarchiverap-env#47: configuration schema not loaded, so PV configuration is not persisted there) that M13's contract documentation must close. Single host, light workload and a 256M heap override, so capacity, retention, retrieval under load, connection pool and restart survival remain unmeasured. Current (2026-09-25): M13 / T2 (MariaDB on the real deploy path) passed; M13 stays Blocked on G2 for its SQLite check, and its plan is a draft awaiting owner acceptance. M18 (logging model, D31) is Complete: its layout landed as a1155ef0, which closed aa-env's G14, and G3 closed on 2026-09-25. M19 (Tomcat log4j jar set, D32) is Complete: 9bbd69bf landed and was reported to aa-env for its G15. M18's layout moved to src/resources/main with monitorInterval in 67be91d7 so every site build ships it (aa-env G16). M20 (runtime log-level control, BPL) is Complete at 3070c518. G1 is Complete (Issues enabled 2026-09-24); the owner decided on 2026-09-25 to project the M rows to GitHub issues, as D2 and D3 require. M21 (issue #1, consolidateDataForPV for an unknown PV) is Complete at 25606494 with #1 closed. The open M rows were projected to GitHub issues on 2026-09-25 as summaries without milestone and decision IDs: M7 #2, M10 #3, M12 #4, M13 #5, M17 #6; completed rows are not projected. Next action: M12 and M17 are Ready; M17 starts once its draft plan is accepted, and its T5 waits for M22, the local launcher that follows M13; M7 is Ready but its items wait on the owner's list; M13 waits on G2 and on owner acceptance of its plan; M10 stays Deferred under D7. The Backlog holds M23 (2026-09-25), the code defects found while rewriting the docs, waiting on the owner's choice of items.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -1355,9 +1355,9 @@ Out of scope: the docs publishing pipeline (M9, done); EPICS-Arche architecture 
 ##### Implementation Plan
 
 Plan Status: accepted
-Plan Acceptance: 2026-09-25, owner accepted this plan; revised the same day by owner direction to add the tarball WAR item and the customization.md, installguide.md and admin.md corrections in step 1
-Implementation Authorization: 2026-09-25, owner authorized implementation of this plan and of the revision
-Superseded Plan Artifacts: none
+Plan Acceptance: 2026-09-25, owner accepted this plan; revised the same day by owner direction to add the tarball WAR item and the customization.md, installguide.md and admin.md corrections in step 1, and again to replace step 3 with a full rewrite of the book
+Implementation Authorization: 2026-09-25, owner authorized implementation of this plan and of both revisions
+Superseded Plan Artifacts: the page-by-page review of step 3 (2026-09-25), replaced by the full rewrite; its interim edits landed as 587907c8 and are the input to the rewrite
 
 Owner decisions (2026-09-25) that shape this plan: in sysadmin/installguide.md, delete the four passages that cite the removed scripts and leave the rest of the page to step 3; delete sysadmin/quickstart.md; delete the site_specific_content sample and, in sysadmin/site_specific.md, only the sentences that depend on the removed scripts; drop slacdev from the example list in the ARCHAPPL_SITEID javadoc; run the T5 check on the M22 local launcher, so steps 1 and 3 and T1 to T4 proceed first and T5 waits for M22; delete the Python 2 samples without a run check, pythonPBRaw/ with it, because its only script reads the PB/HTTP stream in Python 2 and retrieval's JSON and CSV formats and the mgmt WAR's install/pbutils/pb2json.sh already cover that use.
 
@@ -1373,7 +1373,7 @@ Owner decisions (2026-09-25) that shape this plan: in sysadmin/installguide.md, 
    - sysadmin/customization.md: replace the slacdev example (an `ls src/sitespecific/` listing and `export ARCHAPPL_SITEID=slacdev`) with one that shows src/sitespecific holding default and tests and selects a site through ARCHAPPL_SITEID; correct the default site to `default` (pom.xml archapplsite), delete the build message no build step prints and the Downloads quickstart package, and replace the note that links the archived jeonghanlee/epicsarchiverap-sites with a pointer to jeonghanlee/epicsarchiverap-env.
    - sysadmin/installguide.md "Details" item 4 and sysadmin/admin.md: link item 4 to "Stopping and starting the individual Tomcats" and the samples sentence to the repository folder on GitHub.
 2. Check the candidates: run each top-level *.py BPL client under docs/book/src/samples against an appliance started by the M22 launcher on the current Python and keep or remove it by the T5 result, judging the module emailHandler.py with the scripts that import it; keep or remove TESTING.md and mvnw.cmd after checking whether TESTING.md describes this fork's test platform and whether a Windows build is still wanted.
-3. Review the remaining pages for retired features (clustering and multi-appliance, CS-Studio and ArchiveViewer, MySQL-first persistence, jsvc start-up), bringing each page's keep/cut to the owner before editing.
+3. Rewrite the narrative book under docs/book/src from scratch, concise and exact, for the single-instance fork, without keeping the upstream page layout. Pages: Introduction; Architecture; Building; Installing (jeonghanlee/epicsarchiverap-env as the deployment path, then a manual reference); Configuration; Persistence (a placeholder whose content M13 writes); Operating; Logging (the current logging.md, kept); Retrieving data (including Phoebus and Matlab); Scripting (mgmt BPL, the generated API reference, the samples); Redundancy and EPICS 7; Developer guide (test platform, PB file format); FAQ and License where they still hold. Every stated default, parameter, endpoint and file name is checked against the code; every screenshot is a marked placeholder naming what the owner captures later; source text follows the markdown-authoring rules (Scope and Out of scope, fenced code, ASCII punctuation) and the applicable IEEE Editorial Style Manual rules.
 
 ##### Test Plan
 
@@ -1384,6 +1384,7 @@ Owner decisions (2026-09-25) that shape this plan: in sysadmin/installguide.md, 
 | T3 | Integration | Build the book with docs/book/Dockerfile after steps 1 to 3 (docker build -t aa-mdbook docs/book, then docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs/book:/book" aa-mdbook build, as pages.yml runs it) | Docker, pinned mdBook 0.4.52 and mdbook-admonish 1.20.0 | Exit 0, and no Warning line other than the mdbook-admonish notice that it was built against mdBook 0.4.51, which the current tree already prints |
 | T4 | Static | git grep for quickstart.sh, sampleStartup.sh, deployMultipleTomcats, addMysqlConnPool, single_machine_install, multipleBuildAndDeploy, sample_site_specific_content, samples/site_specific_content, pythonPBRaw, samples/debug, ui/help/samples, slacdev, and a link to quickstart.md or (quickstart), excluding docs/archiverap-carry-d12382d1.md and this register; template_changes.html is not searched because src/sitespecific/tests keeps its own copy | Working tree after step 1 | No match |
 | T5 | Integration | Run each candidate Python script against the four WARs of the build current at the time, started by the M22 launcher; runs after M22 is Complete | System python3; M22 launcher with SQLite | A script is kept only if it exits 0 and its BPL calls return the expected response for a PV the appliance archives; the per-script result is recorded |
+| T6 | Static | LC_ALL=C grep -rnP '[^\x00-\x7F]' docs/book/src --include='*.md' after step 3 | Working tree after step 3 | No match |
 
 ##### Verification Results
 
@@ -1391,13 +1392,14 @@ Owner decisions (2026-09-25) that shape this plan: in sysadmin/installguide.md, 
 | --- | --- | --- | --- | --- |
 | T1 | 2026-09-25 08:43 UTC | JDK 21.0.12.1, wrapper Maven; step 1 including the tarball WAR item applied on dc3aa1f4 | Pass | ./mvnw -B -ntp clean verify: 782 tests, 0 failures, 0 errors; enforcer and analyze-only clean; BUILD SUCCESS |
 | T2 | 2026-09-25 08:43 UTC | T1 output under target/ (aa-20260925-dc3aa1f4) | Pass | The mgmt WAR's install/ holds archappl_sqlite.sql, archappl_mysql.sql and pbutils/ (pb2json.sh, validate.sh, printTimes.sh, repair.sh) and no deployMultipleTomcats.py, which the c953fb07 WAR carried; the tarball holds mgmt.war, engine.war, etl.war and retrieval.war, each byte-identical (cmp) to its aa-20260925-dc3aa1f4-<component>.war, plus LICENSE, RELEASE_NOTES, LICENCES/, the four tomcat-log4j jars and the two install_scripts *.sql files, with no quickstart.sh or sample_site_specific_content |
-| T3 | Not run | Docker, pinned mdBook | Pending | none |
-| T4 | 2026-09-25 08:44 UTC | Working tree after step 1 | Pass | git grep for the listed strings, with the two exclusions, returned no match (exit 1) |
+| T3 | 2026-09-25 15:47 UTC | Docker, pinned mdBook 0.4.52 and mdbook-admonish 1.20.0; rewritten book, working tree | Pass | Exit 0; the only Warning line is the mdbook-admonish 0.4.51 notice. A link check of every relative link and anchor against the built HTML found no problem |
+| T4 | 2026-09-25 15:49 UTC | Working tree after step 3 | Pass | git grep for the listed strings, with the two exclusions, and grep over the new untracked pages under docs/book/src returned no match (exit 1) |
 | T5 | Not run | System python3; M22 launcher with SQLite | Pending | none |
+| T6 | 2026-09-25 15:47 UTC | Working tree after step 3 | Pass | LC_ALL=C grep -rnP '[^\x00-\x7F]' docs/book/src --include='*.md' returned no match |
 
 ##### Closure Evidence
 
-- Step 1 landed 2026-09-25 09:23 UTC: commits 4aebc724 (release tarball WARs), 39d92baa (removed samples, slacdev and quickstart page with the page edits) and 6b34d0a3 (this plan and its checks) are ancestors of the fetched origin/modernize (6b34d0a3); the Maven workflow run 36118161053 and the Pages run 36118161044 on 6b34d0a3 succeeded. Steps 2 and 3 and T3 and T5 remain.
+- Step 1 landed 2026-09-25 09:23 UTC: commits 4aebc724 (release tarball WARs), 39d92baa (removed samples, slacdev and quickstart page with the page edits) and 6b34d0a3 (this plan and its checks) are ancestors of the fetched origin/modernize (6b34d0a3); the Maven workflow run 36118161053 and the Pages run 36118161044 on 6b34d0a3 succeeded.
 
 ##### GitHub Projection
 
@@ -1845,8 +1847,72 @@ Last Compared: never
 
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| Backlog | M23 | Code defects found while rewriting the docs | Milestone | Not started | Yes | | Each listed defect is fixed and verified, or kept with a recorded reason; [detail](#m23---code-defects-found-while-rewriting-the-docs) |
 
 ### Backlog Details
+
+#### M23 - Code defects found while rewriting the docs
+
+Origin: daff1b7 / M23
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+Checking the rewritten book against the code on 2026-09-25 (M17 step 3) turned up defects in the code, outside the docs work. Each is recorded with its evidence; the confirmed ones were read in the source, none was run.
+
+##### Scope
+
+Confirmed by reading the source:
+
+1. `importConfig` skips an appliance group that holds exactly one PV: `if(pvsForAppliance.size() > 1)` at src/main/org/epics/archiverappliance/mgmt/bpl/ImportConfig.java line 72, so importing a one-PV export imports nothing.
+2. Two reports of the Reports page call BPL actions that no servlet registers: `getPVsByScanCopyTime` and `getPVsByMaxTimeBetweenScans` (src/main/org/epics/archiverappliance/mgmt/staticcontent/js/mgmt.js lines 943 and 973); no Java file defines either.
+3. The pages' help handlers open `help/user/userguide.html` (for example src/main/org/epics/archiverappliance/mgmt/staticcontent/index.html line 228), which the mgmt WAR does not contain.
+4. The `3DaysMTSOnly` branch of the default site's policies.py records `policyName = '2HzPVs'` (src/sitespecific/default/classpathfiles/policies.py, the `3DaysMTSOnly` branch).
+5. `TimeUtils.fromString` falls back to the offset format only on `IllegalArgumentException` (src/main/org/epics/archiverappliance/common/TimeUtils.java, `fromString`), but `Instant.parse` throws `DateTimeParseException`, which is not one; an offset timestamp such as `2012-11-03T00:00:00-07:00` is therefore not accepted, and the retrieval servlet's `catch (IllegalArgumentException)` around it does not answer a malformed time with HTTP 400.
+6. The retrieval servlet reads `donotchunk` into a local `useChunkedEncoding` (src/main/org/epics/archiverappliance/retrieval/DataRetrievalServlet.java lines 348 and 760) and never uses it, so the parameter has no effect.
+7. The `rms` post-processor (retrieval/postprocessors/RMS.java) is not in the registry of PostProcessors.java, so `rms_<secs>` is not accepted.
+8. The tests site's build.xml uses `${classes}` (src/sitespecific/tests/build.xml lines 8 and 21), while the pom passes the class path as `ant.classes` (pom.xml, the `sitespecificantscript` execution).
+
+Hypotheses, to check first:
+
+9. `RedisPersistence` creates its connection pool only when `ARCHAPPL_PERSISTENCE_LAYER_REDISURL` is set, although it logs `localhost` as the default (RedisPersistence.java lines 38-49).
+
+Out of scope: the docs, which describe the behavior as it is.
+
+##### Completion Criteria
+
+- Each item is fixed with a test on the real path, or kept with a recorded reason; the owner decides which.
+
+##### Dependencies And Decisions
+
+- Found during M17 / step 3 (2026-09-25). No dependency; the owner chooses which items to fix.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settle with the owner which items to fix, and in which order.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | For each item chosen, a test on the real path that fails before the fix and passes after it | JDK 21, wrapper Maven | The test passes and the default suite passes |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
+
+##### Closure Evidence
+
+- none
 
 ## Assignment History
 
