@@ -348,6 +348,12 @@
     <finalName>aa-${maven.build.timestamp}-${git.commit.id.abbrev}</finalName>
     <sourceDirectory>${src.main.dir}</sourceDirectory>
     <testSourceDirectory>${project.basedir}/src/test</testSourceDirectory>
+    <resources>
+      <!-- Site-independent classpath files, such as the shipped log4j2.xml, land in every WAR. -->
+      <resource>
+        <directory>${project.basedir}/src/resources/main</directory>
+      </resource>
+    </resources>
     <testResources>
       <testResource>
         <directory>${project.basedir}/src/test</directory>

@@ -86,8 +86,10 @@ out:
 | `com.hazelcast` | the embedded cluster library |
 
 To change a logger's level, copy the shipped `log4j2.xml`, edit the copy,
-and point the `LOG4J_CONFIGURATION_FILE` environment variable at it. A
-level change takes effect when the component restarts.
+and point the `LOG4J_CONFIGURATION_FILE` environment variable at it. The
+file carries `monitorInterval="30"`, so log4j2 rereads the copy and an
+edited level takes effect within 30 seconds, without a restart. Every WAR
+ships the same `log4j2.xml`, whatever the site the build was made for.
 
 ## File fallback without a collector
 

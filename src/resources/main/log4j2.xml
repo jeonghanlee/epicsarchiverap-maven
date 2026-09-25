@@ -10,8 +10,13 @@
 
     The root level is read from the ARCHAPPL_ROOT_LOGGER_LEVEL environment
     variable and defaults to INFO.
+
+    Every WAR ships this file whatever the site. A site that needs another
+    configuration copies it outside the WAR and points LOG4J_CONFIGURATION_FILE
+    at the copy; monitorInterval makes log4j2 reread that copy every 30 seconds,
+    so an edited logger level takes effect without a restart.
 -->
-<Configuration>
+<Configuration monitorInterval="30">
     <Appenders>
         <Console name="STDOUT" target="SYSTEM_OUT">
             <PatternLayout pattern="%level{FATAL=&lt;2&gt;, ERROR=&lt;3&gt;, WARN=&lt;4&gt;, INFO=&lt;6&gt;, DEBUG=&lt;7&gt;, TRACE=&lt;7&gt;}%-5level [%t] %c - %m%n"/>
