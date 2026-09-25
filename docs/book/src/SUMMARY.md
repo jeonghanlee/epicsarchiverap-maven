@@ -1,29 +1,17 @@
 # Summary
 
-[EPICS Archiver Appliance](index.md)
+[Introduction](index.md)
 
+- [Architecture](architecture.md)
+- [Building](building.md)
+- [Installing](installing.md)
+- [Configuration](configuration.md)
+- [Persistence](persistence.md)
+- [Operating](operating.md)
+- [Logging](logging.md)
+- [Retrieving data](retrieval.md)
+- [Scripting](scripting.md)
+- [Redundancy and EPICS 7](redundancy.md)
+- [Developer guide](developer.md)
 - [FAQ](faq.md)
 - [License](license.md)
-
-# User
-
-- [Phoebus Data Browser](user/phoebus.md)
-- [Retrieving data using Matlab](user/matlab.md)
-- [User guide](user/userguide.md)
-
-# Sysadmin
-
-- [Administration Guide](sysadmin/admin.md)
-- [Customization](sysadmin/customization.md)
-- [Install Guide](sysadmin/installguide.md)
-- [Logging](sysadmin/logging.md)
-- [Redundancy in the EPICS Archiver Appliance](sysadmin/redundancy.md)
-- [Making simple site-specific content changes](sysadmin/site_specific.md)
-- [Using SQLite as a configuration database](sysadmin/sqlite.md)
-
-# Developer
-
-- [Details](developer/details.md)
-- [Developers Guide](developer/developersguide.md)
-- [The .pb file format and the .pbraw binary protocol](developer/pb_pbraw.md)
-- [Management Scriptables](developer/mgmt_scriptables.md)

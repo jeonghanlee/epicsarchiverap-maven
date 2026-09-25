@@ -6,16 +6,13 @@ standard output only. The service that launches the JVMs passes each
 stream to the systemd journal, and journald timestamps, stores and
 rotates the lines. The appliance writes no log files of its own.
 
-```admonish note
-This page describes the target layout. It applies once
-[epicsarchiverap-env](https://github.com/jeonghanlee/epicsarchiverap-env)
-runs the four JVMs in the foreground through `systemd-cat` and stops
-shipping its own `log4j2.xml`; until then the WAR layout below is not in
-effect. On a deployment that still starts Tomcat in the background,
-application lines go to `logs/catalina.out` and Tomcat's own lines go to
-the dated `logs/catalina.<date>.log` and `logs/localhost.<date>.log`
-files under each `CATALINA_BASE`.
-```
+## Scope
+
+This page covers the log streams, their line format, reading them, and
+changing log levels.
+
+**Out of scope:** the journald retention and rate limit settings of the
+host.
 
 ## Line format
 
