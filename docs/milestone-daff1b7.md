@@ -1400,6 +1400,7 @@ Owner decisions (2026-09-25) that shape this plan: in sysadmin/installguide.md, 
 ##### Closure Evidence
 
 - Step 1 landed 2026-09-25 09:23 UTC: commits 4aebc724 (release tarball WARs), 39d92baa (removed samples, slacdev and quickstart page with the page edits) and 6b34d0a3 (this plan and its checks) are ancestors of the fetched origin/modernize (6b34d0a3); the Maven workflow run 36118161053 and the Pages run 36118161044 on 6b34d0a3 succeeded.
+- Step 3 landed 2026-09-25 16:23 UTC: commits 587907c8 (interim page edits), 37c9aadc (the rewritten book) and d3456ba1 (this plan's checks and M23) are ancestors of the fetched origin/modernize (d3456ba1); the Maven workflow run 36160480069 and the Pages run 36160480080 on d3456ba1 succeeded, and the published architecture page answers HTTP 200.
 
 ##### GitHub Projection
 
