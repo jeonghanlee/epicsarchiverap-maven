@@ -70,7 +70,7 @@ Fixture lifecycle:
 - PVA restart tests poll the real retrieval endpoint. `PVAEpicsIntegrationTest` requires samples timestamped after the IOC restarts; `PVAFlakyIntegrationTest` compares the complete expected timestamp/value map before disconnecting and after reconnecting. Each retrieval wait is bounded at two minutes and each response stream is closed.
 - The test Tomcats carry `CATALINA_OPTS=-Deaatag=eaatesttm`. If an interrupted runner leaves processes behind, identify them by their PID, parent, and per-test `CATALINA_BASE` before stopping only the processes owned by that run.
 
-The former Selenium browser tests call the same page or BPL endpoint over HTTP, through the appliance's `GetUrlContent` helper or the JDK HTTP client, and poll for readiness with Awaitility, verifying the server response rather than the DOM. Selenium is not a test dependency.
+The browser tests that the fork kept call the same page or BPL endpoint over HTTP, through the appliance's `GetUrlContent` helper or the JDK HTTP client, and poll for readiness with Awaitility, verifying the server response rather than the DOM. Selenium is not a test dependency.
 
 ## Principles
 
