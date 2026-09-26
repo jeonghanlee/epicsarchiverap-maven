@@ -256,16 +256,6 @@ public class DataRetrievalServlet extends HttpServlet {
         return fetchLatestMetadata;
     }
 
-    private static boolean useChunkedEncoding(HttpServletRequest req) {
-        boolean useChunkedEncoding = true;
-        String doNotChunkStr = req.getParameter("donotchunk");
-        if (doNotChunkStr != null && !doNotChunkStr.equals("false")) {
-            logger.debug("Turning off HTTP chunked encoding");
-            useChunkedEncoding = false;
-        }
-        return useChunkedEncoding;
-    }
-
     private static boolean useReduced(HttpServletRequest req) {
         boolean useReduced = false;
         String useReducedStr = req.getParameter("usereduced");
@@ -344,8 +334,6 @@ public class DataRetrievalServlet extends HttpServlet {
         boolean useReduced = useReduced(req);
         String extension = req.getPathInfo().split("\\.")[1];
         logger.info("Mime is {}", extension);
-
-        boolean useChunkedEncoding = useChunkedEncoding(req);
 
         boolean fetchLatestMetadata = isFetchLatestMetadata(req);
 
@@ -756,8 +744,6 @@ public class DataRetrievalServlet extends HttpServlet {
             logAndRespond(msg, null, resp, HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-
-        boolean useChunkedEncoding = useChunkedEncoding(req);
 
         boolean fetchLatestMetadata = isFetchLatestMetadata(req);
 

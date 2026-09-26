@@ -129,11 +129,6 @@ public class PvaGetPVData implements PvaAction {
 			}
 		}
 
-		String doNotChunkStr = reqParameters.get("donotchunk");
-		if (doNotChunkStr != null && !doNotChunkStr.equals("false")) {
-			logger.info("Turning off HTTP chunked encoding");
-		}
-
 		boolean fetchLatestMetadata = false;
 		String fetchLatestMetadataStr = reqParameters.get("fetchLatestMetadata");
 		if (fetchLatestMetadataStr != null && fetchLatestMetadataStr.equals("true")) {
@@ -485,13 +480,6 @@ public class PvaGetPVData implements PvaAction {
 				logger.error("Exception parsing usereduced", ex);
 				useReduced = false;
 			}
-		}
-
-		boolean useChunkedEncoding = true;
-		String doNotChunkStr = reqParameters.get("donotchunk");
-		if (doNotChunkStr != null && !doNotChunkStr.equals("false")) {
-			logger.info("Turning off HTTP chunked encoding");
-			useChunkedEncoding = false;
 		}
 
 		boolean fetchLatestMetadata = false;
