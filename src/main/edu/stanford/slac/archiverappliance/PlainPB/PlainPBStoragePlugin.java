@@ -324,11 +324,11 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                             this.compressionMode,
                             this.pv2key);
                 } else {
-                    logger.info("Found " + paths.length + " cached entries for " + pvName + " for post processor "
+                    logger.debug("Found " + paths.length + " cached entries for " + pvName + " for post processor "
                             + extension);
                 }
             }
-            logger.info(desc + " Found " + paths.length + " matching files for pv " + pvName + " in store "
+            logger.debug(desc + " Found " + paths.length + " matching files for pv " + pvName + " in store "
                     + this.getName());
             boolean useSearchForPositions = (this.compressionMode == CompressionMode.NONE);
             boolean doNotuseSearchForPositions = !useSearchForPositions;

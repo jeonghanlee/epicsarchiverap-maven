@@ -333,7 +333,7 @@ public class DataRetrievalServlet extends HttpServlet {
 
         boolean useReduced = useReduced(req);
         String extension = req.getPathInfo().split("\\.")[1];
-        logger.info("Mime is {}", extension);
+        logger.debug("Mime is {}", extension);
 
         boolean fetchLatestMetadata = isFetchLatestMetadata(req);
 
@@ -737,7 +737,7 @@ public class DataRetrievalServlet extends HttpServlet {
 
         // Getting MIME type
         String extension = req.getPathInfo().split("\\.")[1];
-        logger.info("Mime is {}", extension);
+        logger.debug("Mime is {}", extension);
 
         if (!StringUtils.equalsAny(extension, "json", "raw", "jplot", "qw")) {
             String msg = "Mime type " + extension + " is not supported. Please use \"json\", \"jplot\" or \"raw\".";

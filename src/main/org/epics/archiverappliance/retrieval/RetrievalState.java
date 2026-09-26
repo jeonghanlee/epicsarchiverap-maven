@@ -206,7 +206,7 @@ public class RetrievalState {
     }
 
     protected void updateRetrievalMetrics(String pvName, Instant time, String user) {
-        logger.info("Update metrics for " + pvName);
+        logger.debug("Update metrics for " + pvName);
 
         retrievalMetricsMap.putIfAbsent(pvName, new RetrievalMetrics());
         retrievalMetricsMap.get(pvName).updateMetrics(time, user);
