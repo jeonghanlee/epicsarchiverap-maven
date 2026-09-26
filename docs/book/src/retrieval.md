@@ -38,8 +38,11 @@ http://archiver.example.org:17668/retrieval/data/getData.json?pv=TEST:PV:1&from=
 | `skipExternalServers` | `true` leaves out external data servers ([Redundancy](redundancy.md)) | `false` |
 
 Times are ISO 8601 instants in UTC, such as `2026-09-24T08:00:00.000Z`,
-URL-encoded when needed. The appliance stores and returns UTC; clients
-convert to local time.
+or ISO 8601 date times with an offset, such as
+`2026-09-24T01:00:00-07:00`, URL-encoded when needed; the `+` of an
+offset such as `+09:00` is sent as `%2B`, because an unencoded `+`
+arrives as a space. A time that cannot be parsed returns HTTP 400.
+The appliance stores and returns UTC; clients convert to local time.
 
 For `getDataForPVs`, repeat `pv` in a GET, or send the names in a POST
 body as a JSON array or as one name per line.

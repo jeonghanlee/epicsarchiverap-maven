@@ -393,4 +393,19 @@ public class TimeUtilsTest {
 			previousEnd = currentInterval.getEndTime();
 		}
 	}
+
+	@Test
+	public void testFromStringAcceptsIsoAndOffsetTimes() throws Exception {
+		Instant defaultTime = Instant.parse("2000-01-01T00:00:00Z");
+		Assertions.assertEquals(Instant.parse("2012-11-03T07:00:00Z"), TimeUtils.fromString("2012-11-03T07:00:00.000Z", defaultTime));
+		Assertions.assertEquals(Instant.parse("2012-11-03T07:00:00Z"), TimeUtils.fromString("2012-11-03T00:00:00-07:00", defaultTime));
+		Assertions.assertEquals(defaultTime, TimeUtils.fromString("", defaultTime));
+	}
+
+	@Test
+	public void testMalformedTimesThrowIllegalArgumentException() throws Exception {
+		Assertions.assertThrows(IllegalArgumentException.class, () -> TimeUtils.fromString("yesterday", Instant.now()));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> TimeUtils.convertFromISO8601String("yesterday"));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> TimeUtils.convertFromDateTimeStringWithOffset("yesterday"));
+	}
 }

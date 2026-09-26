@@ -21,6 +21,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -83,16 +84,33 @@ public class TimeUtils {
                 (TimeUtils.getStartOfYearInSeconds(ysts.getYear()) + ysts.getSecondsintoyear()), ysts.getNano());
     }
 
+    /**
+     * Parses an ISO 8601 instant such as 2011-02-01T08:00:00.000Z.
+     * @param tsstr The timestamp string
+     * @return The instant
+     * @throws IllegalArgumentException if the string is not an ISO 8601 instant
+     */
     public static Instant convertFromISO8601String(String tsstr) {
-        // Sample ISO8601 string 2011-02-01T08:00:00.000Z
-        return Instant.parse(tsstr);
+        try {
+            return Instant.parse(tsstr);
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("Cannot parse ISO 8601 time " + tsstr, ex);
+        }
     }
 
+    /**
+     * Parses an ISO 8601 date time with an offset such as 2012-11-03T00:00:00-07:00.
+     * @param tsstr The timestamp string
+     * @return The instant
+     * @throws IllegalArgumentException if the string is not a date time with an offset
+     */
     public static Instant convertFromDateTimeStringWithOffset(String tsstr) {
-        // Sample string 2012-11-03T00:00:00-07:00
-        DateTimeFormatter fmt = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-        OffsetDateTime dt = OffsetDateTime.parse(tsstr, fmt);
-        return dt.toInstant();
+        try {
+            OffsetDateTime dt = OffsetDateTime.parse(tsstr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return dt.toInstant();
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("Cannot parse time with offset " + tsstr, ex);
+        }
     }
 
     public static long convertToEpochSeconds(Instant ts) {

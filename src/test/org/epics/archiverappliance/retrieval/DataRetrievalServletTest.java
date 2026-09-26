@@ -33,9 +33,14 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Instant;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Test the simple data retrieval case.
@@ -137,5 +142,38 @@ public class DataRetrievalServletTest {
                 configService.getPVNameToKeyConverter()));
 
         pbSetup.deleteTestFolder();
+    }
+
+    /**
+     * The retrieval servlet parses from and to before it looks up the PV, so a malformed time is a bad request,
+     * and a time with an offset parses and reaches the lookup of an unknown PV. The PV name has no unit test prefix,
+     * so the test configuration service does not create a type info for it. A plus sign of an offset that is not
+     * percent-encoded arrives as a space.
+     */
+    @Test
+    public void testTimeParameterStatusCodes() throws Exception {
+        String baseURL = "http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT
+                + "/retrieval/data/getData.json?pv="
+                + URLEncoder.encode("test:time:notarchived", StandardCharsets.UTF_8)
+                + "&from=";
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> malformed = client.send(
+                HttpRequest.newBuilder(URI.create(baseURL + "yesterday")).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(HttpServletResponse.SC_BAD_REQUEST, malformed.statusCode());
+        HttpResponse<String> withOffset = client.send(
+                HttpRequest.newBuilder(URI.create(baseURL + URLEncoder.encode("2011-02-01T00:00:00-08:00", StandardCharsets.UTF_8)))
+                        .GET()
+                        .build(),
+                HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(HttpServletResponse.SC_NOT_FOUND, withOffset.statusCode());
+        HttpResponse<String> plusNotEncoded = client.send(
+                HttpRequest.newBuilder(URI.create(baseURL + "2011-02-01T17:00:00+09:00")).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(HttpServletResponse.SC_BAD_REQUEST, plusNotEncoded.statusCode());
+        HttpResponse<String> plusEncoded = client.send(
+                HttpRequest.newBuilder(URI.create(baseURL + "2011-02-01T17:00:00%2B09:00")).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(HttpServletResponse.SC_NOT_FOUND, plusEncoded.statusCode());
     }
 }
