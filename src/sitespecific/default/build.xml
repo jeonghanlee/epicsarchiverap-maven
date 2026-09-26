@@ -5,6 +5,6 @@
 		<echo message="From within the site specific build for ${archapplsite}."/>
 		<echo message="${site} SITE ID : ${archapplsite}" />
 		<echo message="${site} : STAGE_FOLDER - ${stage}" />
-		<echo message="${site} : Classes folder - ${classes}" />
+		<echo message="${site} : Classes folder - ${ant.classes}" />
 	</target>
 </project>

@@ -5,7 +5,7 @@
 		<echo message="From within the site specific build for ${archapplsite}."/>
 		<echo message="${site} SITE ID : ${archapplsite}" />
 		<echo message="${site} : STAGE_FOLDER - ${stage}" />
-		<echo message="${site} : Classes folder - ${classes}" />
+		<echo message="${site} : Classes folder - ${ant.classes}" />
 	</target>
 	<target name="updateui" depends="updateTemplate">
 		<echo message="${site} : ${site} image files to STAGE_FOLDER/org/epics/archiverappliance/staticcontent/img" />
@@ -18,7 +18,7 @@
 		<java classname = "org.epics.archiverappliance.mgmt.bpl.SyncStaticContentHeadersFooters"
 			  fork="true"
 			  failonerror="true" >
-			<classpath path="${classes}" />
+			<classpath path="${ant.classes}" />
 			<arg value="template_changes.html" />
 			<arg value="${stage}/org/epics/archiverappliance/mgmt/staticcontent/"/>
 		</java>

@@ -74,6 +74,13 @@ four WARs, so the web applications find `policies.py`,
 `archappl.properties` and, if present, `appliances.xml` there. If the
 site folder has a `build.xml`, the build runs it with Ant before the
 WARs are packed; it can replace images and text in the web interface.
+The script receives the build class path in the Ant property
+`ant.classes`, the staging folder in `stage` and the site name in
+`archapplsite`. Files under
+`stage/org/epics/archiverappliance/staticcontent/` go to `ui/comm/` of
+all four WARs, and files under
+`stage/org/epics/archiverappliance/mgmt/staticcontent/` go to `ui/` of
+the mgmt WAR; `src/sitespecific/tests/build.xml` is a working example.
 
 The site is chosen with the `ARCHAPPL_SITEID` environment variable at
 build time; without it the build uses the `default` site.
