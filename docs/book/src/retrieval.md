@@ -97,7 +97,7 @@ getData.json?pv=mean(TEST:PV:1,3600)
 | `firstSample`, `lastSample` | the first or last sample |
 | `firstFill`, `lastFill` | the first or last sample, carried into empty bins |
 | `mean`, `median`, `min`, `max`, `count` | the statistic of the samples |
-| `std`, `variance`, `popvariance`, `jitter`, `kurtosis`, `skewness` | the statistic of the samples |
+| `std`, `variance`, `popvariance`, `rms`, `jitter`, `kurtosis`, `skewness` | the statistic of the samples |
 | `stats` | mean, standard deviation, minimum, maximum and count together |
 | `errorbar` | mean with its standard deviation |
 | `linear`, `loess` | interpolated values |

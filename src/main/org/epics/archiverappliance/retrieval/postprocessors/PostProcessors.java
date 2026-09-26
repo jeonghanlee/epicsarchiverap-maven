@@ -64,6 +64,7 @@ public class PostProcessors {
 		registerPostProcessor(new Median().getIdentity(), Median.class);
 		registerPostProcessor(new Variance().getIdentity(), Variance.class);
 		registerPostProcessor(new PopulationVariance().getIdentity(), PopulationVariance.class);
+		registerPostProcessor(new RMS().getIdentity(), RMS.class);
 		registerPostProcessor(new Kurtosis().getIdentity(), Kurtosis.class);
 		registerPostProcessor(new Skewness().getIdentity(), Skewness.class);
 		registerPostProcessor(new FirstFill().getIdentity(), FirstFill.class);
