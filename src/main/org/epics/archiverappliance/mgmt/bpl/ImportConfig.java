@@ -69,7 +69,7 @@ public class ImportConfig implements BPLAction {
 		LinkedList<JSONObject> responses = new LinkedList<JSONObject>();
 		for(String applianceIdentity : pvsForAppliances.keySet()) {
 			LinkedList<JSONObject> pvsForAppliance = pvsForAppliances.get(applianceIdentity);
-			if(pvsForAppliance.size() > 1) {
+			if(!pvsForAppliance.isEmpty()) {
 				ApplianceInfo applianceInfo = configService.getAppliance(applianceIdentity);
 				String importConfigURL = applianceInfo.getMgmtURL() + "/importConfigForAppliance";
 				JSONObject response = GetUrlContent.postDataAndGetContentAsJSONObject(importConfigURL, pvsForAppliance);
