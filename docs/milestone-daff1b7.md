@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite). On 2026-09-22 the backlog (M17, M7, M10) was assigned to Phase 2, so Phase 2 now carries M12, M13, M17, M7, and the deferred M10, and the Backlog is empty. Sustained-operation evidence (2026-09-23, ansible-provision soak pilot at 3c96141d): 31.5 h continuous, STS-to-MTS ETL observed for all 11 pilot PVs including the jeonghanlee/epicsarchiverap-env#25 name shape, MTS-to-LTS pending 2026-09-24/25, zero restarts and flat memory; the pilot exposed an aa-env provisioning gap (jeonghanlee/epicsarchiverap-env#47: configuration schema not loaded, so PV configuration is not persisted there) that M13's contract documentation must close. Single host, light workload and a 256M heap override, so capacity, retention, retrieval under load, connection pool and restart survival remain unmeasured. A follow-up soak and load test (2026-09-24 to 2026-09-26, same host class, 3c96141d with the schema loaded) measured restart survival, 903 PVs with the 256M heap and 6 h of retrieval load without failure, and found the ETL STS-to-MTS job time growing about 9 s per hour and per-request INFO logging in retrieval; the M13 detail records the figures. Current (2026-09-25): M13 / T2 (MariaDB on the real deploy path) passed; M13 stays Blocked on G2 for its SQLite check, and its plan is a draft awaiting owner acceptance. M18 (logging model, D31) is Complete: its layout landed as a1155ef0, which closed aa-env's G14, and G3 closed on 2026-09-25. M19 (Tomcat log4j jar set, D32) is Complete: 9bbd69bf landed and was reported to aa-env for its G15. M18's layout moved to src/resources/main with monitorInterval in 67be91d7 so every site build ships it (aa-env G16). M20 (runtime log-level control, BPL) is Complete at 3070c518. G1 is Complete (Issues enabled 2026-09-24); the owner decided on 2026-09-25 to project the M rows to GitHub issues, as D2 and D3 require. M21 (issue #1, consolidateDataForPV for an unknown PV) is Complete at 25606494 with #1 closed. The open M rows were projected to GitHub issues on 2026-09-25 as summaries without milestone and decision IDs: M7 #2, M10 #3, M12 #4, M13 #5, M17 #6; completed rows are not projected. On 2026-09-26 M27 and M24 were projected as #9 and #10. On 2026-09-25 M22 and M23 were projected as #7 and #8, and the bodies of #3, #5 and #6 were brought in line with the code and the rewritten book. Next action: M12 is Ready; M17 is In progress under its accepted plan with steps 1 and 3 landed, and what remains of step 2 is T5, the Python BPL client check, which waits for M22, the local launcher that follows M13 (the TESTING.md and mvnw.cmd candidates were settled on 2026-09-25); M7 is Ready but its items wait on the owner's list; M13 waits on G2 and on owner acceptance of its plan (on 2026-09-25 aa-env scheduled jeonghanlee/epicsarchiverap-env#43 to start after its current item and will send its revised SQLite plan here for comment); M10 stays Deferred under D7. M23 (the code defects found while rewriting the docs) is In progress since 2026-09-26 under an accepted plan in three groups (site configuration, retrieval request handling, mgmt UI and BPL): groups 1 and 2 (items 4 to 8) landed on 2026-09-26, and group 3 (items 1 to 3) is implemented with T6, T7 and T8 passing and waits for its commit, after which #8 can close; its item 9 moved to M12. M24 (per-request retrieval logging at DEBUG, 2026-09-26) is implemented with T1 and T2 passing, T2 apart from ETLPostProcessorTest, and waits for its commit. M27 (reduced bins missing after ETL with a post-processor, #9) was added the same day: ETLPostProcessorTest failed on the HEAD source because a PP file with the same modification time as its raw file was taken as up to date; the fix (compareTo >= 0 in PlainPBStoragePlugin) passes T1 and T2, with the default suite passing again, and waits for its commit. M25 (ETL STS-to-MTS job time growth, taken over at aa-env's request) and M26 (etl error bursts and mgmt workflow tick logging), both from the soak test, were added on 2026-09-26 with draft plans; the Backlog is empty.
+Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite). On 2026-09-22 the backlog (M17, M7, M10) was assigned to Phase 2, so Phase 2 now carries M12, M13, M17, M7, and the deferred M10, and the Backlog is empty. Sustained-operation evidence (2026-09-23, ansible-provision soak pilot at 3c96141d): 31.5 h continuous, STS-to-MTS ETL observed for all 11 pilot PVs including the jeonghanlee/epicsarchiverap-env#25 name shape, MTS-to-LTS pending 2026-09-24/25, zero restarts and flat memory; the pilot exposed an aa-env provisioning gap (jeonghanlee/epicsarchiverap-env#47: configuration schema not loaded, so PV configuration is not persisted there) that M13's contract documentation must close. Single host, light workload and a 256M heap override, so capacity, retention, retrieval under load, connection pool and restart survival remain unmeasured. A follow-up soak and load test (2026-09-24 to 2026-09-26, same host class, 3c96141d with the schema loaded) measured restart survival, 903 PVs with the 256M heap and 6 h of retrieval load without failure, and found the ETL STS-to-MTS job time growing about 9 s per hour and per-request INFO logging in retrieval; the M13 detail records the figures. Current (2026-09-25): M13 / T2 (MariaDB on the real deploy path) passed; M13 stays Blocked on G2 for its SQLite check, and its plan is a draft awaiting owner acceptance. M18 (logging model, D31) is Complete: its layout landed as a1155ef0, which closed aa-env's G14, and G3 closed on 2026-09-25. M19 (Tomcat log4j jar set, D32) is Complete: 9bbd69bf landed and was reported to aa-env for its G15. M18's layout moved to src/resources/main with monitorInterval in 67be91d7 so every site build ships it (aa-env G16). M20 (runtime log-level control, BPL) is Complete at 3070c518. G1 is Complete (Issues enabled 2026-09-24); the owner decided on 2026-09-25 to project the M rows to GitHub issues, as D2 and D3 require. M21 (issue #1, consolidateDataForPV for an unknown PV) is Complete at 25606494 with #1 closed. The open M rows were projected to GitHub issues on 2026-09-25 as summaries without milestone and decision IDs: M7 #2, M10 #3, M12 #4, M13 #5, M17 #6; completed rows are not projected. On 2026-09-26 M27 and M24 were projected as #9 and #10. On 2026-09-25 M22 and M23 were projected as #7 and #8, and the bodies of #3, #5 and #6 were brought in line with the code and the rewritten book. Next action: M12 is Ready; M17 is In progress under its accepted plan with steps 1 and 3 landed, and what remains of step 2 is T5, the Python BPL client check, which waits for M22, the local launcher that follows M13 (the TESTING.md and mvnw.cmd candidates were settled on 2026-09-25); M7 is Ready but its items wait on the owner's list; M13 waits on G2 and on owner acceptance of its plan (on 2026-09-25 aa-env scheduled jeonghanlee/epicsarchiverap-env#43 to start after its current item and will send its revised SQLite plan here for comment); M10 stays Deferred under D7. M23 (the code defects found while rewriting the docs) is Complete (2026-09-27): items 1 to 8 landed on 2026-09-26 in three groups (site configuration, retrieval request handling, mgmt UI and BPL) and #8 is closed; its item 9 moved to M12. M24 (per-request retrieval logging at DEBUG) is Complete (2026-09-27) with #10 closed. M27 (reduced bins missing after ETL with a post-processor, #9) was added the same day: ETLPostProcessorTest failed on the HEAD source because a PP file with the same modification time as its raw file was taken as up to date; the fix (compareTo >= 0 in PlainPBStoragePlugin, 9c46ce3d) landed, the default suite passes again, and M27 is Complete (2026-09-27) with #9 closed. M25 (ETL STS-to-MTS job time growth, taken over at aa-env's request) and M26 (etl error bursts and mgmt workflow tick logging), both from the soak test, were added on 2026-09-26 with draft plans; the Backlog is empty.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -42,11 +42,11 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M20 | Runtime log-level control per component | Milestone | Complete | No | D31 | mgmt BPL getLogLevel and setLogLevel change a named logger or the root level in one running component without a restart, forwarded to that component's own BPL; [detail](#m20---runtime-log-level-control-per-component) |
 | Phase 2 | M21 | Reject consolidateDataForPV for an unknown PV | Milestone | Complete | No | | consolidateDataForPV for a PV with no PVTypeInfo returns HTTP 400 with one ERROR line instead of HTTP 500 and a NullPointerException; issue #1 closed manually citing the fix commit; [detail](#m21---reject-consolidatedataforpv-for-an-unknown-pv) |
 | Phase 2 | M22 | Local appliance launcher in one folder | Milestone | Not started | No | M13 | One bash script starts the four WARs of a local build as four Tomcat instances on SQLite, with every file under one temporary folder and no systemd; BPL and a PV archive round trip answer; [detail](#m22---local-appliance-launcher-in-one-folder) |
-| Phase 2 | M23 | Code defects found while rewriting the docs | Milestone | In progress | No | | Each listed defect is fixed and verified, or kept with a recorded reason; [detail](#m23---code-defects-found-while-rewriting-the-docs) |
-| Phase 2 | M24 | Per-request retrieval logging at DEBUG | Milestone | In progress | No | D31 | The five retrieval lines written for every data request log at DEBUG; a deployed retrieval WAR writes none of those a single-PV request passes through at the default level; the build and the default suite pass apart from the M27 test; [detail](#m24---per-request-retrieval-logging-at-debug) |
+| Phase 2 | M23 | Code defects found while rewriting the docs | Milestone | Complete | No | | Each listed defect is fixed and verified, or kept with a recorded reason; [detail](#m23---code-defects-found-while-rewriting-the-docs) |
+| Phase 2 | M24 | Per-request retrieval logging at DEBUG | Milestone | Complete | No | D31 | The five retrieval lines written for every data request log at DEBUG; a deployed retrieval WAR writes none of those a single-PV request passes through at the default level; the build and the default suite pass; [detail](#m24---per-request-retrieval-logging-at-debug) |
 | Phase 2 | M25 | ETL STS-to-MTS job time growth | Milestone | Not started | Yes | | The cause of the growing ETL(0>1) job time is measured on the real ETL path and fixed, or recorded outside aa-maven with evidence; [detail](#m25---etl-sts-to-mts-job-time-growth) |
 | Phase 2 | M26 | etl error bursts and mgmt workflow tick logging | Milestone | Not started | Yes | D31 | A failing store is reported in the settled bounded form, and the settled mgmt tick lines leave the default level; [detail](#m26---etl-error-bursts-and-mgmt-workflow-tick-logging) |
-| Phase 2 | M27 | Reduced bins missing after ETL with a post-processor | Milestone | In progress | No | | The cause of the reduced-bin shortfall in ETLPostProcessorTest is found and fixed, and the test and the default suite pass on repeated runs; [detail](#m27---reduced-bins-missing-after-etl-with-a-post-processor) |
+| Phase 2 | M27 | Reduced bins missing after ETL with a post-processor | Milestone | Complete | No | | The cause of the reduced-bin shortfall in ETLPostProcessorTest is found and fixed, and the test and the default suite pass on repeated runs; [detail](#m27---reduced-bins-missing-after-etl-with-a-post-processor) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Open | No | | aa-env deploys the appliance with the SQLite backend (jeonghanlee/epicsarchiverap-env#43 closed with a landed commit); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -1856,7 +1856,7 @@ Last Compared: 2026-09-25 (gh issue view 7 --repo jeonghanlee/epicsarchiverap-ma
 Origin: daff1b7 / M23
 Identity History: none
 GitHub Issue: #8
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -1934,28 +1934,30 @@ Each regression test runs the shipped class or a deployed WAR, and is shown to f
 | T6 | 2026-09-26 20:28 UTC | JDK 21, wrapper Maven; Tomcat 9.0.121 as TOMCAT_HOME, integration profile | Pass | ImportConfigTest failed on the unfixed WARs (20:01 UTC: One response per appliance in the export, expected 1 but was 0) and passed after !isEmpty() (20:02 and 20:28 UTC); no other size() > 1 check exists under src/main |
 | T7 | 2026-09-26 20:28 UTC | JDK 21, wrapper Maven; Tomcat 9.0.121 as TOMCAT_HOME, integration profile | Pass | StaticContentBPLCallsTest failed before the removal (unregistered /getPVsByMaxTimeBetweenScans, /getPVsByScanCopyTime) and passed after it; MgmtPageLinksTest failed on the unfixed WARs (20:25 UTC: six help/user/userguide.html targets not served) and passed after the handlers were removed |
 | T8 | 2026-09-26 20:40 UTC | JDK 21, wrapper Maven; group 3 applied on a23670a2 | Pass | ./mvnw -B -ntp clean verify: after group 1 (10:14 UTC) 784 tests, after group 2 (19:12 UTC) 787 tests, after group 3 788 tests, each 0 failures, 0 errors and BUILD SUCCESS |
-| T9 | 2026-09-26 19:25 UTC | docs/book Docker build, pinned mdBook 0.4.52 and mdbook-admonish 1.20.0 | Pass (groups 1 and 2) | Second-person pass on building.md and retrieval.md: one minor finding (an unencoded + of an offset arrives as a space) and one info finding (where staged files land in the WARs), both applied; the book builds with exit 0 and only the mdbook-admonish 0.4.51 notice |
+| T9 | 2026-09-26 19:25 UTC | docs/book Docker build, pinned mdBook 0.4.52 and mdbook-admonish 1.20.0 | Pass | Group 3 changed no book page, because the Reports list and the Help row of the book already matched the fixed behavior. Second-person pass on building.md and retrieval.md: one minor finding (an unencoded + of an offset arrives as a space) and one info finding (where staged files land in the WARs), both applied; the book builds with exit 0 and only the mdbook-admonish 0.4.51 notice |
 
 ##### Closure Evidence
 
-- Groups 1 and 2 landed 2026-09-26: commits 7162e178 (item 4), 938f22d8 (item 8), f0366dff (item 5), 94b15626 (item 7), e9772efe (item 6) and a23670a2 (this register) are ancestors of the fetched origin/modernize (a23670a2). Group 3 (items 1, 2, 3) is implemented in the working tree and not yet committed.
+- Groups 1 and 2 landed 2026-09-26: commits 7162e178 (item 4), 938f22d8 (item 8), f0366dff (item 5), 94b15626 (item 7), e9772efe (item 6) and a23670a2 (this register).
+- Group 3 landed 2026-09-26: commits d5a749dc (item 1), 53740e62 (item 2), 8ed1eeff (item 3) and f2c35e0b (this register); the Maven workflow run 36271002724 on f2c35e0b succeeded.
+- All are ancestors of the fetched origin/modernize (7d2337f9). #8 was updated with the implementing commits and closed as completed at 2026-09-27T02:59:58Z (gh issue view 8 --repo jeonghanlee/epicsarchiverap-maven --json state,closedAt).
 
 ##### GitHub Projection
 
 Title: Fix the code defects found while rewriting the docs
 Labels: bug
 GitHub Milestone: none
-Observed State: open
+Observed State: closed
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-09-26 (gh issue view 8 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
+Last Compared: 2026-09-27 (gh issue view 8 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
 
 #### M24 - Per-request retrieval logging at DEBUG
 
 Origin: daff1b7 / M24
 Identity History: none
 GitHub Issue: #10
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -2001,17 +2003,18 @@ Superseded Plan Artifacts: none
 
 ##### Closure Evidence
 
-- none
+- d9250d23 (the change) and a766de08 (this register) are ancestors of the fetched origin/modernize (7d2337f9); the Maven workflow run 36278109280 on a766de08 succeeded. T2's exception ended with M27: the default suite passes with 788 tests on 7d2337f9 (Maven workflow run 36289020914).
+- #10 was updated and closed as completed at 2026-09-27T03:00:04Z (gh issue view 10 --repo jeonghanlee/epicsarchiverap-maven --json state,closedAt).
 
 ##### GitHub Projection
 
 Title: Log the per-request retrieval lines at DEBUG
 Labels: enhancement
 GitHub Milestone: none
-Observed State: open
+Observed State: closed
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-09-26 (gh issue view 10 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
+Last Compared: 2026-09-27 (gh issue view 10 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
 
 #### M25 - ETL STS-to-MTS job time growth
 
@@ -2150,7 +2153,7 @@ Last Compared: never
 Origin: daff1b7 / M27
 Identity History: none
 GitHub Issue: #9
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -2199,17 +2202,18 @@ Superseded Plan Artifacts: none
 
 ##### Closure Evidence
 
-- none
+- 9c46ce3d (the fix) and 7d2337f9 (this register) are ancestors of the fetched origin/modernize (7d2337f9); the Maven workflow run 36289020914 on 7d2337f9 succeeded.
+- #9 was updated with the root cause and closed as completed at 2026-09-27T03:00:01Z (gh issue view 9 --repo jeonghanlee/epicsarchiverap-maven --json state,closedAt).
 
 ##### GitHub Projection
 
 Title: Fix the reduced bins missing after ETL with a post-processor
 Labels: bug
 GitHub Milestone: none
-Observed State: open
+Observed State: closed
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-09-26 (gh issue view 9 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
+Last Compared: 2026-09-27 (gh issue view 9 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
 
 ## Backlog
 
