@@ -19,7 +19,8 @@ The configuration database holds four tables:
 | `ArchivePVRequests` | archive requests still in progress |
 | `ExternalDataServers` | external data servers ([Redundancy](redundancy.md)) |
 
-Only the mgmt web application opens the database.
+Only the mgmt web application opens the database. A Resource defined
+in the other instances is not used.
 
 ## How the appliance connects
 
@@ -75,12 +76,15 @@ The other layers, `InMemoryPersistence`, `JDBM2Persistence` and
 
 ## Setting up SQLite
 
-1. Create the database file from the schema, in a folder the Tomcat
-   user can write to (SQLite writes lock files beside the database):
+1. Create the database file from the schema as the user that runs
+   Tomcat, in a folder that user owns, because SQLite writes its WAL and
+   shared-memory files beside the database:
 
    ```bash
-   sqlite3 /arch/config/archappl.sqlite < install_scripts/archappl_sqlite.sql
+   sudo -u <tomcat_user> sqlite3 /arch/config/archappl.sqlite < install_scripts/archappl_sqlite.sql
    ```
+
+   `<tomcat_user>` is the account the Tomcat instances run as.
 
 2. Define the DataSource with one connection, because SQLite locks the
    file on every write:
@@ -88,16 +92,39 @@ The other layers, `InMemoryPersistence`, `JDBM2Persistence` and
    ```xml
    <Resource name="jdbc/archappl"
        auth="Container"
+       factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
        type="javax.sql.DataSource"
        driverClassName="org.sqlite.JDBC"
        url="jdbc:sqlite:/arch/config/archappl.sqlite?journal_mode=WAL"
-       maxTotal="1"
+       maxActive="1"
        maxIdle="1"
-       maxActive="1"/>
+       minIdle="0"
+       initialSize="0"
+       maxWait="10000"
+       testOnBorrow="true"
+       validationInterval="30000"
+       validationQuery="SELECT 1"/>
    ```
 
+   `maxActive` is the pool size of the tomcat-jdbc factory named here.
+   Without a `factory` attribute Tomcat uses its DBCP2 factory, which
+   reads `maxTotal` instead.
+
    The write-ahead log (WAL) journal mode improves write performance; it
-   adds `.wal` and `.shm` files beside the database file.
+   adds `archappl.sqlite-wal` and `archappl.sqlite-shm` beside the
+   database file.
+
+## The deployment path
+
+[jeonghanlee/epicsarchiverap-env](https://github.com/jeonghanlee/epicsarchiverap-env)
+selects the backend with `DB_BACKEND` (`mariadb`, the default, or
+`sqlite`) in `../CONFIG_SITE.local`. It renders a Resource of the same
+form for the chosen backend; for SQLite it is the one above. Its
+`make sql.fill` step loads the schema from the source tree it builds,
+and runs as root for SQLite. For SQLite it rewrites `archappl_sqlite.sql`
+with `CREATE ... IF NOT EXISTS` and loads it with `sqlite3` as the
+service account, so a second run is harmless. The steps above are the
+manual equivalent.
 
 ## Checking the schema
 
@@ -112,6 +139,9 @@ For SQLite:
 ```bash
 sqlite3 /arch/config/archappl.sqlite ".tables"
 ```
+
+On the deployment path, `make sql.show` in the epicsarchiverap-env
+checkout lists the tables of the chosen backend.
 
 Without the schema the appliance still starts, but writing a PV's
 configuration fails, and the PVs are not archived again after a
