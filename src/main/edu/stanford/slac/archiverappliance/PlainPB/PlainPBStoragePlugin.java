@@ -1196,8 +1196,10 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                 FileTime ppPathTime = Files.getLastModifiedTime(actualPPPath);
                 if (logger.isDebugEnabled())
                     logger.debug("Modification time of src " + rawPathTime + " and of pp file " + ppPathTime);
-                if (rawPathTime.compareTo(ppPathTime) > 0) {
-                    logger.debug("Raw file is newer than PP file for " + expectedPPPath);
+                // File times have the resolution of the file system clock, so an equal time does not show that
+                // the PP file already holds the latest raw data; only a strictly newer PP file is trusted.
+                if (rawPathTime.compareTo(ppPathTime) >= 0) {
+                    logger.debug("Raw file is not older than PP file for " + expectedPPPath);
                     ret.add(new PPMissingPaths(rawPath, context.getPaths().get(expectedPPPath)));
                 }
             }
