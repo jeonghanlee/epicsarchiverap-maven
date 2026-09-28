@@ -22,6 +22,7 @@ import org.epics.archiverappliance.etl.ETLSource;
 import org.epics.archiverappliance.etl.StorageMetrics;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * Holds runtime state for ETL.
@@ -74,8 +76,28 @@ public final class PBThreeTierETLPVLookup {
 
     private final ETLMetrics applianceMetrics = new ETLMetrics();
 
+    /**
+     * The name of the environment variable that names a destination store ETL must not write to.
+     */
+    public static final String SKIP_ETL_FOR_STORE_ENV = "ARCHAPPL_SKIP_ETL_FOR_STORE";
+
+    /**
+     * The clock the lookup reads the current time from, and the reader it resolves environment variables with.
+     * Production uses the system clock and System::getenv; tests supply their own at the outermost boundary.
+     */
+    private final Clock clock;
+
+    private final Function<String, String> environmentReader;
+
     public PBThreeTierETLPVLookup(ConfigService configService) {
+        this(configService, Clock.systemUTC(), System::getenv);
+    }
+
+    public PBThreeTierETLPVLookup(
+            ConfigService configService, Clock clock, Function<String, String> environmentReader) {
         this.configService = configService;
+        this.clock = clock;
+        this.environmentReader = environmentReader;
         configServiceSyncThread = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "Config service sync thread"));
 
         configService.addShutdownHook(new ETLShutdownThread(this));
@@ -170,7 +192,7 @@ public final class PBThreeTierETLPVLookup {
                     // We schedule using the source granularity or a shift (8 hours) whichever is smaller.
                     int delaybetweenETLJobs =
                             Math.min(etlSource.getPartitionGranularity().getApproxSecondsPerChunk(), 8 * 60 * 60);
-                    Instant currentTime = Instant.now();
+                    Instant currentTime = Instant.now(clock);
                     // We then compute the start of the next partition.
                     Instant nextPartitionFirstSec =
                             TimeUtils.getNextPartitionFirstSecond(currentTime, etlSource.getPartitionGranularity());
@@ -180,7 +202,8 @@ public final class PBThreeTierETLPVLookup {
                     long initialDelay = Duration.between(nextExpectedETLRunInSecs, currentTime)
                             .getSeconds();
 
-                    if (System.getenv().containsKey("ARCHAPPL_SKIP_ETL_FOR_STORE")) {
+                    String skipStoreName = environmentReader.apply(SKIP_ETL_FOR_STORE_ENV);
+                    if (skipStoreName != null) {
                         // Temporarily set the initial delay to a distant future; meant for emergencies only.
                         // If you are having trouble with a particular store and it might take some time to fix
                         // you can restart the archiver with ARCHAPPL_SKIP_ETL_FOR_STORE set to the name of the
@@ -190,8 +213,7 @@ public final class PBThreeTierETLPVLookup {
                         // upstream store
                         // and your changes of running out of space with this setting are quite high.
                         // Needless to say; this is meant for emergencies only.
-                        String skipStoreName = System.getenv("ARCHAPPL_SKIP_ETL_FOR_STORE");
-                        if (skipStoreName != null && skipStoreName.equals(((StoragePlugin) etlDest).getName())) {
+                        if (skipStoreName.equals(((StoragePlugin) etlDest).getName())) {
                             initialDelay = 3600 * 24 * 365 * 10;
                             logger.error("Setting ETL for store " + skipStoreName + " for PV " + pvName
                                     + " to a very distant future");
