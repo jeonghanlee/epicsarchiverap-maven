@@ -93,6 +93,16 @@ public class ETLJob implements Runnable {
         long time4runPostProcessors = 0;
         long time4executePostETLTasks = 0;
 
+        // The run report is filled in as the job proceeds and handed to the lookup item in the finally block,
+        // so a job that ends early (the source cannot list its streams, the commit throws) still reports it.
+        boolean streamsCompleted = false;
+        int streamsReturned = 0;
+        int partitionsMoved = 0;
+        long bytesMoved = 0;
+        int streamsDeletedForSpace = 0;
+        boolean commitAttempted = false;
+        boolean commitSucceeded = false;
+
         // We create a brand new context for each run.
         try (ETLContext etlContext = new ETLContext()) {
             currentlyRunning = true;
@@ -125,8 +135,11 @@ public class ETLJob implements Runnable {
             long totalSrcBytes = 0;
             List<ETLInfo> ETLInfoList = curETLSource.getETLStreams(pvName, processingTime, etlContext);
             time4getETLStreams = time4getETLStreams + System.currentTimeMillis() - time1;
+            streamsCompleted = true;
             if (ETLInfoList != null) {
+                streamsReturned = ETLInfoList.size();
                 List<ETLInfo> movedList = new LinkedList<ETLInfo>();
+                List<ETLInfo> deletedForSpaceList = new LinkedList<ETLInfo>();
                 for (ETLInfo infoItem : ETLInfoList) {
                     if (logger.isDebugEnabled()) {
                         logger.debug("Processing ETLInfo with key = " + infoItem.getKey() + " for PV " + pvName
@@ -152,6 +165,7 @@ public class ETLJob implements Runnable {
                             if (outOfSpaceHandling == OutOfSpaceHandling.DELETE_SRC_STREAMS_WHEN_OUT_OF_SPACE) {
                                 logger.error("Not enough space on dest. Deleting src stream " + infoItem.getKey());
                                 movedList.add(infoItem);
+                                deletedForSpaceList.add(infoItem);
                                 lookupItem.outOfSpaceChunkDeleted();
                                 continue;
                             } else if (outOfSpaceHandling == OutOfSpaceHandling.SKIP_ETL_WHEN_OUT_OF_SPACE) {
@@ -162,6 +176,7 @@ public class ETLJob implements Runnable {
                                 if (lookupItem.getLifetimeorder() == 0) {
                                     logger.error("Not enough space on dest. Deleting src stream " + infoItem.getKey());
                                     movedList.add(infoItem);
+                                    deletedForSpaceList.add(infoItem);
                                     lookupItem.outOfSpaceChunkDeleted();
                                     continue;
                                 } else {
@@ -210,10 +225,19 @@ public class ETLJob implements Runnable {
                 // destination to this destination.
                 try {
                     long time7 = System.currentTimeMillis();
+                    commitAttempted = true;
                     boolean commitSuccessful = curETLDest.commitETLAppendData(pvName, etlContext);
                     time4commitETLAppendData = time4commitETLAppendData + System.currentTimeMillis() - time7;
+                    commitSucceeded = commitSuccessful;
 
                     if (commitSuccessful) {
+                        streamsDeletedForSpace = deletedForSpaceList.size();
+                        for (ETLInfo infoItem : movedList) {
+                            if (!deletedForSpaceList.contains(infoItem)) {
+                                partitionsMoved++;
+                                bytesMoved += infoItem.getSize();
+                            }
+                        }
                         // Now that ETL processing has completed for the current
                         // event time and PV name being processed, loop through
                         // the list of ETLInfo elements containing information
@@ -263,6 +287,14 @@ public class ETLJob implements Runnable {
         } catch (IOException ex) {
             logger.error("IOException processing ETL for pv " + lookupItem.getPvName(), ex);
         } finally {
+            lookupItem.setLastRunReport(new ETLRunReport(
+                    streamsCompleted,
+                    streamsReturned,
+                    partitionsMoved,
+                    bytesMoved,
+                    streamsDeletedForSpace,
+                    commitAttempted,
+                    commitSucceeded));
             currentlyRunning = false;
         }
     }

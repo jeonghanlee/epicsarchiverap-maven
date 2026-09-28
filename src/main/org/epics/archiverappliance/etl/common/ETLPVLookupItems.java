@@ -43,6 +43,7 @@ public class ETLPVLookupItems {
 	
 	private int numberofTimesWeETLed = 0;
 	private ScheduledFuture<?> cancellingFuture;
+	private volatile ETLRunReport lastRunReport;
 	
 	private OutOfSpaceHandling outOfSpaceHandling;
 	private long outOfSpaceChunksDeleted = 0;
@@ -208,6 +209,17 @@ public class ETLPVLookupItems {
 
 	public long getTime4checkSizes() {
 		return time4checkSizes;
+	}
+
+	/**
+	 * @return what the last ETL job of this PV and transition did, or null before the first job
+	 */
+	public ETLRunReport getLastRunReport() {
+		return lastRunReport;
+	}
+
+	public void setLastRunReport(ETLRunReport lastRunReport) {
+		this.lastRunReport = lastRunReport;
 	}
 
 	/**
