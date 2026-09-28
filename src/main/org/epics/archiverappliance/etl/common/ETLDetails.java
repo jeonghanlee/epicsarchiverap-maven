@@ -7,7 +7,7 @@ import org.epics.archiverappliance.config.ConfigService;
 import java.text.DecimalFormat;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.time.Instant;
 
 public class ETLDetails implements Details {
 
@@ -43,11 +43,13 @@ public class ETLDetails implements Details {
                         "ETL " + lookupItem.getLifetimeorder() + " last job took (ms)",
                         Long.toString(lookupItem.getLastETLTimeWeSpentInETLInMilliSeconds())));
             }
+            ETLPassDriver driver = configService.getETLLookup().getDriverFor(lookupItem);
+            Instant nextPlannedAt = driver == null ? null : driver.getNextPlannedAt();
             statuses.add(metricDetail(
                     "ETL " + lookupItem.getLifetimeorder() + " next job runs at",
-                    TimeUtils.convertToHumanReadableString(
-                            lookupItem.getCancellingFuture().getDelay(TimeUnit.SECONDS)
-                                    + (TimeUtils.now().toEpochMilli() / 1000))));
+                    nextPlannedAt == null
+                            ? "not scheduled"
+                            : TimeUtils.convertToHumanReadableString(nextPlannedAt.getEpochSecond())));
             if (lookupItem.getNumberofTimesWeETLed() != 0) {
                 statuses.add(metricDetail(
                         "ETL " + lookupItem.getLifetimeorder() + " total time performing ETL(ms)",

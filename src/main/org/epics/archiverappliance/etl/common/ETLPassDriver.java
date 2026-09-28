@@ -7,6 +7,7 @@ import org.epics.archiverappliance.common.PartitionGranularity;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +30,8 @@ import java.util.function.Function;
  * start of the last pass, it is the earliest grid time later than the clock.
  * <p>
  * Every job runs under its own catch, and the pass record is closed and the next firing computed in a finally block,
- * so a failed job never leaves the driver without a next firing.
+ * so a failed job never leaves the driver without a next firing. Tasks queued with {@link #enqueueIfRunning} while a
+ * pass runs (the consolidation of a paused or deleted PV) run on the worker thread between two jobs of the pass.
  */
 public final class ETLPassDriver {
     private static final Logger logger = LogManager.getLogger(ETLPassDriver.class.getName());
@@ -58,6 +60,9 @@ public final class ETLPassDriver {
     private boolean armed = false;
     private Instant armedAt = null;
     private boolean running = false;
+    private Future<ETLPassRecord> currentPass = null;
+    private String currentJobPv = null;
+    private final ArrayDeque<Runnable> betweenJobs = new ArrayDeque<>();
     private volatile boolean stopped = false;
     private Instant nextPlannedAt = null;
     private ETLPassRecord lastCompleted = null;
@@ -162,7 +167,48 @@ public final class ETLPassDriver {
         Instant planned = armed ? armedAt : nextPlannedAt;
         armed = false;
         running = true;
-        return worker.submit(() -> runPass(planned));
+        currentPass = worker.submit(() -> runPass(planned));
+        return currentPass;
+    }
+
+    /** The future of the running pass, or null when none runs. */
+    public synchronized Future<ETLPassRecord> getCurrentPass() {
+        return running ? currentPass : null;
+    }
+
+    /** The PV whose job the running pass is executing, or null between jobs and when no pass runs. */
+    public synchronized String getCurrentJobPv() {
+        return currentJobPv;
+    }
+
+    /**
+     * Queues a task to run on the worker thread between two jobs of the running pass.
+     *
+     * @return false, and the task is not queued, when no pass runs; the caller then runs it elsewhere
+     */
+    public synchronized boolean enqueueIfRunning(Runnable task) {
+        if (!running) {
+            return false;
+        }
+        betweenJobs.add(task);
+        return true;
+    }
+
+    /** Removes and returns every task still queued for the running pass. */
+    public synchronized List<Runnable> takeQueued() {
+        List<Runnable> tasks = new ArrayList<>(betweenJobs);
+        betweenJobs.clear();
+        return tasks;
+    }
+
+    private void runQueued() {
+        for (Runnable task : takeQueued()) {
+            try {
+                task.run();
+            } catch (Throwable t) {
+                logger.error("Exception in a task queued between ETL jobs of " + this, t);
+            }
+        }
     }
 
     public synchronized boolean isRunning() {
@@ -228,6 +274,7 @@ public final class ETLPassDriver {
                     }
                     break;
                 }
+                runQueued();
                 ETLPVLookupItems item = pvs.get(pvName);
                 if (item == null) {
                     synchronized (this) {
@@ -252,11 +299,15 @@ public final class ETLPassDriver {
             Instant endedAt = clock.instant();
             boolean overrun = endedAt.isAfter(nextGridAfter(planned));
             Instant after = planned.isAfter(endedAt) ? planned : endedAt;
+            List<Runnable> leftover;
             synchronized (this) {
                 record = progress.toRecord(endedAt, overrun, cadenceSeconds);
                 lastCompleted = record;
                 inProgress = null;
                 running = false;
+                currentPass = null;
+                leftover = new ArrayList<>(betweenJobs);
+                betweenJobs.clear();
                 completedPasses++;
                 busyMillisTotal += record.busyMillis();
                 long day = Math.floorDiv(startedAt.getEpochSecond(), SECONDS_PER_DAY);
@@ -264,12 +315,22 @@ public final class ETLPassDriver {
                 nextPlannedAt = nextGridAfter(after);
             }
             logger.debug("ETL pass of transition " + transitionIndex + " cadence " + cadenceSeconds + " s: " + record);
+            for (Runnable task : leftover) {
+                try {
+                    task.run();
+                } catch (Throwable t) {
+                    logger.error("Exception in a task queued between ETL jobs of " + this, t);
+                }
+            }
         }
         return record;
     }
 
     private void runJob(ETLPVLookupItems item, Instant processingTime, Progress progress) {
         ETLJob job = new ETLJob(item, processingTime);
+        synchronized (this) {
+            currentJobPv = item.getPvName();
+        }
         long start = System.nanoTime();
         boolean aborted = false;
         try {
@@ -280,6 +341,7 @@ public final class ETLPassDriver {
         }
         long millis = (System.nanoTime() - start) / 1_000_000;
         synchronized (this) {
+            currentJobPv = null;
             progress.addJob(item.getPvName(), millis, item.getLastRunReport(), job.getExceptionFromLastRun(), aborted);
         }
     }
