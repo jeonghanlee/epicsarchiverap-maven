@@ -2009,7 +2009,7 @@ Out of scope: the etl ERROR bursts while a store is unwritable, discussed separa
 
 - D31 (journald collects; the access log is kept as a file with maxDays=90).
 - Owner decision (2026-09-26): one record per request is enough; lower the per-request lines to DEBUG and leave the per-request record to the access log.
-- Correction (2026-09-27): the soak measured about eight INFO lines per request, not two; the five calls of this item cover three of them, and the remaining call sites (DataRetrievalServlet 'For the complete request', MergeDedupConsumer 'Found a total of' and 'was an empty stream', PBOverHTTPStoragePlugin 'URL to fetch data is', RetrievalState 'Found a data source') stay at INFO after d9250d23. Owner decision (2026-09-28): this item stays Complete on its own criteria; the remaining call sites are Backlog M29.
+- Correction (2026-09-27, projected to #10 on 2026-09-28): the soak measured about eight INFO lines per request, not two; the five calls of this item cover three of them, and the remaining call sites (DataRetrievalServlet 'For the complete request', MergeDedupConsumer 'Found a total of' and 'was an empty stream', PBOverHTTPStoragePlugin 'URL to fetch data is', RetrievalState 'Found a data source') stay at INFO after d9250d23. Owner decision (2026-09-28): this item stays Complete on its own criteria; the remaining call sites are Backlog M29.
 
 ##### Implementation Plan
 
@@ -2047,7 +2047,7 @@ GitHub Milestone: none
 Observed State: closed
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-09-27 (gh issue view 10 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
+Last Compared: 2026-09-28 (gh issue view 10 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,assignees; body re-projected 2026-09-28 with the corrected per-request count and the pointer to #13)
 
 #### M25 - ETL pass scheduler in place of per-PV timers
 
@@ -2360,7 +2360,7 @@ Last Compared: 2026-09-28 (gh issue view 12 --repo jeonghanlee/epicsarchiverap-m
 
 Origin: daff1b7 / M29
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #13
 Status: Not started
 
 ##### Summary
@@ -2412,19 +2412,19 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: Lower the remaining per-request retrieval INFO lines
+Labels: enhancement
 GitHub Milestone: none
-Observed State: none
-Observed Labels: none
+Observed State: open
+Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: never
+Last Compared: 2026-09-28 (gh issue view 13 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,assignees)
 
 #### M30 - ETLDetails post-processor time shown under the wrong label
 
 Origin: daff1b7 / M30
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #14
 Status: Not started
 
 ##### Summary
@@ -2474,19 +2474,19 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: Show the post-ETL-tasks time under its own label in ETLDetails
+Labels: bug
 GitHub Milestone: none
-Observed State: none
-Observed Labels: none
+Observed State: open
+Observed Labels: bug
 Observed Milestone: none
-Last Compared: never
+Last Compared: 2026-09-28 (gh issue view 14 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,assignees)
 
 #### M31 - PlainPB stale-file age uses 60 instead of 1000 for seconds to milliseconds
 
 Origin: daff1b7 / M31
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #15
 Status: Not started
 
 ##### Summary
@@ -2537,19 +2537,19 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: Compare the PlainPB stale-file age in one unit
+Labels: bug
 GitHub Milestone: none
-Observed State: none
-Observed Labels: none
+Observed State: open
+Observed Labels: bug
 Observed Milestone: none
-Last Compared: never
+Last Compared: 2026-09-28 (gh issue view 15 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,assignees)
 
 #### M32 - Unknown OutOfSpaceHandling value leaves PVs without ETL
 
 Origin: daff1b7 / M32
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #16
 Status: Not started
 
 ##### Summary
@@ -2599,13 +2599,13 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: Fall back to the default OutOfSpaceHandling on an unknown value
+Labels: bug
 GitHub Milestone: none
-Observed State: none
-Observed Labels: none
+Observed State: open
+Observed Labels: bug
 Observed Milestone: none
-Last Compared: never
+Last Compared: 2026-09-28 (gh issue view 16 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,assignees)
 
 
 ## Assignment History
