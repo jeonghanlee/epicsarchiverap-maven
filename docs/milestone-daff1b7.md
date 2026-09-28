@@ -44,7 +44,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M22 | Local appliance launcher in one folder | Milestone | Not started | No | M13 | One bash script starts the four WARs of a local build as four Tomcat instances on SQLite, with every file under one temporary folder and no systemd; BPL and a PV archive round trip answer; [detail](#m22---local-appliance-launcher-in-one-folder) |
 | Phase 2 | M23 | Code defects found while rewriting the docs | Milestone | Complete | No | | Each listed defect is fixed and verified, or kept with a recorded reason; [detail](#m23---code-defects-found-while-rewriting-the-docs) |
 | Phase 2 | M24 | Per-request retrieval logging at DEBUG | Milestone | Complete | No | D31 | The five retrieval lines written for every data request log at DEBUG; a deployed retrieval WAR writes none of those a single-PV request passes through at the default level; the build and the default suite pass; [detail](#m24---per-request-retrieval-logging-at-debug) |
-| Phase 2 | M25 | ETL pass scheduler in place of per-PV timers | Milestone | Not started | Yes | | The design of docs/design-etl-pass-scheduler.md is implemented: one pass driver per (transition index, cadence) fires on a fixed grid, the reported ETL values come from pass records, and the default suite and the slow-group test pass; [detail](#m25---etl-pass-scheduler-in-place-of-per-pv-timers) |
+| Phase 2 | M25 | ETL pass scheduler in place of per-PV timers | Milestone | In progress | No | | The design of docs/design-etl-pass-scheduler.md is implemented: one pass driver per (transition index, cadence) fires on a fixed grid, the reported ETL values come from pass records, and the default suite and the slow-group test pass; [detail](#m25---etl-pass-scheduler-in-place-of-per-pv-timers) |
 | Phase 2 | M26 | etl error bursts and mgmt workflow tick logging | Milestone | Not started | Yes | D31 | A failing store is reported in the settled bounded form, and the settled mgmt tick lines leave the default level; [detail](#m26---etl-error-bursts-and-mgmt-workflow-tick-logging) |
 | Phase 2 | M27 | Reduced bins missing after ETL with a post-processor | Milestone | Complete | No | | The cause of the reduced-bin shortfall in ETLPostProcessorTest is found and fixed, and the test and the default suite pass on repeated runs; [detail](#m27---reduced-bins-missing-after-etl-with-a-post-processor) |
 | Phase 2 | M28 | ETL pass scheduler soak on the deploy path | Milestone | Blocked | No | M25, G4 | The ansible-provision lab runs the pass scheduler of M25 through the aa-env deploy path on the soak chain and on the aa-env default chain: passes fire on the grid, the reported rows read as designed, the unit's stop time is measured, and the comparison with the 2026-09-24 to 2026-09-26 run is recorded; [detail](#m28---etl-pass-scheduler-soak-on-the-deploy-path) |
@@ -2058,7 +2058,7 @@ Last Compared: 2026-09-28 (gh issue view 10 --repo jeonghanlee/epicsarchiverap-m
 Origin: daff1b7 / M25
 Identity History: renamed 2026-09-27 from "ETL STS-to-MTS job time growth" when the soak figures showed the growth was the metric, not ETL; renamed 2026-09-27 from "ETL last-job metric reports a running sum" when the design review found the per-PV timers to be the cause and replaced them with one pass driver per transition
 GitHub Issue: #11
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -2091,9 +2091,9 @@ Out of scope: what one ETL job moves and how (ETLJob.processETL, the store plugi
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-09-28, owner acceptance of the eight-step plan committed at d4ee97bc
+Implementation Authorization: 2026-09-28, owner authorization of the same plan
 Superseded Plan Artifacts: the investigation plan of 2026-09-26 (find what the job time grows with) and the metric-fix plan of 2026-09-27 (pass delimiter, reproduce, initial delay), both answered by the design; the first pass-driver plan of 2026-09-27 (driver before job reporting, futures removed before the cut-over), reordered 2026-09-28
 
 Each step is one commit and ends with the default suite green. The only failing-before evidence is step 1: the driver and the pass record are new classes, so their tests are acceptance tests that cannot run on HEAD.
@@ -2127,7 +2127,7 @@ Each step is one commit and ends with the default suite green. The only failing-
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | Not run | JDK 21, wrapper Maven | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven, HEAD | Pending | none |
+| T2 | 2026-09-28 05:03 to 05:04 UTC | OpenJDK 21.0.12.1, wrapper Maven, HEAD d4ee97bc, no code change | Pass | A temporary JUnit test on the HEAD tree (not committed): STS PlainPB PARTITION_5MIN, MTS PARTITION_HOUR, default hold; (1) 50 PVs registered through ConfigServiceForTests, then manualControlForUnitTests, one 1 Hz sample per second over four 5-minute partitions from the start of the year, ETLExecutor.runETLs three times as of year start plus 5 min 10 s, 10 min 10 s and 15 min 10 s, reading ETLMetricsForLifetime(0).getApproximateLastGlobalETLTimeInMillis after each: 5 ms after the registration runs, then 70, 102, 115 ms against per-pass job sums of 65, 32, 13 ms; every value equalled the running sum of all jobs so far, while every pass moved one partition for all 50 PVs; (2) one PV registered with an appender capturing PBThreeTierETLPVLookup at DEBUG: within the bounded wait the run count read 1 (job 3 ms), the log read "Scheduled ETL job for ... with initial delay of -366 and between job delay of 300", and getCancellingFuture().getDelay read 299 s. Both assertions held (surefire: 2 tests, 0 failures). The method above is enough to rerun it; the test source is not kept. |
 | T3 | Not run | JDK 21, wrapper Maven | Pending | none |
 | T4 | Not run | JDK 21, wrapper Maven | Pending | none |
 | T5 | Not run | JDK 21, wrapper Maven | Pending | none |
