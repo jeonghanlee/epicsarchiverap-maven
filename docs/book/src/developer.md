@@ -3,7 +3,8 @@
 ## Scope
 
 This page covers the source layout, the test sets and how to run them,
-the documentation build, and the PB file and PB/HTTP formats.
+the local appliance launcher, the documentation build, and the PB file
+and PB/HTTP formats.
 
 **Out of scope:** the details of the test wiring, which `TESTING.md` at
 the repository root describes.
@@ -39,6 +40,92 @@ the repository root describes.
   run after `package`.
 - The tests write their stores under `target/test-storage/` and their
   log to `target/arch.log`.
+
+## Run a local appliance
+
+The development launcher runs management, engine, ETL, and retrieval in
+four foreground Tomcat instances. One run folder holds their configuration,
+SQLite database, storage, logs, and temporary files. The folder remains
+after shutdown and can be reused for the next run.
+
+Prerequisites:
+
+- Linux with Bash 4 or later and JDK 21.
+- Python 3.9 or later, `sqlite3`, `curl`, `unzip`, `tar`, `sha512sum`,
+  `flock`, and standard coreutils.
+- A readable Tomcat 9 installation, or HTTPS access to the Apache archive.
+- Free loopback ports 17665 through 17668 and 17670.
+
+1. In the repository root, build the four WARs:
+
+   ```bash
+   ./mvnw -B -ntp clean package
+   ```
+
+2. Start the appliance with a dedicated run folder:
+
+   ```bash
+   scripts/run-local-appliance.bash <run_folder>
+   ```
+
+   Replace `<run_folder>` with an absolute or relative folder path. Quote
+   paths containing spaces. The launcher prints each component URL, PID,
+   and log path, then prints `Appliance ready.` when startup completes.
+
+3. To stop the appliance, press Ctrl-C in its terminal or send SIGTERM to
+   the PID in `<run_folder>/launcher.pid`. Wait for the launcher to exit.
+
+4. To resume archiving, repeat step 2 with the same folder. The launcher
+   retains PV configuration and stored samples in that folder.
+
+For verification, open `http://127.0.0.1:17665/mgmt/bpl/getApplianceInfo`
+after the ready message. It returns the appliance configuration as JSON.
+Use the management page to add PVs from a separately running IOC.
+Channel Access and PVAccess discovery default to loopback;
+`EPICS_CA_ADDR_LIST` and `EPICS_PVA_ADDR_LIST` select other addresses.
+
+| Component | Default URL | Console log relative to the run folder |
+| --- | --- | --- |
+| Management | `http://127.0.0.1:17665/mgmt/` | `instances/mgmt/logs/console.log` |
+| Engine | `http://127.0.0.1:17666/engine/` | `instances/engine/logs/console.log` |
+| ETL | `http://127.0.0.1:17667/etl/` | `instances/etl/logs/console.log` |
+| Retrieval | `http://127.0.0.1:17668/retrieval/` | `instances/retrieval/logs/console.log` |
+
+### Tomcat selection and options
+
+`--tomcat-home` selects an installation explicitly. Otherwise the launcher
+checks `TOMCAT_HOME`, then `CATALINA_HOME`, standard installation paths,
+and its retained download. An invalid explicit installation is an error.
+When no usable Tomcat 9 is found, the launcher downloads version 9.0.122
+inside the run folder and verifies its Apache SHA-512 checksum before
+extraction. An existing installation remains unchanged.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `--war-dir DIR` | `target` | One complete build's four WARs |
+| `--tomcat-home DIR` | automatic selection | Existing readable Tomcat 9 |
+| `--port-base PORT` | `17665` | Four HTTP ports starting at `PORT`; cluster port at `PORT+5` |
+| `--start-timeout SEC` | `180` | Startup timeout, 1 through 86400 seconds |
+| `--stop-timeout SEC` | `300` | Total graceful shutdown timeout, 1 through 86400 seconds |
+
+### Folder ownership and shutdown
+
+The launcher holds an exclusive lock throughout preparation, operation,
+and shutdown. A second invocation using the same folder, including a
+symlink alias, is rejected. Keep `.launcher.lock` in place. Symlinks
+inside the run folder are unsupported.
+
+Shutdown proceeds in reverse component order under one shared deadline.
+At that deadline, the launcher sends SIGKILL to remaining owned JVMs and
+allows five seconds to reap them. A forced stop returns failure and can
+leave buffered samples unflushed; the database, stores, and logs remain.
+Ordinary SIGINT and SIGTERM stops return 130 and 143, respectively.
+
+`children.tsv` records each owned PID with its process start identity.
+If an owned process survives shutdown, the launcher refuses to reuse the
+folder while that process remains alive. Inspect the retained logs and
+process before restarting. The launcher does not manage production
+services or systemd units.
 
 ## Tools
 
