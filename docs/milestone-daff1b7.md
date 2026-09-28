@@ -2066,7 +2066,7 @@ The ETL metric "Approximate time taken by last job in ETL(0>1)" (ETLMetrics.java
 
 ##### Scope
 
-Implement docs/design-etl-pass-scheduler.md: the pass driver, the ticker, the pass record and the reported rows, the job reporting in ETLJob, the consolidation queue of pause and delete, the shutdown order, the environment reader for ARCHAPPL_SKIP_ETL_FOR_STORE, and the tests its Testing section names; align the book pages that describe the ETL metrics rows and the skip-store variable.
+Implement docs/design-etl-pass-scheduler.md: the pass driver, the ticker, the pass record and the reported rows, the job reporting in ETLJob, the consolidation queue of pause and delete, the shutdown order, the environment reader for ARCHAPPL_SKIP_ETL_FOR_STORE, and the tests its Testing section names; align the book page that describes the skip-store variable (docs/book/src/configuration.md).
 
 Out of scope: what one ETL job moves and how (ETLJob.processETL, the store plugins, hold and gather, post-processors); aa-env's store variables and partition settings; host sizing; ETL throughput (ETLPassWorkers stays 1); the consolidate BPL through ETLExecutor; the carry-forward items of the design review, recorded in the Backlog when the owner directs.
 
@@ -2084,6 +2084,7 @@ Out of scope: what one ETL job moves and how (ETLJob.processETL, the store plugi
 - Owner decision (2026-09-27): fix the metric rather than only document it; tracked as #11.
 - Owner decision (2026-09-27): replace the per-PV timers with a pass driver per the design; the design's Decisions table D1 to D15 records the rulings (driver key, processing time, tick, metrics keys, skip-store scope, shutdown bound, failure definition, consolidation queue, slow-group test, removal of the per-index sums).
 - Design review (2026-09-27): two lane rounds, two paired debates and a bounded fresh-context check; closure report accepted 2026-09-27 20:07 (session work/review_sessions/20260927_160405_etl-pass-scheduler, removed after the closure commit; the design document carries the decisions).
+- Owner decision (2026-09-28): the plan is ordered so that new classes are built and tested before one cut-over commit, each step leaving the default suite green; the before-evidence of step 1 is a temporary test on HEAD that is not committed, its values and source path recorded in T2.
 - Owner decision (2026-09-27): the soak on the deploy path is its own item, M28, depending on this item and on G4, so this row is not Blocked while the code is written; the design's Register sentence that made the soak gate M25 is superseded by that split (the design text is aligned in the same commit).
 - Owner decision (2026-09-27): the two test gaps the design review carried forward (the Current pass and Weekly usage rows; the shutdown consolidation under the skip store) are covered here by T10, T5 and T9, extending the design's Testing items 11, 3 and 7.
 - GitHub (2026-09-28): #11 title and body re-projected to this scope under Issue scope.
@@ -2093,27 +2094,29 @@ Out of scope: what one ETL job moves and how (ETLJob.processETL, the store plugi
 Plan Status: draft
 Plan Acceptance: none
 Implementation Authorization: none
-Superseded Plan Artifacts: the investigation plan of 2026-09-26 (find what the job time grows with) and the metric-fix plan of 2026-09-27 (pass delimiter, reproduce, initial delay), both answered by the design
+Superseded Plan Artifacts: the investigation plan of 2026-09-26 (find what the job time grows with) and the metric-fix plan of 2026-09-27 (pass delimiter, reproduce, initial delay), both answered by the design; the first pass-driver plan of 2026-09-27 (driver before job reporting, futures removed before the cut-over), reordered 2026-09-28
 
-1. Record the before-evidence on HEAD (docs/design-etl-pass-scheduler.md, Register): the growing last-job value across passes of a 5-minute source partition, and the negative computed initialDelay with the job run at registration. Closes with T2.
-2. ETLPassDriver and ETLPassTicker: grid, tick, start(), ordering rule, pass record, nextPlannedAt, completed-pass count and busy totals, per-day totals; PBThreeTierETLPVLookup creates them in postStartup and stops them for tests. Closes with T1 and T4.
-3. ETLJob reporting and ETLPVLookupItems: streams returned, partitions moved, bytes, streams deleted for space, commit result, getETLStreams completion; removal of the futures and of the writes into ETLMetricsForLifetime. Closes with T5 and T6.
-4. ETLMetrics details() and metrics() from the records; ETLDetails next-job row from the driver; ETLMetricsForLifetime reduced to the FileStore cache (ConcurrentHashMap) and getLifeTimeId. Closes with T5.
-5. Consolidation queue of pause and delete on the index worker thread, the environment reader for ARCHAPPL_SKIP_ETL_FOR_STORE in the pass and the consolidation paths, the shutdown order with ETLPassStopWaitSeconds. Closes with T7, T8, T9.
+Each step is one commit and ends with the default suite green. The only failing-before evidence is step 1: the driver and the pass record are new classes, so their tests are acceptance tests that cannot run on HEAD.
+
+1. Before-evidence on HEAD, with no code change: run a temporary test on the HEAD tree (not committed) that runs ETLJob several times over PlainPB stores with a 5-minute source partition and reads the ETL(0>1) last-job value after each run, then registers one PV and, within a bounded wait until the run count reads 1, reads getNumberofTimesWeETLed, the DEBUG initialDelay line of addETLJobs and getCancellingFuture().getDelay. Record the values, the HEAD commit, and the method in enough detail to rerun it (fixture granularity, number of runs, the log line read) in Verification Results. Closes with T2.
+2. ETLJob reporting, behavior unchanged: whether getETLStreams completed, streams returned, partitions moved (appended and committed), their bytes, streams deleted for space, and the commit result, stored on ETLPVLookupItems; the existing writes into ETLMetricsForLifetime stay until step 5. Closes with T6 (job part) and T3.
+3. The Clock and environment-reader seams, added beside the current code paths without changing them. Closes with T3.
+4. ETLPassDriver, ETLPassTicker and the pass record as new classes, not yet wired into PBThreeTierETLPVLookup; their tests drive them directly over PlainPB stores. Closes with T1, T4, T5 (record part) and T6 (pass part).
+5. Cut-over: PBThreeTierETLPVLookup creates the drivers, the ticker and one worker thread per transition index in postStartup and keeps the sticky test stop; the per-PV futures go; pause and delete queue their consolidation on the worker thread; the shutdown order with ETLPassStopWaitSeconds; ETLDetails reads the next-job time from the driver; ETLMetrics rows and keys come from the records; ETLMetricsForLifetime keeps only getLifeTimeId and the FileStore cache. Closes with T5 (rows part), T7, T8, T9 and T3, with every existing ETL test still passing.
 6. The slow-group in-progress test. Closes with T10.
-7. Book pages: the ETL metrics rows and the skip-store variable in docs/book/src (configuration.md line 29 and the operating page if it lists the rows). Closes with T3.
-8. ./mvnw -B -ntp clean verify. Closes with T3.
+7. Book page: docs/book/src/configuration.md line 29, which describes ARCHAPPL_SKIP_ETL_FOR_STORE, gains the widened skip; no book page lists the ETL metrics rows. Closes with T3.
+8. ./mvnw -B -ntp clean verify and the Maven workflow on the pushed commit; then M28 is handed to LAB-ansible-provision. Closes with T3.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
 | T1 | Unit, real jobs | Design Testing item 1: driver over PlainPB stores with a test Clock, ticks across three boundaries on a 5MIN and a 15MIN source, a stepping Clock for the overrun case | JDK 21, wrapper Maven | plannedAt, processingTime and the moved partition per pass as planned; the start-up pass first; overrun recorded; a backwards Clock reschedules |
-| T2 | Before-evidence on HEAD | Design Register: the last-job value over several passes of a 5-minute source; after one registration, within a bounded wait until the run count reads 1, the DEBUG initialDelay and getDelay | JDK 21, wrapper Maven, HEAD before the change | The value grows with each pass; initialDelay negative in the log, run count 1, getDelay between cadence minus the job duration and cadence |
+| T2 | Before-evidence on HEAD | Design Register, run as a temporary test on the HEAD tree and not committed (owner decision 2026-09-28): the last-job value over several passes of a 5-minute source; after one registration, within a bounded wait until the run count reads 1, the DEBUG initialDelay and getDelay | JDK 21, wrapper Maven, HEAD before the change | The value grows with each pass; initialDelay negative in the log, run count 1, getDelay between cadence minus the job duration and cadence |
 | T3 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
 | T4 | Unit, real jobs | Design Testing item 2: index 0 and index 1 due at the same tick | JDK 21, wrapper Maven | The index-1 pass starts after the index-0 pass ended; plannedAt unchanged |
-| T5 | Unit, real jobs | Design Testing item 3, extended: several PVs over two passes; ETLMetrics.details and metrics() read afterwards; the Weekly usage row after passes on two Clock days | JDK 21, wrapper Maven | Record sums, slowest PV, max partitions and busyMillis match the jobs; Passes so far 2; the average and the three keys from the records; the Weekly usage row equals the per-day totals over the counted seconds |
-| T6 | Unit, real jobs | Design Testing item 4: destination root and source root as regular files | JDK 21, wrapper Maven | The pass completes, jobsFailed counts the job, nextPlannedAt set; a usable folder reports a skip |
+| T5 | Unit, real jobs | Design Testing item 3, extended: several PVs over two passes; ETLMetrics.details and metrics() read afterwards; the Weekly usage row after passes on two Clock days (record part: the record sums, slowest PV, max partitions and busyMillis; rows part: ETLMetrics.details and metrics() and the Weekly usage row) | JDK 21, wrapper Maven | Record sums, slowest PV, max partitions and busyMillis match the jobs; Passes so far 2; the average and the three keys from the records; the Weekly usage row equals the per-day totals over the counted seconds |
+| T6 | Unit, real jobs | Design Testing item 4: destination root and source root as regular files | JDK 21, wrapper Maven | The pass completes, jobsFailed counts the job, nextPlannedAt set; a usable folder reports a skip (job part: the ETLJob reports getETLStreams not completed, or streams returned larger than partitions moved; pass part: the pass completes, jobsFailed counts it, nextPlannedAt set) |
 | T7 | Unit, real jobs | Design Testing item 5: PV added between passes; PV registered after the start-up pass; deleteETLJobs between passes | JDK 21, wrapper Maven | In the next snapshot; joins the next planned pass; absent and consolidated |
 | T8 | Unit, real jobs | Design Testing item 6: environment reader returns the destination name unique to the test | JDK 21, wrapper Maven | No job writes to it in a pass or in the consolidation on delete; jobsSkipped counts the PVs |
 | T9 | Unit, real jobs | Design Testing item 7, extended: stop flag on an idle driver with ETLPassStopWaitSeconds 0; then the same with the environment reader returning the destination store name | JDK 21, wrapper Maven | A following tick starts no pass; the consolidation runs for every PV; with the skip set, the shutdown consolidation writes nothing to the named store and logs the count of PVs left unconsolidated |
@@ -2147,7 +2150,7 @@ GitHub Milestone: none
 Observed State: open
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-09-28 (gh issue view 11 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,assignees; title and body re-projected 2026-09-28)
+Last Compared: 2026-09-28 (gh issue view 11 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,assignees; title and body re-projected 2026-09-28, the book-page criterion narrowed to configuration.md the same day)
 
 #### M26 - etl error bursts and mgmt workflow tick logging
 
