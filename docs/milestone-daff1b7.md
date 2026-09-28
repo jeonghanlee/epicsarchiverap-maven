@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite). On 2026-09-22 the backlog (M17, M7, M10) was assigned to Phase 2, so Phase 2 now carries M12, M13, M17, M7, and the deferred M10, and the Backlog is empty. Sustained-operation evidence (2026-09-23, ansible-provision soak pilot at 3c96141d): 31.5 h continuous, STS-to-MTS ETL observed for all 11 pilot PVs including the jeonghanlee/epicsarchiverap-env#25 name shape, MTS-to-LTS pending 2026-09-24/25, zero restarts and flat memory; the pilot exposed an aa-env provisioning gap (jeonghanlee/epicsarchiverap-env#47: configuration schema not loaded, so PV configuration was not persisted there); aa-env closed #47 on 2026-09-23, the follow-up soak test found the schema loaded, and docs/book/src/persistence.md states the schema check. Single host, light workload and a 256M heap override, so capacity, retention, retrieval under load, connection pool and restart survival remain unmeasured. A follow-up soak and load test (2026-09-24 to 2026-09-26, same host class, 3c96141d with the schema loaded) measured restart survival, 903 PVs with the 256M heap and 6 h of retrieval load without failure, and found per-request INFO logging in retrieval and an ETL last-job metric that sums instead of reporting one pass; the M13 detail records the figures. Current (2026-09-25): M13 / T2 (MariaDB on the real deploy path) passed. On 2026-09-27 G2 closed on aa-env's landed SQLite deploy path (bbe0968), so M13 is Not started again, and its plan was revised, accepted and authorized the same day; M13 is Blocked on G4: T1 and T3 pass, and T4 and T5 wait for items M17 (deploying aa-env at or past bbe0968) and M18 (a SQLite species) of the ansible-provision register, tracked here as G4. M18 (logging model, D31) is Complete: its layout landed as a1155ef0, which closed aa-env's G14, and G3 closed on 2026-09-25. M19 (Tomcat log4j jar set, D32) is Complete: 9bbd69bf landed and was reported to aa-env for its G15. M18's layout moved to src/resources/main with monitorInterval in 67be91d7 so every site build ships it (aa-env G16). M20 (runtime log-level control, BPL) is Complete at 3070c518. G1 is Complete (Issues enabled 2026-09-24); the owner decided on 2026-09-25 to project the M rows to GitHub issues, as D2 and D3 require. M21 (issue #1, consolidateDataForPV for an unknown PV) is Complete at 25606494 with #1 closed. The open M rows were projected to GitHub issues on 2026-09-25 as summaries without milestone and decision IDs: M7 #2, M10 #3, M12 #4, M13 #5, M17 #6; completed rows are not projected. On 2026-09-26 M27 and M24 were projected as #9 and #10. On 2026-09-25 M22 and M23 were projected as #7 and #8, and the bodies of #3, #5 and #6 were brought in line with the code and the rewritten book. Next action: M12 is Ready; M17 is In progress under its accepted plan with steps 1 and 3 landed, and what remains of step 2 is T5, the Python BPL client check, which waits for M22, the local launcher that follows M13 (the TESTING.md and mvnw.cmd candidates were settled on 2026-09-25); M7 is Ready but its items wait on the owner's list; M13 is Blocked under its accepted plan: T1 and T3 pass, and T4 and T5 wait for G4, the ansible-provision deploy path for aa-env at or past bbe0968 with SQLite; M10 stays Deferred under D7. M23 (the code defects found while rewriting the docs) is Complete (2026-09-27): items 1 to 8 landed on 2026-09-26 in three groups (site configuration, retrieval request handling, mgmt UI and BPL) and #8 is closed; its item 9 moved to M12. M24 (per-request retrieval logging at DEBUG) is Complete (2026-09-27) with #10 closed. M27 (reduced bins missing after ETL with a post-processor, #9) was added the same day: ETLPostProcessorTest failed on the HEAD source because a PP file with the same modification time as its raw file was taken as up to date; the fix (compareTo >= 0 in PlainPBStoragePlugin, 9c46ce3d) landed, the default suite passes again, and M27 is Complete (2026-09-27) with #9 closed. M25 (the ETL last-job metric, which reports a running sum; taken over at aa-env's request, tracked as #11) and M26 (etl error bursts and mgmt workflow tick logging), both from the soak test, were added on 2026-09-26 with draft plans; the Backlog is empty.
+Next session entry point: M16 (mgmt API reference generated from code) is complete (2026-09-18): the reference is generated from the BPLServlet registry and @BPLEndpoint annotations into the mgmt WAR ui/api, replacing the scp/taglet/sphinx relay; M14 is complete (2026-09-18): svg_viewer is vendored as a committed viewer.zip and the build is offline-self-sufficient (a30d8cd3). M6 is complete (upstream selective adoption). M11 is complete: sqlite-jdbc runtime dependency added and the SQLite persistence path verified (2026-09-18); with M11 done, M13 (reframed 2026-09-18 to a selectable MariaDB/SQLite backend, both drivers kept, per the aa-env parallel decision) is unblocked and coordinated with aa-env. Nineteen units are applied (PR360, PR364, PR408, PR417, PR423, PR425, PR445, PR454, PR480, PR481, PR516, PR461, PR396, PR474, PR501, PR505, PR452, PR521, PR520 committed). PR433, PR385, PR400, PR405, and PR448 are skipped (PR385 superseded by the fork's backward cross-chunk retrieval, verified by GetDataAtTimeChunkBoundaryTest; PR400 a pure URLKey refactor with no behavior change; PR405 a JSONAware refactor fundamentally incompatible with the fork's diverged GetDataAtTime; PR448 would change the archiver's value-before-window retrieval convention). All 25 retained units are triaged (Tier A to D complete): 19 applied, 6 skipped (PR433, PR385, PR400, PR405, PR448, PR527). Three are excluded (PR429, PR458 by D26; PR359 by D27). Next: M6 selective adoption is done. M9 is complete (2026-09-19): docs migrated to an mdBook published live at https://jeonghanlee.github.io/epicsarchiverap-maven/ (D29; T1/T2/T3 Pass), Sphinx/Read the Docs retired. Narrative content currency for the single-instance fork is deferred to backlog M17 (D30). This retired Sphinx/Read the Docs and folded the docs pipeline out of M5, which now covers only the Maven CI workflow; M5 is complete (2026-09-19): the maven.yml run 35423900164 (commit b0fcbb61) landed green. Maven 3.9.16 is committed as d12382d1 with CI skipped; Wrapper startup and validate passed locally. Phase 1 is complete: with M5 closed, M7 (site-required features, no owner item list yet) and M10 (Ant removal, deferred by D7) moved to the backlog on 2026-09-19, leaving every Phase 1 row Complete; the next active work is Phase 2 (M12 backend pruning, M13 selectable MariaDB/SQLite). On 2026-09-22 the backlog (M17, M7, M10) was assigned to Phase 2, so Phase 2 now carries M12, M13, M17, M7, and the deferred M10, and the Backlog is empty. Sustained-operation evidence (2026-09-23, ansible-provision soak pilot at 3c96141d): 31.5 h continuous, STS-to-MTS ETL observed for all 11 pilot PVs including the jeonghanlee/epicsarchiverap-env#25 name shape, MTS-to-LTS pending 2026-09-24/25, zero restarts and flat memory; the pilot exposed an aa-env provisioning gap (jeonghanlee/epicsarchiverap-env#47: configuration schema not loaded, so PV configuration was not persisted there); aa-env closed #47 on 2026-09-23, the follow-up soak test found the schema loaded, and docs/book/src/persistence.md states the schema check. Single host, light workload and a 256M heap override, so capacity, retention, retrieval under load, connection pool and restart survival remain unmeasured. A follow-up soak and load test (2026-09-24 to 2026-09-26, same host class, 3c96141d with the schema loaded) measured restart survival, 903 PVs with the 256M heap and 6 h of retrieval load without failure, and found per-request INFO logging in retrieval and an ETL last-job metric that sums instead of reporting one pass; the M13 detail records the figures. Current (2026-09-25): M13 / T2 (MariaDB on the real deploy path) passed. On 2026-09-27 G2 closed on aa-env's landed SQLite deploy path (bbe0968), so M13 is Not started again, and its plan was revised, accepted and authorized the same day; M13 is Blocked on G4: T1 and T3 pass, and T4 and T5 wait for items M17 (deploying aa-env at or past bbe0968) and M18 (a SQLite species) of the ansible-provision register, tracked here as G4. M18 (logging model, D31) is Complete: its layout landed as a1155ef0, which closed aa-env's G14, and G3 closed on 2026-09-25. M19 (Tomcat log4j jar set, D32) is Complete: 9bbd69bf landed and was reported to aa-env for its G15. M18's layout moved to src/resources/main with monitorInterval in 67be91d7 so every site build ships it (aa-env G16). M20 (runtime log-level control, BPL) is Complete at 3070c518. G1 is Complete (Issues enabled 2026-09-24); the owner decided on 2026-09-25 to project the M rows to GitHub issues, as D2 and D3 require. M21 (issue #1, consolidateDataForPV for an unknown PV) is Complete at 25606494 with #1 closed. The open M rows were projected to GitHub issues on 2026-09-25 as summaries without milestone and decision IDs: M7 #2, M10 #3, M12 #4, M13 #5, M17 #6; completed rows are not projected. On 2026-09-26 M27 and M24 were projected as #9 and #10. On 2026-09-25 M22 and M23 were projected as #7 and #8, and the bodies of #3, #5 and #6 were brought in line with the code and the rewritten book. Next action: M12 is Ready; M17 is In progress under its accepted plan with steps 1 and 3 landed, and what remains of step 2 is T5, the Python BPL client check, which waits for M22, the local launcher that follows M13 (the TESTING.md and mvnw.cmd candidates were settled on 2026-09-25); M7 is Ready but its items wait on the owner's list; M13 is Blocked under its accepted plan: T1 and T3 pass, and T4 and T5 wait for G4, the ansible-provision deploy path for aa-env at or past bbe0968 with SQLite; M10 stays Deferred under D7. M23 (the code defects found while rewriting the docs) is Complete (2026-09-27): items 1 to 8 landed on 2026-09-26 in three groups (site configuration, retrieval request handling, mgmt UI and BPL) and #8 is closed; its item 9 moved to M12. M24 (per-request retrieval logging at DEBUG) is Complete (2026-09-27) with #10 closed. M27 (reduced bins missing after ETL with a post-processor, #9) was added the same day: ETLPostProcessorTest failed on the HEAD source because a PP file with the same modification time as its raw file was taken as up to date; the fix (compareTo >= 0 in PlainPBStoragePlugin, 9c46ce3d) landed, the default suite passes again, and M27 is Complete (2026-09-27) with #9 closed. M25 (taken over at aa-env's request, tracked as #11) and M26 (etl error bursts and mgmt workflow tick logging), both from the soak test, were added on 2026-09-26 with draft plans; M25 was widened on 2026-09-27 from the last-job metric to the ETL pass scheduler of docs/design-etl-pass-scheduler.md (design review closed 2026-09-27; plan draft, before-evidence runs on HEAD first), and its soak on the deploy path was split out as M28, Blocked on M25 and G4; the Backlog is empty.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -44,9 +44,10 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M22 | Local appliance launcher in one folder | Milestone | Not started | No | M13 | One bash script starts the four WARs of a local build as four Tomcat instances on SQLite, with every file under one temporary folder and no systemd; BPL and a PV archive round trip answer; [detail](#m22---local-appliance-launcher-in-one-folder) |
 | Phase 2 | M23 | Code defects found while rewriting the docs | Milestone | Complete | No | | Each listed defect is fixed and verified, or kept with a recorded reason; [detail](#m23---code-defects-found-while-rewriting-the-docs) |
 | Phase 2 | M24 | Per-request retrieval logging at DEBUG | Milestone | Complete | No | D31 | The five retrieval lines written for every data request log at DEBUG; a deployed retrieval WAR writes none of those a single-PV request passes through at the default level; the build and the default suite pass; [detail](#m24---per-request-retrieval-logging-at-debug) |
-| Phase 2 | M25 | ETL last-job metric reports a running sum | Milestone | Not started | Yes | | The ETL(0>1) last-job metric reports one pass's time for any source partition, and the per-PV ETL initial delay is confirmed or corrected; [detail](#m25---etl-last-job-metric-reports-a-running-sum) |
+| Phase 2 | M25 | ETL pass scheduler in place of per-PV timers | Milestone | Not started | Yes | | The design of docs/design-etl-pass-scheduler.md is implemented: one pass driver per (transition index, cadence) fires on a fixed grid, the reported ETL values come from pass records, and the default suite and the slow-group test pass; [detail](#m25---etl-pass-scheduler-in-place-of-per-pv-timers) |
 | Phase 2 | M26 | etl error bursts and mgmt workflow tick logging | Milestone | Not started | Yes | D31 | A failing store is reported in the settled bounded form, and the settled mgmt tick lines leave the default level; [detail](#m26---etl-error-bursts-and-mgmt-workflow-tick-logging) |
 | Phase 2 | M27 | Reduced bins missing after ETL with a post-processor | Milestone | Complete | No | | The cause of the reduced-bin shortfall in ETLPostProcessorTest is found and fixed, and the test and the default suite pass on repeated runs; [detail](#m27---reduced-bins-missing-after-etl-with-a-post-processor) |
+| Phase 2 | M28 | ETL pass scheduler soak on the deploy path | Milestone | Blocked | No | M25, G4 | The ansible-provision lab runs the pass scheduler of M25 through the aa-env deploy path on the soak chain and on the aa-env default chain: passes fire on the grid, the reported rows read as designed, the unit's stop time is measured, and the comparison with the 2026-09-24 to 2026-09-26 run is recorded; [detail](#m28---etl-pass-scheduler-soak-on-the-deploy-path) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -2047,67 +2048,90 @@ Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-09-27 (gh issue view 10 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
 
-#### M25 - ETL last-job metric reports a running sum
+#### M25 - ETL pass scheduler in place of per-PV timers
 
 Origin: daff1b7 / M25
-Identity History: renamed 2026-09-27 from "ETL STS-to-MTS job time growth" when the soak figures showed the growth was the metric, not ETL
+Identity History: renamed 2026-09-27 from "ETL STS-to-MTS job time growth" when the soak figures showed the growth was the metric, not ETL; renamed 2026-09-27 from "ETL last-job metric reports a running sum" when the design review found the per-PV timers to be the cause and replaced them with one pass driver per transition
 GitHub Issue: #11
 Status: Not started
 
 ##### Summary
 
-The ETL metric "Approximate time taken by last job in ETL(0>1)" (ETLMetrics.java line 74) does not show the last job: it is a running sum of per-PV ETL durations that resets only after 15 minutes without an update (ETLMetricsForLifetime.updateApproximateGlobalLastETLTime, lines 108-123). The ansible-provision soak and load test of 2026-09-24 to 2026-09-26 (M13 Dependencies; STS PARTITION_5MIN) read it rising about 9 s per hour to 277 s against the 300 s STS partition period, which was first taken as ETL falling behind. The other figures of the same metrics page, sent by LAB-ansible-provision on 2026-09-27, show that ETL kept up: the average time per ETL(0>1) run rose with the PV count (0.36 s at 500 PVs, 0.49 s at 903) and then stayed at 0.69 s, the "last job" value equalled runs times that average at every sample (401 x 0.69 s = 277 s at 2026-09-26T18:50Z), and the estimated weekly usage stayed at 0.18 %. aa-env asked aa-maven to own the item; ansible-provision sent the corrected reading, and aa-env was told of the re-scope.
+The ETL metric "Approximate time taken by last job in ETL(0>1)" (ETLMetrics.java line 74) does not show the last job: it is a running sum of per-PV ETL durations that resets only after 15 minutes without an update (ETLMetricsForLifetime.updateApproximateGlobalLastETLTime, lines 108-123). The ansible-provision soak and load test of 2026-09-24 to 2026-09-26 (M13 Dependencies; STS PARTITION_5MIN) read it rising about 9 s per hour to 277 s against the 300 s STS partition period, which was first taken as ETL falling behind. The other figures of the same metrics page show that ETL kept up: the "Average time spent in ETL(0>1) (s/run)" row is the running sum divided by the largest per-PV run count, that is the pass count, so it is the busy time of one pass over all PVs (0.36 s at 500 PVs, 0.49 s at 903, then 0.69 s as lifetime values; the growth of the sum per run gives one pass at about 0.43 s at 500 PVs, 0.68 to 1.03 s at 903 PVs, 0.78 s under the 6 h retrieval load, 0.69 s in the final hold; LAB-ansible-provision and aa-env corrections of 2026-09-27, jeonghanlee/epicsarchiverap-env#50), the "last job" value equalled runs times that average at every sample (401 x 0.69 s = 277 s at 2026-09-26T18:50Z), and the estimated weekly usage stayed at 0.18 %. The design review of 2026-09-27 (docs/design-etl-pass-scheduler.md) found the cause in the scheduling: each PV runs on its own timer whose initial delay is clamped to zero, so the jobs of a transition spread over the cadence, no pass exists to measure, and the metric can only estimate one. The design replaces the per-PV timers with one pass driver per (transition index, cadence) that fires on a fixed grid, records each pass, and derives every reported value from the records. aa-env asked aa-maven to own the item; ansible-provision sent the corrected reading, and aa-env was told of the re-scope.
 
 ##### Scope
 
-Make the metric report the time of the latest ETL pass of a lifetime for any source partition period, and check the initial delay of the per-PV ETL jobs on the real path.
+Implement docs/design-etl-pass-scheduler.md: the pass driver, the ticker, the pass record and the reported rows, the job reporting in ETLJob, the consolidation queue of pause and delete, the shutdown order, the environment reader for ARCHAPPL_SKIP_ETL_FOR_STORE, and the tests its Testing section names; align the book pages that describe the ETL metrics rows and the skip-store variable.
 
-Out of scope: aa-env's store variables and partition settings; host sizing; ETL throughput, which the soak figures show is not a problem.
+Out of scope: what one ETL job moves and how (ETLJob.processETL, the store plugins, hold and gather, post-processors); aa-env's store variables and partition settings; host sizing; ETL throughput (ETLPassWorkers stays 1); the consolidate BPL through ETLExecutor; the carry-forward items of the design review, recorded in the Backlog when the owner directs.
 
 ##### Completion Criteria
 
-- With a 5-minute source partition, the metric reports about one pass's time on repeated passes on the real ETL path instead of a growing sum; the initial-delay behavior is confirmed or corrected with a test; build and the default suite pass.
+- The two before-evidence runs on HEAD are recorded (T2) before any code change.
+- The driver, record, rows and consolidation order behave as the design states on the real ETL path with only the clock and the environment reader substituted (T1, T4 to T9); build and the default suite pass (T3); the slow-group in-progress test passes (T10). The soak on the deploy path is M28.
 
 ##### Dependencies And Decisions
 
 - Owner decision (2026-09-26): take the item into this register at aa-env's request.
 - Related: aa-env's register records this item as handled here.
 - Cause (2026-09-27): ETL runs one job per PV with no global job that has a start and an end, and the metric adds each PV's duration to one sum that resets only after a 15-minute gap; the per-PV jobs of a 5-minute partition leave no such gap. Confirmed against the soak figures above.
-- Observation (2026-09-27, read in the source, not yet run): PBThreeTierETLPVLookup computes each PV's initial delay as Duration.between(nextExpectedETLRunInSecs, currentTime) (line 180), which is negative while the expected run is in the future, so a job starts when its PV is registered instead of at the predictable time the comment describes; that spreads the per-PV jobs over the period and removes any gap in which the sum could reset.
-- Owner decision (2026-09-27): fix the metric rather than only document it, so the displayed "last job" matches what it names; tracked as #11.
-- Open for the plan: the reproduction environment, a local run of the real ETL or the ansible-provision lab VM with aa-env's deploy path.
+- Observation (2026-09-27, read in the source, not yet run): PBThreeTierETLPVLookup computes each PV's initial delay as Duration.between(nextExpectedETLRunInSecs, currentTime) (line 180), which is negative while the expected run is in the future and is clamped to zero by the executor, so a job starts when its PV is registered instead of at the predictable time the comment describes; that spreads the per-PV jobs over the period and removes any gap in which the sum could reset.
+- Owner decision (2026-09-27): fix the metric rather than only document it; tracked as #11.
+- Owner decision (2026-09-27): replace the per-PV timers with a pass driver per the design; the design's Decisions table D1 to D15 records the rulings (driver key, processing time, tick, metrics keys, skip-store scope, shutdown bound, failure definition, consolidation queue, slow-group test, removal of the per-index sums).
+- Design review (2026-09-27): two lane rounds, two paired debates and a bounded fresh-context check; closure report accepted 2026-09-27 20:07 (session work/review_sessions/20260927_160405_etl-pass-scheduler, removed after the closure commit; the design document carries the decisions).
+- Owner decision (2026-09-27): the soak on the deploy path is its own item, M28, depending on this item and on G4, so this row is not Blocked while the code is written; the design's Register sentence that made the soak gate M25 is superseded by that split (the design text is aligned in the same commit).
+- Owner decision (2026-09-27): the two test gaps the design review carried forward (the Current pass and Weekly usage rows; the shutdown consolidation under the skip store) are covered here by T10, T5 and T9, extending the design's Testing items 11, 3 and 7.
+- GitHub: the issue #11 title names the metric only; it is re-synced through reconcile.md under Issue scope when the owner directs.
 
 ##### Implementation Plan
 
 Plan Status: draft
 Plan Acceptance: none
 Implementation Authorization: none
-Superseded Plan Artifacts: the investigation plan of 2026-09-26 (find what the job time grows with), answered by the cause above
+Superseded Plan Artifacts: the investigation plan of 2026-09-26 (find what the job time grows with) and the metric-fix plan of 2026-09-27 (pass delimiter, reproduce, initial delay), both answered by the design
 
-1. Settle with the owner how a pass is delimited: for example, the jobs of one lifetime that move the same source partition, with the sum reset when a job moves a later partition than the last one recorded.
-2. Reproduce the growing sum on the real ETL path with a short source partition over repeated passes, change the metric, and verify it reports one pass. Closes with T1.
-3. Check the initial delay of PBThreeTierETLPVLookup on the real scheduling path and correct it if it starts the jobs at registration. Closes with T2.
-4. ./mvnw -B -ntp clean verify. Closes with T3.
+1. Record the before-evidence on HEAD (docs/design-etl-pass-scheduler.md, Register): the growing last-job value across passes of a 5-minute source partition, and the negative computed initialDelay with the job run at registration. Closes with T2.
+2. ETLPassDriver and ETLPassTicker: grid, tick, start(), ordering rule, pass record, nextPlannedAt, completed-pass count and busy totals, per-day totals; PBThreeTierETLPVLookup creates them in postStartup and stops them for tests. Closes with T1 and T4.
+3. ETLJob reporting and ETLPVLookupItems: streams returned, partitions moved, bytes, streams deleted for space, commit result, getETLStreams completion; removal of the futures and of the writes into ETLMetricsForLifetime. Closes with T5 and T6.
+4. ETLMetrics details() and metrics() from the records; ETLDetails next-job row from the driver; ETLMetricsForLifetime reduced to the FileStore cache (ConcurrentHashMap) and getLifeTimeId. Closes with T5.
+5. Consolidation queue of pause and delete on the index worker thread, the environment reader for ARCHAPPL_SKIP_ETL_FOR_STORE in the pass and the consolidation paths, the shutdown order with ETLPassStopWaitSeconds. Closes with T7, T8, T9.
+6. The slow-group in-progress test. Closes with T10.
+7. Book pages: the ETL metrics rows and the skip-store variable in docs/book/src (configuration.md line 29 and the operating page if it lists the rows). Closes with T3.
+8. ./mvnw -B -ntp clean verify. Closes with T3.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Integration | Run the real ETL for several passes of a 5-minute source partition and read the ETL(0>1) last-job metric after each pass, before and after the change | JDK 21; the environment left open for the plan | Before, the value grows with each pass; after, it reports about one pass's time |
-| T2 | Unit | Schedule a PV through PBThreeTierETLPVLookup and read the initial delay it computes, through the ScheduledFuture kept by the lookup item (getDelay) | JDK 21, wrapper Maven | The delay is not negative and aims at the next expected run; before a fix, a negative value confirms the observation |
+| T1 | Unit, real jobs | Design Testing item 1: driver over PlainPB stores with a test Clock, ticks across three boundaries on a 5MIN and a 15MIN source, a stepping Clock for the overrun case | JDK 21, wrapper Maven | plannedAt, processingTime and the moved partition per pass as planned; the start-up pass first; overrun recorded; a backwards Clock reschedules |
+| T2 | Before-evidence on HEAD | Design Register: the last-job value over several passes of a 5-minute source; after one registration, within a bounded wait until the run count reads 1, the DEBUG initialDelay and getDelay | JDK 21, wrapper Maven, HEAD before the change | The value grows with each pass; initialDelay negative in the log, run count 1, getDelay between cadence minus the job duration and cadence |
 | T3 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
+| T4 | Unit, real jobs | Design Testing item 2: index 0 and index 1 due at the same tick | JDK 21, wrapper Maven | The index-1 pass starts after the index-0 pass ended; plannedAt unchanged |
+| T5 | Unit, real jobs | Design Testing item 3, extended: several PVs over two passes; ETLMetrics.details and metrics() read afterwards; the Weekly usage row after passes on two Clock days | JDK 21, wrapper Maven | Record sums, slowest PV, max partitions and busyMillis match the jobs; Passes so far 2; the average and the three keys from the records; the Weekly usage row equals the per-day totals over the counted seconds |
+| T6 | Unit, real jobs | Design Testing item 4: destination root and source root as regular files | JDK 21, wrapper Maven | The pass completes, jobsFailed counts the job, nextPlannedAt set; a usable folder reports a skip |
+| T7 | Unit, real jobs | Design Testing item 5: PV added between passes; PV registered after the start-up pass; deleteETLJobs between passes | JDK 21, wrapper Maven | In the next snapshot; joins the next planned pass; absent and consolidated |
+| T8 | Unit, real jobs | Design Testing item 6: environment reader returns the destination name unique to the test | JDK 21, wrapper Maven | No job writes to it in a pass or in the consolidation on delete; jobsSkipped counts the PVs |
+| T9 | Unit, real jobs | Design Testing item 7, extended: stop flag on an idle driver with ETLPassStopWaitSeconds 0; then the same with the environment reader returning the destination store name | JDK 21, wrapper Maven | A following tick starts no pass; the consolidation runs for every PV; with the skip set, the shutdown consolidation writes nothing to the named store and logs the count of PVs left unconsolidated |
+| T10 | Unit, real jobs, slow group | Design Testing item 11 with ./mvnw -B -ntp test -Dtest.groups=slow -Dtest.excludedGroups=integration,localEpics,flaky | JDK 21, wrapper Maven | (a) to (d) as the item states, (d) being the Current pass row read from the record in progress; a run whose precondition did not hold reports inconclusive |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21 | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T2 | Not run | JDK 21, wrapper Maven, HEAD | Pending | none |
 | T3 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T4 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T5 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T6 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T7 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T8 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T9 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T10 | Not run | JDK 21, wrapper Maven, slow group | Pending | none |
 
 ##### Closure Evidence
 
-- none
+- Design: docs/design-etl-pass-scheduler.md at 4a964b08 (draft 3, review closed 2026-09-27).
 
 ##### GitHub Projection
 
@@ -2253,6 +2277,69 @@ Observed State: closed
 Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-09-27 (gh issue view 9 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
+
+#### M28 - ETL pass scheduler soak on the deploy path
+
+Origin: daff1b7 / M28
+Identity History: none
+GitHub Issue: none
+Status: Blocked
+
+##### Summary
+
+The pass scheduler of M25 changes when ETL runs, how the appliance stops, and what the metrics page reports. Those effects are observable only on a deployed appliance: the ansible-provision lab runs aa-env's deploy path on a VM (M13 Dependencies, G4). This item is the soak of the landed M25 code on that path, compared with the run of 2026-09-24 to 2026-09-26 that found the running-sum metric, through the mapping of retired rows to new rows in docs/design-etl-pass-scheduler.md, Testing item 10.
+
+##### Scope
+
+Run the soak on the soak chain (STS PARTITION_5MIN, MTS PARTITION_HOUR) and on the aa-env default chain (STS PARTITION_HOUR, MTS PARTITION_DAY); read the ETL metrics rows over the run; measure the stop time of the unit; record the comparison table.
+
+Out of scope: the code and unit tests (M25); aa-env's store variables; host sizing.
+
+##### Completion Criteria
+
+- On both chains the passes fire on the grid of the design (boundary plus 5 min x (transition index + 1), within one tick), the reported rows read as the design states, no overrun is recorded under the soak load, the stop of the unit stays within aa-env's TimeoutStopSec, and the comparison table is recorded here.
+
+##### Dependencies And Decisions
+
+- Owner decision (2026-09-27): split from M25 so that M25 is not Blocked while the code is written; supersedes the design's Register sentence that made the soak gate M25.
+- Depends on M25 (the code) and G4 (the deploy path); resume as Not started when both are Complete.
+- aa-env is told the stop-time measurement so that SYSTEMD_TIMEOUT_STOP_SECONDS is sized against it (design, Deployment).
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. After M25 lands and aa-env builds it, ask LAB-ansible-provision for the two-chain soak with the metrics rows sampled hourly and one measured stop. Closes with T1.
+2. Record the comparison table and the stop time here; send the stop time to aa-env. Closes with T1.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Soak | Design Testing item 10 on the ansible-provision lab after the aa-env build; two chains; stop time measured | Lab VM through the deploy path (G4) | Passes fire on the grid; the reported rows read as designed; the stop stays within the unit's timeout; the comparison table against the earlier run is recorded |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Lab VM through the deploy path | Pending, waits on M25 and G4 | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: none
+Labels: none
+GitHub Milestone: none
+Observed State: none
+Observed Labels: none
+Observed Milestone: none
+Last Compared: never
 
 ## Backlog
 
