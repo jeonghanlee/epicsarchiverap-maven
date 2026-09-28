@@ -26,12 +26,22 @@ then as an environment variable.
 | `ARCHAPPL_MEDIUM_TERM_FOLDER` | MTS folder, used in the store URLs | none |
 | `ARCHAPPL_LONG_TERM_FOLDER` | LTS folder, used in the store URLs | none |
 | `ARCHAPPL_ROOT_LOGGER_LEVEL` | root log level ([Logging](logging.md)); read by `log4j2.xml` (environment only) | `INFO` |
-| `ARCHAPPL_SKIP_ETL_FOR_STORE` | name of a store to stop moving data into, for emergencies (environment only) | no store is skipped |
+| `ARCHAPPL_SKIP_ETL_FOR_STORE` | name of a store that ETL stops moving data into, for emergencies (environment only) | no store is skipped |
 
 The three folder variables are not read by the code directly: they are
 `${...}` macros in the store URLs of the policy file, expanded when a
 store URL is parsed. An unknown macro is logged as an error and left in
 the URL as its bare name.
+
+`ARCHAPPL_SKIP_ETL_FOR_STORE` names a store by the `name` in its store
+URL. While the etl instance runs with it set, every ETL job whose
+destination is that store is skipped: the jobs of each ETL pass, the
+consolidation that runs when a PV is paused or deleted, and the
+consolidation at shutdown. Each skipped job of a pass is logged at
+ERROR, and the shutdown logs the number of PVs left unconsolidated per
+source store. The data stays in the source store. The variable is read
+from the process environment, so unset it and restart the etl instance
+to resume the moves.
 
 The engine also reads the EPICS client variables `EPICS_CA_ADDR_LIST`,
 `EPICS_CA_AUTO_ADDR_LIST`, `EPICS_CA_CONN_TMO`,
@@ -69,6 +79,8 @@ with `org.epics.archiverappliance.`, left out here.
 | `engine.epics.scanThreadCount` | `1` | threads that serve SCAN sampling |
 | `engine.epics.scanJitterFactor` | `0.95` | factor applied to SCAN periods |
 | `etl.common.OutOfSpaceHandling` | `DELETE_SRC_STREAMS_IF_FIRST_DEST_WHEN_OUT_OF_SPACE` | what ETL does when a destination store is full |
+| `etl.common.ETLPassWorkers` | `1` | worker threads per ETL transition index; only `1` is supported |
+| `etl.common.ETLPassStopWaitSeconds` | `60` | seconds the etl shutdown waits for a running ETL job before interrupting it, and again after the interrupt; `0` interrupts at once |
 | `config.RuntimeKeys` | `DESC` | fields kept in engine memory |
 | `engine.util.EngineContext.disconnectCheckTimeoutInMinutes` | `0` | disconnect check interval; `0` turns it off |
 | `engine.archivePVSonStartup.determineLastKnownEventFromStores` | `false` | `false` starts from server time, not from the last stored sample |
