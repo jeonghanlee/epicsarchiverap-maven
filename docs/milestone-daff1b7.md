@@ -2081,7 +2081,7 @@ Out of scope: what one ETL job moves and how (ETLJob.processETL, the store plugi
 - Design review (2026-09-27): two lane rounds, two paired debates and a bounded fresh-context check; closure report accepted 2026-09-27 20:07 (session work/review_sessions/20260927_160405_etl-pass-scheduler, removed after the closure commit; the design document carries the decisions).
 - Owner decision (2026-09-27): the soak on the deploy path is its own item, M28, depending on this item and on G4, so this row is not Blocked while the code is written; the design's Register sentence that made the soak gate M25 is superseded by that split (the design text is aligned in the same commit).
 - Owner decision (2026-09-27): the two test gaps the design review carried forward (the Current pass and Weekly usage rows; the shutdown consolidation under the skip store) are covered here by T10, T5 and T9, extending the design's Testing items 11, 3 and 7.
-- GitHub: the issue #11 title names the metric only; it is re-synced through reconcile.md under Issue scope when the owner directs.
+- GitHub (2026-09-28): #11 title and body re-projected to this scope under Issue scope.
 
 ##### Implementation Plan
 
@@ -2131,17 +2131,18 @@ Superseded Plan Artifacts: the investigation plan of 2026-09-26 (find what the j
 
 ##### Closure Evidence
 
-- Design: docs/design-etl-pass-scheduler.md at 4a964b08 (draft 3, review closed 2026-09-27).
+- Design: docs/design-etl-pass-scheduler.md at 4a964b08 (draft 3, review closed 2026-09-27), aligned at ed16a99d.
+- Design review session work/review_sessions/20260927_160405_etl-pass-scheduler removed from the working tree on 2026-09-28 after its closure report was accepted and the design and register landed (4a964b08, ed16a99d); work/ is gitignored, so the removal is local and this line is its record.
 
 ##### GitHub Projection
 
-Title: Report the last ETL pass instead of a running sum in the ETL metrics
+Title: Replace the per-PV ETL timers with one pass driver per transition
 Labels: bug
 GitHub Milestone: none
 Observed State: open
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-09-27 (gh issue view 11 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
+Last Compared: 2026-09-28 (gh issue view 11 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,assignees; title and body re-projected 2026-09-28)
 
 #### M26 - etl error bursts and mgmt workflow tick logging
 
@@ -2282,7 +2283,7 @@ Last Compared: 2026-09-27 (gh issue view 9 --repo jeonghanlee/epicsarchiverap-ma
 
 Origin: daff1b7 / M28
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #12
 Status: Blocked
 
 ##### Summary
@@ -2333,13 +2334,13 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: Soak the ETL pass scheduler on the deploy path
+Labels: enhancement
 GitHub Milestone: none
-Observed State: none
-Observed Labels: none
+Observed State: open
+Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: never
+Last Compared: 2026-09-28 (gh issue view 12 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,assignees)
 
 ## Backlog
 
