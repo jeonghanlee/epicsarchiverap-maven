@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: prepare the verified M34 server correction and M17 pause/resume CLI changes for commit and push, project the new verification results to #17 and #6, then confirm landing and close #17. The partial-write correction passes 14 focused tests and a real recovery-failure check; fresh default tests (818), affected integration cases (8), Python client tests (43), real pause/resume checks (58), archive/status checks (22) and documentation checks pass. M34 remains In progress until landing and issue closure. M17 remains In progress; rename, deletion and disconnection reporting require their next scope approval.
+Next session entry point: commit this closure record, then return to M17 to define and accept the next operation scope. The M34 server correction landed as 759337d5 and the M17 CLI, tests and documentation as fbc32120; both are on the fetched origin/modernize, and Maven CI and Pages pass on fbc32120. M34 is Complete and #17 is closed; #6 records the landed pause/resume results and remains open. Rename, deletion and disconnection reporting require acceptance and authorization before implementation.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -53,7 +53,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M31 | PlainPB stale-file age uses 60 instead of 1000 for seconds to milliseconds | Milestone | Not started | Yes | | The stale zero-byte and empty-file checks in PlainPBStoragePlugin compare the file age with the intended age in the same unit, with a test that fails on the current factor; [detail](#m31---plainpb-stale-file-age-uses-60-instead-of-1000-for-seconds-to-milliseconds) |
 | Phase 2 | M32 | Unknown OutOfSpaceHandling value leaves PVs without ETL | Milestone | Not started | Yes | | A misspelled org.epics.archiverappliance.etl.common.OutOfSpaceHandling value falls back to the default with one ERROR line instead of leaving every PV without ETL, with a test; [detail](#m32---unknown-outofspacehandling-value-leaves-pvs-without-etl) |
 | Phase 2 | M33 | ZipETLTest reads back fewer events than written | Milestone | Not started | Yes | | The cause of the 1093 events missing from the slow-group ZipETLTest read-back is found on the real path and fixed in the code or in the test; the class passes with the slow-group command and the default suite passes; [detail](#m33---zipetltest-reads-back-fewer-events-than-written) |
-| Phase 2 | M34 | Preserve pending samples when pausing archiving | Milestone | In progress | No | | Pause persists pending samples before removing the channel; write failures preserve retryable data; real PB and concurrency checks pass; return to M17 pause/resume verification; [detail](#m34---preserve-pending-samples-when-pausing-archiving) |
+| Phase 2 | M34 | Preserve pending samples when pausing archiving | Milestone | Complete | No | | Correction 759337d5 and verified CLI/tests/docs fbc32120 landed; local regression, integration and live checks pass; Maven CI and Pages pass; #17 closed on 2026-09-29; [detail](#m34---preserve-pending-samples-when-pausing-archiving) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -1551,7 +1551,7 @@ Deadlines and cleanup: initial archiving is bounded at 360 seconds; state transi
 
 Completion requires T14-T16 passing on the shipped paths, no archive/status/listing regression, matching documentation, and recorded source/WAR provenance. Existing legacy-script observations and source inspection do not satisfy these new checks. The revised plan was accepted on 2026-09-29. Implementation was authorized on 2026-09-29; T14-T16 remain required before completion.
 
-Current implementation: the pause/resume CLIs, shared helper, HTTP boundary tests, PB adapter, real workflow runner and documentation are implemented and verified in the working tree. M34 preserves pending buffers and rolls back partial PB appends before retry. Fresh verification passes 818 default tests, eight affected integration cases, 43 Python client tests, 58 real pause/resume checks and 22 real archive/status checks. T14-T16 record the current results on the rebuilt WARs, including exact PB persistence of the earlier-timestamped IOC current value. M34 remains the server dependency until landing and issue closure. No commit or landing evidence exists for these changes yet.
+Current implementation: the pause/resume CLIs, shared helper, HTTP boundary tests, PB adapter, real workflow runner and documentation landed as fbc32120, following the M34 server correction in 759337d5. M34 preserves pending buffers and rolls back partial PB appends before retry. Verification passes 818 default tests, eight affected integration cases, 43 Python client tests, 58 real pause/resume checks and 22 real archive/status checks. T14-T16 record the results on the rebuilt WARs, including exact PB persistence of the earlier-timestamped IOC current value. Both commits are on the fetched origin/modernize; Maven CI and Pages pass on fbc32120. M34 is Complete and #17 is closed, satisfying the server dependency. Rename, deletion and disconnection reporting remain outside the accepted implementation scope.
 
 ##### Test Plan
 
@@ -1644,6 +1644,8 @@ The two dependency failures do not establish defects in their unexecuted BPL pat
 
 - Step 1 landed 2026-09-25 09:23 UTC: commits 4aebc724 (release tarball WARs), 39d92baa (removed samples, slacdev and quickstart page with the page edits) and 6b34d0a3 (this plan and its checks) are ancestors of the fetched origin/modernize (6b34d0a3); the Maven workflow run 36118161053 and the Pages run 36118161044 on 6b34d0a3 succeeded.
 - Step 3 landed 2026-09-25 16:23 UTC: commits 587907c8 (interim page edits), 37c9aadc (the rewritten book) and d3456ba1 (this plan's checks and M23) are ancestors of the fetched origin/modernize (d3456ba1); the Maven workflow run 36160480069 and the Pages run 36160480080 on d3456ba1 succeeded, and the published architecture page answers HTTP 200.
+- Pause/resume landed 2026-09-29: server commit 759337d5 and CLI/test/documentation commit fbc32120 are on the fetched origin/modernize at fbc32120b83f4999f0d7f4408e3719abf8dac8bd. At 22:25 UTC, fetch and diff against origin/modernize confirmed all changed implementation, test and documentation paths match. The [Maven workflow](https://github.com/jeonghanlee/epicsarchiverap-maven/actions/runs/36630658575) completed successfully at 21:21 UTC, including the JDK 21 build, test and dependency-check step; [Pages](https://github.com/jeonghanlee/epicsarchiverap-maven/actions/runs/36630658665) completed successfully at 21:03 UTC. The remaining operation scopes keep M17 In progress.
+- The server dependency #17 closed as completed on 2026-09-29 at 22:31:30 UTC. Issue #6's body now records the landed implementation and current verification, with the five remaining operation and inventory criteria unchecked; its open state and exact body were read back after the update.
 
 ##### GitHub Projection
 
@@ -1653,7 +1655,7 @@ GitHub Milestone: none
 Observed State: open
 Observed Labels: documentation
 Observed Milestone: none
-Last Compared: 2026-09-29; gh issue view 6; state, title, labels and milestone match; remote updatedAt 2026-09-29T16:58:10Z. The remote body still records 814 default tests and does not include partial-write recovery; project the fresh verification results before closure.
+Last Compared: 2026-09-29; gh api repos/jeonghanlee/epicsarchiverap-maven/issues/6; exact projected body, open state, title, documentation label, no milestone and assignee jeonghanlee verified; remote updated_at 2026-09-29T22:31:44Z. The body records the landed pause/resume work, 818 default tests, partial-write recovery and successful CI; five remaining acceptance criteria stay unchecked.
 
 #### M7 - Site-required features and fixes
 
@@ -2913,7 +2915,7 @@ Last Compared: never
 Origin: daff1b7 / M34
 Identity History: none
 GitHub Issue: [#17](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/17)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -2976,17 +2978,20 @@ Superseded Plan Artifacts: none
 
 ##### Closure Evidence
 
-- The working-tree correction and all required checks pass, including partial-write rollback and retry after failed recovery. The original partial header and first-sample corruption is retained in work/pause-review/partial-write-repeat.log; the fresh results above verify the correction. M17 pause/resume and archive/status checks pass on the same rebuilt WARs. No fix commit or landing evidence yet; #17 stays open until the verified correction lands.
+- The correction and all required checks pass, including partial-write rollback and retry after failed recovery. The original partial header and first-sample corruption is retained in work/pause-review/partial-write-repeat.log; the results above verify the correction. M17 pause/resume and archive/status checks pass on the same rebuilt WARs.
+- Landing observed 2026-09-29 at 22:25 UTC: server correction 759337d5e48b0af5ae90ae1fd92cb1676e3d21d6 and CLI/test/documentation commit fbc32120b83f4999f0d7f4408e3719abf8dac8bd are on the fetched origin/modernize at fbc32120. The implementation, test and documentation paths match that upstream. Recheck with fetch, rev-parse and diff against origin/modernize.
+- Remote checks observed 2026-09-29: [Maven run 36630658575](https://github.com/jeonghanlee/epicsarchiverap-maven/actions/runs/36630658575) and [Pages run 36630658665](https://github.com/jeonghanlee/epicsarchiverap-maven/actions/runs/36630658665) completed successfully on fbc32120. Maven's JDK 21 build, test and dependency-check step passed.
+- Linked issue #17: body reconciled with the landed correction, partial-write recovery, verification and checked acceptance criteria; closed as completed on 2026-09-29 at 22:31:30 UTC. The [closure comment](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/17#issuecomment-5900342506) records the commits and results. GitHub API readback confirms state closed, state_reason completed and an exact body match. All completion criteria are satisfied; M34 is Complete and work returns to M17's remaining operation scopes.
 
 ##### GitHub Projection
 
 Title: Preserve pending samples when pausing archiving
 Labels: bug
 GitHub Milestone: none
-Observed State: open
+Observed State: closed
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-09-29; gh issue view 17; state, title, labels and milestone match; remote updatedAt 2026-09-29T16:58:06Z. The remote body still records 814 default tests and does not include partial-write recovery; project the fresh verification results before closure.
+Last Compared: 2026-09-29; gh api repos/jeonghanlee/epicsarchiverap-maven/issues/17; exact projected body, closed state, completed reason, title, bug label, no milestone and assignee jeonghanlee verified; remote closed_at and updated_at 2026-09-29T22:31:30Z.
 
 ## Backlog
 
