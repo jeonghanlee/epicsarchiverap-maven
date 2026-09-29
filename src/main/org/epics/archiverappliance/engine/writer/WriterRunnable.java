@@ -10,8 +10,6 @@
 package org.epics.archiverappliance.engine.writer;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +20,6 @@ import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.engine.model.SampleBuffer;
-import org.epics.archiverappliance.engine.model.YearListener;
 
 /**
  * WriterRunnable is scheduled by the executor in the engine context every writing period.
@@ -38,8 +35,6 @@ public class WriterRunnable implements Runnable {
 
 	/**the configservice used by this WriterRunnable*/
 	private ConfigService configservice = null;
-	/**is running?*/
-	private boolean isRunning=false;
 /**
  * the constructor
  * @param configservice the configservice used by this WriterRunnable
@@ -60,7 +55,7 @@ public class WriterRunnable implements Runnable {
  * At the same time. it also removes the channel from the channel hash map in the engine context
  * @param channelName the name of the channel who and whose sample buffer are removed
  */
-	public void removeChannel(final String channelName) {
+	public synchronized void removeChannel(final String channelName) {
 		buffers.remove(channelName);
 	}
 
@@ -69,7 +64,7 @@ public class WriterRunnable implements Runnable {
 	 * @param name the name of the channel
 	 * @param buffer the sample buffer for this channel
 	 */
-	void addSampleBuffer(final String name, final SampleBuffer buffer) {
+	synchronized void addSampleBuffer(final String name, final SampleBuffer buffer) {
 		// buffers.add(buffer);
 		buffers.put(name, buffer);
 		buffer.addYearListener(sampleBuffer -> {
@@ -124,75 +119,50 @@ public class WriterRunnable implements Runnable {
     * @param buffer the sample buffer to be written
     * @throws IOException  error occurs during writing the sample buffer to the short term storage
     */
-	private void write(SampleBuffer buffer) throws IOException {
-		if(isRunning) return;
-		isRunning=true;
-		ConcurrentHashMap<String, ArchiveChannel> channelList = configservice
-				.getEngineContext().getChannelList();
-		String channelNname = buffer.getChannelName();
-		buffer.resetSamples();
-		ArrayListEventStream previousSamples = buffer.getPreviousSamples();
-		
+	private synchronized void write(SampleBuffer buffer) throws IOException {
+		String name = buffer.getChannelName();
+		ArchiveChannel channel = configservice.getEngineContext().getChannelList().get(name);
+		// A queued year-change task can outlive the channel that registered it.
+		if (buffers.get(name) != buffer || channel == null || channel.getSampleBuffer() != buffer) return;
+		boolean retry = buffer.hasPendingWrite();
+		writeBatch(channel, buffer);
+		if (retry) writeBatch(channel, buffer);
+	}
 
-		try (BasicContext basicContext = new BasicContext()) {
+	private void writeBatch(ArchiveChannel channel, SampleBuffer buffer) throws IOException {
+		ArrayListEventStream samples = buffer.samplesToWrite();
+		if (samples == null) return;
+		try (BasicContext context = new BasicContext()) {
+			channel.aboutToWriteBuffer((DBRTimeEvent) samples.getLast());
+			channel.getWriter().appendData(context, channel.getName(), samples);
+		}
+		buffer.samplesWritten();
+		channel.setlastRotateLogsEpochSeconds(System.currentTimeMillis() / 1000);
+	}
 
-			if (!previousSamples.isEmpty()) {
-				ArchiveChannel tempChannel = channelList.get(channelNname);
-				tempChannel.setlastRotateLogsEpochSeconds(System
-						.currentTimeMillis() / 1000);
-				tempChannel.getWriter().appendData(basicContext, channelNname,
-						previousSamples);
+	/** Wait for active writes and persist this channel's pending batches. */
+	public synchronized void flushChannel(ArchiveChannel channel) throws IOException {
+		if (buffers.get(channel.getName()) != channel.getSampleBuffer()
+				|| configservice.getEngineContext().getChannelList().get(channel.getName()) != channel) {
+			throw new IOException("Channel changed before its buffer could be written: " + channel.getName());
+		}
+		write(channel.getSampleBuffer());
+	}
+
+	/** Serialize periodic writes, explicit flushes and buffer removal. */
+	private synchronized void write() throws IOException {
+		IOException failure = null;
+		for (SampleBuffer buffer : buffers.values()) {
+			try {
+				write(buffer);
+			} catch (IOException ex) {
+				if (failure == null) failure = ex;
+				else failure.addSuppressed(ex);
 			}
-		} catch (IOException e) {
-			throw (e);
 		}
-		finally{
-			isRunning=false;
-		}
-		isRunning=false;
+		if (failure != null) throw failure;
 	}
-/**
- * write all sample buffers into short term storage
- * @throws Exception error occurs during writing the sample buffer to the short term storage
- */
-	private void write() throws Exception {
-		if(isRunning) return;
-		isRunning=true;
-		ConcurrentHashMap<String, ArchiveChannel> channelList = configservice
-				.getEngineContext().getChannelList();
 
-
-        for (Entry<String, SampleBuffer> entry : buffers.entrySet()) {
-
-            SampleBuffer buffer = entry.getValue();
-
-            String channelNname = buffer.getChannelName();
-
-            buffer.resetSamples();
-            ArrayListEventStream previousSamples = buffer.getPreviousSamples();
-            try (BasicContext basicContext = new BasicContext()) {
-                if (!previousSamples.isEmpty()) {
-                    ArchiveChannel tempChannel = channelList.get(channelNname);
-                    tempChannel.aboutToWriteBuffer((DBRTimeEvent) previousSamples.getLast());
-                    tempChannel.setlastRotateLogsEpochSeconds(System
-                        .currentTimeMillis() / 1000);
-                    tempChannel.getWriter().appendData(basicContext,
-                        channelNname, previousSamples);
-                }
-            } catch (IOException e) {
-                throw (e);
-            } finally {
-                isRunning = false;
-            }
-
-        }
-		
-		isRunning=false;
-		
-		
-
-
-	}
 	/**
 	 * flush out the sample buffer to the short term storage before shutting down the engine
 	 * @throws Exception  error occurs during writing the sample buffer to the short term storage

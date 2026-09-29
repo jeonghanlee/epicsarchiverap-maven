@@ -42,6 +42,8 @@ public class SampleBuffer {
 	 * previous ArrayListEventStream
 	 */
 	private ArrayListEventStream previousSamples;
+	private boolean writePending;
+	private boolean acceptingSamples = true;
 
 	/**
 	 * year listener for this buffer.
@@ -103,7 +105,7 @@ public class SampleBuffer {
     * get the combined ArrayListEventStream of the previous and the current
     * @return ArrayListEventStream
     */
-	public ArrayListEventStream getCombinedSamples() {
+	public synchronized ArrayListEventStream getCombinedSamples() {
 		RemotableEventStreamDesc desc = new RemotableEventStreamDesc(
 				archdbrtype, channel_name, (short) 0);
 		ArrayListEventStream combinedSamples = new ArrayListEventStream(
@@ -136,6 +138,33 @@ public class SampleBuffer {
 			currentSamples = new ArrayListEventStream(capacity, desc);
 
 		}
+	}
+
+	/** Stop buffer input before the final write, including callbacks already in flight. */
+	public synchronized void stopAcceptingSamples() {
+		acceptingSamples = false;
+	}
+
+	public synchronized void startAcceptingSamples() {
+		acceptingSamples = true;
+	}
+
+	public synchronized boolean hasPendingWrite() {
+		return writePending;
+	}
+
+	/** Retain a failed batch until the writer acknowledges its successful append. */
+	public synchronized ArrayListEventStream samplesToWrite() {
+		if (!writePending) {
+			if (currentSamples.isEmpty()) return null;
+			resetSamples();
+			writePending = true;
+		}
+		return previousSamples;
+	}
+
+	public synchronized void samplesWritten() {
+		writePending = false;
 	}
 /**
  * get the previous ArrayListEventStream
@@ -171,7 +200,8 @@ public class SampleBuffer {
 	 * @return boolean true if we need to increment the event count.
 	 */
 	@SuppressWarnings("nls")
-	public boolean add(final DBRTimeEvent value)  {
+	public synchronized boolean add(final DBRTimeEvent value)  {
+		if (!acceptingSamples) return false;
 		boolean retval = true;
 		
 		if(this.archdbrtype != value.getDBRType()) { 

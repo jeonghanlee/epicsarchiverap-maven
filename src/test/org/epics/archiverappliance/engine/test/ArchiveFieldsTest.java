@@ -138,7 +138,7 @@ public class ArchiveFieldsTest {
     public void testArchiveFilterPV() {
 
         try {
-            String pvName = "ArchUnitTest:manual.{'dbnd':{'abs':0.1}}";
+            String pvName = pvPrefix + "ArchUnitTest:manual.{'dbnd':{'abs':0.1}}";
             MemBufWriter myWriter = new MemBufWriter(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE);
             PVTypeInfo typeInfo = new PVTypeInfo(pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
             testConfigService.updateTypeInfoForPV(pvName, typeInfo);
@@ -184,8 +184,7 @@ public class ArchiveFieldsTest {
             Assertions.assertEquals(3, totalEvents, "We should have some events in the current samples " + totalEvents);
 
         } catch (Exception e) {
-            //
-            logger.error("Exception", e);
+            Assertions.fail("Could not verify archived filter samples", e);
         }
     }
 

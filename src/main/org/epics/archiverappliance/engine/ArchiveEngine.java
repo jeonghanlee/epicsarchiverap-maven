@@ -321,8 +321,12 @@ public class ArchiveEngine {
 		if (channel != null) {
 			channel.shutdownMetaChannels();
 			channel.stop();
-			channel.setPaused(true);
-			engineContext.incrementPausedPVCount();
+			channel.getSampleBuffer().stopAcceptingSamples();
+			if (!channel.isPaused()) {
+				channel.setPaused(true);
+				engineContext.incrementPausedPVCount();
+			}
+			engineContext.getWriteThead().flushChannel(channel);
 			destoryPv(pvName, configservice);
 		}
 	}
@@ -344,6 +348,7 @@ public class ArchiveEngine {
 		ArchiveChannel channel = engineContext.getChannelList().get(pvName);
 		if (channel != null) {
 			channel.stop();
+			engineContext.getWriteThead().flushChannel(channel);
 			channel.start();
 			channel.setPaused(false);
 		} else {
@@ -369,6 +374,7 @@ public class ArchiveEngine {
 		ArchiveChannel channel = engineContext.getChannelList().get(pvName);
 		if (channel != null) {
 			channel.stop();
+			engineContext.getWriteThead().flushChannel(channel);
 			channel.start();
 		} else {
 			// We have not created the channel on startup.

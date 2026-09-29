@@ -410,6 +410,7 @@ public abstract class ArchiveChannel {
     public final void start() throws Exception {
         if (is_running) return;
 
+        buffer.startAcceptingSamples();
         is_running = true;
         need_first_sample = true;
         pvMetrics.setEnable(true);
