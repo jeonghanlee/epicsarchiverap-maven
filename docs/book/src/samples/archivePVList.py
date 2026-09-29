@@ -5,52 +5,10 @@ import sys
 
 from archiverClient import (
     ClientError, _request, check_disjoint, diagnostic, normalized, parser_for,
-    print_results, read_pvs, result_row, sampling_period, text_field,
+    print_results, read_pvs, resolve_inputs, result_row, sampling_period, text_field,
 )
 
 ACCEPTED = {"Archive request submitted", "Already submitted"}
-
-
-def resolve_inputs(parser, args, records):
-    """Resolve configured aliases and reject overlapping identities before POST."""
-    check_disjoint(parser, records)
-    body = _request(args.bpl_url, "getAllAliases", args.timeout)
-    if not isinstance(body, list):
-        raise ClientError("expected an alias array")
-    aliases = {}
-    for row in body:
-        if not isinstance(row, dict):
-            raise ClientError("expected an alias object")
-        alias = text_field(row.get("aliasName"), "alias name")
-        real = text_field(row.get("srcPVName"), "alias target")
-        if alias in aliases:
-            raise ClientError("duplicate alias in response")
-        aliases[alias] = real
-    resolved = []
-    for line, name in records:
-        real = normalized(name)
-        visited = set()
-        while real in aliases:
-            if real in visited:
-                raise ClientError("cyclic alias response")
-            visited.add(real)
-            real = aliases[real]
-        try:
-            info = _request(args.bpl_url, "getPVTypeInfo", args.timeout, {"pv": real})
-        except ClientError as exc:
-            if exc.code != 404:
-                raise
-        else:
-            if not isinstance(info, dict):
-                raise ClientError("expected a type-info object")
-            identity = text_field(info.get("pvName"), "type-info pvName")
-            if identity != real:
-                raise ClientError("type-info identity contradicts the alias map")
-        # Existing aliases name the configured target; other names retain their protocol/field.
-        target = real if visited else name
-        resolved.append((line, name, target, real))
-    check_disjoint(parser, [(line, real) for line, _, _, real in resolved])
-    return resolved
 
 
 def main(argv=None):

@@ -172,11 +172,77 @@ PV-specific syntax beyond the input-file restrictions above.
 The [test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-archive-and-status-examples)
 uses the shipped IOC fixture to reproduce these states and sampling checks.
 
+## Pause and resume archiving
+
+Use [pausePVList.py](samples/pausePVList.py) and
+[resumePVList.py](samples/resumePVList.py) for existing archived PVs. Keep
+[archiverClient.py](samples/archiverClient.py) and
+[listArchivedPVs.py](samples/listArchivedPVs.py) beside them. Both commands
+use the Python standard library and the same explicit BPL URL, UTF-8 input
+file, ASCII table and `--timeout` bounds as archive/status.
+
+Set `BPL_URL` and `PV_FILE` as above; start with the listed PVs archiving.
+From the repository root:
+
+```bash
+python3 docs/book/src/samples/pausePVList.py "$BPL_URL" "$PV_FILE"
+python3 docs/book/src/samples/getPVStatus.py "$BPL_URL" "$PV_FILE"
+python3 docs/book/src/samples/resumePVList.py "$BPL_URL" "$PV_FILE"
+python3 docs/book/src/samples/getPVStatus.py "$BPL_URL" "$PV_FILE"
+```
+
+The request rows report `Pause accepted` and `Resume accepted`. Pause
+requires successful management, engine and ETL responses; resume requires
+management and engine responses. Status queries report `Paused` and
+`Being archived` once those states are visible. Repeat the separate status
+query if needed; the mutation commands return without polling. Request
+acceptance and status do not prove stored data. The
+[real verification procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-pause-and-resume-examples)
+checks unchanged stored data before resume, the baseline and resumed PB
+persistence. The first current value received after resume keeps its IOC
+timestamp, which can fall within the pause interval. That timestamp does
+not mean the appliance received the value while paused.
+
+The engine stops accepting samples into the paused channel's buffer and
+finishes pending writes before removing the channel. A storage failure
+keeps the pending data and returns an engine failure. Management metadata
+may already show `Paused`, so the client reports `Outcome unknown`; inspect
+the storage error before resuming. A retained channel must finish its
+pending writes before sampling can resume.
+
+If an append writes only part of a PB header or sample, the engine restores
+that file to its length before the failed append. Earlier completed writes
+remain intact. If file recovery also fails, the pending batch stays in
+memory and recovery must succeed before another append can proceed.
+
+Each line names one record or one ordinary field. One optional `ca://` or
+`pva://` prefix and a terminal `.VAL` resolve to the canonical stored name.
+Repeated protocol prefixes are rejected before any HTTP request.
+Field modifiers such as `.VAL.[0:1]`, additional dot segments and fields
+beginning with `VAL` other than the exact `VAL` are rejected. Configured
+aliases resolve before mutation; use canonical IOC names for aliases the
+appliance has not discovered. Duplicate, alias-equivalent and same-record
+inputs are rejected together. These stricter name rules apply to
+pause/resume; archive input behavior is unchanged.
+
+The client sends one JSON POST per canonical PV in input order. Unknown
+PVs and repeated operations (`pause` while paused, `resume` while archiving)
+are `Rejected`. Missing, contradictory or failed component responses,
+timeouts and unusable responses report `Outcome unknown`, because metadata
+may already have changed. Inspect actual status before a manual retry.
+Details go to stderr; independent later PVs still run. There is no automatic
+retry or rollback.
+
+Exit 0 means every request was accepted; exit 1 means a preflight or request
+failed; exit 2 means invalid local input or overlapping identities. Local
+input failures send no HTTP requests. Remote identity validation uses only
+read requests and sends no mutations on failure.
+
 ## Other sample scripts
 
 The repository folder
 [`docs/book/src/samples`](https://github.com/jeonghanlee/epicsarchiverap-maven/tree/modernize/docs/book/src/samples)
-holds Python 3 scripts that use these calls, for example to pause,
-resume or delete a list of PVs, or to report disconnected PVs. Each
+holds additional Python 3 scripts to delete a list of PVs or report
+disconnected PVs. Each
 script has its own arguments and dependencies; check its help and calls
 against the API reference before relying on it.

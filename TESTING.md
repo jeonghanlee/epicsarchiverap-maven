@@ -159,6 +159,101 @@ listing runner's real bounded JVM cleanup helper. A forced stop or surviving
 owned process fails the run. Boundary tests do not count as appliance
 acceptance, and Maven does not run these Python tests.
 
+## Python pause and resume examples
+
+The engine persistence regression runs in the default Maven suite and can
+also run alone:
+
+```bash
+./mvnw -B -ntp -Dtest=PausePersistenceTest,PBAppendCrashRecoveryTest test
+```
+
+It uses the actual engine, sample buffers, PlainPB serializer and file
+reader. A directory at the output path tests append failure; Linux
+`/dev/full` tests a buffered output-close failure. The latter case requires
+Linux and is skipped when that device is absent. Four partial-write cases use
+Linux `/usr/bin/prlimit` and `/bin/bash` in a separate JVM, keeping the
+test runner's file-size limit unchanged. They interrupt the header, first
+sample, next sample, and an append to an existing file. The failed append
+must restore the preceding file bytes; a retry must preserve every sample
+tuple. These four cases are skipped when either executable is absent.
+The concurrency case
+controls only the real file output's close boundary. The engine BPL case
+controls only the HTTP request and response; its engine and storage paths
+run unchanged. A queued year-change task is exercised through the actual
+engine scheduler. These checks require no IOC or Tomcat.
+
+The pause/resume commands use the archive client's shared transport and
+identity checks. Run the real CLI subprocess tests with a controlled outer
+HTTP boundary, plus both existing suites:
+
+```bash
+work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_pause_resume_clients.py -v
+work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_archive_status_clients.py -v
+work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_list_archived_pvs.py -v
+```
+
+With JDK 21, compile the test adapter and resolve its dependency classpath
+before starting any appliance. This does not rebuild the four WARs; build
+those first using the normal build procedure when production code changes.
+
+```bash
+./mvnw -B -ntp -DskipTests test-compile
+./mvnw -B -ntp dependency:build-classpath -Dmdep.outputFile=work/pause-resume-classpath.txt
+```
+
+Use the listing procedure's `TOMCAT_HOME` and `softIocPVX` environment, and
+put the matching EPICS Base `camonitor` on PATH. The standard-library-only
+runner invokes the real Java `PVSampleDump` adapter, which calls
+`PBFileInfo` and `FileBackedPBEventStream`. No PB parser is reproduced in
+Python. It also compares the client's supported canonical names against
+the server's actual `PVNames.normalizeChannelName` function.
+
+```bash
+work/list-pvs-venv/bin/python src/test/pythontests/verify_pause_resume.py work/pause-resume-check
+work/list-pvs-venv/bin/python src/test/pythontests/verify_archive_status.py work/archive-status-regression
+```
+
+Use fresh evidence folders. The pause/resume runner defaults to HTTP ports
+19665 through 19668 and 19670, and CA port 19675. Overrides are
+`--port-base`, `--ca-port`, `--tomcat-home`, `--ioc`, `--monitor`,
+`--war-dir` and `--classpath-file`. Run the two real workflows sequentially.
+
+The runner loads unchanged `UnitTestPVs.db` under a unique prefix. It saves
+at least three baseline samples, pauses through the shipped CLI, waits for
+`Paused` and verifies the baseline in actual PB files. It then observes
+`2*B+5` seconds using the launched engine's buffer property. The real CA
+monitor and a continuously archived control PV must keep producing data
+during this interval. Before sending resume, the runner requires the target's
+PB and retrieval tuple sets to equal the snapshot captured after pause.
+After resume, at least three samples timestamped after the command completed
+must match retrieval and actual PB tuples, including nanoseconds, value,
+status and severity. The baseline must remain unchanged.
+
+The runner sends resume just after observing an IOC update, so its first
+resumed current value must retain an IOC timestamp preceding the request.
+Exactly one new sample with that earlier timestamp must be present. It
+must match the last real IOC monitor update before the request
+within 500 nanoseconds of its rounded microsecond timestamp, carry startup and reconnection
+fields consistent with receipt after resume, and persist in actual PB.
+Numeric samples with connection or startup fields remain samples; only
+headers without sample payloads are excluded. Boundary records are retained.
+
+Initial archiving has a 360-second deadline. State transitions, retrieval,
+baseline persistence and resumed persistence each have a 120-second
+deadline; PB polling uses one second. Expiry fails the run. Alias and `.VAL`
+requests, overlap and repeated-operation rejections, and mixed batches with
+an unknown PV at every position run against the actual appliance. The
+scripting page's pause/status/resume/status block executes verbatim.
+
+Evidence includes exact commands and outputs, retrieval responses, decoded
+PB records, monitor output, configured store roots, source/fixture/WAR and
+adapter/classpath digests, deadlines and cleanup results. Every exit path
+stops the owned monitor, launcher and IOC. Normal launcher exit is 143 and
+IOC exit is 0; forced cleanup or surviving owned processes fails the run.
+These Python checks are separate from Maven's default suite. Component
+failure injection at the HTTP boundary verifies client reporting only.
+
 ## Principles
 
 - The platform carries only the tests this site needs, on the paths it uses. The Channel Archiver migration tests were removed with that feature's disuse.
