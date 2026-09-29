@@ -110,6 +110,68 @@ exit 2 before any request. The script makes no archive changes or automatic
 retries. A read timeout bounds a socket read, not the total time for a server
 that continuously sends a large response.
 
+## Request archiving and inspect status
+
+Use [archivePVList.py](samples/archivePVList.py) to submit requests and
+[getPVStatus.py](samples/getPVStatus.py) to read the appliance's actual state.
+Keep both scripts with [archiverClient.py](samples/archiverClient.py) and
+[listArchivedPVs.py](samples/listArchivedPVs.py) in the same directory.
+They use only Python 3's standard library.
+
+Start the [local appliance](developer.md#run-a-local-appliance) or select an
+existing appliance. Set `BPL_URL` to its management URL ending in `/bpl` and
+`PV_FILE` to a UTF-8 file of PV names you intend to archive, one per line.
+The archive command changes that appliance's configuration.
+Then run from the repository root:
+
+```bash
+python3 -m venv --without-pip work/list-pvs-venv
+samples=docs/book/src/samples
+bpl=${BPL_URL:?Set BPL_URL to the management BPL base URL}
+pv_file=${PV_FILE:?Set PV_FILE to your input file}
+work/list-pvs-venv/bin/python "$samples/getPVStatus.py" "$bpl" "$pv_file"
+work/list-pvs-venv/bin/python "$samples/archivePVList.py" "$bpl" "$pv_file"
+work/list-pvs-venv/bin/python "$samples/getPVStatus.py" "$bpl" "$pv_file"
+```
+
+Both commands print an aligned ASCII table with `PV Name` and `Status`, in
+input order, followed by total, successful and failed counts. Successful
+status queries can report `Not being archived` or `Initial sampling`.
+`Being archived` is separate from archive request acceptance, and does not
+by itself prove that the IOC is connected. Repeat the status command to
+observe progress; neither script waits for collection to begin.
+
+The archive command accepts `--sampling-method MONITOR|SCAN` and
+`--sampling-period SECONDS` (defaults MONITOR and 1). The period must be
+positive and representable as a finite 32-bit float. The server can enforce
+a minimum period. `Already submitted` is successful request handling; it
+does not mean existing sampling settings were updated. Use the appliance's
+sampling-parameter operation to change an existing configuration.
+
+Input names must be printable ASCII without spaces, commas, `*` or `?`.
+Blank lines are skipped, surrounding whitespace is stripped, and `#` is a
+literal name character. There is no comment syntax. Archive inputs must be
+independent: duplicate names, protocol/`.VAL` equivalents and configured
+alias collisions are rejected before mutation. Multiple fields of the same
+record are conservatively rejected in one archive batch because the server
+may archive them as part of the parent stream. Read-only status queries may
+repeat a name. IOC aliases not yet discovered by the appliance cannot be
+resolved by this check; use canonical IOC names for new requests.
+
+Both scripts accept `--timeout` with the listing script's bounds. Exit 0
+means every query/request succeeded, exit 1 means at least one failed, and
+exit 2 means local input or identity overlap was rejected. Local input
+errors send no HTTP; alias overlap checks use only read requests. Archive
+preflight failures send no archive request. A server rejection or uncertain
+mutation is shown for its PV, details go to stderr, and subsequent independent
+inputs are still processed. Timeouts and unusable responses produce
+`Outcome unknown`; inspect actual status before retrying. No automatic
+mutation retries or batch rollback are performed. The server validates
+PV-specific syntax beyond the input-file restrictions above.
+
+The [test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-archive-and-status-examples)
+uses the shipped IOC fixture to reproduce these states and sampling checks.
+
 ## Other sample scripts
 
 The repository folder
@@ -117,5 +179,4 @@ The repository folder
 holds Python 3 scripts that use these calls, for example to pause,
 resume or delete a list of PVs, or to report disconnected PVs. Each
 script has its own arguments and dependencies; check its help and calls
-against the API reference before relying on it. The older `getPVList.py`
-uses a fixed site URL; use `listArchivedPVs.py` for an explicit appliance URL.
+against the API reference before relying on it.

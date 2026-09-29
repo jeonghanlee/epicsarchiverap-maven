@@ -124,6 +124,41 @@ failure and no surviving owned JVM, and retains its evidence under `work/`:
 work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_listing_runner_cleanup.py -v
 ```
 
+## Python archive and status examples
+
+The shipped `archivePVList.py` and `getPVStatus.py` share `archiverClient.py`
+and the URL/timeout validators in `listArchivedPVs.py`. Run their subprocess
+tests against a controlled outer HTTP boundary:
+
+```bash
+work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_archive_status_clients.py -v
+```
+
+With the same built WARs, JDK 21, Tomcat and EPICS environment as the listing
+procedure, run the real workflow in a new retained folder:
+
+```bash
+work/list-pvs-venv/bin/python src/test/pythontests/verify_archive_status.py work/archive-status-check
+```
+
+The runner uses appliance ports 18665 through 18668 and 18670 and CA port
+18675; `--port-base`, `--ca-port`, `--tomcat-home`, `--ioc` and `--war-dir`
+provide overrides. It starts with the IOC stopped, invokes the actual CLI
+files to observe unknown and Initial sampling states, then loads unchanged
+`UnitTestPVs.db` and waits up to 360 seconds for the requested fixture PVs
+to reach Being archived. It checks MONITOR/SCAN and effective sampling
+periods, repeated submissions, a configured alias, rejected overlaps, and
+real mixed archive batches with a server-invalid name in each position.
+An unusable error response must report an unknown outcome; independent
+good requests still reach Being archived. The runner also executes the
+documentation command block verbatim.
+
+Evidence includes CLI inputs, exact commands and outputs, independent BPL
+observations, source/fixture/WAR digests, and cleanup results. It imports the
+listing runner's real bounded JVM cleanup helper. A forced stop or surviving
+owned process fails the run. Boundary tests do not count as appliance
+acceptance, and Maven does not run these Python tests.
+
 ## Principles
 
 - The platform carries only the tests this site needs, on the paths it uses. The Channel Archiver migration tests were removed with that feature's disuse.
