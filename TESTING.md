@@ -72,6 +72,58 @@ Fixture lifecycle:
 
 The browser tests that the fork kept call the same page or BPL endpoint over HTTP, through the appliance's `GetUrlContent` helper or the JDK HTTP client, and poll for readiness with Awaitility, verifying the server response rather than the DOM. Selenium is not a test dependency.
 
+## Python listing example
+
+The listing checks invoke the shipped `docs/book/src/samples/listArchivedPVs.py`
+as a subprocess. Python 3's standard library is sufficient; Maven does not
+run these Python checks.
+
+For argument validation, HTTP errors, timeout, malformed/truncated responses,
+and result formatting, run the client boundary tests. They control only a
+local HTTP server, with no internal-function mocks:
+
+```bash
+python3 -m venv --without-pip work/list-pvs-venv
+work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_list_archived_pvs.py -v
+```
+
+For real BPL acceptance, first build the four WARs with `./mvnw -B -ntp package`.
+Export `JAVA_HOME` and `TOMCAT_HOME` and activate the EPICS environment as
+described above; `softIocPVX` must be on `PATH`. Stop any earlier example
+appliance or Maven integration fixture before this run. Use a new evidence
+folder each time:
+
+```bash
+work/list-pvs-venv/bin/python src/test/pythontests/verify_list_archived_pvs.py work/list-pvs-check
+```
+
+The runner starts the real local launcher on ports 17665 through 17668 and
+17670 with a separate CA server/search port 17675, loads the unchanged
+`src/resources/test/UnitTestPVs.db`, and requests
+archiving for 600 of its PVs. It waits up to 360 seconds for all 600 to report
+Being archived, then verifies complete listing, globs, empty matches,
+explicit limits and an actual HTTP 404. It also executes the listing page's
+shell commands verbatim and checks their output. No proxy or substitute BPL is used.
+The runner records the real commands, stdout/stderr, status responses,
+fixture/script/WAR digests and process cleanup in the retained folder.
+
+`--tomcat-home`, `--ioc`, `--war-dir`, `--port-base` and `--ca-port` allow
+explicit paths and ports. The runner stops only its own launcher and IOC in cleanup and
+requires the launcher's normal exit 143 with no owned JVM remaining.
+If the launcher exits early, the runner checks the recorded boot ID, PID and
+start time before stopping its surviving JVMs. It shares the shutdown deadline,
+records any fallback or forced stop, and still fails verification for that run.
+Client boundary checks do not count as appliance acceptance.
+
+With the same Tomcat/EPICS environment and built WARs, verify this failure
+path by killing the real launcher during startup. The test uses appliance
+ports 24665 through 24668 and 24670, and CA port 24675. It requires runner
+failure and no surviving owned JVM, and retains its evidence under `work/`:
+
+```bash
+work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_listing_runner_cleanup.py -v
+```
+
 ## Principles
 
 - The platform carries only the tests this site needs, on the paths it uses. The Channel Archiver migration tests were removed with that feature's disuse.
