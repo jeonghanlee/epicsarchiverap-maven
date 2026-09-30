@@ -30,7 +30,7 @@ def main(argv=None):
         try:
             body = _request(args.bpl_url, "archivePV", args.timeout, data=[{
                 "pv": target, "samplingmethod": args.sampling_method, "samplingperiod": args.sampling_period,
-            }])
+            }], mutation=True)
             row = result_row(body)
             if row["pvName"] not in {real, real.split(".", 1)[0]}:
                 raise ClientError("archive response identifies another PV")

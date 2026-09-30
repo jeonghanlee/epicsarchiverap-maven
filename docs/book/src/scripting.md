@@ -41,7 +41,7 @@ from the deployed code, it is the authority on names and parameters.
 | `pauseArchivingPV`, `resumeArchivingPV` | `pv` (glob or comma list) | pause or resume |
 | `changeArchivalParameters` | `pv`, `samplingperiod`, `samplingmethod` | change sampling |
 | `deletePV` | `pv`, `deleteData` (`true` or `false`, default `false`) | stop archiving; the PV must be paused |
-| `renamePV` | `pv`, `newname` | rename; the PV must be paused |
+| `renamePV` | `pv`, `newname` | copy paused configuration and data to an unused name; retain both names |
 | `getNeverConnectedPVs`, `getCurrentlyDisconnectedPVs`, `getPausedPVsReport` | none | the reports |
 | `exportConfig`, `importConfig` | none; `importConfig` takes the export as POST body | the archiving configuration as JSON |
 | `getNamedFlag`, `setNamedFlag` | `name`, `value` | named flags ([Operating](operating.md#named-flags)) |
@@ -237,6 +237,61 @@ Exit 0 means every request was accepted; exit 1 means a preflight or request
 failed; exit 2 means invalid local input or overlapping identities. Local
 input failures send no HTTP requests. Remote identity validation uses only
 read requests and sends no mutations on failure.
+
+## Rename a paused PV
+
+Use [renamePVList.py](samples/renamePVList.py) with the companion
+[archiverClient.py](samples/archiverClient.py) and
+[listArchivedPVs.py](samples/listArchivedPVs.py) in the same folder. These
+clients use only the Python 3 standard library.
+
+Prepare three explicitly selected UTF-8 files: `SOURCE_FILE` lists the
+archived source names, `PAIR_FILE` contains one `old,new` pair per line,
+and `BOTH_FILE` lists both names from every pair for the final status check.
+Each pair has exactly one comma and two nonempty printable ASCII PV names.
+Blank lines are ignored and surrounding whitespace is stripped. Names are
+case-sensitive; `#` is literal. There is no CSV quoting or comment syntax.
+The pause/resume name restrictions apply to both columns, including one
+optional protocol prefix and exact terminal `.VAL` normalization.
+
+Every source must be paused and every destination unused. Independent pairs
+cannot repeat either identity, form chains, or address fields of the same
+record. The client rejects local overlap before HTTP and checks configured
+aliases and type-info identities with read-only requests before mutation.
+Undiscovered IOC aliases require canonical input names.
+
+With `BPL_URL`, `SOURCE_FILE`, `PAIR_FILE` and `BOTH_FILE` set to your
+selected URL and files, run:
+
+```bash
+python3 docs/book/src/samples/pausePVList.py "$BPL_URL" "$SOURCE_FILE"
+python3 docs/book/src/samples/getPVStatus.py "$BPL_URL" "$SOURCE_FILE"
+python3 docs/book/src/samples/renamePVList.py "$BPL_URL" "$PAIR_FILE"
+python3 docs/book/src/samples/getPVStatus.py "$BPL_URL" "$BOTH_FILE"
+```
+
+The three-column table reports `Old PV Name`, `New PV Name` and `Status`,
+followed by total, successful and failed counts. `Rename accepted` means
+the API acknowledged the request. Verify copied sampling settings and the
+same timestamp/value/status/severity records over a fixed interval under
+both names before using the destination. The source configuration and data
+remain present; both names remain paused. This command does not resume or
+delete either name.
+
+A copy failure may leave paused destination metadata and incomplete data.
+Validation messages, HTTP errors, redirects, timeouts and unusable responses
+therefore report `Outcome unknown`, with details on stderr. Independent
+later pairs continue. Mutation redirects are never followed by rename,
+archive, pause or resume; none of these clients retries automatically.
+Inspect both configurations and stored samples before a manual recovery or
+retry. A failed nonempty PB file must not be treated as an empty archive.
+
+Exit 0 means all pairs were accepted, exit 1 means a preflight or operation
+failed, and exit 2 means invalid local input or overlapping identities.
+`--timeout` defaults to 30 seconds and accepts values greater than zero and
+at most 86400 seconds. The [real verification procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-rename-example)
+checks source retention and exact copied records through actual retrieval
+and PB readers, including filesystem failures during copying.
 
 ## Other sample scripts
 

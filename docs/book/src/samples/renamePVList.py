@@ -1,54 +1,81 @@
 #!/usr/bin/env python3
-'''Given a list of comma separated PVs, this renames  all the PVs in the first column to the second column.
-We assume that the PV's have been paused etc.
-For example, generate a list like so
-OldName0, NewName0
-OldName1, NewName1
+"""Copy paused PV configuration and stored data while retaining both names."""
 
-To actually do this
-1) Pause all the old names using the pausePVList script
-2) Use this script to rename the oldName to newName
-3) Resume the newNames using the resumePVList script
-4) Delete the oldNames (including the data) using the deletePVList script
-'''
-
-import os
 import sys
-import argparse
-import time
-import requests
-import json
-import datetime
-import time
 
-def renamePV(bplURL, oldName, newName):
-    '''Renames the pv oldName to newName'''
-    url = bplURL + '/renamePV'
-    params = {"pv" : oldName, "newname" : newName}
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    renamePVResponse = response.json()
-    return renamePVResponse
+from archiverClient import (
+    ClientError, _request, diagnostic, operation_name, parser_for, print_results,
+    resolve_inputs,
+)
 
+HEADERS = ("Old PV Name", "New PV Name", "Status")
+
+
+def read_pairs(parser, path):
+    """Read a plain UTF-8 pair file and validate every name before HTTP."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        parser.error(f"cannot read pair file: {exc}")
+    pairs = []
+    for line, raw in enumerate(text.split("\n"), 1):
+        if not raw.strip():
+            continue
+        parts = [part.strip() for part in raw.split(",")]
+        if len(parts) != 2 or not all(parts):
+            parser.error(f"line {line}: expected two nonempty PV names separated by one comma")
+        for role, name in zip(("old", "new"), parts):
+            try:
+                operation_name(name)
+            except ClientError as exc:
+                parser.error(f"line {line} {role} column: {exc}")
+        pairs.append((line, *parts))
+    if not pairs:
+        parser.error("pair file contains no names")
+    return pairs
+
+
+def accepted(body):
+    """Validate the actual rename acknowledgement without claiming copy completion."""
+    if not isinstance(body, dict):
+        raise ClientError("expected a rename result object")
+    for field in ("validation", "desc", "description"):
+        if field in body and not isinstance(body[field], str):
+            raise ClientError(f"expected a string {field}")
+    if body.get("validation"):
+        raise ClientError(body["validation"])
+    if body.get("status") != "ok":
+        raise ClientError(f"rename was not confirmed: {body.get('status')}; {body.get('desc', '')}")
+
+
+def main(argv=None):
+    parser = parser_for(__doc__, "UTF-8 file with one old,new pair per line; no quoting or comments")
+    args = parser.parse_args(argv)
+    pairs = read_pairs(parser, args.file)
+    records = [(line, name) for line, old, new in pairs for name in (old, new)]
+    roles = [role for _ in pairs for role in ("old", "new")]
+    try:
+        resolved = resolve_inputs(parser, args, records, operation_name, roles)
+    except ClientError as exc:
+        diagnostic(f"preflight failed; no rename requests sent: {exc}")
+        return 1
+    rows, failures = [], 0
+    for index, (_, old, new) in enumerate(pairs):
+        source, destination = resolved[2 * index][3], resolved[2 * index + 1][3]
+        status = "Outcome unknown"
+        try:
+            body = _request(args.bpl_url, "renamePV", args.timeout,
+                            params={"pv": source, "newname": destination}, mutation=True)
+            accepted(body)
+            status = "Rename accepted"
+        except ClientError as exc:
+            failures += 1
+            diagnostic(f"{old} -> {new}: Outcome unknown: {exc}; "
+                       "check both configurations and stored samples before retrying")
+        rows.append((old, new, status))
+    print_results(rows, failures, HEADERS)
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("url", help="This is the URL to the mgmt bpl interface of the appliance cluster. For example, http://arch.slac.stanford.edu/mgmt/bpl")
-    parser.add_argument("file", help="A file with a list of PVS, two PVs per line separated by a comma")
-    args = parser.parse_args()
-    lines = []
-    with open(args.file, 'r') as f:
-        lines = f.readlines()
-    for line in lines:
-        line = line.strip()
-        parts = line.split(",")
-        if len(parts) != 2:
-            print("Skipping line", line)
-            continue
-        oldName = parts[0].strip()
-        newName = parts[1].strip()
-        renameResponse = renamePV(args.url, oldName, newName)
-        print("{0} has been renamed to {1} with status {2}".format(oldName, newName, renameResponse['status'] if 'status' in renameResponse else "N/A"))
-        time.sleep(1.0)
-    
+    sys.exit(main())

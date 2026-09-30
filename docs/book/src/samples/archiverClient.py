@@ -10,7 +10,7 @@ import struct
 import sys
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
 from listArchivedPVs import bpl_url, positive_timeout
 
@@ -30,10 +30,10 @@ class ClientError(Exception):
         self.code = code
 
 
-def parser_for(description):
+def parser_for(description, file_help="UTF-8 file with one explicit PV per line"):
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("bpl_url", type=bpl_url, help="explicit management base URL ending in /bpl")
-    parser.add_argument("file", type=Path, help="UTF-8 file with one explicit PV per line")
+    parser.add_argument("file", type=Path, help=file_help)
     parser.add_argument("--timeout", type=positive_timeout, default=DEFAULT_TIMEOUT,
                         help="connect/read timeout, greater than 0 and at most 86400 seconds (default: 30)")
     return parser
@@ -68,7 +68,14 @@ def sampling_period(value):
     return str(number)
 
 
-def _request(base, action, timeout, params=None, data=None):
+class NoMutationRedirect(HTTPRedirectHandler):
+    """Keep a mutation's response at the endpoint that received the request."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def _request(base, action, timeout, params=None, data=None, mutation=False):
     """Perform the sole HTTP path and require HTTP 200 with valid JSON."""
     url = base + "/" + action + ("?" + urlencode(params) if params else "")
     headers = {"Accept": "application/json"}
@@ -77,7 +84,8 @@ def _request(base, action, timeout, params=None, data=None):
         payload = json.dumps(data, allow_nan=False).encode("utf-8")
         headers["Content-Type"] = "application/json"
     try:
-        with urlopen(Request(url, data=payload, headers=headers), timeout=timeout) as response:
+        open_request = build_opener(NoMutationRedirect()).open if mutation else urlopen
+        with open_request(Request(url, data=payload, headers=headers), timeout=timeout) as response:
             if response.status != 200:
                 raise ClientError(f"HTTP {response.status}; expected 200", response.status)
             return json.load(response)
@@ -116,14 +124,16 @@ def normalized(name):
     return name[:-4] if name.endswith(".VAL") else name
 
 
-def check_disjoint(parser, records):
+def check_disjoint(parser, records, roles=None):
     """Reject shared record roots conservatively, including fields and protocols."""
     seen = {}
-    for line, name in records:
+    for index, (line, name) in enumerate(records):
         key = normalized(name).split(".", 1)[0]
+        location = f"line {line}" + (f" {roles[index]} column" if roles else "")
         if key in seen:
-            parser.error(f"lines {seen[key]} and {line}: overlapping PV identities ({name})")
-        seen[key] = line
+            conflict = f"{seen[key]} and {location}" if roles else f"lines {seen[key]} and {line}"
+            parser.error(f"{conflict}: overlapping PV identities ({name})")
+        seen[key] = location if roles else line
 
 
 def diagnostic(message):
@@ -132,19 +142,21 @@ def diagnostic(message):
     print(f"error: {safe}", file=sys.stderr)
 
 
-def print_results(rows, failures):
-    headers = ("PV Name", "Status")
-    widths = [max(len(row[i]) for row in [headers, *rows]) for i in range(2)]
+def print_results(rows, failures, headers=("PV Name", "Status")):
+    widths = [max(len(row[i]) for row in [headers, *rows]) for i in range(len(headers))]
     separator = "   ".join("-" * width for width in widths)
-    lines = [separator, f"{headers[0]:<{widths[0]}}   {headers[1]}", separator]
-    lines.extend(f"{name:<{widths[0]}}   {status}" for name, status in rows)
+    def formatted(row):
+        return "   ".join(value.ljust(widths[i]) if i < len(headers) - 1 else value
+                          for i, value in enumerate(row))
+    lines = [separator, formatted(headers), separator]
+    lines.extend(formatted(row) for row in rows)
     lines.extend((separator, f"Total {len(rows)}   Successful {len(rows) - failures}   Failed {failures}"))
     print("\n".join(lines))
 
 
-def resolve_inputs(parser, args, records, canonicalize=None):
-    """Resolve configured aliases and reject overlapping identities before POST."""
-    check_disjoint(parser, records)
+def resolve_inputs(parser, args, records, canonicalize=None, roles=None):
+    """Resolve configured aliases and reject overlapping identities before mutation."""
+    check_disjoint(parser, records, roles)
     body = _request(args.bpl_url, "getAllAliases", args.timeout)
     if not isinstance(body, list):
         raise ClientError("expected an alias array")
@@ -154,6 +166,8 @@ def resolve_inputs(parser, args, records, canonicalize=None):
             raise ClientError("expected an alias object")
         alias = text_field(row.get("aliasName"), "alias name")
         real = text_field(row.get("srcPVName"), "alias target")
+        if canonicalize:
+            alias, real = canonicalize(alias), canonicalize(real)
         if alias in aliases:
             raise ClientError("duplicate alias in response")
         aliases[alias] = real
@@ -175,12 +189,14 @@ def resolve_inputs(parser, args, records, canonicalize=None):
             if not isinstance(info, dict):
                 raise ClientError("expected a type-info object")
             identity = text_field(info.get("pvName"), "type-info pvName")
+            if canonicalize:
+                canonicalize(identity)
             if identity != real:
                 raise ClientError("type-info identity contradicts the alias map")
         # Existing aliases name the configured target; other names retain their protocol/field.
         target = real if visited else name
         resolved.append((line, name, target, real))
-    check_disjoint(parser, [(line, real) for line, _, _, real in resolved])
+    check_disjoint(parser, [(line, real) for line, _, _, real in resolved], roles)
     return resolved
 
 
@@ -250,7 +266,7 @@ def pause_resume_main(pause, argv=None):
     for _, original, _, target in resolved:
         status = "Outcome unknown"
         try:
-            body = _request(args.bpl_url, verb + "ArchivingPV", args.timeout, data=[target])
+            body = _request(args.bpl_url, verb + "ArchivingPV", args.timeout, data=[target], mutation=True)
             rejection = pause_resume_result(body, target, pause)
             if rejection:
                 status = "Rejected"

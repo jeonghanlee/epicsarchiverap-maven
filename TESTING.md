@@ -254,6 +254,103 @@ IOC exit is 0; forced cleanup or surviving owned processes fails the run.
 These Python checks are separate from Maven's default suite. Component
 failure injection at the HTTP boundary verifies client reporting only.
 
+## Python rename example
+
+Run the shipped rename CLI boundary suite together with listing,
+archive/status and pause/resume:
+
+```bash
+work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_rename_client.py -v
+work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_list_archived_pvs.py -v
+work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_archive_status_clients.py -v
+work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_pause_resume_clients.py -v
+```
+
+These are actual CLI subprocesses. Only their outer HTTP boundary is
+controlled. Rename uses GET with encoded `pv` and `newname`; 301, 302,
+303, 307 and 308 mutation responses must produce one request, no request
+at the Location target, an uncertain outcome and continued handling of
+later independent records. Archive, pause and resume have the same redirect
+checks. Request logs from both boundary servers and CLI commands/outputs
+are retained under `work/rename-client-evidence/`. No client result
+establishes appliance data-copy completion.
+
+The live runner requires JDK 21, the existing Tomcat 9 distribution and
+`softIocPVX` environment from the listing procedure, and Linux `strace` on
+PATH. The user must be able to attach strace to the owned management JVM;
+an attachment failure fails setup. The runner records actual HTTP syscalls
+without forwarding or replacing requests. Its filesystem failures affect
+only a selected destination path. Run the Java fixture and all appliance
+runners sequentially and use fresh evidence folders.
+
+Prepare the adapter, dependency classpath and one isolated four-WAR bundle
+before starting any fixture. The preparation mode runs the normal package
+build with tests skipped, records source/resource and WAR digests and the
+successful build logs, and copies only that build's four WARs. It obtains
+the basename from the actual build output.
+
+```bash
+RENAME_RUNNER=src/test/pythontests/verify_rename.py
+WAR_DIR="$PWD/work/rename-bundle"
+python3 "$RENAME_RUNNER" "$WAR_DIR" --prepare-bundle
+BUNDLE_MANIFEST="$WAR_DIR/manifest.json"
+WAR_BASENAME=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["war_basename"])' "$BUNDLE_MANIFEST")
+export MAVEN_ARGS="-Darchappl.war.dir=$WAR_DIR -Darchappl.final.name=$WAR_BASENAME"
+./mvnw -B -ntp test -P integration -Dtest=org.epics.archiverappliance.mgmt.RenamePVTest
+unset MAVEN_ARGS
+RENAME_OPTIONS=(--war-dir "$WAR_DIR" --war-basename "$WAR_BASENAME")
+RENAME_OPTIONS+=(--bundle-manifest "$BUNDLE_MANIFEST")
+python3 "$RENAME_RUNNER" work/rename-check "${RENAME_OPTIONS[@]}"
+```
+
+The Java test calls actual BPL endpoints through TomcatSetup/SIOCSetup and
+compares exact timestamp/value/status/severity multisets over a fixed
+interval, copied sampling/storage settings and both retained Paused names.
+The explicit WAR directory and basename must select the same bundle used
+by Python; do not infer them from a later date or HEAD. The runner verifies
+build evidence, production-source/resource digests and deployed-copy digests.
+
+The live run loads unchanged `UnitTestPVs.db` under its own prefix. It
+archives sources and a healthy control through the shipped CLI, establishes
+at least three real numeric samples, pauses sources, fixes the baseline
+interval and confirms PB persistence. It verifies successful copies, aliases,
+`.VAL`, rejected chains and repeated identities, and actual occupied,
+unpaused and unknown-source failures in every batch position. Successes
+before and after each failure must preserve exact source/destination
+multisets. Sampling settings, protocol flags, archived fields, store URLs
+and creation time are copied; both names remain Paused.
+
+The archive requests specify a 0.1-second MONITOR period. One source is
+processed repeatedly through the actual IOC console before pause; its
+persisted PB data must exceed 16 KiB to exercise multiple destination writes.
+A successful copy first records the actual destination write sequence.
+The filesystem cases verify a destination write denied after metadata
+registration and a fault on the second destination write, with real samples
+observed during its five-second entry delay. No storage plugin, action, HTTP response or PB
+reader is replaced. Faults are restored before later checks. An unexercised
+fault or unproven partial-copy onset fails the run.
+
+Each PB file is decoded independently with the actual PVSampleDump adapter.
+Source and control files must decode and preserve exact baseline multisets.
+Destination observations retain path, existence, size, digest, reader exit,
+stdout and stderr, including absent, zero-byte and undecodable files. A
+nonempty undecodable file is never treated as an empty sample set. Such
+destination failures are allowed only with proof of the intended filesystem
+fault and passing source/control and later-pair checks. Files are read again
+after orderly shutdown, and the scripting page's exact rename command block
+is executed against the same appliance.
+
+Initial archive readiness has a 360-second deadline; other state, retrieval
+and PB checks have 120-second deadlines. Expiry retains the last observation
+and fails. Defaults are HTTP ports 20665 through 20668 and 20670, and CA
+port 20675, with explicit port overrides available. Cleanup requires launcher
+exit 143, IOC exit 0 and no surviving owned JVMs. Tracer shutdown is bounded;
+its failure cannot bypass appliance or IOC teardown. Forced tracer
+termination fails the run. Then rerun the existing
+live archive/status and pause/resume runners against the same selected WAR
+directory, since their shared mutation transport changed. Build the book
+and compare all affected copied scripts and links before accepting the scope.
+
 ## Principles
 
 - The platform carries only the tests this site needs, on the paths it uses. The Channel Archiver migration tests were removed with that feature's disuse.
