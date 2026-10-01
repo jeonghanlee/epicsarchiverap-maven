@@ -301,3 +301,73 @@ holds additional Python 3 scripts to delete a list of PVs or report
 disconnected PVs. Each
 script has its own arguments and dependencies; check its help and calls
 against the API reference before relying on it.
+
+## Delete paused PVs
+
+Use [deletePVList.py](samples/deletePVList.py) with
+[archiverClient.py](samples/archiverClient.py) and
+[listArchivedPVs.py](samples/listArchivedPVs.py) in the same folder.
+Python 3 needs no third-party package. Set `BPL_URL`, `DELETE_PV` and
+`DELETE_FILE` to an explicit management URL, an archived canonical PV
+and a UTF-8 file path. For several PVs, prepare one name per line instead
+of the single-PV file command below. Blank lines are ignored, surrounding
+whitespace is stripped, case is preserved and `#` is literal.
+
+The default removes archive configuration and configured aliases while
+retaining stored data. This differs from the previous sample, which always
+requested data deletion. The PV must first be paused:
+
+```bash
+printf '%s\n' "$DELETE_PV" > "$DELETE_FILE"
+python3 docs/book/src/samples/pausePVList.py "$BPL_URL" "$DELETE_FILE"
+python3 docs/book/src/samples/getPVStatus.py "$BPL_URL" "$DELETE_FILE"
+python3 docs/book/src/samples/deletePVList.py "$BPL_URL" "$DELETE_FILE"
+python3 docs/book/src/samples/getPVStatus.py "$BPL_URL" "$DELETE_FILE"
+```
+
+For a separate archived PV selected through the same variables, explicitly
+request irreversible stored-data deletion:
+
+```bash
+printf '%s\n' "$DELETE_PV" > "$DELETE_FILE"
+python3 docs/book/src/samples/pausePVList.py "$BPL_URL" "$DELETE_FILE"
+python3 docs/book/src/samples/getPVStatus.py "$BPL_URL" "$DELETE_FILE"
+python3 docs/book/src/samples/deletePVList.py "$BPL_URL" "$DELETE_FILE" --delete-data
+python3 docs/book/src/samples/getPVStatus.py "$BPL_URL" "$DELETE_FILE"
+```
+
+The commands report `Pause accepted`, `Paused`, `Delete accepted` and
+`Not being archived`. Mutation commands do not poll or retry. Status can
+lag the accepted request; repeat a separate status query if needed.
+The input uses the pause/resume name restrictions: one optional protocol
+prefix, exact terminal `.VAL` normalization and ordinary field names.
+Configured aliases resolve before mutation. Duplicate, alias-equivalent
+and same-record inputs fail before any deletion; undiscovered IOC aliases
+require canonical input names.
+
+Each item sends one encoded GET with explicit `deleteData=false` or `true`.
+`Delete accepted` confirms successful engine and ETL acknowledgements.
+With `--delete-data`, ETL checks PV chunk enumeration, removal, and ZIP
+persistence before acknowledging completion. Management removes configuration
+and aliases only after confirming both responses.
+Configuration-only deletion leaves unconfigured PB data;
+normal retrieval becomes unavailable, so empty retrieval cannot establish
+data erasure. Save store roots and inspect actual retained files before
+recovery. The [real verification procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-deletion-example)
+checks both modes with actual PB readers after orderly shutdown.
+
+HTTP errors, validation failures, redirects, timeout and unusable responses
+report `Outcome unknown`; details go to stderr and independent later items
+continue. Inspect configuration, aliases and all saved stores before a
+manual retry or recovery. Reported storage failures retain the PV's paused
+configuration and aliases, although some chunks might already be deleted.
+A lost response can leave the outcome unknown after successful deletion.
+There is no automatic pause, retry, rearchiving, rollback, or data recovery.
+Removed samples cannot be restored by retrying.
+Deleting an already removed configuration is an error.
+
+Exit 0 means all items were acknowledged, exit 1 means a preflight or item
+failed, and exit 2 means invalid input or overlapping identities. Local
+validation failures send no HTTP request; failed remote identity checks
+send no mutation. `--timeout` defaults to 30 seconds and accepts finite
+values greater than zero and at most 86400 seconds.

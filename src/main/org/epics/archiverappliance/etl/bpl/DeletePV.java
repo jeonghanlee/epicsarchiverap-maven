@@ -12,7 +12,6 @@ package org.epics.archiverappliance.etl.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
-import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
@@ -27,11 +26,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 /**
- * consolidate PB files for one pv before one storage
+ * Removes ETL jobs and, when requested, confirms stored-data deletion before acknowledging it.
  * @author Luofeng  Li 
  *
  */
@@ -63,35 +62,55 @@ public class DeletePV implements BPLAction {
 		resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
 
 		try (PrintWriter out = resp.getWriter()) {
+			List<String> failures = new ArrayList<>();
 			// Remove any ETL jobs from the runtime state. 
 			configService.getETLLookup().deleteETLJobs(pvName);
 			
 			if(deleteData) {
 				HashMap<String, String> timingValues = new HashMap<String, String>();
 				infoValues.put("deletes_timing", timingValues);
-				try(ETLContext context = new ETLContext()) {
-					Instant tenYearsLaterTimeStamp = TimeUtils.convertFromEpochSeconds(TimeUtils.getCurrentEpochSeconds() + 10 * 365 * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk(), 0);
+				if (typeInfo.getDataStores() == null || typeInfo.getDataStores().length == 0) {
+					failures.add("No usable data stores for PV " + pvName);
+				} else {
 					for(String dataSource : typeInfo.getDataStores()) {
+						ETLContext context = new ETLContext();
 						try {
 							ETLSource etlSource = StoragePluginURLParser.parseETLSource(dataSource, configService);
-							if(etlSource == null) continue;
-							List<ETLInfo> infos = etlSource.getETLStreams(pvName, tenYearsLaterTimeStamp, context);
-							if(infos == null) continue;
+							if (etlSource == null) throw new IOException("Data store has no usable deletion source");
+							List<ETLInfo> infos = etlSource.getETLStreamsForDeletion(pvName, context);
+							if (infos == null) throw new IOException("Deletion source returned no stream result");
 							for(ETLInfo info : infos) {
+								if (info == null) throw new IOException("Deletion source returned a null stream");
 								timingValues.put(info.getKey() + ": Start", TimeUtils.convertToHumanReadableString(System.currentTimeMillis()/1000));
 								logger.debug("Marking src " + info.getKey() + " for deletion when stopping archiving pv " + pvName);
-								etlSource.markForDeletion(info, context);
+								etlSource.deleteETLStream(info, context);
 								timingValues.put(info.getKey() + ": End", TimeUtils.convertToHumanReadableString(System.currentTimeMillis()/1000));
 							}
 						} catch(Exception ex) {
 							logger.error("Exception deleting data for PV " + pvName, ex);
+							failures.add("Deletion failed for " + dataSource + ": " + ex);
+						} finally {
+							try {
+								context.getPaths().close();
+							} catch (Exception ex) {
+								logger.error("Exception finalizing deletion for PV " + pvName, ex);
+								failures.add("Deletion finalization failed for " + dataSource + ": " + ex);
+							}
+							try {
+								context.close();
+							} catch (Exception ex) {
+								logger.error("Exception closing deletion context for PV " + pvName, ex);
+								failures.add("Deletion cleanup failed for " + dataSource + ": " + ex);
+							}
 						}
 					}
 				}
 			}
 			
-			infoValues.put("status", "ok");
-			infoValues.put("desc", "Successfully removed PV " + pvName + " from the cluster");
+			infoValues.put("status", failures.isEmpty() ? "ok" : "error");
+			infoValues.put("desc", failures.isEmpty()
+					? "Successfully removed PV " + pvName + " from the cluster"
+					: "Unable to confirm stored-data deletion for PV " + pvName + ": " + String.join("; ", failures));
 			out.println(JSONValue.toJSONString(infoValues));
 			return;
 		}

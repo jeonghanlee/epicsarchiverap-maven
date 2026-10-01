@@ -356,3 +356,131 @@ and compare all affected copied scripts and links before accepting the scope.
 - The platform carries only the tests this site needs, on the paths it uses. The Channel Archiver migration tests were removed with that feature's disuse.
 - Tests are hermetic and deterministic: storage owned by each test, JUnit temporary directories or directories under the build tree, no fixed host paths, readiness by polling (Awaitility) instead of sleeps, and a timeout that turns a hang into a failure. Existing tests that predate these rules are converted as they are touched.
 - A test verifies the real shipped path. Internal spans of the path under test are never replaced by stand-ins; only outermost boundaries (an IOC, a browser, the clock) are controlled.
+
+## Python deletion example
+
+Run the shipped client suites with only the outer HTTP boundary controlled:
+
+```bash
+python3 -m unittest discover -s src/test/pythontests -p 'test_*client*.py'
+python3 -m unittest discover -s src/test/pythontests -p 'test_list_archived_pvs.py'
+```
+
+`test_delete_client.py` checks both explicit data parameters, canonical names,
+alias/record overlap, UTF-8 input, ASCII output, timeout, actual subprocess
+exit codes, malformed and contradictory responses, every failure position,
+one mutation per item and 301/302/303/307/308 redirect refusal. These client
+checks do not establish stored-data effects.
+
+The live runner uses the listing procedure's JDK 21, Tomcat 9 and
+`softIocPVX` environment, unchanged `UnitTestPVs.db` and Linux `strace`.
+The user must be able to attach strace to the owned ETL JVM. Failure to
+attach or observe the intended filesystem fault fails the run. HTTP syscall
+traces observe the shipped CLIs directly without forwarding their requests.
+
+Prepare the PB-reader adapter, classpath and one isolated complete four-WAR
+bundle before any fixture starts. The deletion runner reuses the actual
+bundle preparation and HTTP/PB observation functions from the rename runner.
+It validates production/resource/configuration, IOC fixture, successful
+build-log, WAR and deployed-copy digests and records CLI/runner/reader
+sources, dependency classpath and adapter digests.
+
+```bash
+DELETE_RUNNER=src/test/pythontests/verify_delete.py
+WAR_DIR="$PWD/work/delete-bundle"
+python3 "$DELETE_RUNNER" "$WAR_DIR" --prepare-bundle
+BUNDLE_MANIFEST="$WAR_DIR/manifest.json"
+WAR_BASENAME=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["war_basename"])' "$BUNDLE_MANIFEST")
+export MAVEN_ARGS="-Darchappl.war.dir=$WAR_DIR -Darchappl.final.name=$WAR_BASENAME"
+DELETE_TESTS=org.epics.archiverappliance.mgmt.pauseresume.DeletePVTest
+DELETE_TESTS+=,org.epics.archiverappliance.mgmt.pauseresume.DeletePVAfterRestartTest
+DELETE_TESTS+=,org.epics.archiverappliance.mgmt.pauseresume.DeleteMultiplePVTest
+export EPICS_CA_SERVER_PORT=21875 EPICS_CAS_SERVER_PORT=21875
+./mvnw -B -ntp test -P integration -Dtest="$DELETE_TESTS"
+unset MAVEN_ARGS EPICS_CA_SERVER_PORT EPICS_CAS_SERVER_PORT
+DELETE_OPTIONS=(--war-dir "$WAR_DIR" --war-basename "$WAR_BASENAME")
+DELETE_OPTIONS+=(--bundle-manifest "$BUNDLE_MANIFEST")
+python3 "$DELETE_RUNNER" work/delete-check "${DELETE_OPTIONS[@]}"
+```
+
+Java fixtures and the Python appliance run sequentially after teardown and
+with free ports; the Java command uses CA port 21875 and the Python
+runner uses its separate default CA port 21675. The strengthened `DeletePVTest` uses the real IOC, retrieval
+and PB readers for both modes, sends each deletion once and polls read-only
+state. Original restart/bulk tests remain regressions; they do not establish
+PB retention/erasure or the no-retry contract.
+
+The Python runner archives separate targets under a dedicated prefix and
+saves at least three real numeric samples, fixed intervals, exact
+timestamp/value/status/severity multisets, configuration/aliases and store
+URLs/roots. Before deletion, it restarts the retained appliance so the
+server initializes persisted chunk keys. Existing control settings and
+baseline data must remain exact; the control's initialized key must match
+its actual PB path. Later comparisons require the complete saved settings.
+STS/MTS/LTS cases require actual target records in the selected
+store before mutation. Later stores are prepared through real
+`consolidateDataForPV` with a recorded future processing date; no PB files
+are synthesized or copied to construct a fixture.
+
+Default requests explicitly send `deleteData=false`. After configuration and
+alias removal, orderly shutdown must leave exact baseline records across all
+saved roots. Explicit `--delete-data` requests must remove all target PB
+headers and stream paths. Control metadata and fixed-interval data remain
+unchanged. All PB files decode independently with the shipped reader; an
+unexplained or undecodable leftover fails. File movement during consolidation
+is allowed without losing baseline records or duplicate counts.
+
+The retained SQLite database and stores are reused across restarts, with
+readiness, deleted metadata absence and preserved control checks. Fresh
+independent targets cover aliases, exact `.VAL`, overlapping identities and
+unpaused/unknown/repeated-delete errors first, middle and last in both modes.
+Accepted items must satisfy their actual data mode. The scripting page's
+two command blocks execute verbatim.
+
+The filesystem case attaches a path-filtered tracer to the owned ETL
+process and injects an `EACCES` error into actual `unlink`/`unlinkat` calls
+for one saved target PB file. Its trace must prove the attempted failed
+delete; the file and actual target records must survive. Failed items must
+report `Outcome unknown` with batch exit 1 and never `Delete accepted`.
+Later independent items must be accepted and have correct configuration
+and PB-data effects, with exactly one request per item and no retry.
+The failed target must retain its paused configuration, inventory entry,
+and actual configured aliases before normal stop and after restart.
+
+The ZIP case uses real `ZIP_PER_PV` LTS data prepared through
+`consolidateDataForPV`. Normal deletion must persist target removal in the
+reopened physical archive. A second target receives an actual `EACCES`
+during archive replacement at ZIP finalization; the trace must identify
+the failed physical archive operation. The target's exact ZIP records and
+paused configuration/aliases must survive normal stop and restart.
+Later healthy deletion and control settings/data are checked independently.
+
+The default suite includes `PlainPBExplicitDeletionTest` over shipped PB
+writers/readers, strict deletion, real ZIP filesystems, and actual
+MergeDedup delegation. Its ZIP path cases preserve literal `#`, `%23` and
+`+` in PV names and spaces, `#`, `%` and `+` in the storage root. They reopen
+physical archives after deletion and read the retained control's PB samples.
+`DeletePVAcknowledgementTest` executes the shipped
+management handler and configuration with only outer HTTP/servlet boundaries
+controlled. It checks unconfirmed component responses and later independent
+GET/POST items; it does not replace the complete four-WAR regressions.
+Run these tests and the ordinary ETL regressions under the default profile.
+Run the three Java deletion classes under the integration profile with the
+same explicit fresh bundle. Preserve each invocation's fresh XML and log;
+every required class must execute non-skipped tests with zero failures/errors.
+
+A hidden successful acknowledgement fails the run. Retain HTTP/filesystem
+traces, CLI stdout/stderr, component logs, metadata, file sizes/digests and
+actual PB records, including partial deletion. Preserve matching-source
+defective and corrected runs separately, with the same fault and
+CLI/state/data assertions. Fresh WARs must pass the default suite, selected
+Java integration classes, and complete real CLI regression before deletion
+is accepted.
+
+Archive readiness has a 360-second deadline; state, consolidation, retrieval
+and PB observations have 120 seconds with one-second polls and no extension.
+Defaults use HTTP ports 21665-21668/21670 and CA port 21675. Cleanup restores
+the tracer, stops the launcher normally (exit 143) and stops the IOC (exit 0)
+independently on every exit path. Forced stop, incomplete cleanup or a
+surviving owned JVM/IOC/tracer fails. Store acceptance scans occur only after
+normal shutdown; retain every run folder on success or failure.

@@ -5,6 +5,7 @@ import edu.stanford.slac.archiverappliance.PlainPB.PBFileInfo;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.data.DBRTimeEvent;
+import org.epics.archiverappliance.utils.nio.ArchPaths;
 import org.json.simple.JSONObject;
 
 import java.nio.file.Path;
@@ -24,34 +25,36 @@ public class PVSampleDump {
             }
             return;
         }
-        for (String filename : args) {
-            Path path = Path.of(filename);
-            PBFileInfo info = new PBFileInfo(path);
-            try (FileBackedPBEventStream stream = new FileBackedPBEventStream(
-                    info.getPVName(), path, info.getType())) {
-                JSONObject header = new JSONObject();
-                header.put("kind", "header");
-                header.put("file", path.toString());
-                header.put("pvName", info.getPVName());
-                header.put("type", info.getType().toString());
-                HashMap<String, String> headers = new HashMap<>();
-                info.getInfo().getHeadersList().forEach(field -> headers.put(field.getName(), field.getVal()));
-                header.put("fields", headers);
-                header.put("year", info.getDataYear());
-                System.out.println(header.toJSONString());
-                for (Event event : stream) {
-                    DBRTimeEvent sample = (DBRTimeEvent) event;
-                    JSONObject row = new JSONObject();
-                    row.put("kind", "sample");
-                    row.put("pvName", info.getPVName());
-                    row.put("type", info.getType().toString());
-                    row.put("secs", sample.getEpochSeconds());
-                    row.put("nanos", sample.getEventTimeStamp().getNano());
-                    row.put("val", sample.getSampleValue().getValue());
-                    row.put("status", sample.getStatus());
-                    row.put("severity", sample.getSeverity());
-                    row.put("fields", sample.hasFieldValues() ? sample.getFields() : Collections.emptyMap());
-                    System.out.println(row.toJSONString());
+        try (ArchPaths paths = new ArchPaths()) {
+            for (String filename : args) {
+                Path path = paths.get(filename);
+                PBFileInfo info = new PBFileInfo(path);
+                try (FileBackedPBEventStream stream = new FileBackedPBEventStream(
+                        info.getPVName(), path, info.getType())) {
+                    JSONObject header = new JSONObject();
+                    header.put("kind", "header");
+                    header.put("file", path.toString());
+                    header.put("pvName", info.getPVName());
+                    header.put("type", info.getType().toString());
+                    HashMap<String, String> headers = new HashMap<>();
+                    info.getInfo().getHeadersList().forEach(field -> headers.put(field.getName(), field.getVal()));
+                    header.put("fields", headers);
+                    header.put("year", info.getDataYear());
+                    System.out.println(header.toJSONString());
+                    for (Event event : stream) {
+                        DBRTimeEvent sample = (DBRTimeEvent) event;
+                        JSONObject row = new JSONObject();
+                        row.put("kind", "sample");
+                        row.put("pvName", info.getPVName());
+                        row.put("type", info.getType().toString());
+                        row.put("secs", sample.getEpochSeconds());
+                        row.put("nanos", sample.getEventTimeStamp().getNano());
+                        row.put("val", sample.getSampleValue().getValue());
+                        row.put("status", sample.getStatus());
+                        row.put("severity", sample.getSeverity());
+                        row.put("fields", sample.hasFieldValues() ? sample.getFields() : Collections.emptyMap());
+                        System.out.println(row.toJSONString());
+                    }
                 }
             }
         }

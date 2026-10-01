@@ -197,6 +197,18 @@ public class MergeDedupStoragePlugin implements StoragePlugin, ETLSource, ETLDes
     }
 
     @Override
+    public List<ETLInfo> getETLStreamsForDeletion(String pv, ETLContext context) throws IOException {
+        if (!(dest instanceof ETLSource source)) throw new IOException("Merge destination cannot be deleted");
+        return source.getETLStreamsForDeletion(pv, context);
+    }
+
+    @Override
+    public void deleteETLStream(ETLInfo info, ETLContext context) throws IOException {
+        if (!(dest instanceof ETLSource source)) throw new IOException("Merge destination cannot be deleted");
+        source.deleteETLStream(info, context);
+    }
+
+    @Override
     public PartitionGranularity getPartitionGranularity() {
         return ((ETLSource) dest).getPartitionGranularity();
     }

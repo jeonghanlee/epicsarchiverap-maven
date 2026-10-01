@@ -916,6 +916,38 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
     }
 
     @Override
+    public List<ETLInfo> getETLStreamsForDeletion(String pvName, ETLContext context) throws IOException {
+        Path[] paths = PlainPBPathNameUtility.getAllPathsForDeletion(context.getPaths(), rootFolder, pvName,
+                pbFileExtension, partitionGranularity, compressionMode, pv2key);
+        ArrayList<ETLInfo> infos = new ArrayList<>();
+        for (Path path : paths) {
+            // ArchPaths reads the decoded ZIP archive and entry paths literally.
+            String key = compressionMode == CompressionMode.ZIP_PER_PV
+                    ? "jar:" + path.toUri().getSchemeSpecificPart() : path.toAbsolutePath().toString();
+            infos.add(new ETLInfo(pvName, null, key, partitionGranularity, null, null, Files.size(path)));
+        }
+        return infos;
+    }
+
+    @Override
+    public void deleteETLStream(ETLInfo info, ETLContext context) throws IOException {
+        if (info == null || info.getKey() == null || info.getSize() < 0) {
+            throw new IOException("Explicit deletion requires a path and observed size");
+        }
+        Path path = context.getPaths().get(info.getKey());
+        try {
+            long size = Files.size(path);
+            if (size != info.getSize()) {
+                throw new IOException("PV chunk changed before deletion: " + path + "; expected size "
+                        + info.getSize() + ", current size " + size);
+            }
+            Files.delete(path);
+        } catch (NoSuchFileException absent) {
+            // A previously selected chunk that is already absent needs no further removal.
+        }
+    }
+
+    @Override
     public Event getLastKnownEvent(BasicContext context, String pvName) throws IOException {
         try {
             Path[] paths = PlainPBPathNameUtility.getAllPathsForPV(
