@@ -351,6 +351,106 @@ live archive/status and pause/resume runners against the same selected WAR
 directory, since their shared mutation transport changed. Build the book
 and compare all affected copied scripts and links before accepting the scope.
 
+## Python disconnection example
+
+The report checks execute the shipped management action, CLI, and real
+appliance/IOC lifecycle. The live runner requires Linux. Prepare the JDK 21,
+Tomcat 9, and `softIocPVX` environment above. Set `TOMCAT_HOME` to the user-owned Tomcat distribution
+and place `softIocPVX` on `PATH`. Stop earlier owned fixtures and require
+free ports before each run; the runner never stops unrelated processes.
+
+The default Java suite includes `CurrentlyDisconnectedPVsResponseTest`.
+It uses real `ConfigServiceForTests` and controls only engine HTTP and
+servlet boundaries. Each case checks the final response bytes, status,
+media type, and UTF-8 encoding. It retains exact request counts, timeout
+durations, and responses in `work/disconnected-action-evidence/`.
+Locale checks call shipped `TimeUtils` under US, France, and Japan locales,
+restore the original locale, and capture rows with source/class hashes in
+`work/disconnected-locale.json`. These checks do not establish deployed
+engine locale behavior.
+
+Build fresh WARs and generate that locale evidence before Python tests:
+
+```bash
+./mvnw -B -ntp clean verify
+python3 -m unittest discover -s src/test/pythontests -p 'test_*client*.py'
+python3 -m unittest discover -s src/test/pythontests -p test_list_archived_pvs.py
+```
+
+The Python report suite uses actual subprocesses and only outer management
+HTTP responses. It checks grouping, literal filters, full schema validation,
+no partial output, controls, captured locale text, ASCII output failure,
+HTTP errors, connection loss, closed stdout, argument rejection before HTTP, and timeout.
+`--timeout 1` against a ten-second delay must fail within five seconds.
+
+Select and record one complete successful four-WAR build before starting
+Java or Python fixtures. Bundle preparation reuses the rename runner's
+build/log/source/fixture hashing; it does not replace the clean verification:
+
+```bash
+DISCONNECT_RUNNER=src/test/pythontests/verify_disconnected.py
+WAR_DIR="$PWD/work/disconnected-bundle"
+CLASSPATH_FILE="$PWD/work/disconnected-classpath.txt"
+python3 src/test/pythontests/verify_rename.py "$WAR_DIR" --prepare-bundle --classpath-file "$CLASSPATH_FILE"
+BUNDLE_MANIFEST="$WAR_DIR/manifest.json"
+WAR_BASENAME=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["war_basename"])' "$BUNDLE_MANIFEST")
+export MAVEN_ARGS="-Darchappl.war.dir=$WAR_DIR -Darchappl.final.name=$WAR_BASENAME"
+DISCONNECT_TESTS=org.epics.archiverappliance.mgmt.CurrentlyDisconnectedPVsTest
+DISCONNECT_TESTS+=,org.epics.archiverappliance.mgmt.MetricsTest
+export EPICS_CA_SERVER_PORT=29875 EPICS_CAS_SERVER_PORT=29875
+./mvnw -B -ntp test -P integration -Dtest="$DISCONNECT_TESTS"
+unset MAVEN_ARGS EPICS_CA_SERVER_PORT EPICS_CAS_SERVER_PORT
+DISCONNECT_OPTIONS=(--war-dir "$WAR_DIR" --war-basename "$WAR_BASENAME")
+DISCONNECT_OPTIONS+=(--bundle-manifest "$BUNDLE_MANIFEST" --tomcat-home "$TOMCAT_HOME")
+DISCONNECT_OPTIONS+=(--ioc "$(command -v softIocPVX)")
+python3 "$DISCONNECT_RUNNER" work/disconnected-ioc --mode ioc "${DISCONNECT_OPTIONS[@]}"
+```
+
+Java uses actual `TomcatSetup`, `SIOCSetup`, and unchanged `UnitTestPVs.db`.
+`CurrentlyDisconnectedPVsTest` covers connected absence, IOC-loss inclusion,
+paused exclusion, and recovery; unchanged `MetricsTest` runs as a regression.
+Require fixture teardown before Python starts.
+
+Python starts the existing four-process SQLite launcher and actual IOC with
+the unchanged database, a unique prefix, and recorded commands and identities.
+Default ports are 27665-27668 and 27670, with CA port 27675; explicit
+`--port-base` and `--ca-port` select another free set. It archives active
+and paused-control PVs through shipped CLIs and waits for actual engine
+connection metrics and at least three numeric samples. After an IOC stdin
+exit, only active targets must appear with positive loss epochs. A fresh
+owned IOC process must reconnect and produce at least three new samples.
+Report queries preserve type information, inventory, and fixed-interval
+retrieval records. The runner executes the scripting page's command block
+verbatim against actual disconnected rows.
+
+Startup, initial archive, and connection/report/retrieval deadlines are
+180, 360, and 120 seconds. IOC exit is bounded at 30 seconds. Ordinary
+launcher cleanup requires exit 143 within 300 plus seven seconds, IOC exit
+0, and every recorded child gone. Retain all evidence folders.
+
+For component-failure verification, run separate `--mode raw-fault` and
+`--mode cli-fault` cases, each followed by a fresh `--mode healthy` run.
+Use a new folder and free ports for every case. Select recorded original
+and corrected bundles explicitly; baseline replay uses `--baseline-manifest`
+with the original raw run's `manifest.json` to verify unchanged old WAR
+provenance after production sources change. The same HTTP-503 and CLI-exit-1
+assertions must fail on the original server and pass on the correction.
+
+The fault runner records boot ID, PID, and start ticks; suspends only its
+launcher with SIGSTOP; confirms stopped state within five seconds; and
+gracefully stops only its engine within 30 seconds. It independently checks
+the refused engine port and live management process before the report.
+Direct HTTP uses 15 seconds; the CLI uses timeout 15 and a 20-second process
+limit. One shared 60-second suspension budget reserves five seconds for
+SIGCONT and acknowledgement. Every failure enters restoration and bounded
+cleanup. The intended fault must end with launcher exit 1, the engine-exit
+diagnostic, `status=stopped`, and all children reaped. Another exit 1,
+forced shutdown, incomplete cleanup, or unverified restoration fails.
+
+Build the book with the pinned tools from `docs/book/Dockerfile`, then
+compare linked sample copies with their sources. HTTP-boundary tests and
+formatter captures are separate from actual appliance acceptance.
+
 ## Principles
 
 - The platform carries only the tests this site needs, on the paths it uses. The Channel Archiver migration tests were removed with that feature's disuse.

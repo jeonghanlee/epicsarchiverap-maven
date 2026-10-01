@@ -293,6 +293,66 @@ at most 86400 seconds. The [real verification procedure](https://github.com/jeon
 checks source retention and exact copied records through actual retrieval
 and PB readers, including filesystem failures during copying.
 
+## Currently disconnected PVs
+
+Use [printCurrentlyDisconnectedPVs.py](samples/printCurrentlyDisconnectedPVs.py)
+with [archiverClient.py](samples/archiverClient.py) and
+[listArchivedPVs.py](samples/listArchivedPVs.py) in the same folder.
+Python 3 needs only the standard library. The script reads the management
+report once and requires no PV file.
+
+Start the [local appliance](developer.md#run-a-local-appliance) and an IOC,
+then archive its PVs using the archive procedure above. Set `BPL_URL` to
+the direct management URL. The
+[disconnection test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-disconnection-example)
+provides the shipped IOC setup and checks actual IOC loss and recovery.
+From the repository root, read the report and its literal filters:
+
+```bash
+python3 -m venv --without-pip work/disconnected-venv
+script=docs/book/src/samples/printCurrentlyDisconnectedPVs.py
+bpl=${BPL_URL:-http://127.0.0.1:17665/mgmt/bpl}
+work/disconnected-venv/bin/python "$script" "$bpl"
+work/disconnected-venv/bin/python "$script" "$bpl" --timeout 15
+work/disconnected-venv/bin/python "$script" "$bpl" --onlyNA
+work/disconnected-venv/bin/python "$script" "$bpl" --noNA
+```
+
+The output groups rows under `Appliance <instance>:` and sorts appliance
+identities and PV names. Each PV line contains its name and the exact
+server-generated `connectionLostAt` string. Paused PVs are excluded.
+A pending archive request does not prove that an engine channel exists;
+the current-disconnection and never-connected reports answer different questions.
+
+The CLI preserves locale text, including non-ASCII month names, and does
+not parse, translate, or normalize either time field. Its stdout encoding
+must represent that text. `Never` and `N/A` remain literal values.
+
+| Argument | Behavior |
+| --- | --- |
+| `url` | Required HTTP(S) management base ending in `/bpl`, without credentials, query, or fragment |
+| `--timeout SECONDS` | Socket connect/read limit greater than zero and at most 86400; default 30 |
+| `--onlyNA` | Include only rows whose `connectionLostAt` equals the literal `N/A` |
+| `--noNA` | Exclude those literal `N/A` rows; `--onlyNA` takes precedence when both are supplied |
+
+These filters do not classify never-connected PVs. The engine normally
+provides a timestamp for `connectionLostAt`, including its startup time
+when no positive loss time exists.
+
+A successful empty or filtered-empty report writes nothing and exits 0.
+HTTP, transport, JSON, schema, and output failures produce stderr and exit 1.
+Invalid arguments exit 2 before HTTP. The CLI validates the complete array
+and its output encoding before writing PV lines, rejects duplicate identities,
+and sends no mutations or automatic retries.
+
+Management queries every configured engine before returning a successful
+array. An unavailable, invalid, or timed-out engine produces HTTP 503 with
+an `application/json` UTF-8 error object containing `status=error` and `desc`.
+This failure must not be counted as zero disconnections. Engine requests
+use five-second connect/pool limits and a ten-second read timeout; redirects
+and automatic retries are disabled. Socket timeouts bound individual waits,
+not the complete duration across multiple configured engines.
+
 ## Other sample scripts
 
 The repository folder
