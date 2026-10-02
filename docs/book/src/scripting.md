@@ -357,10 +357,17 @@ not the complete duration across multiple configured engines.
 
 The repository folder
 [`docs/book/src/samples`](https://github.com/jeonghanlee/epicsarchiverap-maven/tree/modernize/docs/book/src/samples)
-holds additional Python 3 scripts to delete a list of PVs or report
-disconnected PVs. Each
-script has its own arguments and dependencies; check its help and calls
-against the API reference before relying on it.
+holds further Python 3 scripts for reports, alerts, recovery, and
+storage configuration. This fork's tests do not run them. Each script
+has its own arguments and dependencies; check its help and calls
+against the API reference before you rely on it.
+
+Do not use `stopArchivingCurrentlyDisconnectedPVs.py`. It deletes the
+stored data of every disconnected PV whose last known event is `Never`,
+and it does not check that the pause succeeded. To remove such PVs,
+read `lastKnownEvent` in the `getCurrentlyDisconnectedPVs` response and
+choose the PVs yourself. Then run `pausePVList.py` and `deletePVList.py`
+as separate steps.
 
 ## Delete paused PVs
 
