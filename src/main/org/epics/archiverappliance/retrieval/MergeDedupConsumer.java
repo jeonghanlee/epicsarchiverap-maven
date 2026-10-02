@@ -31,6 +31,7 @@ import java.time.Instant;
 class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 	private static Logger logger = LogManager.getLogger(MergeDedupConsumer.class.getName());
     private Instant startTimeStamp;
+    private Instant endTimeStamp;
 	int totalEvents = 0;
 	int skippedEvents = 0;
 	int comparedEvents = 0;
@@ -108,6 +109,7 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 		pushRemainingEvents();
 		logNumbersAndCollectTotal();
 		this.startTimeStamp = start;
+        this.endTimeStamp = end;
 		mimeresponse.processingPV(retrievalContext, PV, start, end, streamDesc);
 		pvName = PV;
 		resetForNextPV();
@@ -119,6 +121,11 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 			for(Event e : strm) {
 				try {
 					eventsInCurrentStream++;
+
+                    if (endTimeStamp != null && e.getEventTimeStamp().isAfter(endTimeStamp)) {
+                        skippedEvents++;
+                        continue;
+                    }
 					
 					if(!haveIpushedTheFirstEvent && firstEvent == null) {
 						logger.debug("Making a copy of the first event " + TimeUtils.convertToHumanReadableString(e.getEventTimeStamp()));

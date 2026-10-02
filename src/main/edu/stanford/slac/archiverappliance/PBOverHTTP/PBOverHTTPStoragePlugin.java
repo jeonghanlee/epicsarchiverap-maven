@@ -19,7 +19,6 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BasicContext;
-import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.etl.ConversionFunction;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
@@ -63,8 +62,8 @@ public class PBOverHTTPStoragePlugin implements StoragePlugin {
             BasicContext context, String pvName, Instant startTime, Instant endTime, PostProcessor postProcessor)
             throws IOException {
         String getURL = accessURL + "?pv=" + URLEncoder.encode(pvName, StandardCharsets.UTF_8)
-                + "&from=" + TimeUtils.convertToISO8601String(startTime)
-                + "&to=" + TimeUtils.convertToISO8601String(endTime)
+                + "&from=" + startTime.toString()
+                + "&to=" + endTime.toString()
                 + (postProcessor != null ? "&pp=" + postProcessor.getExtension() : "")
                 + (skipExternalServers ? "&skipExternalServers=true" : "");
         logger.info("URL to fetch data is " + getURL);
@@ -78,8 +77,8 @@ public class PBOverHTTPStoragePlugin implements StoragePlugin {
         for (int i = 0; i < pvNames.size(); i++)
             if (i == 0) getURL += "?pv=" + pvNames.get(i);
             else getURL += "&pv=" + pvNames.get(i);
-        getURL += "&from=" + TimeUtils.convertToISO8601String(startTime)
-                + "&to=" + TimeUtils.convertToISO8601String(endTime)
+        getURL += "&from=" + startTime.toString()
+                + "&to=" + endTime.toString()
                 + (postProcessor != null ? "&pp=" + postProcessor.getExtension() : "")
                 + (skipExternalServers ? "&skipExternalServers=true" : "");
         logger.info("URL to fetch data is " + getURL);

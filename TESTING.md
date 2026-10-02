@@ -451,6 +451,94 @@ Build the book with the pinned tools from `docs/book/Dockerfile`, then
 compare linked sample copies with their sources. HTTP-boundary tests and
 formatter captures are separate from actual appliance acceptance.
 
+## Exact retrieval bounds
+
+These checks cover the public retrieval request, internal PB/HTTP request,
+engine streaming and final merge output. Use JDK 21, exported `JAVA_HOME`
+and `TOMCAT_HOME`, and the real `softIocPVX` on PATH. The Java fixture and
+Python runner use unchanged `src/resources/test/UnitTestPVs.db` and shipped
+PB readers. Run from the repository root. Execute fixtures sequentially on
+Linux with free selected ports and networking that supports local CA
+communication.
+
+Verify the default suite, retain its Surefire reports, then prepare one
+complete bundle. Preparation builds with tests skipped and records source,
+fixture, build-log and four-WAR digests; it does not replace verification.
+Use a new bundle and evidence directory for each source revision.
+
+```bash
+./mvnw -B -ntp clean verify
+BOUNDS_RUNNER=src/test/pythontests/verify_retrieval_bounds.py
+WAR_DIR="$PWD/work/retrieval-bounds-corrected-bundle"
+CLASSPATH_FILE="$PWD/work/retrieval-bounds-corrected-classpath.txt"
+python3 src/test/pythontests/verify_rename.py "$WAR_DIR" --prepare-bundle --classpath-file "$CLASSPATH_FILE"
+MANIFEST="$WAR_DIR/manifest.json"
+WAR_BASENAME=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["war_basename"])' "$MANIFEST")
+export MAVEN_ARGS="-Darchappl.war.dir=$WAR_DIR -Darchappl.final.name=$WAR_BASENAME"
+BOUNDS_TESTS=org.epics.archiverappliance.retrieval.LiveRetrievalBoundsTest
+BOUNDS_TESTS+=,org.epics.archiverappliance.retrieval.DataRetrievalServletTest
+BOUNDS_TESTS+=,org.epics.archiverappliance.retrieval.client.SinglePVRetrievalTest
+export EPICS_CA_SERVER_PORT=29875 EPICS_CAS_SERVER_PORT=29875
+./mvnw -B -ntp test -P integration -Dtest="$BOUNDS_TESTS"
+unset MAVEN_ARGS EPICS_CA_SERVER_PORT EPICS_CAS_SERVER_PORT
+BOUNDS_OPTIONS=(--war-dir "$WAR_DIR" --war-basename "$WAR_BASENAME")
+BOUNDS_OPTIONS+=(--bundle-manifest "$MANIFEST" --classpath-file "$CLASSPATH_FILE")
+BOUNDS_OPTIONS+=(--tomcat-home "$TOMCAT_HOME" --ioc "$(command -v softIocPVX)")
+BOUNDS_OPTIONS+=(--port-base 30665 --ca-port 30675)
+python3 "$BOUNDS_RUNNER" work/retrieval-bounds-corrected-ioc-2 "${BOUNDS_OPTIONS[@]}"
+```
+
+Inspect fresh reports for all three selected classes: each must have a
+nonzero count and zero failures, errors and skipped cases. Retain these
+reports separately from the default suite, which includes `TimeUtilsTest`.
+Compare deployed WAR copies with the bundle manifest and require Java
+fixture teardown before starting Python.
+
+`LiveRetrievalBoundsTest` acquires real IOC events through the engine,
+retains native PB bytes and uses those bytes for engine streaming and merge
+checks. It covers minus-one-nanosecond exclusion, exact inclusion, second
+rollover, preceding values and single-event output on close and PV switch.
+Both `PBOverHTTPStoragePlugin` request methods execute against a controlled
+outer HTTP server returning the captured PB response. Internal functions
+are unchanged in these checks.
+
+Python starts the existing four-JVM SQLite launcher and original IOC under
+a unique prefix. It records each target as integer seconds/nanoseconds,
+value, status and severity. The same immutable live target must be in the
+engine buffer before and after the public minus-one-nanosecond/equality
+pair. Production logs must show the actual internal engine URL and engine
+handler completion for each request; exact internal bounds must match the
+public bounds. Stored-only controls require engine exclusion and actual PB
+records; mixed controls require both stored records and engine participation.
+
+The runner checks second rollover and the supported preceding value at
+`from`. It retains storage and keeps the IOC alive while stopping and
+restarting all four appliance components with the same WARs. The restart
+pair must use a new target acquired after appliance startup and preserve
+the original stored sample. It never substitutes an aged target or a
+stored-only request for live verification.
+
+Startup, initial archiving and each observation have deadlines of 180, 360
+and 120 seconds. HTTP requests use 15 seconds and native reader processes
+20 seconds, limited by the remaining observation deadline. Normal launcher
+cleanup requires exit 143 within 300 plus seven seconds and no surviving
+owned children; IOC exit must return 0 within 30 seconds. Forced cleanup,
+malformed data, missing engine evidence or timeout fails the run.
+
+HTTP evidence records the URL before transport starts and retains received
+response bytes, status and errors on HTTP failure, truncation or timeout.
+Partial responses remain marked incomplete; they never count as a successful
+observation.
+
+Evidence includes requests and response bytes, native decoded records,
+source/WAR/fixture/runner digests, logs, process identities, results and
+cleanup records. A run returns 0 only when every assertion passes. Python
+is separate from Maven's default suite. Preserve a defective bundle before
+production edits and run unchanged assertions on both revisions. Replaying
+that bundle after edits requires `--baseline-manifest` pointing to the
+original executed run's `manifest.json`; setup failures do not establish
+the retrieval defect.
+
 ## Principles
 
 - The platform carries only the tests this site needs, on the paths it uses. The Channel Archiver migration tests were removed with that feature's disuse.
