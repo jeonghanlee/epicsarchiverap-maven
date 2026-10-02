@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M36 is Complete: correction dca485fd28d14cf91e988fae9ade13729a55c7ee is published on origin/modernize and issue #21 is closed as completed. Reply to epicsarchiverap-env's request `live-to-20261001` using the prepared draft at `work/handoff-live-to-20261001.md`, providing the published revision and executed boundary results for [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56)'s unchanged full VM revalidation, then return to M17's final supported-operation inventory. The draft has not been sent. The env-owned full VM rerun and M17 inventory acceptance remain unverified by this source completion.
+Next session entry point: close M17. Its final inventory is decided (2026-10-02) and script modernization moved to M37. The corrected `Other sample scripts` section of `docs/book/src/scripting.md` is in the commit directly before this register update, and M17 / T9 passed on 2026-10-02. Confirm both commits are on origin/modernize, then reconcile issue #6 with M17's detail and close it under its own authorization, and record M17's closure. M37 is Not started with a draft plan and issue #22; its owner decisions (language, timeouts, legacy failure handling) come before any implementation. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; the existing handoff draft at `work/handoff-live-to-20261001.md` still records itself as unsent. Confirm delivery separately before repeating it. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -34,7 +34,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M11 | sqlite-jdbc runtime dependency | Milestone | Complete | No | | Driver org.xerial:sqlite-jdbc 3.53.4.0 added (runtime) and allowlisted; SQLite persistence path verified by SQLitePersistenceTest and the 777/777 regression; [detail](#m11---sqlite-jdbc-runtime-dependency) |
 | Phase 2 | M12 | Persistence and storage backend pruning | Milestone | Not started | Yes | | Owner-approved backends removed, build and tests pass; [detail](#m12---persistence-and-storage-backend-pruning) |
 | Phase 2 | M13 | Selectable persistence backend: MariaDB and SQLite | Milestone | Complete | No | M11, G2, G4 | Both drivers ship; the backend is chosen by the JNDI DataSource; MariaDB and SQLite paths verified; [detail](#m13---selectable-persistence-backend-mariadb-and-sqlite) |
-| Phase 2 | M17 | Modernize the narrative doc content for the single-instance fork | Milestone | In progress | No | M34, M35 | All core operation examples, including disconnection reporting in c4516e76, are verified and landed; issue #6 has eight checked criteria and one unchecked inventory criterion; final inventory acceptance remains; [detail](#m17---modernize-the-narrative-doc-content-for-the-single-instance-fork) |
+| Phase 2 | M17 | Modernize the narrative doc content for the single-instance fork | Milestone | In progress | No | M34, M35 | Eight core commands are verified and landed; the final inventory classifies all 25 CLIs and both helpers (decision 2026-10-02), with script modernization moved to M37. T9 passed on 2026-10-02 with the corrected scripting page, which is in the commit directly before this register update. Publication of both commits and issue #6 reconciliation and closure remain. Issue #6 is open; [detail](#m17---modernize-the-narrative-doc-content-for-the-single-instance-fork) |
 | Phase 2 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; awaiting the owner's item list; [detail](#m7---site-required-features-and-fixes) |
 | Phase 2 | M10 | Ant removal: final Maven-only consolidation | Milestone | Deferred | No | D7 | build.xml gone and antrun executions rehomed; only Maven remains; deferred per D7; [detail](#m10---ant-removal-final-maven-only-consolidation) |
 | Phase 2 | M18 | Appliance logging model: journald-first log4j2 layout and lifecycle | Milestone | Complete | No | D31, G3 | The shipped log4j2.xml emits the <N> priority prefix with a ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO} root level and a capped, commented RollingFile fallback; the operating-model page and the faq/install-guide fixes land; [detail](#m18---appliance-logging-model-journald-first-log4j2-layout-and-lifecycle) |
@@ -55,6 +55,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M33 | ZipETLTest reads back fewer events than written | Milestone | Not started | Yes | | The cause of the 1093 events missing from the slow-group ZipETLTest read-back is found on the real path and fixed in the code or in the test; the class passes with the slow-group command and the default suite passes; [detail](#m33---zipetltest-reads-back-fewer-events-than-written) |
 | Phase 2 | M34 | Preserve pending samples when pausing archiving | Milestone | Complete | No | | Correction 759337d5 and verified CLI/tests/docs fbc32120 landed; local regression, integration and live checks pass; Maven CI and Pages pass; #17 closed on 2026-09-29; [detail](#m34---preserve-pending-samples-when-pausing-archiving) |
 | Phase 2 | M36 | Honor nanosecond bounds in live retrieval | Milestone | Complete | No | | Correction dca485fd published on origin/modernize; 882 default tests, 4 selected integration tests and 70 real IOC checks pass, including exact/minus-one-nanosecond bounds and four-component restart; issue #21 closed as completed on 2026-10-02 UTC; [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) retains full VM revalidation; [detail](#m36---honor-nanosecond-bounds-in-live-retrieval) |
+| Phase 2 | M37 | Modernize the retained sample scripts | Milestone | Not started | Yes | | Each of the fourteen retained scripts has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m37---modernize-the-retained-sample-scripts) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -1403,6 +1404,15 @@ Out of scope: the docs publishing pipeline (M9, done); EPICS-Arche architecture 
 - Owner decision (2026-09-25), the TESTING.md and mvnw.cmd candidates of step 2: keep TESTING.md, because it describes this fork's test platform (the default excludedGroups and the integration and localEpics profiles match pom.xml, and README.md and docs/book/src/developer.md defer the test wiring to it), with its one stale sentence on the browser-test rewrite corrected to the finished state; remove mvnw.cmd, because no Windows build is supported: CI runs only on ubuntu-24.04 and ubuntu-latest, the integration fixture runs catalina.sh (TomcatSetup.java line 188), and the book and README.md give only ./mvnw. After the removal ./mvnw -B -ntp validate passed (Maven 3.9.16). Step 2 now leaves only the Python BPL clients, checked by T5.
 
 - Direction (2026-09-28): define the needed operations, implement and verify working behavior, then provide scripts such as getPVList.py and matching documentation. Existing sample survival is not the objective. This supersedes the Python keep/cut criterion of 2026-09-24; the completed install-sample, TESTING.md and mvnw.cmd decisions remain recorded above. The revised plan below is a draft requested on this date.
+- Decision Date: 2026-10-02. Bash is the preferred language for the modularization investigation. Preserve the operational purpose accumulated in the existing scripts by mapping shared mechanics separately from target selection, request order, side effects and recovery checks. Scores and expected use frequency do not authorize removal. The completed research and this tracking update do not authorize a Bash replacement, a final support list, dependency changes or deletion; the delivered Python baseline and its accepted checks remain in force until a separately accepted amendment.
+- Decision Date: 2026-10-02. Final inventory of the 25 CLIs and both helpers under `docs/book/src/samples`. No sample file is removed by this decision. Script modernization, including the implementation-language choice and the Bash/curl/jq proposal recorded below, is M37's scope and is no longer a completion criterion here.
+
+  | Classification | Scripts |
+  | --- | --- |
+  | Supported; verified by this milestone | listArchivedPVs.py; getPVStatus.py; archivePVList.py; pausePVList.py; resumePVList.py; renamePVList.py; deletePVList.py; printCurrentlyDisconnectedPVs.py; helper archiverClient.py |
+  | Retained unchanged; modernization assigned to M37 | unarchivedPVs.py; archivedPVsNotInList.py; listTypeChanges.py; checkConnectedPVs.py; checkTypeChangedPVs.py; storageSizeCheck.py; checkForEngineActivity.py; abortNeverConnectedPVs.py; resumePausedPVsMatchingPattern.py; consolidatePausedPVs.py; consolidateArchivedData.py; changeArchiveStore.py; addPostProcessingOperator.py; removeMetaFields.py; helper emailHandler.py |
+  | Retained unchanged; unassigned until a later decision adds them to M37 | archiveFromDB.py (loads libdbStaticHost.so before argument parsing); pingCurrentlyDisconnectedPVs.py (requires PyEpics; Channel Access only) |
+  | Excluded from the supported operations | stopArchivingCurrentlyDisconnectedPVs.py: it requests deleteData=true for every PV reported with lastKnownEvent Never without checking the pause result. The selection remains available from the lastKnownEvent field of the getCurrentlyDisconnectedPVs response, and the action from pausePVList.py and deletePVList.py as separate explicit steps. printCurrentlyDisconnectedPVs.py prints connectionLostAt only and does not show lastKnownEvent |
 
 ##### Completion Criteria
 
@@ -1410,6 +1420,7 @@ Out of scope: the docs publishing pipeline (M9, done); EPICS-Arche architecture 
 - Each required operation has an executable Python example, explicit inputs and dependencies, documented output and errors, and direct verification against the current appliance.
 - A reader can start the M22 launcher and shipped IOC fixture and reproduce the documented workflow without editing a hostname in source or adding a routing proxy.
 - The example inventory identifies the supported operations and any explicitly excluded operations; passing an old script alone does not satisfy these criteria.
+- The final inventory accounts for all 25 current CLIs and both helpers, including distinct procedures that share endpoints, and classifies each as supported, retained for M37, retained without assignment, or excluded. The scripting page presents only the supported operations as verified. Modernization or replacement of a retained script is M37's criterion; research alone verifies no retained script.
 
 ##### Implementation Plan
 
@@ -1634,7 +1645,7 @@ Current implementation: the deletion CLI, fourteen client tests, real verificati
 
 Deletion acceptance checked on 2026-10-01 against the accepted eleven-step plan: T22 establishes both data modes, nonempty STS/MTS/LTS baselines, aliases, canonical identities, independent batches, retained-folder restarts and exact target/control data effects; T23 establishes the client error/no-retry contract; T24 establishes verbatim workflows, source/copy/link equality and the pinned book; T25 establishes all four selected Java integration executions; T26 and M35 / T1-T7 establish the unchanged real failure regression, checked ZIP persistence and failed-target preservation before and after restart. T10 establishes the fresh default suite, matching source/WAR hashes and fixture teardown. Closure Evidence records the remote commit and observed issue closure. These results satisfy this deletion scope's completion criteria without satisfying the later disconnection or inventory criteria.
 
-###### Next implementation scope: disconnection reporting
+###### Completed implementation scope: disconnection reporting
 
 Plan Status: accepted
 Plan Acceptance: 2026-10-01; accepted document SHA-256 a8ca8ca88e5da72c2763ff617b76d16583ac7bfd45008327639eaae0b981db5e after the third third-person review and first second-person review returned no must-fix/minor findings.
@@ -1674,6 +1685,49 @@ Deadlines and ownership: prepare the shipped PB adapter/classpath before any fix
 
 Completion requires T27-T30 and applicable T10 passing on the shipped paths: actual hidden-failure reproduction before correction, final action HTTP 503/application-json/error-object assertions after correction without any partial successful report, exactly one outbound engine request and zero redirect-target requests in the defined transport cases, healthy empty/nonempty reports with exact Unicode time-string preservation and UTF-8 response encoding, executed locale and control-character checks with explicit output-encoding failure behavior, real IOC disconnection/recovery and paused exclusion, strict CLI failure behavior, unchanged existing clients, reproducible documentation and bounded owned-process cleanup with verified restoration. The plan is accepted and implementation is authorized on 2026-10-01. The original deployed engine-failure assertion has failed as predicted, and the management correction, CLI, and tests are implemented. Fresh T10 passes all 882 default tests, final action checks pass 25 cases, Python clients pass 84 cases, and the final book has nine identical linked sample copies. The corrected four-WAR bundle is retained in work/disconnected-bundle/. Final Java integration passes both CurrentlyDisconnectedPVsTest and unchanged MetricsTest. Corrected actual engine failures return HTTP 503 and CLI exit 1; the same assertions fail on the original WARs. All 26 IOC workflow checks, verbatim commands, fresh healthy runs and bounded cleanup pass. work/disconnected-final-evidence.json confirms 610 production-source hashes and final client/test/doc digests; only this management action differs from the original production sources. Implementation, local verification and landing are complete: c4516e76765733a3f0d4426bf41a3a5c1e9c71d8 is on origin/modernize. Issue #6's body was updated at 2026-10-01T23:46:54Z to include deletion and disconnection results, with eight checked criteria and one unchecked final-inventory criterion. Final operation inventory acceptance remains; M17 stays In progress.
 
+###### Final inventory research and modularization proposal
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-02, the inventory classification recorded in Dependencies And Decisions and the closing steps at the end of this subsection. The Bash/curl/jq module proposal is not accepted; it is carried to M37 as research input.
+Implementation Authorization: 2026-10-02, correct the scripting page's sample-script paragraph and execute the remaining T9 checks. None for a Bash replacement, dependency changes or source removal.
+Superseded Plan Artifacts: none; prior accepted implementation scopes and executed results above remain intact
+
+Research basis: source commit b2eae22a80f573a4dad30b93c2ce125060c778ff, inspected on 2026-10-02. The 27 Python files under `docs/book/src/samples` comprise 25 CLIs and two helpers, with 1,774 lines. Sixteen files contain 31 direct `requests.get`/`requests.post` call sites; these establish repeated transport responsibility, not 31 identical algorithms. Nineteen CLIs use HTTP without a DB/native/mail boundary, one observes filesystem sizes, and five combine HTTP with DB parsing, CA diagnosis or SMTP. The eight modernized core commands already share strict behavior through `archiverClient.py` and `listArchivedPVs.py`.
+
+The complete function map is retained here so the inventory does not depend on local research artifacts. Names below use the `docs/book/src/samples/` prefix.
+
+| Function group | Current CLIs | Distinct behavior retained for the inventory |
+| --- | --- | --- |
+| Inventory | listArchivedPVs.py; unarchivedPVs.py; archivedPVsNotInList.py | Complete listing; incoming rows absent from expanded inventory; configured names absent from incoming input |
+| Status and reports | getPVStatus.py; printCurrentlyDisconnectedPVs.py; listTypeChanges.py | Explicit appliance states; grouped disconnection report and literal N/A filters; reported type-change details |
+| Explicit PV actions | archivePVList.py; pausePVList.py; resumePVList.py; deletePVList.py; renamePVList.py | Full identity preflight; action-specific acknowledgement; no automatic mutation retry; distinct stored-data and copy semantics |
+| Recovery selection | abortNeverConnectedPVs.py; resumePausedPVsMatchingPattern.py; stopArchivingCurrentlyDisconnectedPVs.py | Age-based pending-workflow cancellation; paused-pattern resume; Never-selected pause followed by deleteData=true |
+| Storage and configuration | consolidatePausedPVs.py; consolidateArchivedData.py; changeArchiveStore.py; addPostProcessingOperator.py; removeMetaFields.py | Leave-paused consolidation versus consolidation/resume; store substring replacement; LTS operator addition; extra-field removal |
+| Alerts | checkConnectedPVs.py; checkTypeChangedPVs.py; storageSizeCheck.py | Different metrics, thresholds, message content and SMTP effects |
+| Diagnostics | checkForEngineActivity.py; pingCurrentlyDisconnectedPVs.py | Filesystem path/size comparison; HTTP report followed by native CA diagnosis from the client environment |
+| IOC database provisioning | archiveFromDB.py | Real EPICS static DB parser with includes/macros/info tags and bulk archive submission |
+
+Helper coverage: `archiverClient.py` supplies input, HTTP, identity, response and pause/resume behavior. `emailHandler.py` supplies configuration, MIME, recipient and SMTP/TLS/auth behavior. A missing optional dependency is not evidence that the associated operational need can be removed.
+
+Proposed boundaries: Bash entry points and explicit procedures; a shared curl transport; named jq request/response programs; common input and identity preflight; inventory/report/PV-action/type-info modules owning their own success predicates; output and batch aggregation; separate DB, CA, mail and filesystem adapters. HTTP management of archived PVA PVs and direct PVXS operations remain separate interfaces. Current samples do not execute PVXS tools; server PVA management actions exist independently. This is a proposal, not an implementation or support decision.
+
+Constraints carried into the next scope decision:
+
+- Preserve separate consolidation procedures. `consolidatePausedPVs.py` leaves its selected PVs paused; `consolidateArchivedData.py` resumes after consolidation. Commit 81e7a3867472170b0fa04ca1cc41f0788a601c5b records the long-paused MTS cleanup purpose. Commit 5b41bb52c0270b0de662fcd8c54f246581068318 removes internal pause/resume from `removeMetaFields.py`; a generic lifecycle wrapper would change that recorded behavior.
+- Preserve comparison populations and outputs. `UnarchivedPVsAction` uses `DefaultConfigService.getAllExpandedNames`, including aliases, fields and pending requests, and the client emits original rows. `ArchivedPVsNotInListAction` uses configured `getAllPVs` and emits names. One local set subtraction over a listing does not reproduce both.
+- Preserve full input validation and preflight. File decoding, CR/CRLF/LF normalization, trimming and command-specific validation occur in that order; globally removing CR or comments changes targets. File UTF-8 validation and binary HTTP JSON decoding have different contracts. Positive finite float32 validation does not mean sending the float32-rounded value; the current archive payload uses the original Python float's string.
+- Keep transport results separate from operation acceptance. HTTP 200 alone does not establish success; pause and resume have different component checks. Unknown outcomes can include partial server changes. Continuation belongs to each procedure; stricter legacy failure handling and recovery are explicit behavior changes.
+- Set timeout and dependency policies before any replacement. The existing urllib blocking-operation timeout is not equivalent to curl's whole-transfer deadline. A per-request limit is not a deadline for a complete procedure. Retain the real DB parser and native/mail behavior until equivalent replacements are demonstrated.
+- Use current sequential behavior as the comparison baseline. Bounded reads and connection reuse remain unverified optimizations; per-PV curl processes do not share a connection pool. No server speedup or concurrent-mutation safety was measured.
+
+Closing steps after the 2026-10-02 inventory decision:
+
+1. Completed 2026-10-02: in `docs/book/src/scripting.md`, the `Other sample scripts` section states that this fork's tests do not run the further scripts in the samples folder, and tells the reader not to use stopArchivingCurrentlyDisconnectedPVs.py, to select PVs from the lastKnownEvent field of getCurrentlyDisconnectedPVs, and to act with pausePVList.py and deletePVList.py. Closed by T9.
+2. Completed 2026-10-02: the six live runners ran on the current tree and the book, copy and link checks ran on the corrected page. Closed by T9.
+3. Reconcile issue #6 with this detail and close it under separate authorization.
+
+Defining each retained procedure's conditions and recovery checks, any replacement, and the comparison of original and replacement entry points belong to M37. No Bash equivalence, live protocol result or performance acceptance is recorded here.
+
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
@@ -1708,11 +1762,16 @@ Completion requires T27-T30 and applicable T10 passing on the shipped paths: act
 | T28 | Client boundary and regression | Run test_disconnected_client.py and all existing client suites; execute the shipped report subprocess with controlled outer management HTTP responses | Standard-library-only Python; actual CLI/helper; outer HTTP transport controlled for client checks only | Sorted grouped output and literal filters, exact captured Unicode time strings with UTF-8 stdout and exit 0, ASCII stdout encoding failure with exit 1/no partial output, rejection of timestamp controls/line separators, valid empty exit 0, strict whole-response/output validation, no partial output, useful stderr/exit 1, invalid arguments exit 2 before HTTP, bounded timeout and no automatic retries; existing clients remain unchanged |
 | T29 | Real appliance and IOC lifecycle | Run verify_disconnected.py through the shipped archive/pause/report clients, actual connection metrics, raw reports and retrieval; stop and restart the actual IOC and retain fixed baselines | Fresh corrected four-WAR SQLite launcher, real softIocPVX and unchanged UnitTestPVs.db, isolated prefix/ports | Initially connected report is empty; after IOC stop all active targets appear with actual loss information and paused/unknown targets are excluded; after restart targets reconnect and disappear from the report while sampling resumes; report queries preserve configuration/inventory/baselines; deadlines and ordinary cleanup pass |
 | T30 | Documentation | Execute final disconnection command block verbatim in T29; build book with T3 tools and compare affected copies/links | Actual corrected appliance/IOC, standard-library Python and pinned mdBook/admonish | Reproducible explicit-URL report, timeout and documented literal filters; paused exclusion and unavailable-report errors are clear; all affected sample copies/links match and only the permitted build warning remains |
+| T31 | Static inventory and contract review | Read all 25 CLIs and two helpers, inspect relevant server actions and source history, map shared mechanics and distinct procedures, and compare all source bytes with the recorded commit | Source commit b2eae22a80f573a4dad30b93c2ce125060c778ff; official tool/API documentation | Exactly 25 unique CLI mappings and both helpers; explicit native/mail boundaries and compatibility constraints; source unchanged; no implementation equivalence or performance inferred from research |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
+| T9 | 2026-10-02 16:57 UTC | Pinned mdBook 0.4.52/admonish 1.20.0 Docker image; working tree on b2eae22a80f573a4dad30b93c2ce125060c778ff after the `Other sample scripts` section replaced its print-command advice with the lastKnownEvent field of getCurrentlyDisconnectedPVs | Pass | The book builds with exit 0 and only the permitted admonish version warning (work/inventory-book-2.log), again through `build -d` into a separate output folder. All 257 relative links and anchors read from 14 of the 17 built pages resolve, and the nine linked sample files match their source bytes (work/inventory-book-links-2.json). The fenced command blocks of the page are byte-identical to those at b2eae22a80f573a4dad30b93c2ce125060c778ff, so the 15:55-16:28 UTC runner results below apply to this text unchanged |
+| T9 | 2026-10-02 15:55-16:28 UTC | JDK 21.0.12.1, Tomcat 9.0.122, softIocPVX and unchanged `UnitTestPVs.db`; one four-WAR bundle aa-20261002-b2eae22a built from the working tree on b2eae22a80f573a4dad30b93c2ce125060c778ff with the corrected scripting page; standard-library Python | Pass | The six shipped runners ran sequentially against the real four-WAR SQLite appliance and IOC and each exited 0 with no failed check: listing 13, archive/status 22, pause/resume 58, rename 132, deletion 664 and disconnection (ioc mode) 26. Each run executed its scripting-page command block verbatim and stopped its owned appliance and IOC; no appliance port or owned process remained afterwards. work/inventory-final-status.txt records step times and exit codes, work/inventory-final-bundle/manifest.json the bundle, and the work/inventory-final-*-run folders the commands and outputs. Together with the 15:49 UTC book, link and copy check below, this completes T9 |
+| T9 | 2026-10-02 15:49 UTC | Pinned mdBook 0.4.52/admonish 1.20.0 Docker image; working tree with the corrected `Other sample scripts` paragraph on b2eae22a80f573a4dad30b93c2ce125060c778ff | Partial | The book builds with exit 0 and only the permitted admonish version warning (work/inventory-book.log). The build wrote to a separate output folder through `build -d`, because the existing docs/book/book output is owned by root and the pinned image, run as the invoking user, cannot clear it. All 257 relative links and anchors read from 14 of the 17 built pages resolve (print.html, toc.html and 404.html were not read for links), and the nine sample files linked from the scripting page match their source bytes (work/inventory-book-links.json). The corrected paragraph contains no command. The page's command blocks were not executed in this run; their evidence remains the per-operation runs recorded under T13, T16, T19, T24 and T30 |
+| T31 | 2026-10-02 07:12-07:33 UTC | Frozen source b2eae22a80f573a4dad30b93c2ce125060c778ff; Bash 5.2.37, curl 8.14.1 and jq 1.7 observations | Pass for research scope only | All 27 sample sources were read and matched the recorded commit byte-for-byte. The complete 25-CLI/two-helper map and constraints are preserved above. Actual jq observations expose last-result, multi-document and invalid-byte pitfalls; the real pausePVList.py parser interpreted CR/CRLF/LF as two records and reported overlap exit 2. These observations verify only those tool/parser paths. No Bash candidate, new appliance workflow, adapter equivalence or benchmark was executed; T9 and final inventory acceptance remain incomplete |
 | T10 / T27 | 2026-10-01 21:46 UTC; evidence rechecked 2026-10-01 21:58 UTC | JDK 21; Tomcat 9.0.122; real SIOCSetup/TomcatSetup; unchanged DB; CA port 29875; explicit corrected bundle | Pass | CurrentlyDisconnectedPVsTest and unchanged MetricsTest execute two tests with zero failures/errors/skips and BUILD SUCCESS in work/disconnected-java-final.log. All eight deployed WAR hashes match the bundle. Actual IOC loss, paused exclusion and reconnect pass; both owned report-test IOC processes exit 0. Fixture HTTP port refuses connections and no matching Java/IOC process remains before Python starts. work/disconnected-java-final-evidence.json retains counts, hashes and lifecycle observations. The first prefix failure and native-stream logs remain in work/disconnected-java-first/ |
 | T27 | 2026-10-01 21:48 UTC; evidence rechecked 2026-10-01 21:58 UTC | Corrected four-WAR SQLite appliance; actual engine SIGTERM under bounded owned-launcher suspension | Pass | All seven checks pass in work/disconnected-corrected-raw/. The actual engine becomes a zombie and its port refuses with errno 111 while management remains alive; the unchanged assertion observes HTTP 503, application/json;charset=UTF-8 and complete status=error/nonempty desc in 0.004 seconds. Suspension is 10.246 seconds; restoration, intended launcher exit 1, engine-exit diagnostic, status=stopped and every original child reaped pass. The fresh work/disconnected-corrected-raw-healthy/ run passes all three checks, including HTTP 200 empty and ordinary exit 143 |
 | T27 | 2026-10-01 21:52 UTC; evidence rechecked 2026-10-01 21:58 UTC | Recorded original aa-20261001-6552a9f5 WARs; same final shipped CLI and actual engine-stop procedure | Fail | work/disconnected-baseline-cli/ retains the unchanged CLI-exit-1 assertion failing on actual exit 0 with empty stdout/stderr. Healthy CLI, actual refused engine port/live management, restoration, suspension budget and intended cleanup pass independently. The original source/WAR/build/fixture provenance is checked through the recorded baseline manifest. A fresh original-bundle healthy run passes in work/disconnected-baseline-cli-healthy/. This failing assertion is retained as the original behavior, not counted as corrected verification |
@@ -1843,6 +1902,8 @@ The two dependency failures do not establish defects in their unexecuted BPL pat
 - Deletion completed on 2026-10-01: CLI, tests, documentation and the separately authorized M35 production correction landed as 48c0a692b60547969819ccf469bb6343215c60aa. At 16:57 UTC, `git ls-remote --exit-code origin refs/heads/modernize` confirms that commit; 610 current production-source hashes match the tested bundle and all 664 recorded real-appliance checks pass. T22-T26/T10 and M35 / T1-T7 establish the accepted deletion criteria, including 857 default tests, four Java integration executions, unchanged client results, both actual filesystem faults and normal cleanup. Issue #18 closed as completed at 16:47:15 UTC; API readback confirms the reconciled body with ten checked criteria and the exact closure comment. M35 is Complete. Disconnection reporting, final inventory and issue #6's body update remain; M17 stays In progress.
 - Disconnection implementation and local verification completed on 2026-10-01; evidence rechecked 2026-10-01 21:58 UTC. T10 records 882 default tests and two selected Java integration tests; T27 records actual failing original HTTP/CLI assertions and passing corrected failures with verified restoration; T28 records 84 clients; T29 records 26 real IOC checks; T30 records verbatim commands and nine matching book samples. work/disconnected-final-evidence.json pins the current sources and explicit four-WAR bundle. The nine authored implementation/test/documentation paths landed in c4516e76765733a3f0d4426bf41a3a5c1e9c71d8. Local HEAD and origin/modernize match; at 2026-10-02 00:04 UTC, `git ls-remote --heads origin refs/heads/modernize` independently confirms that exact remote tip. The source and verification-log digests were checked against the final evidence before issue preparation; no verification rerun is claimed by this documentation update. Final inventory acceptance remains; M17 stays In progress.
 - The server dependency #17 closed as completed on 2026-09-29 at 22:31:30 UTC. Issue #6's earlier rename body was updated at 2026-09-30T05:32:33Z with five checked and four unchecked criteria. Its latest body update at 2026-10-01T23:46:54Z includes the landed deletion and disconnection implementations and results. Readback confirms an exact match to work/issue-docs-disconnection-body.md (SHA-256 9b53bcc3ffdcba6cd93e465f28621948c9fb495eac8959ed243b5cfebf8067a7), unchanged title/documentation label/assignee/no milestone and OPEN state. Eight criteria are checked; only final supported-operation inventory acceptance remains unchecked. The server dependencies #17 and #18 remain closed; M17 remains In progress.
+- Inventory research completed on 2026-10-02 under T31. The full current function map and compatibility constraints are now preserved in this canonical detail. The earlier core implementation and runtime results remain valid evidence for those Python commands; they do not establish Bash replacement behavior. Final support selection, an accepted amendment, applicable implementation and T9 verification still determine completion. M17 and issue #6 remain open work.
+- Final inventory decided on 2026-10-02 after that research: the classification is recorded in Dependencies And Decisions and script modernization moved to M37. T9 passed on 2026-10-02 with the corrected scripting page. Publication of that correction and issue #6 reconciliation and closure determine completion.
 
 ##### GitHub Projection
 
@@ -1852,7 +1913,7 @@ GitHub Milestone: none
 Observed State: open
 Observed Labels: documentation
 Observed Milestone: none
-Last Compared: 2026-10-02 00:04 UTC; `gh issue view 6 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,milestone,assignees,updatedAt,body,url` confirms OPEN state, the title above, documentation label, no milestone and assignee jeonghanlee; remote updatedAt is 2026-10-01T23:46:54Z. The body includes deletion in 48c0a692 and disconnection reporting in c4516e76, exactly matches the prepared body, and has eight checked criteria and one unchecked final-inventory criterion. The authorized issue body edit and readback are complete. Final inventory scope, acceptance and verification remain.
+Last Compared: 2026-10-02 08:42 UTC; `gh issue view 6 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,milestone,assignees,updatedAt,body,url` confirms OPEN state, the title above, documentation label, no milestone and assignee jeonghanlee; remote updatedAt is 2026-10-02T08:42:02Z. Eight criteria are checked and the final-inventory criterion is unchecked. The updated remote body includes the landed Python implementations, the complete 25-CLI/two-helper inventory, the Bash modularization proposal and its compatibility and verification constraints. Readback exactly matches `work/issue-cli-inventory-body.md`; title, state, labels, milestone and assignee are unchanged. Final inventory scope, acceptance and verification remain.
 
 #### M7 - Site-required features and fixes
 
@@ -3327,6 +3388,90 @@ Observed State: closed
 Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-10-02 04:16 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/21` and `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/21/comments` confirm the title above, closed state, state_reason completed, bug label, assignee jeonghanlee, no milestone, and closed_at/updated_at 2026-10-02T04:07:43Z. The body has six checked acceptance criteria and exactly matches the authorized body SHA-256 9fed423b29f6ba2b3b3009c76f95a8c01cd2c61c7290a3917398802ee884da65; the single closure comment exactly matches SHA-256 17d4f63affb99b87b2bcf5caeb19c285d39b2a0054606d69e3a3bfbf602d2c35. Source verification is complete; the env-owned full VM rerun remains outside this completion.
+
+#### M37 - Modernize the retained sample scripts
+
+Origin: daff1b7 / M37
+Identity History: none
+GitHub Issue: [#22](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/22)
+Status: Not started
+
+##### Summary
+
+M17 delivered eight verified commands on a shared client, `archiverClient.py`, and its final inventory (2026-10-02) retains fourteen further scripts and the `emailHandler.py` helper under `docs/book/src/samples` in their upstream form. On 2026-09-28 each of the fourteen completed its operation against the real local appliance at 50e7382a1a3bab64c2f44b6dcf6aa34b01116780 (M17, legacy sample observations). They do not yet meet the contract the eight commands meet. Source at b2eae22a80f573a4dad30b93c2ce125060c778ff shows:
+
+- Thirteen of the fourteen call `requests.get` or `requests.post` directly at 26 sites, none with a timeout; `emailHandler.py` opens its SMTP connection without one.
+- `consolidatePausedPVs.py` and `resumePausedPVsMatchingPattern.py` accept any HTTP 200 response as success and do not read the returned validation.
+- `consolidateArchivedData.py` pauses, consolidates and resumes with no check between the steps, and resumes a PV that was already paused before it ran.
+- `addPostProcessingOperator.py`, `changeArchiveStore.py` and `removeMetaFields.py` post a complete previously read PVTypeInfo with override=true.
+- `addPostProcessingOperator.py` selects its targets through getAllPVs without a limit, so the server's default of 500 names applies.
+- `checkConnectedPVs.py` divides by the sum of the connected and disconnected counts with no guard for zero.
+- `emailHandler.py` reads its configuration file at import, before the three alert scripts parse their arguments.
+
+##### Scope
+
+Bring the fourteen retained scripts to a defined and verified contract while keeping what each one is for: unarchivedPVs.py, archivedPVsNotInList.py, listTypeChanges.py, checkConnectedPVs.py, checkTypeChangedPVs.py, storageSizeCheck.py, checkForEngineActivity.py, abortNeverConnectedPVs.py, resumePausedPVsMatchingPattern.py, consolidatePausedPVs.py, consolidateArchivedData.py, changeArchiveStore.py, addPostProcessingOperator.py and removeMetaFields.py, with emailHandler.py. Extract the mechanics they repeat (input reading, HTTP transport, response validation, result output) and keep each script's target selection, request order, side effects and final state explicit. Document each in the scripting page.
+
+Out of scope: the eight commands delivered by M17 and archiverClient.py, unless the accepted plan names a change to them; archiveFromDB.py and pingCurrentlyDisconnectedPVs.py, retained unchanged until a later decision adds them; stopArchivingCurrentlyDisconnectedPVs.py, excluded by M17's inventory; server corrections, which take their own scope when a script exposes a defect; performance or concurrency claims without measurement.
+
+##### Completion Criteria
+
+- Each of the fourteen scripts has a defined input, response, dependency, timeout and failure contract. It reports an application-level rejection and an uncertain outcome as such, and does not report success on HTTP 200 alone.
+- Each script keeps the distinct procedure recorded in M17's function map: its target selection, request order, side effects and final state. Every intentional change from the legacy behavior is named with its reason.
+- Each script is verified by executing its shipped entry point against the real appliance and the shipped IOC fixture. Where an implementation is replaced, the original and the replacement entry points are compared on the same fixtures before the original is removed.
+- The scripting page documents each script with commands that reproduce the verified behavior.
+
+##### Dependencies And Decisions
+
+- Origin: M17's final inventory decision of 2026-10-02.
+- Research input: M17 / T31 and M17's `Final inventory research and modularization proposal`, which hold the function map of all 25 CLIs, the Bash/curl/jq module proposal and the compatibility constraints. That proposal is neither accepted nor authorized.
+- Decision Date: 2026-10-02. Bash is the preferred language (recorded at M17). The language is selected when this plan is accepted, not before.
+- Constraints carried from the research: the two consolidation scripts end in different states and stay separate procedures; unarchivedPVs.py and archivedPVsNotInList.py compare different populations and emit different output; the three type-info scripts share transport and keep separate transformations, and removeMetaFields.py has no internal pause or resume; no automatic retry of a mutation; sequential requests are the comparison baseline.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settle the owner decisions and record them here: implementation language and dependencies; per-request and whole-procedure timeout meaning; which legacy failure behaviors change, including HTTP 200 validation handling and the unconditional resume in consolidateArchivedData.py; whether archiveFromDB.py and pingCurrentlyDisconnectedPVs.py join the scope.
+2. Write each script's contract in this detail: purpose, target selection, preconditions, request order, effects, uncertain-outcome checks and source evidence.
+3. Implement by group, each closed by T1 and T2 before the next begins. The order below is the research's suggestion and is not yet owner-set: read-only comparisons and reports (unarchivedPVs.py, archivedPVsNotInList.py, listTypeChanges.py, checkForEngineActivity.py); alerts (checkConnectedPVs.py, checkTypeChangedPVs.py, storageSizeCheck.py, emailHandler.py); recovery selection (abortNeverConnectedPVs.py, resumePausedPVsMatchingPattern.py); storage and configuration (consolidatePausedPVs.py, consolidateArchivedData.py, changeArchiveStore.py, addPostProcessingOperator.py, removeMetaFields.py).
+4. Run the default suite. Closes with T3.
+5. Document each script in `docs/book/src/scripting.md` and execute the documented commands verbatim. Closes with T4.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Client boundary | Run each shipped entry point as a subprocess with only the HTTP transport, SMTP endpoint, filesystem or clock controlled; no internal function replaced | System Python or the selected shell tools; loopback endpoints | Valid, rejected, malformed, timed-out and uncertain responses produce the contract's output and exit status for every script |
+| T2 | Real appliance | Run each shipped entry point against the M22 launcher's four-WAR appliance and the shipped IOC fixture, with independent readback of the resulting state; where an implementation is replaced, run the original and the replacement on the same fixtures | JDK 21, Tomcat 9, SQLite appliance, softIocPVX and the shipped IOC database | Each script's recorded procedure and final state are observed; original and replacement agree except for the named intentional changes |
+| T3 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
+| T4 | Documentation | Execute the scripting page's commands for these scripts verbatim and build the book with the pinned tools | T2 environment; pinned mdBook and mdbook-admonish | Commands reproduce the documented output and state; the book builds and every sample link resolves |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | System Python or the selected shell tools; loopback endpoints | Pending | none |
+| T2 | Not run | Real appliance and shipped IOC fixture | Pending | none |
+| T3 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T4 | Not run | T2 environment; pinned book tools | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Modernize the retained sample scripts
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-02 15:54 UTC; issue #22 read back with matching title and body, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-02T15:54:13Z. Recheck with gh issue view 22 on jeonghanlee/epicsarchiverap-maven.
 
 ## Backlog
 
