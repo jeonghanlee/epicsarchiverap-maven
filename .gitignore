@@ -14,6 +14,9 @@ docs/LICENSE
 # Soft IOC interactive history
 .iocsh_history
 
+# Python bytecode caches
+__pycache__/
+
 # git-workflow scratch (commit messages, staging scripts)
 /work/
 
