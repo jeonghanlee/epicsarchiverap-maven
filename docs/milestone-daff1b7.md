@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M17 (issue #6), M30 (issue #14) and M32 (issue #16) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M31 is next: its plan is still draft and starts with the owner's decision on the intended age (step 1 of its Implementation Plan). Of the other Ready rows (M12, M7, M26, M29, M33 and M37), M33 needs no owner decision before implementation and M29 starts with one. Read the chosen row's detail in this register and settle its plan before any implementation. M37 has a draft plan and issue #22; its owner decisions (language, timeouts, legacy failure handling) come first. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
+Next session entry point: M17 (issue #6), M30 (issue #14) and M32 (issue #16) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M31 is In progress: its plan is accepted and the correction with its test passes T1 and T2 locally; landing, the Maven workflow and the reconciliation and closure of issue #15 remain. Of the other Ready rows (M12, M7, M26, M29, M33 and M37), M33 needs no owner decision before implementation and M29 starts with one. Read the chosen row's detail in this register and settle its plan before any implementation. M37 has a draft plan and issue #22; its owner decisions (language, timeouts, legacy failure handling) come first. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -50,7 +50,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M28 | ETL pass scheduler soak on the deploy path | Milestone | In progress | No | M25, G4 | The ansible-provision lab runs the pass scheduler of M25 through the aa-env deploy path on the soak chain and on the aa-env default chain: passes fire on the grid, the reported rows read as designed, the unit's stop time is measured, and the comparison with the 2026-09-24 to 2026-09-26 run is recorded; [detail](#m28---etl-pass-scheduler-soak-on-the-deploy-path) |
 | Phase 2 | M29 | Remaining per-request retrieval INFO lines | Milestone | Not started | Yes | | The five remaining per-request INFO call sites in the retrieval WAR log at DEBUG or are recorded as wanted at INFO, and a deployed retrieval WAR at the default level writes no per-request line other than those recorded to stay at INFO, for a plain single-PV request (no function-call syntax, no .VAL suffix, no post-processor); [detail](#m29---remaining-per-request-retrieval-info-lines) |
 | Phase 2 | M30 | ETLDetails post-processor time shown under the wrong label | Milestone | Complete | No | | The per-PV ETL details row labelled executePostETLTasks shows that phase's time (0fbd5592); ETLDetailsTest fails on the old label and passes after, 883 default tests and the Maven workflow pass; issue #14 closed as completed on 2026-10-03; [detail](#m30---etldetails-post-processor-time-shown-under-the-wrong-label) |
-| Phase 2 | M31 | PlainPB stale-file age uses 60 instead of 1000 for seconds to milliseconds | Milestone | Not started | Yes | | The stale zero-byte and empty-file checks in PlainPBStoragePlugin compare the file age with the intended age in the same unit, with a test that fails on the current factor; [detail](#m31---plainpb-stale-file-age-uses-60-instead-of-1000-for-seconds-to-milliseconds) |
+| Phase 2 | M31 | PlainPB stale-file age uses 60 instead of 1000 for seconds to milliseconds | Milestone | In progress | No | | The stale zero-byte and empty-file checks in PlainPBStoragePlugin compare the file age with the intended age in the same unit, with a test that fails on the current factor; [detail](#m31---plainpb-stale-file-age-uses-60-instead-of-1000-for-seconds-to-milliseconds) |
 | Phase 2 | M32 | Unknown OutOfSpaceHandling value leaves PVs without ETL | Milestone | Complete | No | | A misspelled org.epics.archiverappliance.etl.common.OutOfSpaceHandling value falls back to the default with one ERROR line instead of leaving every PV without ETL (0e0c01dd); ETLOutOfSpaceHandlingTest fails on the old code and passes after, 884 default tests and the Maven workflow pass; issue #16 closed as completed on 2026-10-03; [detail](#m32---unknown-outofspacehandling-value-leaves-pvs-without-etl) |
 | Phase 2 | M33 | ZipETLTest reads back fewer events than written | Milestone | Not started | Yes | | The cause of the 1093 events missing from the slow-group ZipETLTest read-back is found on the real path and fixed in the code or in the test; the class passes with the slow-group command and the default suite passes; [detail](#m33---zipetltest-reads-back-fewer-events-than-written) |
 | Phase 2 | M34 | Preserve pending samples when pausing archiving | Milestone | Complete | No | | Correction 759337d5 and verified CLI/tests/docs fbc32120 landed; local regression, integration and live checks pass; Maven CI and Pages pass; #17 closed on 2026-09-29; [detail](#m34---preserve-pending-samples-when-pausing-archiving) |
@@ -2991,7 +2991,7 @@ Last Compared: 2026-10-03 01:55 UTC; `gh api repos/jeonghanlee/epicsarchiverap-m
 Origin: daff1b7 / M31
 Identity History: none
 GitHub Issue: #15
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -3010,30 +3010,35 @@ Out of scope: the ETL scheduling (M25).
 ##### Dependencies And Decisions
 
 - Origin: the design review of 2026-09-27 of docs/design-etl-pass-scheduler.md; the defect is recorded only here.
+- The default hold is 0 (line 205). With (hold + 1) partitions as the intended age, hold 0 moves the threshold from 18 s to 5 min for a 5-minute partition and from 86.4 min to 1 day for a daily one; hold 2 moves it from 54 s to 15 min and from about 4.3 h to 3 days.
+- The empty-file check runs only when hold or gather is not 0 (line 794). getETLStreams examines only files named for partitions before the one that contains the processing time (PlainPBPathNameUtility.getPathsBeforeCurrentPartition), so a test file named for the current partition is never checked.
+- Plan review, 2026-10-03: the test files are named for an earlier partition, the processing times are taken from the files' actual modification times, and the header-only file is cut from a file the real writer produced at the first-sample position PBFileInfo reports; the two age checks share one helper.
+- Decision Date: 2026-10-03. The intended age is (hold + 1) partitions, as the code reads: a zero-byte or header-only source file is deleted once its modification time is more than (hold + 1) x the partition length before the processing time.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-03, this plan with the T1 method below and the intended age above
+Implementation Authorization: 2026-10-03, implement and verify this plan
+Superseded Plan Artifacts: the earlier draft T1 method that did not fix the file partition names or the processing-time base
 
-1. Settle the intended age with the owner. Closes with the decision recorded here.
-2. Change the factor to the unit conversion and add the test. Closes with T1 and T2.
+1. Completed 2026-10-03: the intended age is (hold + 1) partitions (Dependencies And Decisions).
+2. Add the test and observe it fail on the current factor. Closes with T1 (before part).
+3. Compute the stale age in milliseconds with the unit conversion in one helper used by both checks. Closes with T1 and T2.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Unit | A zero-byte and an empty source file older than the current threshold but younger than the intended age, run through getETLStreams on real PlainPB stores | JDK 21, wrapper Maven | Both are kept; before the fix both are deleted |
+| T1 | Unit | On a real PlainPB store with PARTITION_5MIN and hold 2, create a zero-byte file and a header-only file, both named for a partition before the processing time; the header-only file is a file the real writer produced, cut at the first-sample position PBFileInfo reports. Call getETLStreams with processing times of each file's modification time plus 120 s and plus 1000 s | JDK 21, wrapper Maven | At plus 120 s both files are kept, and before the fix both are deleted; at plus 1000 s both are deleted |
 | T2 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-10-03 06:38-06:40 UTC | JDK 21.0.12.1, wrapper Maven, `./mvnw -B -ntp test -Dtest=PlainPBStaleEmptyFileTest` on b7b9c0a9c2340c6f7ad3ef086a5915f077d623ec plus the new test, before and after the correction | Pass | Before the correction both cases fail at 120 s after modification because the file is already deleted (work/m31-t1-before.log). After both checks use one helper with the millisecond conversion, both cases pass: the zero-byte and the header-only file are kept at 120 s and deleted at 1000 s; 2 tests, no failure, error or skip (work/m31-t1-after.log). The header-only case asserts that PBFileInfo reads no first event before getETLStreams runs |
+| T2 | 2026-10-03 06:40-07:07 UTC | JDK 21.0.12.1, wrapper Maven, `./mvnw -B -ntp clean verify` on the working tree with the correction and the new test | Pass | Build success; the default suite runs 886 tests, including PlainPBStaleEmptyFileTest, HoldAndGatherTest and ZeroByteFilesTest, with no failure, error or skip (work/m31-t2.log) |
 
 ##### Closure Evidence
 
