@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M17 is Complete (2026-10-02): its page correction and inventory record are on origin/modernize at 3229d61643561195b4c84d147a383f578a5be0d9 and issue #6 is closed as completed. The owner has not set an order among the Ready rows M12, M7, M26, M29 to M33 and M37; M12 is the first of them in the work table. Read the chosen row's detail in this register and settle its plan before any implementation. M37 has a draft plan and issue #22; its owner decisions (language, timeouts, legacy failure handling) come first. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
+Next session entry point: M17 (issue #6) and M30 (issue #14) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. Of the remaining Ready rows (M12, M7, M26, M29, M31, M32, M33 and M37), the plans of M32 and M33 need no owner decision before implementation, and M32 is the smaller change; M29 and M31 each start with one owner decision. Read the chosen row's detail in this register and settle its plan before any implementation. M37 has a draft plan and issue #22; its owner decisions (language, timeouts, legacy failure handling) come first. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -49,7 +49,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M27 | Reduced bins missing after ETL with a post-processor | Milestone | Complete | No | | The cause of the reduced-bin shortfall in ETLPostProcessorTest is found and fixed, and the test and the default suite pass on repeated runs; [detail](#m27---reduced-bins-missing-after-etl-with-a-post-processor) |
 | Phase 2 | M28 | ETL pass scheduler soak on the deploy path | Milestone | In progress | No | M25, G4 | The ansible-provision lab runs the pass scheduler of M25 through the aa-env deploy path on the soak chain and on the aa-env default chain: passes fire on the grid, the reported rows read as designed, the unit's stop time is measured, and the comparison with the 2026-09-24 to 2026-09-26 run is recorded; [detail](#m28---etl-pass-scheduler-soak-on-the-deploy-path) |
 | Phase 2 | M29 | Remaining per-request retrieval INFO lines | Milestone | Not started | Yes | | The five remaining per-request INFO call sites in the retrieval WAR log at DEBUG or are recorded as wanted at INFO, and a deployed retrieval WAR at the default level writes no per-request line other than those recorded to stay at INFO, for a plain single-PV request (no function-call syntax, no .VAL suffix, no post-processor); [detail](#m29---remaining-per-request-retrieval-info-lines) |
-| Phase 2 | M30 | ETLDetails post-processor time shown under the wrong label | Milestone | In progress | No | | The per-PV ETL details row labelled executePostETLTasks shows that phase's time, with a test that reads the row; [detail](#m30---etldetails-post-processor-time-shown-under-the-wrong-label) |
+| Phase 2 | M30 | ETLDetails post-processor time shown under the wrong label | Milestone | Complete | No | | The per-PV ETL details row labelled executePostETLTasks shows that phase's time (0fbd5592); ETLDetailsTest fails on the old label and passes after, 883 default tests and the Maven workflow pass; issue #14 closed as completed on 2026-10-03; [detail](#m30---etldetails-post-processor-time-shown-under-the-wrong-label) |
 | Phase 2 | M31 | PlainPB stale-file age uses 60 instead of 1000 for seconds to milliseconds | Milestone | Not started | Yes | | The stale zero-byte and empty-file checks in PlainPBStoragePlugin compare the file age with the intended age in the same unit, with a test that fails on the current factor; [detail](#m31---plainpb-stale-file-age-uses-60-instead-of-1000-for-seconds-to-milliseconds) |
 | Phase 2 | M32 | Unknown OutOfSpaceHandling value leaves PVs without ETL | Milestone | Not started | Yes | | A misspelled org.epics.archiverappliance.etl.common.OutOfSpaceHandling value falls back to the default with one ERROR line instead of leaving every PV without ETL, with a test; [detail](#m32---unknown-outofspacehandling-value-leaves-pvs-without-etl) |
 | Phase 2 | M33 | ZipETLTest reads back fewer events than written | Milestone | Not started | Yes | | The cause of the 1093 events missing from the slow-group ZipETLTest read-back is found on the real path and fixed in the code or in the test; the class passes with the slow-group command and the default suite passes; [detail](#m33---zipetltest-reads-back-fewer-events-than-written) |
@@ -2927,7 +2927,7 @@ Last Compared: 2026-09-28 (gh issue view 13 --repo jeonghanlee/epicsarchiverap-m
 Origin: daff1b7 / M30
 Identity History: none
 GitHub Issue: #14
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -2973,17 +2973,18 @@ Superseded Plan Artifacts: the earlier draft T1 method without the added distinc
 
 ##### Closure Evidence
 
-- none
+- Landed on 2026-10-03: the correction and `ETLDetailsTest` are 0fbd559259aacb7a8d023950d53d09b926413ffb and the plan and test record 81575aed33368b71b0b366731060a3685fc03063. Directly after the push at 01:11 UTC, fetch showed local HEAD and origin/modernize both at 81575aed, and `git ls-remote --exit-code origin refs/heads/modernize` returned it. The Maven workflow run 37085156529 on 81575aed succeeded at 01:45 UTC.
+- Linked issue #14: body reconciled with the change and its verification, both acceptance criteria checked, and closed as completed on 2026-10-03 at 01:54:46 UTC with a [closure comment](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/14#issuecomment-5964331323). M30 is Complete.
 
 ##### GitHub Projection
 
 Title: Show the post-ETL-tasks time under its own label in ETLDetails
 Labels: bug
 GitHub Milestone: none
-Observed State: open
+Observed State: closed
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-09-28 (gh issue view 14 --repo jeonghanlee/epicsarchiverap-maven --json title,state,labels,assignees)
+Last Compared: 2026-10-03 01:55 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/14` confirms state closed with state_reason completed, closed_at 2026-10-03T01:54:46Z, the title above, bug label, no milestone and assignee jeonghanlee. Readback of the body matches `work/issue-etldetails-label-body.md` and the closure comment matches `work/issue-etldetails-label-close.md`.
 
 #### M31 - PlainPB stale-file age uses 60 instead of 1000 for seconds to milliseconds
 
