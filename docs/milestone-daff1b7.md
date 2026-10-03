@@ -51,7 +51,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M29 | Remaining per-request retrieval INFO lines | Milestone | Not started | Yes | | The five remaining per-request INFO call sites in the retrieval WAR log at DEBUG or are recorded as wanted at INFO, and a deployed retrieval WAR at the default level writes no per-request line other than those recorded to stay at INFO, for a plain single-PV request (no function-call syntax, no .VAL suffix, no post-processor); [detail](#m29---remaining-per-request-retrieval-info-lines) |
 | Phase 2 | M30 | ETLDetails post-processor time shown under the wrong label | Milestone | Complete | No | | The per-PV ETL details row labelled executePostETLTasks shows that phase's time (0fbd5592); ETLDetailsTest fails on the old label and passes after, 883 default tests and the Maven workflow pass; issue #14 closed as completed on 2026-10-03; [detail](#m30---etldetails-post-processor-time-shown-under-the-wrong-label) |
 | Phase 2 | M31 | PlainPB stale-file age uses 60 instead of 1000 for seconds to milliseconds | Milestone | Not started | Yes | | The stale zero-byte and empty-file checks in PlainPBStoragePlugin compare the file age with the intended age in the same unit, with a test that fails on the current factor; [detail](#m31---plainpb-stale-file-age-uses-60-instead-of-1000-for-seconds-to-milliseconds) |
-| Phase 2 | M32 | Unknown OutOfSpaceHandling value leaves PVs without ETL | Milestone | Not started | Yes | | A misspelled org.epics.archiverappliance.etl.common.OutOfSpaceHandling value falls back to the default with one ERROR line instead of leaving every PV without ETL, with a test; [detail](#m32---unknown-outofspacehandling-value-leaves-pvs-without-etl) |
+| Phase 2 | M32 | Unknown OutOfSpaceHandling value leaves PVs without ETL | Milestone | In progress | No | | A misspelled org.epics.archiverappliance.etl.common.OutOfSpaceHandling value falls back to the default with one ERROR line instead of leaving every PV without ETL, with a test; [detail](#m32---unknown-outofspacehandling-value-leaves-pvs-without-etl) |
 | Phase 2 | M33 | ZipETLTest reads back fewer events than written | Milestone | Not started | Yes | | The cause of the 1093 events missing from the slow-group ZipETLTest read-back is found on the real path and fixed in the code or in the test; the class passes with the slow-group command and the default suite passes; [detail](#m33---zipetltest-reads-back-fewer-events-than-written) |
 | Phase 2 | M34 | Preserve pending samples when pausing archiving | Milestone | Complete | No | | Correction 759337d5 and verified CLI/tests/docs fbc32120 landed; local regression, integration and live checks pass; Maven CI and Pages pass; #17 closed on 2026-09-29; [detail](#m34---preserve-pending-samples-when-pausing-archiving) |
 | Phase 2 | M36 | Honor nanosecond bounds in live retrieval | Milestone | Complete | No | | Correction dca485fd published on origin/modernize; 882 default tests, 4 selected integration tests and 70 real IOC checks pass, including exact/minus-one-nanosecond bounds and four-component restart; issue #21 closed as completed on 2026-10-02 UTC; [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) retains full VM revalidation; [detail](#m36---honor-nanosecond-bounds-in-live-retrieval) |
@@ -3054,11 +3054,11 @@ Last Compared: 2026-09-28 (gh issue view 15 --repo jeonghanlee/epicsarchiverap-m
 Origin: daff1b7 / M32
 Identity History: none
 GitHub Issue: #16
-Status: Not started
+Status: In progress
 
 ##### Summary
 
-PBThreeTierETLPVLookup.determineOutOfSpaceHandling (lines 373-380) turns the property org.epics.archiverappliance.etl.common.OutOfSpaceHandling into an enum with valueOf, which throws on an unknown value; the call (line 161) sits inside the per-transition try of addETLJobs (lines 140-217), so a misspelled value logs one ERROR line per PV and transition and leaves every PV without ETL while the engine keeps writing the STS. Found by the design review of 2026-09-27 of docs/design-etl-pass-scheduler.md; pre-existing.
+PBThreeTierETLPVLookup.determineOutOfSpaceHandling (lines 579-585 at 14fc08a1) turns the property org.epics.archiverappliance.etl.common.OutOfSpaceHandling into an enum with valueOf, which throws on an unknown value; the call (line 297) sits inside the per-transition try of addETLJobs (lines 265-315), so a misspelled value logs one ERROR line per PV and transition and leaves every PV without ETL while the engine keeps writing the STS. Found by the design review of 2026-09-27 of docs/design-etl-pass-scheduler.md; pre-existing.
 
 ##### Scope
 
@@ -3073,29 +3073,31 @@ Out of scope: the handling values themselves.
 ##### Dependencies And Decisions
 
 - Origin: the design review of 2026-09-27 of docs/design-etl-pass-scheduler.md; the defect is recorded only here.
+- ETLExecutor.java line 92 calls the same method, so the fallback applies to that path too.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-03, this plan with the T1 method below
+Implementation Authorization: 2026-10-03, implement and verify this plan
+Superseded Plan Artifacts: the earlier draft T1 method that registered one PV and did not count ERROR lines
 
-1. Parse the property once with a fallback and a single ERROR line; add the test. Closes with T1 and T2.
+1. Add the test and observe it fail on the current code. Closes with T1 (before part).
+2. Make determineOutOfSpaceHandling fall back to the default handling with one ERROR line naming the bad value, and have the lookup read the property once instead of per PV and transition. Closes with T1 and T2.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Unit | Register a PV with a misspelled property value through the test config service | JDK 21, wrapper Maven | The lookup item exists with the default handling; before the fix no item exists |
+| T1 | Unit | Set the property to a misspelled value on the test config service, register two PVs through the real registration path, and capture the lookup's ERROR lines with a log appender | JDK 21, wrapper Maven | Both PVs have lookup items with the default handling and exactly one ERROR line names the bad value; before the fix no lookup item exists |
 | T2 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-10-03 04:52 UTC | JDK 21.0.12.1, wrapper Maven, `./mvnw -B -ntp test -Dtest=ETLOutOfSpaceHandlingTest` on 14fc08a13bb049256e665b376b74f8609eb3a777 plus the new test, before and after the correction | Pass | Before the correction the test fails because the first PV has no lookup item (expected 1, actual 0; work/m32-t1-before.log). After it, both PVs have lookup items with DELETE_SRC_STREAMS_IF_FIRST_DEST_WHEN_OUT_OF_SPACE and exactly one ERROR line names the bad value: 1 test, no failure, error or skip (work/m32-t1-after.log). With only the read-once call reverted to a per-PV read, the same test fails on two ERROR lines (work/m32-t1-mutant.log); the correction was restored byte for byte |
+| T2 | 2026-10-03 04:53-05:20 UTC | JDK 21.0.12.1, wrapper Maven, `./mvnw -B -ntp clean verify` on the working tree with the correction and the new test | Pass | Build success; the default suite runs 884 tests, including ETLOutOfSpaceHandlingTest, with no failure, error or skip (work/m32-t2.log) |
 
 ##### Closure Evidence
 
