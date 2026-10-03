@@ -106,7 +106,7 @@ public class ETLDetails implements Details {
                 statuses.add(metricDetail(
                         "ETL Total time spent by executePostETLTasks() in ETL(" + lookupItem.getLifetimeorder()
                                 + ") (ms)",
-                        Long.toString(lookupItem.getTime4runPostProcessors())));
+                        Long.toString(lookupItem.getTime4executePostETLTasks())));
 
             } else {
                 statuses.add(metricDetail(
