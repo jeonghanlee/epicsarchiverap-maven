@@ -70,7 +70,17 @@ public final class PBThreeTierETLPVLookup {
 
     public static final long DEFAULT_STOP_WAIT_SECONDS = 60;
 
+    /** What ETL does when a destination store lacks space; the value names an OutOfSpaceHandling constant. */
+    public static final String OUT_OF_SPACE_HANDLING_PROPERTY =
+            "org.epics.archiverappliance.etl.common.OutOfSpaceHandling";
+
+    public static final OutOfSpaceHandling DEFAULT_OUT_OF_SPACE_HANDLING =
+            OutOfSpaceHandling.DELETE_SRC_STREAMS_IF_FIRST_DEST_WHEN_OUT_OF_SPACE;
+
     private ConfigService configService = null;
+
+    /** The out of space handling read once for all PVs and transitions; null until the first ETL job is added. */
+    private OutOfSpaceHandling outOfSpaceHandling = null;
 
     /** Used to poll the config service in the background and add ETL jobs for PVs. */
     private ScheduledThreadPoolExecutor configServiceSyncThread = null;
@@ -294,7 +304,7 @@ public final class PBThreeTierETLPVLookup {
                             etlDest,
                             etllifetimeid,
                             applianceMetrics.get(etllifetimeid),
-                            determineOutOfSpaceHandling(configService));
+                            readOutOfSpaceHandling());
                     if (etlDest instanceof StorageMetrics) {
                         // At least on some of the test machines, checking free space seems to take the longest time. In
                         // this, getting the fileStore seems to take the longest time.
@@ -576,13 +586,29 @@ public final class PBThreeTierETLPVLookup {
         workersStopped = true;
     }
 
+    /**
+     * The out of space handling named by the installation property; a value that names no OutOfSpaceHandling
+     * constant is replaced by the default with an ERROR line naming the value.
+     */
     public static OutOfSpaceHandling determineOutOfSpaceHandling(ConfigService configService) {
-        String outOfSpaceHandler = configService
+        String value = configService
                 .getInstallationProperties()
-                .getProperty(
-                        "org.epics.archiverappliance.etl.common.OutOfSpaceHandling",
-                        OutOfSpaceHandling.DELETE_SRC_STREAMS_IF_FIRST_DEST_WHEN_OUT_OF_SPACE.toString());
-        return OutOfSpaceHandling.valueOf(outOfSpaceHandler);
+                .getProperty(OUT_OF_SPACE_HANDLING_PROPERTY, DEFAULT_OUT_OF_SPACE_HANDLING.toString());
+        try {
+            return OutOfSpaceHandling.valueOf(value);
+        } catch (IllegalArgumentException ex) {
+            logger.error(OUT_OF_SPACE_HANDLING_PROPERTY + " is " + value + ", which names no OutOfSpaceHandling; "
+                    + "the default " + DEFAULT_OUT_OF_SPACE_HANDLING + " is used");
+            return DEFAULT_OUT_OF_SPACE_HANDLING;
+        }
+    }
+
+    /** Reads the out of space handling on the first call and returns the same value for every later PV. */
+    private synchronized OutOfSpaceHandling readOutOfSpaceHandling() {
+        if (outOfSpaceHandling == null) {
+            outOfSpaceHandling = determineOutOfSpaceHandling(configService);
+        }
+        return outOfSpaceHandling;
     }
 
     public void addETLJobsForUnitTests(String pvName, PVTypeInfo typeInfo) {
