@@ -750,6 +750,18 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
         this.partitionGranularity = partitionGranularity;
     }
 
+    /**
+     * Whether the file was last modified more than (hold + 1) partitions before the given time; a zero-byte or
+     * header-only source file this old is deleted by getETLStreams.
+     */
+    private boolean isOlderThanHeldPartitions(Path path, Instant currentTime) throws IOException {
+        long ageInMillis = currentTime.toEpochMilli() - Files.getLastModifiedTime(path).toMillis();
+        long heldPartitionsInMillis = (long) (this.holdETLForPartions + 1)
+                * this.getPartitionGranularity().getApproxSecondsPerChunk()
+                * 1000L;
+        return ageInMillis > heldPartitionsInMillis;
+    }
+
     @Override
     public List<ETLInfo> getETLStreams(String pvName, Instant currentTime, ETLContext context) throws IOException {
 
@@ -807,12 +819,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                     logger.warn("Path " + path + " is of size zero bytes at time "
                             + TimeUtils.convertToISO8601String(currentTime));
 
-                    long lastModifiedInMillis = Files.getLastModifiedTime(path).toMillis();
-                    long currentTimeInMillis = currentTime.toEpochMilli();
-                    if ((currentTimeInMillis - lastModifiedInMillis)
-                            > ((long) (this.holdETLForPartions + 1)
-                                    * this.getPartitionGranularity().getApproxSecondsPerChunk()
-                                    * 60)) {
+                    if (isOlderThanHeldPartitions(path, currentTime)) {
                         logger.warn("Zero byte file is older than current ETL time by holdETLForPartions; deleting it "
                                 + path.toAbsolutePath());
                         try {
@@ -841,13 +848,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                     if (fileinfo.getFirstEvent() == null) {
                         logger.debug("We seem to have an empty file " + path.toAbsolutePath());
 
-                        long lastModifiedInMillis =
-                                Files.getLastModifiedTime(path).toMillis();
-                        long currentTimeInMillis = currentTime.toEpochMilli();
-                        if ((currentTimeInMillis - lastModifiedInMillis)
-                                > ((long) (this.holdETLForPartions + 1)
-                                        * this.getPartitionGranularity().getApproxSecondsPerChunk()
-                                        * 60)) {
+                        if (isOlderThanHeldPartitions(path, currentTime)) {
                             logger.warn("Empty file is older than current ETL time by holdETLForPartions; deleting it "
                                     + path.toAbsolutePath());
                             try {
