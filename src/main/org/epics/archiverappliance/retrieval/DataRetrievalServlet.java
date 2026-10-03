@@ -488,7 +488,7 @@ public class DataRetrievalServlet extends HttpServlet {
             pmansProfiler.mark("After writing all eventstreams to response");
 
             long s2 = System.currentTimeMillis();
-            logger.info("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
+            logger.debug("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
                     + " in " + (s2 - s1) + "(ms)"
                     + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs + " events"
                     + " deduping involved " + mergeDedupCountingConsumer.comparedEventsForAllPVs + " compares.");
@@ -1048,7 +1048,7 @@ public class DataRetrievalServlet extends HttpServlet {
         }
 
         long s2 = System.currentTimeMillis();
-        logger.info("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
+        logger.debug("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
                 + " in " + (s2 - s1) + "(ms)"
                 + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs + " events"
                 + " deduping involved " + mergeDedupCountingConsumer.comparedEventsForAllPVs + " compares.");

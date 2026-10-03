@@ -105,7 +105,7 @@ public class RetrievalState {
                 Event firstKnownEvent = storagePlugin.getFirstKnownEvent(context, pvName);
                 if (firstKnownEvent != null
                         && firstKnownEvent.getEventTimeStamp().isBefore(start)) {
-                    logger.info("Found a data source " + storagePlugin.getName() + " that has an event "
+                    logger.debug("Found a data source " + storagePlugin.getName() + " that has an event "
                             + TimeUtils.convertToISO8601String(firstKnownEvent.getEventTimeStamp())
                             + " older than the request start time " + TimeUtils.convertToISO8601String(start));
                     // Optimize the rest of the data sources away....

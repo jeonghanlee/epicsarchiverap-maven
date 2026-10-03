@@ -183,7 +183,7 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 			}
 			
 			if(eventsInCurrentStream == 0) {
-				logger.info("The stream from " + ((strm.getDescription() != null ) ? strm.getDescription().getSource() : "Unknown") + " was an empty stream.");
+				logger.debug("The stream from " + ((strm.getDescription() != null ) ? strm.getDescription().getSource() : "Unknown") + " was an empty stream.");
 			}
 
 			// We start deduping at the boundaries of event streams. 
@@ -215,7 +215,7 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 	
 	public void logNumbersAndCollectTotal() {
 		if(pvName != null) {
-			logger.info("Found a total of " + totalEvents 
+			logger.debug("Found a total of " + totalEvents
 					+ " skipping " + skippedEvents + " events"
 					+ " deduping involved " + comparedEvents + " compares for PV "
 					+ pvName);
