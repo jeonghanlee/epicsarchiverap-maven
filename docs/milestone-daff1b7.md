@@ -49,7 +49,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M27 | Reduced bins missing after ETL with a post-processor | Milestone | Complete | No | | The cause of the reduced-bin shortfall in ETLPostProcessorTest is found and fixed, and the test and the default suite pass on repeated runs; [detail](#m27---reduced-bins-missing-after-etl-with-a-post-processor) |
 | Phase 2 | M28 | ETL pass scheduler soak on the deploy path | Milestone | In progress | No | M25, G4 | The ansible-provision lab runs the pass scheduler of M25 through the aa-env deploy path on the soak chain and on the aa-env default chain: passes fire on the grid, the reported rows read as designed, the unit's stop time is measured, and the comparison with the 2026-09-24 to 2026-09-26 run is recorded; [detail](#m28---etl-pass-scheduler-soak-on-the-deploy-path) |
 | Phase 2 | M29 | Remaining per-request retrieval INFO lines | Milestone | Not started | Yes | | The five remaining per-request INFO call sites in the retrieval WAR log at DEBUG or are recorded as wanted at INFO, and a deployed retrieval WAR at the default level writes no per-request line other than those recorded to stay at INFO, for a plain single-PV request (no function-call syntax, no .VAL suffix, no post-processor); [detail](#m29---remaining-per-request-retrieval-info-lines) |
-| Phase 2 | M30 | ETLDetails post-processor time shown under the wrong label | Milestone | Not started | Yes | | The per-PV ETL details row labelled executePostETLTasks shows that phase's time, with a test that reads the row; [detail](#m30---etldetails-post-processor-time-shown-under-the-wrong-label) |
+| Phase 2 | M30 | ETLDetails post-processor time shown under the wrong label | Milestone | In progress | No | | The per-PV ETL details row labelled executePostETLTasks shows that phase's time, with a test that reads the row; [detail](#m30---etldetails-post-processor-time-shown-under-the-wrong-label) |
 | Phase 2 | M31 | PlainPB stale-file age uses 60 instead of 1000 for seconds to milliseconds | Milestone | Not started | Yes | | The stale zero-byte and empty-file checks in PlainPBStoragePlugin compare the file age with the intended age in the same unit, with a test that fails on the current factor; [detail](#m31---plainpb-stale-file-age-uses-60-instead-of-1000-for-seconds-to-milliseconds) |
 | Phase 2 | M32 | Unknown OutOfSpaceHandling value leaves PVs without ETL | Milestone | Not started | Yes | | A misspelled org.epics.archiverappliance.etl.common.OutOfSpaceHandling value falls back to the default with one ERROR line instead of leaving every PV without ETL, with a test; [detail](#m32---unknown-outofspacehandling-value-leaves-pvs-without-etl) |
 | Phase 2 | M33 | ZipETLTest reads back fewer events than written | Milestone | Not started | Yes | | The cause of the 1093 events missing from the slow-group ZipETLTest read-back is found on the real path and fixed in the code or in the test; the class passes with the slow-group command and the default suite passes; [detail](#m33---zipetltest-reads-back-fewer-events-than-written) |
@@ -2927,7 +2927,7 @@ Last Compared: 2026-09-28 (gh issue view 13 --repo jeonghanlee/epicsarchiverap-m
 Origin: daff1b7 / M30
 Identity History: none
 GitHub Issue: #14
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -2946,29 +2946,30 @@ Out of scope: the per-transition rows, which M25 replaces.
 ##### Dependencies And Decisions
 
 - Origin: the design review of 2026-09-27 of docs/design-etl-pass-scheduler.md; the defect is recorded only here.
+- Decision Date: 2026-10-02. ETLJob accumulates both phase times as millisecond wall-clock differences, so a small test job records zero or equal values and the present defect would pass unnoticed. After the real ETLJob, the test adds distinct known amounts to both phases through the production accumulator `ETLPVLookupItems.addInfoAboutDetailedTime`, so the two totals cannot be equal; no internal function is replaced.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-02, this plan with the T1 method below
+Implementation Authorization: 2026-10-02, implement and verify this plan
+Superseded Plan Artifacts: the earlier draft T1 method without the added distinct amounts
 
-1. Fix the getter and add the test. Closes with T1 and T2.
+1. Add the test and observe it fail on the current label. Fix the getter and observe it pass. Closes with T1 and T2.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Unit | Run one real ETLJob over PlainPB stores, then read ETLDetails for the PV | JDK 21, wrapper Maven | Both rows carry the value of their own phase; before the fix the test fails on the label |
+| T1 | Unit | Run one real ETLJob over PlainPB stores, add distinct known amounts to the runPostProcessors and executePostETLTasks totals through `addInfoAboutDetailedTime`, then read ETLDetails for the PV | JDK 21, wrapper Maven | Both rows carry the value of their own phase; before the fix the test fails on the label |
 | T2 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-10-03 00:18 UTC | JDK 21.0.12.1, wrapper Maven, `./mvnw -B -ntp test -Dtest=ETLDetailsTest` on 0c941984f6747e301b3c2d9e739d1c0ff6cf813b plus the new test, before and after the one-line correction | Pass | Before the correction the test fails at the executePostETLTasks row: expected 3000000, actual 1000000, the runPostProcessors total (work/m30-t1-before.log). After `ETLDetails` prints `getTime4executePostETLTasks()` under that label, the same test passes: 1 test, no failure, error or skip (work/m30-t1-after.log). The real ETLJob moved 2 partitions before the details were read |
+| T2 | 2026-10-03 00:19-00:46 UTC | JDK 21.0.12.1, wrapper Maven, `./mvnw -B -ntp clean verify` on the working tree with the correction and the new test | Pass | Build success; the default suite runs 883 tests, including ETLDetailsTest, with no failure, error or skip (work/m30-t2.log) |
 
 ##### Closure Evidence
 
