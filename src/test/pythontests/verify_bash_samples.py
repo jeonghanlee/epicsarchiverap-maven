@@ -364,9 +364,47 @@ def check_type_changed_pvs_cases(run):
     run.compare("checkTypeChangedPVs-changed", "checkTypeChangedPVs", [run.bpl], report_matches(True))
 
 
+def storage_size_check_cases(run):
+    mail = run.mail_env()
+
+    def rows(lines):
+        parsed = []
+        for line in lines:
+            name, value = line[len("PV: "):].rsplit(" Size(GB/year): ", 1)
+            parsed.append((name, float(value)))
+        return parsed
+
+    def judge_alert(original, replacement):
+        sent = mail.messages[judge_alert.before:]
+        save(run.root, "storageSizeCheck-alert.mail.json", sent)
+        if original.returncode != 0 or replacement.returncode != 1 or replacement.stderr or len(sent) != 1:
+            return f"exit {original.returncode}/{replacement.returncode}, {len(sent)} mails"
+        body = mail_body(sent[0]).splitlines()
+        lines = replacement.stdout.splitlines()
+        if body[0] != lines[0]:
+            return "header differs"
+        # Intentional change: rates are printed as the server formats them, so values compare as numbers.
+        if rows(body[1:]) != rows(lines[1:]) or not lines[1:]:
+            return "PV order or rates differ from the mail"
+        return None
+
+    def judge_quiet(original, replacement):
+        if mail.messages[judge_quiet.before:] or original.returncode != 0 or original.stdout:
+            return "original mailed or printed"
+        if replacement.returncode != 0 or replacement.stdout or replacement.stderr:
+            return f"replacement exit {replacement.returncode} with output"
+        return None
+
+    judge_quiet.before = len(mail.messages)
+    run.compare("storageSizeCheck-quiet", "storageSizeCheck", [run.bpl, "1000000"], judge_quiet)
+    judge_alert.before = len(mail.messages)
+    run.compare("storageSizeCheck-alert", "storageSizeCheck", [run.bpl, "-1.0", "--limit", "15"], judge_alert)
+
+
 CASES = {"unarchivedPVs": unarchived_pvs_cases, "archivedPVsNotInList": archived_pvs_not_in_list_cases,
          "listTypeChanges": list_type_changes_cases, "checkForEngineActivity": check_for_engine_activity_cases,
-         "checkConnectedPVs": check_connected_pvs_cases, "checkTypeChangedPVs": check_type_changed_pvs_cases}
+         "checkConnectedPVs": check_connected_pvs_cases, "checkTypeChangedPVs": check_type_changed_pvs_cases,
+         "storageSizeCheck": storage_size_check_cases}
 
 
 def main():
