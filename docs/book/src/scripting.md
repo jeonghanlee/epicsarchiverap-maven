@@ -353,14 +353,114 @@ use five-second connect/pool limits and a ten-second read timeout; redirects
 and automatic retries are disabled. Socket timeouts bound individual waits,
 not the complete duration across multiple configured engines.
 
+## Bash sample scripts
+
+Seven Bash scripts in `docs/book/src/samples` compare PV lists with the
+appliance, report type changes and engine activity, and run alert checks.
+Each script sources [archiverClient.bash](samples/archiverClient.bash) from
+its own folder, so keep them together; a symbolic link to a script works.
+They need Bash 4 or later, `curl`, `jq`, `iconv`, GNU `find`, and GNU
+coreutils.
+
+Every HTTP script takes the management URL ending in `/bpl` as its first
+argument and accepts `--timeout SEC`, a limit for each request greater than
+0 and at most 86400 seconds (default 30). Redirects are not followed.
+Results go to stdout and diagnostics to stderr. `-h` prints the usage.
+
+| Exit status | Comparison and report scripts | Alert checks |
+| --- | --- | --- |
+| 0 | Complete output | Nothing to report |
+| 1 | Request or response failure; for `checkForEngineActivity.bash`, no change seen | Alert reported on stdout |
+| 2 | Invalid arguments or input, before any request | Invalid arguments |
+| 3 | Not used | Check incomplete, reported on stderr; it takes precedence over 1 |
+
+The management reports behind `listTypeChanges.bash`,
+`checkTypeChangedPVs.bash`, and `storageSizeCheck.bash` skip an engine that
+does not answer. For these scripts an unavailable engine looks like an
+empty report.
+
+### Compare a PV list with the appliance
+
+[unarchivedPVs.bash](samples/unarchivedPVs.bash) prints the rows of a file
+whose PV the appliance does not know. Known names include configured PVs,
+aliases, fields, and pending archive requests.
+[archivedPVsNotInList.bash](samples/archivedPVsNotInList.bash) prints the
+configured PVs that the file does not list; aliases and pending requests
+are not part of that set.
+
+The file is UTF-8 CSV and the first column of each row names a PV. Blank
+lines are skipped and surrounding whitespace is removed from the row and
+from the first column. A file without names is rejected by
+`archivedPVsNotInList.bash`. From the repository root, compare a file with
+the appliance:
+
+```bash
+samples=docs/book/src/samples
+bpl=${BPL_URL:-http://127.0.0.1:17665/mgmt/bpl}
+"$samples/unarchivedPVs.bash" "$bpl" "$PV_FILE"
+"$samples/archivedPVsNotInList.bash" "$bpl" "$PV_FILE"
+```
+
+Set `PV_FILE` to the CSV file. `unarchivedPVs.bash` prints the original
+rows in byte order of their names; when a name repeats, its last row is
+printed. `archivedPVsNotInList.bash` prints one name per line in byte
+order.
+
+### Report type changes and engine activity
+
+[listTypeChanges.bash](samples/listTypeChanges.bash) lists each PV that
+drops events because its type changed, with the type it started with and
+the type Channel Access reports. A PV whose details cannot be read is
+reported on stderr, the remaining PVs are listed, and the script exits 1.
+[checkForEngineActivity.bash](samples/checkForEngineActivity.bash) walks a
+storage folder twice, `-t` seconds apart, and counts files whose path or
+size changed; it makes no HTTP request and exits 1 when nothing changed.
+With `samples` and `bpl` set as in the previous block, list type changes
+and check the short-term store for writes:
+
+```bash
+"$samples/listTypeChanges.bash" "$bpl"
+"$samples/checkForEngineActivity.bash" -t 30 "$STS_FOLDER"
+```
+
+Set `STS_FOLDER` to the short-term store folder of the appliance; for the
+[local appliance](developer.md#run-a-local-appliance) it is
+`<run_folder>/stores/sts`.
+
+### Run the alert checks
+
+The alert checks run once and exit; a scheduler or an operator runs them.
+They send no mail. Each prints its alert on stdout and exits 1, so a
+scheduler can act on the exit status alone. With `samples` and `bpl` set
+as above, run the three checks:
+
+```bash
+"$samples/checkConnectedPVs.bash" -d 5 "$bpl"
+"$samples/checkTypeChangedPVs.bash" "$bpl"
+"$samples/storageSizeCheck.bash" --limit 100 "$bpl" 50
+```
+
+- [checkConnectedPVs.bash](samples/checkConnectedPVs.bash) reports each
+  appliance whose disconnected share of PVs exceeds `-d` percent (default
+  5). An appliance without PVs raises no alert. An appliance whose counts
+  are missing because its engine did not answer makes the check exit 3.
+- [checkTypeChangedPVs.bash](samples/checkTypeChangedPVs.bash) prints the
+  number of PVs that drop events because their type changed, then one name
+  per line.
+- [storageSizeCheck.bash](samples/storageSizeCheck.bash) prints the PVs
+  whose estimated storage exceeds the given GB per year, highest first.
+  `--limit` sets how many entries each appliance reports (default 100), so
+  the alert covers only those entries. Rates appear as the server formats
+  them, for example `1.5E-4`.
+
 ## Other sample scripts
 
 The repository folder
 [`docs/book/src/samples`](https://github.com/jeonghanlee/epicsarchiverap-maven/tree/modernize/docs/book/src/samples)
-holds further Python 3 scripts for reports, alerts, recovery, and
-storage configuration. This fork's tests do not run them. Each script
-has its own arguments and dependencies; check its help and calls
-against the API reference before you rely on it.
+also holds Python 3 scripts for recovery and storage configuration, and
+`emailHandler.py` for mail. This fork's tests do not run them. Each script
+has its own arguments and dependencies; check its help and calls against
+the API reference before you rely on it.
 
 Do not use `stopArchivingCurrentlyDisconnectedPVs.py`. It deletes the
 stored data of every disconnected PV whose last known event is `Never`,

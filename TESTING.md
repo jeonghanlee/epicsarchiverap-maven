@@ -672,3 +672,43 @@ the tracer, stops the launcher normally (exit 143) and stops the IOC (exit 0)
 independently on every exit path. Forced stop, incomplete cleanup or a
 surviving owned JVM/IOC/tracer fails. Store acceptance scans occur only after
 normal shutdown; retain every run folder on success or failure.
+
+## Bash sample scripts
+
+The seven Bash scripts under `docs/book/src/samples` and their shared
+`archiverClient.bash` are checked in two layers; Maven does not run either.
+Both need Bash, `curl`, `jq`, `iconv`, GNU `find` and coreutils, and Python
+3's standard library; the static check also needs `shellcheck`.
+
+Check every Bash file statically and run the client boundary tests, which
+execute each shipped script as a subprocess against a local HTTP server, a
+temporary folder or the clock, with no internal function replaced:
+
+```bash
+for f in docs/book/src/samples/*.bash; do bash -n "$f" && shellcheck -x -P docs/book/src/samples "$f"; done
+python3 -m unittest discover -s src/test/pythontests -p 'test_*_bash.py'
+```
+
+For the real-appliance comparison, build the four WARs with
+`./mvnw -B -ntp package`, export `JAVA_HOME` and `TOMCAT_HOME`, and activate
+the EPICS environment so that `softIocPVX` is on `PATH`. Free the ports
+17665 through 17668, 17670 and 17675, and use a new evidence folder:
+
+```bash
+python3 src/test/pythontests/verify_bash_samples.py work/bash-samples-check
+```
+
+The runner starts the local launcher and the shipped `UnitTestPVs.db`,
+archives 20 of its PVs, and runs each script's Python original, read from
+git at `d1cd363c`, and its Bash replacement on the same inputs. The original
+alert scripts mail a loopback SMTP receiver configured through
+`ARCHAPPL_NAGIOS_EMAIL_CONFIG`; their mail is compared with the
+replacement's stdout. A real type change is made through `putPVTypeInfo`,
+and engine activity is read from the live short-term store. Outputs must
+agree except for the intentional changes each case names: skipped blank
+lines, a trimmed first column, an empty list rejected before HTTP, exit 1
+instead of 255 for no engine activity, alerts on stdout with exit 1, and
+storage rates in the server's number format. `--script NAME` limits the run
+to one script, and `--port-base` and `--ca-port` move the ports. The runner
+stops only its own launcher and IOC and fails unless the launcher exits 143
+with no owned JVM left.

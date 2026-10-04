@@ -284,8 +284,18 @@ def ensure_type_change(run):
     return pv
 
 
+def list_type_changes_empty(run):
+    run.compare("listTypeChanges-empty", "listTypeChanges", [run.bpl], expect_empty_type_report)
+
+
+def expect_empty_type_report(original, replacement):
+    reason = same_output(original, replacement)
+    if reason:
+        return reason
+    return None if not replacement.stdout else "the type-change report is not empty"
+
+
 def list_type_changes_cases(run):
-    run.compare("listTypeChanges-empty", "listTypeChanges", [run.bpl])
     pv = ensure_type_change(run)
 
     def names_changed_pv(original, replacement):
@@ -337,6 +347,22 @@ def check_connected_pvs_cases(run):
     run.mail_compare("checkConnectedPVs-alert", "checkConnectedPVs", ["-d", "-1", run.bpl], alert_expected=True)
 
 
+def check_type_changed_pvs_empty(run):
+    mail = run.mail_env()
+    before = len(mail.messages)
+
+    def judge(original, replacement):
+        sent = mail.messages[before:]
+        save(run.root, "checkTypeChangedPVs-empty.mail.json", sent)
+        if sent or original.returncode != 0 or replacement.returncode != 0 or replacement.stderr:
+            return f"expected no mail and exit 0; got {len(sent)} mails, exit {replacement.returncode}"
+        if original.stdout != replacement.stdout or replacement.stdout != "No PVs have changed type\n":
+            return "expected the same no-change line"
+        return None
+
+    run.compare("checkTypeChangedPVs-empty", "checkTypeChangedPVs", [run.bpl], judge)
+
+
 def check_type_changed_pvs_cases(run):
     mail = run.mail_env()
 
@@ -359,7 +385,6 @@ def check_type_changed_pvs_cases(run):
         judge.before = len(mail.messages)
         return judge
 
-    run.compare("checkTypeChangedPVs-empty", "checkTypeChangedPVs", [run.bpl], report_matches(False))
     ensure_type_change(run)
     run.compare("checkTypeChangedPVs-changed", "checkTypeChangedPVs", [run.bpl], report_matches(True))
 
@@ -401,10 +426,38 @@ def storage_size_check_cases(run):
     run.compare("storageSizeCheck-alert", "storageSizeCheck", [run.bpl, "-1.0", "--limit", "15"], judge_alert)
 
 
+def documented_cases(run):
+    """Executes the scripting page's Bash sample commands verbatim against the appliance."""
+    page = (REPO / "docs/book/src/scripting.md").read_text()
+    section = page.split("## Bash sample scripts\n", 1)[1].split("\n## ", 1)[0]
+    blocks = [part.split("```", 1)[0] for part in section.split("```bash\n")[1:]]
+    pv_file = run.root / "documented-pvs.csv"
+    pv_file.write_text("\n".join([f"{run.pvs[0]},meta", f"{run.prefix}unknown_doc"]) + "\n")
+    env = dict(run.env, BPL_URL=run.bpl, PV_FILE=str(pv_file), STS_FOLDER=str(run.root / "appliance/stores/sts"))
+    commands = "\n".join(blocks)
+    command = ["bash", "-e", "-c", commands]
+    result = subprocess.run(command, cwd=REPO, env=env, text=True, capture_output=True, timeout=300)
+    (run.root / "documented-commands.stdout").write_text(result.stdout)
+    (run.root / "documented-commands.stderr").write_text(result.stderr)
+    lines = result.stdout.splitlines()
+    expected_start = [f"{run.prefix}unknown_doc"]
+    passed = (result.returncode == 0 and not result.stderr and len(blocks) == 3
+              and lines[:1] == expected_start and any("changes were detected in 30 seconds" in line for line in lines))
+    run.results.append({"case": "documented-commands", "blocks": len(blocks), "exit": result.returncode,
+                        "lines": len(lines), "passed": passed})
+    save(run.root, "results.json", run.results)
+    print(f"[ {'PASS' if passed else 'FAIL'} ] documented-commands: {len(blocks)} blocks, exit {result.returncode}",
+          flush=True)
+    if not passed:
+        raise RuntimeError("documented commands failed; see documented-commands.stdout and .stderr")
+
+
 CASES = {"unarchivedPVs": unarchived_pvs_cases, "archivedPVsNotInList": archived_pvs_not_in_list_cases,
          "listTypeChanges": list_type_changes_cases, "checkForEngineActivity": check_for_engine_activity_cases,
          "checkConnectedPVs": check_connected_pvs_cases, "checkTypeChangedPVs": check_type_changed_pvs_cases,
-         "storageSizeCheck": storage_size_check_cases}
+         "storageSizeCheck": storage_size_check_cases, "documented": documented_cases}
+# Cases that need the type-change report to be empty; they run before any case changes a type.
+EMPTY_TYPE_REPORT_CASES = {"listTypeChanges": list_type_changes_empty, "checkTypeChangedPVs": check_type_changed_pvs_empty}
 
 
 def main():
@@ -421,7 +474,8 @@ def main():
         parser.error("port base must be between 1024 and 65530")
     if not 1024 <= args.ca_port <= 65535 or args.ca_port in {args.port_base + n for n in (0, 1, 2, 3, 5)}:
         parser.error("CA port must be between 1024 and 65535 and distinct from appliance ports")
-    scripts = args.script or sorted(CASES)
+    # The documented commands run first, before any case makes a type change.
+    scripts = sorted(args.script or CASES, key=lambda name: (name != "documented", name))
     root = args.run_folder.resolve()
     root.mkdir(parents=True, exist_ok=False)
     env = os.environ.copy()
@@ -441,7 +495,7 @@ def main():
         "observed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
         "original_commit": ORIGINAL_COMMIT, "scripts": scripts, "python": sys.version,
-        "replacements": {name: digest(SAMPLES / f"{name}.bash") for name in scripts},
+        "replacements": {name: digest(SAMPLES / f"{name}.bash") for name in scripts if name != "documented"},
         "client_sha256": digest(SAMPLES / "archiverClient.bash"), "fixture_sha256": digest(FIXTURE),
         "wars": {str(path): digest(path) for path in wars}, "prefix": prefix, "pvs": pvs,
         "ca_port": args.ca_port, "bpl_url": bpl,
@@ -482,6 +536,9 @@ def main():
             return {row["pvName"] for row in states if row["status"] == "Being archived"} == set(pvs)
 
         wait_for(archived, ARCHIVE_TIMEOUT, f"{PV_COUNT} PVs Being archived (last-status.json)")
+        for name in scripts:
+            if name in EMPTY_TYPE_REPORT_CASES:
+                EMPTY_TYPE_REPORT_CASES[name](run)
         for name in scripts:
             CASES[name](run)
     finally:
