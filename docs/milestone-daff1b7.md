@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. Every remaining Ready row (M12, M7, M26 and M37) needs an owner decision before implementation: M12 the backends to remove, M7 the site's item list, M26 the settled output form under D31, M37 the language, timeouts and legacy failure handling. Read the chosen row's detail in this register and settle its plan before any implementation. M37 has a draft plan and issue #22; its owner decisions (language, timeouts, legacy failure handling) come first. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
+Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. Every remaining Ready row (M12, M7, M26, M37 and M39) needs an owner decision before implementation: M12 the backends to remove, M7 the site's item list, M26 the settled output form under D31, M37 the legacy failure handling still open after the language and timeout decisions, M39 the per-statement keep, enrich or demote decision. Read the chosen row's detail in this register and settle its plan before any implementation. M37 has a draft plan and issue #22; its owner decisions (language, timeouts, legacy failure handling) come first. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -57,6 +57,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M36 | Honor nanosecond bounds in live retrieval | Milestone | Complete | No | | Correction dca485fd published on origin/modernize; 882 default tests, 4 selected integration tests and 70 real IOC checks pass, including exact/minus-one-nanosecond bounds and four-component restart; issue #21 closed as completed on 2026-10-02 UTC; [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) retains full VM revalidation; [detail](#m36---honor-nanosecond-bounds-in-live-retrieval) |
 | Phase 2 | M37 | Modernize the retained sample scripts | Milestone | Not started | Yes | | Each of the fourteen retained scripts has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m37---modernize-the-retained-sample-scripts) |
 | Phase 2 | M38 | PB last-line search reports a position past the end of a complete file | Milestone | Complete | No | | seekToBeforeLastLine sets lastReadPointer after readNextBatch (76c7707d); PBFileInfo reports the file size as the truncation point and the last line's start as the last-sample position for plain and ZIP_PER_PV files; PBFileInfoPositionTest fails 4 of 8 before and passes after, the slow LineByteStream tests pass before and after, 900 default tests and the Maven workflow pass; issue #23 closed as completed on 2026-10-04; [detail](#m38---pb-last-line-search-reports-a-position-past-the-end-of-a-complete-file) |
+| Phase 2 | M39 | Per-request INFO logging without requester or outcome | Milestone | Not started | Yes | | Each remaining per-request INFO statement (BasicDispatcher Servicing, engine BPLServlet Beginning request, GetEngineDataAction Found a total) is kept with requester and outcome fields, replaced by one record per request, or moved below INFO, with the decision recorded; output at the default level under load contains only the kept lines; the default suite passes; [detail](#m39---per-request-info-logging-without-requester-or-outcome) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -3450,6 +3451,8 @@ Out of scope: the eight commands delivered by M17 and archiverClient.py, unless 
 - Origin: M17's final inventory decision of 2026-10-02.
 - Research input: M17 / T31 and M17's `Final inventory research and modularization proposal`, which hold the function map of all 25 CLIs, the Bash/curl/jq module proposal and the compatibility constraints. That proposal is neither accepted nor authorized.
 - Decision Date: 2026-10-02. Bash is the preferred language (recorded at M17). The language is selected when this plan is accepted, not before.
+- Decision Date: 2026-10-04. The implementation language is Bash; curl and jq are the proposed transport and JSON tools from M17's research.
+- Decision Date: 2026-10-04. Timeouts apply per HTTP request: `--timeout` takes positive seconds, default 30 and at most 86400, applied to each curl request as its whole-transfer limit. No whole-procedure deadline is imposed, because multi-step procedures scale with the number of PVs and a per-request limit already prevents a hung request.
 - Constraints carried from the research: the two consolidation scripts end in different states and stay separate procedures; unarchivedPVs.py and archivedPVsNotInList.py compare different populations and emit different output; the three type-info scripts share transport and keep separate transformations, and removeMetaFields.py has no internal pause or resume; no automatic retry of a mutation; sequential requests are the comparison baseline.
 
 ##### Implementation Plan
@@ -3566,6 +3569,71 @@ Observed State: closed
 Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-10-04 08:15 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/23` confirms state closed with state_reason completed, closed_at 2026-10-04T08:15:11Z, the title above, bug label, no milestone and assignee jeonghanlee. Readback of the body matches `work/issue-pb-last-line-position-body.md` and the closure comment matches `work/issue-pb-last-line-position-close.md`.
+
+#### M39 - Per-request INFO logging without requester or outcome
+
+Origin: daff1b7 / M39
+Identity History: none
+GitHub Issue: [#24](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/24)
+Status: Not started
+
+##### Summary
+
+The ansible-provision lab measured on 2026-10-04, on a Rocky 8.10 deployment of epicsarchiverap-env d09dca7 with 3bdf378c, 32,191 journal lines in 29 minutes under a 903-PV fixture and a two-worker retrieval probe every five minutes, about 31,800 of them seven INFO lines per retrieval request. Five of the seven moved to DEBUG in d80eef3a (M29), which that deployment did not include. At 254a6542 these per-request INFO statements remain: BasicDispatcher.java:44 "Servicing <path>" for every BPL request in all four components, before validation; engine BPLServlet.java:106 and :120 "Beginning request into Engine servlet"; GetEngineDataAction.java:72 "Found a total of N in N(ms)" for every retrieval-to-engine data request. None carries the requester, the HTTP status or a request identifier. On Rocky 8.10 (systemd 239) journald silently drops lines from concurrent request bursts (65 to 137 lines per run with two client workers, none with one; none on Debian 13 with systemd 257), so per-request volume raises the chance of losing lines that matter.
+
+##### Scope
+
+Decide for each remaining per-request INFO statement whether it is used and for what; either replace the statements with one record per external request at its end (requester, path and key parameters, HTTP status, events and elapsed time, with a request identifier the retrieval-to-engine hop carries) or move them below INFO; keep the log level controls able to restore the detail.
+
+Out of scope: the journald version or host configuration; ETL storage-error logging and the mgmt workflow tick (M26); the retrieval lines already at DEBUG (M29).
+
+##### Completion Criteria
+
+- Each listed statement is kept with added fields, replaced by the single request record, or moved below INFO, with the decision and its reason recorded here.
+- Under a retrieval and BPL request load, appliance output at the default level contains only the lines the decision keeps; the build and the default suite pass.
+
+##### Dependencies And Decisions
+
+- Origin: request from the ansible-provision session on 2026-10-04, relaying the owner's direction that this logging carry who, what, outcome and a correlation id if it is useful, and go below INFO if it is not.
+- Decision Date: 2026-10-04. File the issue adjusted to the current HEAD and track it as its own milestone rather than inside M26.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settle with the owner, statement by statement, whether a single request record is wanted and which fields it carries, or whether the statements move to DEBUG.
+2. Implement the settled form, verify it on the real request path before and after, and run the default suite.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | Count the appliance output lines of a real retrieval and BPL request load at the default level before and after the change, from freshly built WARs | JDK 21, Tomcat 9, integration profile | Before, the listed lines per request; after, only the lines the decision keeps |
+| T2 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21, Tomcat 9, integration profile | Pending | none |
+| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Study per-request INFO logging that lacks requester and outcome
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-04 08:46 UTC; issue #24 read back with matching title and body, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-04T08:46:17Z. Recheck with gh issue view 24 on jeonghanlee/epicsarchiverap-maven.
 
 ## Backlog
 
