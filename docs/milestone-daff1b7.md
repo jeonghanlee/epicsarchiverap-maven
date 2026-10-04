@@ -3528,7 +3528,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-02 15:54 UTC; issue #22 read back with matching title and body, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-02T15:54:13Z. Recheck with gh issue view 22 on jeonghanlee/epicsarchiverap-maven.
+Last Compared: 2026-10-04 09:57 UTC; issue #22 body replaced for the seven-script Bash scope and read back matching `work/issue-script-modernization-body.md`, with the title above, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-04T09:57:05Z. Recheck with gh issue view 22 on jeonghanlee/epicsarchiverap-maven.
 
 #### M38 - PB last-line search reports a position past the end of a complete file
 
