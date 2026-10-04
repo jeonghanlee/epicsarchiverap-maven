@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. Every remaining Ready row (M12, M7, M26 and M39) needs an owner decision before implementation: M12 the backends to remove, M7 the site's item list, M26 the settled output form under D31, M39 the per-statement keep, enrich or demote decision. Read the chosen row's detail in this register and settle its plan before any implementation. M37 has a draft plan and issue #22; its owner decisions (language, timeouts, legacy failure handling) come first. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
+Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) were added on 2026-10-04 with draft plans. Every remaining Ready row (M12, M7, M26 and M39) needs an owner decision before implementation: M12 the backends to remove, M7 the site's item list, M26 the settled output form under D31, M39 the per-statement keep, enrich or demote decision. Read the chosen row's detail in this register and settle its plan before any implementation. M37 has a draft plan and issue #22; its owner decisions (language, timeouts, legacy failure handling) come first. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -58,6 +58,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M37 | Modernize the retained sample scripts | Milestone | Complete | No | | The seven read-only and alert-check sample scripts are Bash on a shared archiverClient.bash (bcff5f27 through e08f9007), each compared with its Python original on a local appliance before removal; 66 client boundary cases, 18 appliance comparisons, 900 default tests and the Maven workflow pass; issue #22 closed as completed on 2026-10-04; the state-changing scripts and mail delivery continue in M40 and M41; [detail](#m37---modernize-the-retained-sample-scripts) |
 | Phase 2 | M38 | PB last-line search reports a position past the end of a complete file | Milestone | Complete | No | | seekToBeforeLastLine sets lastReadPointer after readNextBatch (76c7707d); PBFileInfo reports the file size as the truncation point and the last line's start as the last-sample position for plain and ZIP_PER_PV files; PBFileInfoPositionTest fails 4 of 8 before and passes after, the slow LineByteStream tests pass before and after, 900 default tests and the Maven workflow pass; issue #23 closed as completed on 2026-10-04; [detail](#m38---pb-last-line-search-reports-a-position-past-the-end-of-a-complete-file) |
 | Phase 2 | M39 | Per-request INFO logging without requester or outcome | Milestone | Not started | Yes | | Each remaining per-request INFO statement (BasicDispatcher Servicing, engine BPLServlet Beginning request, GetEngineDataAction Found a total) is kept with requester and outcome fields, replaced by one record per request, or moved below INFO, with the decision recorded; output at the default level under load contains only the kept lines; the default suite passes; [detail](#m39---per-request-info-logging-without-requester-or-outcome) |
+| Phase 2 | M42 | Human-readable storage rates in storageSizeCheck.bash | Milestone | Not started | Yes | | storageSizeCheck.bash prints rates and its threshold in B to TB units per year with three significant digits, verified by client boundary cases and on a local appliance; the scripting page shows the output; the default suite passes; [detail](#m42---human-readable-storage-rates-in-storagesizecheckbash) |
+| Phase 2 | M43 | One engine CA context never receives search replies | Milestone | Not started | Yes | | The cause of one CAJ context's channels never connecting while its search socket shares a UDP port with another context is confirmed or rejected on the real path, and if confirmed a correction verified by a reproduction prevents or recovers from the shared port; the default suite passes; [detail](#m43---one-engine-ca-context-never-receives-search-replies) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -3671,6 +3673,138 @@ Observed State: OPEN
 Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-04 08:46 UTC; issue #24 read back with matching title and body, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-04T08:46:17Z. Recheck with gh issue view 24 on jeonghanlee/epicsarchiverap-maven.
+
+#### M42 - Human-readable storage rates in storageSizeCheck.bash
+
+Origin: daff1b7 / M42
+Identity History: none
+GitHub Issue: [#25](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/25)
+Status: Not started
+
+##### Summary
+
+M37 replaced storageSizeCheck.py with storageSizeCheck.bash, which prints each rate exactly as the server formats `storageRate_GBperYear` with Java's `Double.toString` (for example `7.078215479850769` or `1.5E-4`) and the threshold as given. On 2026-10-04 the owner asked for human-readable units regardless of the original script's format.
+
+##### Scope
+
+Print each rate with the largest unit among B, KB, MB, GB and TB that keeps the value at least 1, in steps of 1024, rounded to three significant digits (`7.08 GB/year`, `157 KB/year`, `512 MB/year`), and the header threshold as `50 GB/year`. Keep MAXSIZE in GB per year, the selection, the descending order by the server's value and the exit statuses. Update the scripting page and the tests.
+
+Out of scope: the server's rate report; the other sample scripts.
+
+##### Completion Criteria
+
+- Rates and threshold print in the format above across the B to TB range, verified by client boundary cases and on a local appliance; the scripting page shows the output; the build and the default suite pass.
+
+##### Dependencies And Decisions
+
+- Origin: owner request on 2026-10-04 after M37; tracked as its own milestone by the owner's direction the same day.
+- Decision Date: 2026-10-04. Units follow the server's 1024 steps; three significant digits.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Add the unit formatting to storageSizeCheck.bash with client boundary cases that fail on the current output; update the scripting page. Closes with T1.
+2. Run the storageSizeCheck comparison on a local appliance with the format difference named, and the default suite. Closes with T2 and T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Client boundary and static | `bash -n`, `shellcheck`, and test_storage_size_check_bash.py with rates from bytes to terabytes per year | System Python standard library, bash, curl, jq | Each rate and the header print in the new format; the cases fail on the current output |
+| T2 | Real appliance | verify_bash_samples.py --script storageSizeCheck | M37 / T2 environment | The PVs, their order and the exit status match the original; rates differ only in format |
+| T3 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | System Python standard library, bash, curl, jq | Pending | none |
+| T2 | Not run | M37 / T2 environment | Pending | none |
+| T3 | Not run | JDK 21, wrapper Maven | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Print human-readable storage rates in storageSizeCheck.bash
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-04 20:32 UTC; issue #25 read back with matching title and body, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-04T20:32:38Z. Recheck with gh issue view 25 on jeonghanlee/epicsarchiverap-maven.
+
+#### M43 - One engine CA context never receives search replies
+
+Origin: daff1b7 / M43
+Identity History: none
+GitHub Issue: [#26](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/26)
+Status: Not started
+
+##### Summary
+
+On 2026-10-04 the ansible-provision lab observed, on a fresh Rocky 8.10 engine (kernel 4.18.0-553.el8_10) at 254a6542 with 903 PVs and the default 10 CA command threads, 95 PVs that never connected, all on one CAJ context (command thread id 2), while the other 808 connected over the other nine contexts. The IOC served the 95 and answered every search to the engine's source port, but two sockets of the engine process were bound to that one UDP port; every other context's search port had one socket. The failure is intermittent: a second deployment of the same commit and eight earlier deployments of 3bdf378c connected everything. In jca 2.4.12, `CAJContext.initializeUDPTransport` sets `SO_REUSEADDR` on the search socket and binds it to port 0 (read from the bytecode), and each `JCACommandThread` creates its own `CAJContext`.
+
+##### Scope
+
+Confirm or reject, on the real path, that two contexts can be given one ephemeral search port with `SO_REUSEADDR` and that the context whose socket loses the delivery never connects; if confirmed, correct it so contexts cannot share a search port or a shared port is detected and recovered from.
+
+Out of scope: the ETL soak; the IOC's CA server.
+
+##### Completion Criteria
+
+- The cause is confirmed with evidence or the hypothesis is rejected with evidence; if confirmed, a correction verified by a reproduction that fails before and passes after; the build and the default suite pass.
+
+##### Dependencies And Decisions
+
+- Origin: the lab's report and read-only follow-up checks of 2026-10-04; the owner directed the same day that it be tracked as its own milestone and issue for deeper study.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Reproduce the port sharing outside the appliance with DatagramChannels bound as CAJ binds them, on a 4.18 kernel and a current kernel, and count shared ports. Closes with T1.
+2. Tie the shared port to the context that never connects on a real engine, and record which socket receives the replies. Closes with T2.
+3. Check later jca releases and CA client practice, choose a correction with the owner, and verify it with the reproduction and the default suite. Closes with T1, T2 and T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Kernel behavior | A standalone Java program opening N DatagramChannels with setReuseAddress(true) and bind(0), repeated, reporting shared ports | Rocky 8.10 kernel 4.18 and a current kernel | Shared ports observed or not, per kernel |
+| T2 | Real engine | Engine with 10 CA contexts on the deploy path; per-context search port, socket inodes and channel states | Rocky 8.10 lab deployment | The never-connecting context is the one whose port is shared, or not |
+| T3 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Rocky 8.10 and a current kernel | Pending | none |
+| T2 | Not run | Rocky 8.10 lab deployment | Pending | none |
+| T3 | Not run | JDK 21, wrapper Maven | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Find why one engine CA context never receives search replies
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-04 20:32 UTC; issue #26 read back with matching title and body, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-04T20:32:40Z. Recheck with gh issue view 26 on jeonghanlee/epicsarchiverap-maven.
 
 ## Backlog
 
