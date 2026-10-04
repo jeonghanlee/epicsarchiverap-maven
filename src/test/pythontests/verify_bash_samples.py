@@ -184,7 +184,41 @@ def archived_pvs_not_in_list_cases(run):
     run.compare("archivedPVsNotInList-empty", "archivedPVsNotInList", [run.bpl, empty], empty_rejected_before_http)
 
 
-CASES = {"unarchivedPVs": unarchived_pvs_cases, "archivedPVsNotInList": archived_pvs_not_in_list_cases}
+def ensure_type_change(run):
+    """Give one archived PV a configured type that disagrees with its IOC record, through the shipped BPL."""
+    if getattr(run, "type_changed_pv", None):
+        return run.type_changed_pv
+    pv = run.pvs[6]
+    run.request("pauseArchivingPV", {"pv": pv})
+    info = run.request("getPVTypeInfo", {"pv": pv})
+    save(run.root, "type-original.json", info)
+    info[next(key for key in info if key.lower() == "dbrtype")] = "DBR_SCALAR_FLOAT"
+    run.request("putPVTypeInfo", {"pv": pv, "override": "true"}, data=info)
+    run.request("resumeArchivingPV", {"pv": pv})
+    changed = wait_for(lambda: [row for row in run.request("getPVsByDroppedEventsTypeChange") if row["pvName"] == pv],
+                       90, "type-change report naming the changed PV")
+    save(run.root, "type-changed.json", changed)
+    run.type_changed_pv = pv
+    return pv
+
+
+def list_type_changes_cases(run):
+    run.compare("listTypeChanges-empty", "listTypeChanges", [run.bpl])
+    pv = ensure_type_change(run)
+
+    def names_changed_pv(original, replacement):
+        reason = same_output(original, replacement)
+        if reason:
+            return reason
+        if pv not in replacement.stdout or "Current DBR_SCALAR_DOUBLE" not in replacement.stdout:
+            return "output does not show the changed PV with its CA type"
+        return None
+
+    run.compare("listTypeChanges-changed", "listTypeChanges", [run.bpl], names_changed_pv)
+
+
+CASES = {"unarchivedPVs": unarchived_pvs_cases, "archivedPVsNotInList": archived_pvs_not_in_list_cases,
+         "listTypeChanges": list_type_changes_cases}
 
 
 def main():
