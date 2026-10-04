@@ -15,7 +15,9 @@ from pathlib import Path
 import shutil
 import signal
 import socket
+import socketserver
 import subprocess
+import threading
 import sys
 import time
 import uuid
@@ -32,6 +34,53 @@ ARCHIVE_TIMEOUT = 360
 STOP_TIMEOUT = 300
 STOP_ALLOWANCE = 7
 HTTP_TIMEOUT = 30
+
+
+class MailSink:
+    """A loopback SMTP receiver without TLS or authentication that keeps each message's raw text."""
+
+    def __init__(self):
+        self.messages = []
+        sink = self
+
+        class Handler(socketserver.StreamRequestHandler):
+            def handle(self):
+                self.wfile.write(b"220 sink\r\n")
+                while True:
+                    line = self.rfile.readline()
+                    if not line:
+                        return
+                    verb = line.strip().split(b" ", 1)[0].upper()
+                    if verb in (b"EHLO", b"HELO"):
+                        self.wfile.write(b"250 sink\r\n")
+                    elif verb == b"DATA":
+                        self.wfile.write(b"354 end with .\r\n")
+                        data = []
+                        for body_line in iter(self.rfile.readline, b""):
+                            if body_line in (b".\r\n", b".\n"):
+                                break
+                            data.append(body_line[1:] if body_line.startswith(b"..") else body_line)
+                        sink.messages.append(b"".join(data).decode("utf-8", "replace").replace("\r\n", "\n"))
+                        self.wfile.write(b"250 queued\r\n")
+                    elif verb == b"QUIT":
+                        self.wfile.write(b"221 bye\r\n")
+                        return
+                    else:
+                        self.wfile.write(b"250 ok\r\n")
+
+        self.server = socketserver.ThreadingTCPServer(("127.0.0.1", 0), Handler)
+        self.server.daemon_threads = True
+        self.port = self.server.server_address[1]
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
+def mail_body(message):
+    """Returns the body of one received plain-text message without its trailing newlines."""
+    return message.split("\n\n", 1)[1].rstrip("\n") if "\n\n" in message else ""
 
 
 class Run:
@@ -65,6 +114,39 @@ class Run:
                                              cwd=REPO)
             path.write_bytes(source)
         return path
+
+    def mail_env(self):
+        """Starts the loopback SMTP receiver and the mail configuration the original alert scripts read."""
+        if getattr(self, "mail", None) is None:
+            self.mail = MailSink()
+            config = self.root / "mail-config.json"
+            config.write_text(json.dumps({"from": "archiver@localhost", "to": ["operator@localhost", "second@localhost"],
+                                          "smtphost": "127.0.0.1", "port": self.mail.port, "use_ssl": False,
+                                          "use_tls": False, "username": "", "password": ""}))
+            self.env["ARCHAPPL_NAGIOS_EMAIL_CONFIG"] = str(config)
+            self.original("emailHandler")
+        return self.mail
+
+    def mail_compare(self, case, name, args, alert_expected):
+        """Compares the mail an original sends with the replacement's stdout and exit status."""
+        mail = self.mail_env()
+        before = len(mail.messages)
+
+        def judge(original, replacement):
+            sent = mail.messages[before:]
+            save(self.root, f"{case}.mail.json", sent)
+            if original.returncode != 0:
+                return f"original exit {original.returncode}"
+            if alert_expected:
+                if len(sent) != 1 or replacement.returncode != 1 or replacement.stderr:
+                    return f"expected one mail and exit 1; got {len(sent)} mails, exit {replacement.returncode}"
+                if mail_body(sent[0]) != replacement.stdout.rstrip("\n"):
+                    return "mail body differs from the replacement's stdout"
+            elif sent or replacement.returncode != 0 or replacement.stdout or replacement.stderr:
+                return f"expected no mail and a silent exit 0; got {len(sent)} mails, exit {replacement.returncode}"
+            return None
+
+        self.compare(case, name, args, judge)
 
     def execute(self, label, command):
         result = subprocess.run(command, env=self.env, text=True, capture_output=True, timeout=HTTP_TIMEOUT + 60)
@@ -250,8 +332,14 @@ def check_for_engine_activity_cases(run):
     run.compare("checkForEngineActivity-quiet", "checkForEngineActivity", ["-t", "3", quiet], no_change_exits_1)
 
 
+def check_connected_pvs_cases(run):
+    run.mail_compare("checkConnectedPVs-quiet", "checkConnectedPVs", [run.bpl], alert_expected=False)
+    run.mail_compare("checkConnectedPVs-alert", "checkConnectedPVs", ["-d", "-1", run.bpl], alert_expected=True)
+
+
 CASES = {"unarchivedPVs": unarchived_pvs_cases, "archivedPVsNotInList": archived_pvs_not_in_list_cases,
-         "listTypeChanges": list_type_changes_cases, "checkForEngineActivity": check_for_engine_activity_cases}
+         "listTypeChanges": list_type_changes_cases, "checkForEngineActivity": check_for_engine_activity_cases,
+         "checkConnectedPVs": check_connected_pvs_cases}
 
 
 def main():
