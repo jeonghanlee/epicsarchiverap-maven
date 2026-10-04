@@ -149,10 +149,7 @@ public class ZipAppendTailTest {
                     dayStart.plusSeconds(SECONDS_PER_DAY - 1).getEpochSecond(),
                     info.getLastEvent().getEpochSeconds(),
                     "Last sample of the entry");
-            long size = Files.size(entry);
-            Assertions.assertTrue(
-                    info.getTruncationPoint() >= size,
-                    "Truncation point " + info.getTruncationPoint() + " cuts into a complete entry of " + size + " bytes");
+            Assertions.assertEquals(Files.size(entry), info.getTruncationPoint(), "Truncation point of a complete entry");
         }
     }
 
