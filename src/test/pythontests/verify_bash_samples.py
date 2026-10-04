@@ -337,9 +337,36 @@ def check_connected_pvs_cases(run):
     run.mail_compare("checkConnectedPVs-alert", "checkConnectedPVs", ["-d", "-1", run.bpl], alert_expected=True)
 
 
+def check_type_changed_pvs_cases(run):
+    mail = run.mail_env()
+
+    def report_matches(alert_expected):
+        def judge(original, replacement):
+            sent = mail.messages[judge.before:]
+            save(run.root, f"checkTypeChangedPVs-{'changed' if alert_expected else 'empty'}.mail.json", sent)
+            if original.returncode != 0 or replacement.stderr:
+                return f"exit {original.returncode}/{replacement.returncode}"
+            lines = replacement.stdout.splitlines()
+            if not alert_expected:
+                if sent or replacement.returncode != 0 or original.stdout != replacement.stdout:
+                    return "expected no mail and the same no-change line"
+                return None
+            if len(sent) != 1 or replacement.returncode != 1:
+                return f"expected one mail and exit 1; got {len(sent)}, exit {replacement.returncode}"
+            if lines[0] != original.stdout.rstrip("\n") or lines[1:] != mail_body(sent[0]).splitlines()[1:]:
+                return "count line or PV names differ from the original's output and mail"
+            return None
+        judge.before = len(mail.messages)
+        return judge
+
+    run.compare("checkTypeChangedPVs-empty", "checkTypeChangedPVs", [run.bpl], report_matches(False))
+    ensure_type_change(run)
+    run.compare("checkTypeChangedPVs-changed", "checkTypeChangedPVs", [run.bpl], report_matches(True))
+
+
 CASES = {"unarchivedPVs": unarchived_pvs_cases, "archivedPVsNotInList": archived_pvs_not_in_list_cases,
          "listTypeChanges": list_type_changes_cases, "checkForEngineActivity": check_for_engine_activity_cases,
-         "checkConnectedPVs": check_connected_pvs_cases}
+         "checkConnectedPVs": check_connected_pvs_cases, "checkTypeChangedPVs": check_type_changed_pvs_cases}
 
 
 def main():
