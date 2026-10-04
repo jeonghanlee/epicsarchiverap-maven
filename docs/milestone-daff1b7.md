@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16) and M33 (issue #19) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. Of the remaining Ready rows (M12, M7, M26, M37 and M38), M38 (issue #23) needs no owner decision before its plan review. Read the chosen row's detail in this register and settle its plan before any implementation. M37 has a draft plan and issue #22; its owner decisions (language, timeouts, legacy failure handling) come first. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
+Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. Every remaining Ready row (M12, M7, M26 and M37) needs an owner decision before implementation: M12 the backends to remove, M7 the site's item list, M26 the settled output form under D31, M37 the language, timeouts and legacy failure handling. Read the chosen row's detail in this register and settle its plan before any implementation. M37 has a draft plan and issue #22; its owner decisions (language, timeouts, legacy failure handling) come first. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -56,7 +56,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M34 | Preserve pending samples when pausing archiving | Milestone | Complete | No | | Correction 759337d5 and verified CLI/tests/docs fbc32120 landed; local regression, integration and live checks pass; Maven CI and Pages pass; #17 closed on 2026-09-29; [detail](#m34---preserve-pending-samples-when-pausing-archiving) |
 | Phase 2 | M36 | Honor nanosecond bounds in live retrieval | Milestone | Complete | No | | Correction dca485fd published on origin/modernize; 882 default tests, 4 selected integration tests and 70 real IOC checks pass, including exact/minus-one-nanosecond bounds and four-component restart; issue #21 closed as completed on 2026-10-02 UTC; [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) retains full VM revalidation; [detail](#m36---honor-nanosecond-bounds-in-live-retrieval) |
 | Phase 2 | M37 | Modernize the retained sample scripts | Milestone | Not started | Yes | | Each of the fourteen retained scripts has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m37---modernize-the-retained-sample-scripts) |
-| Phase 2 | M38 | PB last-line search reports a position past the end of a complete file | Milestone | In progress | No | | PBFileInfo reports the end of a complete PB file as its truncation point and the start of its last line as the last-sample position, for plain and ZIP_PER_PV files; a test fails on the current order and passes after, and the default suite passes; [detail](#m38---pb-last-line-search-reports-a-position-past-the-end-of-a-complete-file) |
+| Phase 2 | M38 | PB last-line search reports a position past the end of a complete file | Milestone | Complete | No | | seekToBeforeLastLine sets lastReadPointer after readNextBatch (76c7707d); PBFileInfo reports the file size as the truncation point and the last line's start as the last-sample position for plain and ZIP_PER_PV files; PBFileInfoPositionTest fails 4 of 8 before and passes after, the slow LineByteStream tests pass before and after, 900 default tests and the Maven workflow pass; issue #23 closed as completed on 2026-10-04; [detail](#m38---pb-last-line-search-reports-a-position-past-the-end-of-a-complete-file) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -3502,7 +3502,7 @@ Last Compared: 2026-10-02 15:54 UTC; issue #22 read back with matching title and
 Origin: daff1b7 / M38
 Identity History: none
 GitHub Issue: [#23](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/23)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -3554,17 +3554,18 @@ Superseded Plan Artifacts: none
 
 ##### Closure Evidence
 
-- none
+- Landed on 2026-10-04: the change is 76c7707d and the plan, review and test record 145b2b5af8c90deee76b5b21e3e32ce953df6a59. Directly after the push at 07:06 UTC, fetch showed local HEAD and origin/modernize both at 145b2b5a, and `git ls-remote --exit-code origin refs/heads/modernize` returned it. The Maven workflow run 37184774667 on 145b2b5a succeeded at 07:39 UTC.
+- Linked issue #23: body reconciled with the cause, the change and its verification, all three acceptance criteria checked, and closed as completed on 2026-10-04 at 08:15:11 UTC with a [closure comment](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/23#issuecomment-5978018833). M38 is Complete.
 
 ##### GitHub Projection
 
 Title: Report file offsets after the PB last-line search
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: closed
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-04 02:37 UTC; issue #23 read back with matching title and body, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-04T02:37:27Z. Recheck with gh issue view 23 on jeonghanlee/epicsarchiverap-maven.
+Last Compared: 2026-10-04 08:15 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/23` confirms state closed with state_reason completed, closed_at 2026-10-04T08:15:11Z, the title above, bug label, no milestone and assignee jeonghanlee. Readback of the body matches `work/issue-pb-last-line-position-body.md` and the closure comment matches `work/issue-pb-last-line-position-close.md`.
 
 ## Backlog
 
