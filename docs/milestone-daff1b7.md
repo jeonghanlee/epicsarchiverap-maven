@@ -55,7 +55,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M33 | ZipETLTest reads back fewer events than written | Milestone | Complete | No | | ETL truncated complete ZIP_PER_PV day entries because zip entry reads returned short; WrappedSeekableByteChannel fills each read (6c2cfc08); ZipETLTest reads back 31536000 events on two consecutive slow-group runs, ZipAppendTailTest fails 4 of 6 before and passes after, 892 default tests and the Maven workflow pass; issue #19 closed as completed on 2026-10-04; [detail](#m33---zipetltest-reads-back-fewer-events-than-written) |
 | Phase 2 | M34 | Preserve pending samples when pausing archiving | Milestone | Complete | No | | Correction 759337d5 and verified CLI/tests/docs fbc32120 landed; local regression, integration and live checks pass; Maven CI and Pages pass; #17 closed on 2026-09-29; [detail](#m34---preserve-pending-samples-when-pausing-archiving) |
 | Phase 2 | M36 | Honor nanosecond bounds in live retrieval | Milestone | Complete | No | | Correction dca485fd published on origin/modernize; 882 default tests, 4 selected integration tests and 70 real IOC checks pass, including exact/minus-one-nanosecond bounds and four-component restart; issue #21 closed as completed on 2026-10-02 UTC; [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) retains full VM revalidation; [detail](#m36---honor-nanosecond-bounds-in-live-retrieval) |
-| Phase 2 | M37 | Modernize the retained sample scripts | Milestone | Not started | Yes | | Each of the fourteen retained scripts has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m37---modernize-the-retained-sample-scripts) |
+| Phase 2 | M37 | Modernize the retained sample scripts | Milestone | Not started | Yes | | Each of the seven retained read-only and alert-check scripts has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m37---modernize-the-retained-sample-scripts) |
 | Phase 2 | M38 | PB last-line search reports a position past the end of a complete file | Milestone | Complete | No | | seekToBeforeLastLine sets lastReadPointer after readNextBatch (76c7707d); PBFileInfo reports the file size as the truncation point and the last line's start as the last-sample position for plain and ZIP_PER_PV files; PBFileInfoPositionTest fails 4 of 8 before and passes after, the slow LineByteStream tests pass before and after, 900 default tests and the Maven workflow pass; issue #23 closed as completed on 2026-10-04; [detail](#m38---pb-last-line-search-reports-a-position-past-the-end-of-a-complete-file) |
 | Phase 2 | M39 | Per-request INFO logging without requester or outcome | Milestone | Not started | Yes | | Each remaining per-request INFO statement (BasicDispatcher Servicing, engine BPLServlet Beginning request, GetEngineDataAction Found a total) is kept with requester and outcome fields, replaced by one record per request, or moved below INFO, with the decision recorded; output at the default level under load contains only the kept lines; the default suite passes; [detail](#m39---per-request-info-logging-without-requester-or-outcome) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
@@ -3435,13 +3435,13 @@ M17 delivered eight verified commands on a shared client, `archiverClient.py`, a
 
 ##### Scope
 
-Bring the fourteen retained scripts to a defined and verified contract while keeping what each one is for: unarchivedPVs.py, archivedPVsNotInList.py, listTypeChanges.py, checkConnectedPVs.py, checkTypeChangedPVs.py, storageSizeCheck.py, checkForEngineActivity.py, abortNeverConnectedPVs.py, resumePausedPVsMatchingPattern.py, consolidatePausedPVs.py, consolidateArchivedData.py, changeArchiveStore.py, addPostProcessingOperator.py and removeMetaFields.py, with emailHandler.py. Extract the mechanics they repeat (input reading, HTTP transport, response validation, result output) and keep each script's target selection, request order, side effects and final state explicit. Document each in the scripting page.
+Bring the seven retained read-only and alert-check scripts to a defined and verified contract while keeping what each one is for: unarchivedPVs.py, archivedPVsNotInList.py, listTypeChanges.py, checkForEngineActivity.py, checkConnectedPVs.py, checkTypeChangedPVs.py and storageSizeCheck.py. The three alert checks run on demand and report by stdout and exit status. Extract the mechanics they repeat (input reading, HTTP transport, response validation, result output) and keep each script's target selection, request order, side effects and final state explicit. Document each in the scripting page.
 
-Out of scope: the eight commands delivered by M17 and archiverClient.py, unless the accepted plan names a change to them; archiveFromDB.py and pingCurrentlyDisconnectedPVs.py, retained unchanged until a later decision adds them; stopArchivingCurrentlyDisconnectedPVs.py, excluded by M17's inventory; server corrections, which take their own scope when a script exposes a defect; performance or concurrency claims without measurement.
+Out of scope: emailHandler.py and mail delivery from the alert checks, moved to M41; the seven state-changing scripts, moved to M40 (abortNeverConnectedPVs.py, resumePausedPVsMatchingPattern.py, consolidatePausedPVs.py, consolidateArchivedData.py, changeArchiveStore.py, addPostProcessingOperator.py, removeMetaFields.py); the eight commands delivered by M17 and archiverClient.py, unless the accepted plan names a change to them; archiveFromDB.py and pingCurrentlyDisconnectedPVs.py, retained unchanged until a later decision adds them; stopArchivingCurrentlyDisconnectedPVs.py, excluded by M17's inventory; server corrections, which take their own scope when a script exposes a defect; performance or concurrency claims without measurement.
 
 ##### Completion Criteria
 
-- Each of the fourteen scripts has a defined input, response, dependency, timeout and failure contract. It reports an application-level rejection and an uncertain outcome as such, and does not report success on HTTP 200 alone.
+- Each of the seven scripts has a defined input, response, dependency, timeout and failure contract. It reports an application-level rejection and an uncertain outcome as such, and does not report success on HTTP 200 alone.
 - Each script keeps the distinct procedure recorded in M17's function map: its target selection, request order, side effects and final state. Every intentional change from the legacy behavior is named with its reason.
 - Each script is verified by executing its shipped entry point against the real appliance and the shipped IOC fixture. Where an implementation is replaced, the original and the replacement entry points are compared on the same fixtures before the original is removed.
 - The scripting page documents each script with commands that reproduce the verified behavior.
@@ -3453,6 +3453,10 @@ Out of scope: the eight commands delivered by M17 and archiverClient.py, unless 
 - Decision Date: 2026-10-02. Bash is the preferred language (recorded at M17). The language is selected when this plan is accepted, not before.
 - Decision Date: 2026-10-04. The implementation language is Bash; curl and jq are the proposed transport and JSON tools from M17's research.
 - Decision Date: 2026-10-04. Timeouts apply per HTTP request: `--timeout` takes positive seconds, default 30 and at most 86400, applied to each curl request as its whole-transfer limit. No whole-procedure deadline is imposed, because multi-step procedures scale with the number of PVs and a per-request limit already prevents a hung request.
+- Decision Date: 2026-10-04. Legacy behaviors that change: consolidateArchivedData.py checks the result of each step and resumes only the PVs it paused itself; addPostProcessingOperator.py requests getAllPVs with an explicit limit so the server default of 500 names does not truncate its targets; checkConnectedPVs.py handles a zero connected-plus-disconnected total explicitly; emailHandler.py reads its configuration file after the calling script has parsed its arguments (carried with emailHandler.py to M41). The three type-info scripts (addPostProcessingOperator.py, changeArchiveStore.py, removeMetaFields.py) keep posting the complete PVTypeInfo with override=true, add a readback that confirms only the intended field changed, and document that a concurrent change between read and post can be overwritten. Rejecting success on HTTP 200 alone is already a completion criterion.
+- Decision Date: 2026-10-04. The recovery-selection and storage-and-configuration groups, which change appliance state, move to M40 in the Backlog; this milestone keeps the read-only and alert groups.
+- Decision Date: 2026-10-04. The alert checks run on demand and exit, not as resident monitors; they report on stdout and by exit status and send no mail. emailHandler.py and mail delivery move to M41 in the Backlog. The legacy-behavior decisions above for consolidateArchivedData.py, addPostProcessingOperator.py and the three type-info scripts are carried to M40.
+- Decision Date: 2026-10-04. archiveFromDB.py and pingCurrentlyDisconnectedPVs.py stay out of this milestone, retained unchanged for a later milestone: the first needs libdbStaticHost.so, absent from the installed EPICS Base 7.0.10, and the second needs PyEpics, absent from system Python, so neither can meet the real entry-point verification here.
 - Constraints carried from the research: the two consolidation scripts end in different states and stay separate procedures; unarchivedPVs.py and archivedPVsNotInList.py compare different populations and emit different output; the three type-info scripts share transport and keep separate transformations, and removeMetaFields.py has no internal pause or resume; no automatic retry of a mutation; sequential requests are the comparison baseline.
 
 ##### Implementation Plan
@@ -3464,9 +3468,35 @@ Superseded Plan Artifacts: none
 
 1. Settle the owner decisions and record them here: implementation language and dependencies; per-request and whole-procedure timeout meaning; which legacy failure behaviors change, including HTTP 200 validation handling and the unconditional resume in consolidateArchivedData.py; whether archiveFromDB.py and pingCurrentlyDisconnectedPVs.py join the scope.
 2. Write each script's contract in this detail: purpose, target selection, preconditions, request order, effects, uncertain-outcome checks and source evidence.
-3. Implement by group, each closed by T1 and T2 before the next begins. The order below is the research's suggestion and is not yet owner-set: read-only comparisons and reports (unarchivedPVs.py, archivedPVsNotInList.py, listTypeChanges.py, checkForEngineActivity.py); alerts (checkConnectedPVs.py, checkTypeChangedPVs.py, storageSizeCheck.py, emailHandler.py); recovery selection (abortNeverConnectedPVs.py, resumePausedPVsMatchingPattern.py); storage and configuration (consolidatePausedPVs.py, consolidateArchivedData.py, changeArchiveStore.py, addPostProcessingOperator.py, removeMetaFields.py).
+3. Implement by group, each closed by T1 and T2 before the next begins: read-only comparisons and reports (unarchivedPVs.py, archivedPVsNotInList.py, listTypeChanges.py, checkForEngineActivity.py), then alert checks (checkConnectedPVs.py, checkTypeChangedPVs.py, storageSizeCheck.py).
 4. Run the default suite. Closes with T3.
 5. Document each script in `docs/book/src/scripting.md` and execute the documented commands verbatim. Closes with T4.
+
+###### Script contracts
+
+Common to every HTTP script: the first positional argument is the explicit BPL URL; `--timeout` applies per request as decided; exit 0 means the operation completed and its output is complete, 1 means the operation was rejected, failed or has an uncertain outcome, 2 means invalid arguments or input detected before any HTTP request; results go to stdout and diagnostics to stderr. Source evidence is origin/modernize 1fda8403.
+
+Group 1, read-only comparisons and reports:
+
+| Script | Purpose and target selection | Request and response | Output and exit | Intentional changes |
+| --- | --- | --- | --- | --- |
+| unarchivedPVs.py | Rows of a CSV file whose first column names a PV that the appliance does not know; "known" is `getAllExpandedNames` (configured PVs, aliases, fields and pending requests) | One POST `/unarchivedPVs` with the names; the server returns a JSON array of the input names absent from the expanded inventory, and an empty input returns an empty array (`UnarchivedPVsAction`) | The original input row of each returned name, sorted by name; when a name repeats, the last row wins, as today; exit 0 | Send the names as a JSON array body instead of a comma-joined form field, so the request is not bound by the servlet form-size limit; skip blank lines instead of sending an empty name; reject a response that is not a JSON array of input names |
+| archivedPVsNotInList.py | Configured PVs (`getAllPVs`, no aliases or pending requests) whose names are absent from the CSV file's first column | One POST `/archivedPVsNotInList`; the server answers 400 for an empty list and otherwise a JSON array of names (`ArchivedPVsNotInListAction`) | Returned names sorted, one per line; exit 0 | Same JSON body and blank-line handling; an input with no names exits 2 before HTTP instead of surfacing the server's 400 |
+| listTypeChanges.py | PVs the engines report as dropping events because of a type change (paused PVs excluded by the engine) | GET `/getPVsByDroppedEventsTypeChange`, then GET `/getPVDetails?pv=` per PV, reading `Archiver DBR type (initial)` and `Archiver DBR type (from CA)`, which mgmt merges from the engine's details | One line per PV in report order, in today's `PV: <name> Previous <type> Current <type>` layout; exit 0 when every PV resolved; a PV whose details lack either field is reported on stderr and the run exits 1 after the remaining PVs | Missing detail fields are reported instead of stopping the run with a Python KeyError |
+| checkForEngineActivity.py | Files under one storage folder whose path and size changed between two walks; no HTTP | Two filesystem walks separated by the interval `-t` seconds (positive integer, default 30) | Today's change-count or no-change message; exit 0 when changes are seen, 1 when none are seen; an unreadable folder exits 2 | A file removed between listing and reading its size, as ETL does when it moves partitions, is skipped instead of aborting the walk; no change exits 1 instead of -1 (status 255) |
+
+Constraints found in the source: `/getPVsByDroppedEventsTypeChange` on mgmt combines the engines' reports through `GetUrlContent.combineJSONArrays`, which logs an engine failure and returns what it gathered, so an unavailable engine is indistinguishable from an empty report; correcting that server action is outside this milestone and is reported in the scripting page.
+- Decision Date: 2026-10-04. checkForEngineActivity.py exits 1 when no change is seen, like the other scripts, instead of -1 (status 255); a monitoring caller that tests for 255 must test for a nonzero status.
+
+Group 2, alert checks run on demand. Each script is run by an operator or a scheduler, performs one check and exits; it is not a resident monitor and sends no mail. Exit 0 means the check completed and found nothing to report; 1 means the check found the alert condition, reported on stdout, or could not complete, reported on stderr; 2 means invalid arguments.
+
+| Script | Purpose and target selection | Request and response | Output and exit | Intentional changes |
+| --- | --- | --- | --- | --- |
+| checkConnectedPVs.py | Appliances whose disconnected share of PVs exceeds `-d` percent (default 5.0) | GET `/getApplianceMetrics`; mgmt returns one object per appliance and merges `connectedPVCount` and `disconnectedPVCount` from that appliance's engine, omitting them when the engine does not answer (`ApplianceMetrics`, `EngineMetrics`, `GetUrlContent.combineJSONObjects`) | One stdout line per appliance over the threshold, in today's mail wording, and exit 1; an appliance without counts is reported on stderr as metrics unavailable and the run exits 1; an empty report exits 1 with "Cannot obtain appliance metrics" on stderr; otherwise exit 0 | Reports on stdout and by exit status instead of mail; a zero connected-plus-disconnected total raises no alert instead of a division error; missing counts are reported instead of a KeyError; a URL not ending in `bpl` exits 2 instead of 1 |
+| checkTypeChangedPVs.py | Any PV the engines report as dropping events because of a type change | GET `/getPVsByDroppedEventsTypeChange` (`DroppedEventsTypeChangeReport`) | The count and one PV name per line on stdout and exit 1, or "No PVs have changed type" and exit 0 | Reports on stdout and by exit status instead of mail; same URL rule and response validation |
+| storageSizeCheck.py | PVs whose estimated storage rate exceeds `maxsize` GB per year among the report's top entries | GET `/getStorageRateReport?limit=` (default 100); mgmt forwards the limit to every engine and concatenates their reports, so the limit applies per appliance (`StorageRateReport`) | PV and GB per year in descending rate on stdout and exit 1, or no output and exit 0 | Reports on stdout and by exit status instead of mail; rejects a non-numeric `storageRate_GBperYear` as a malformed response |
+
+Constraints found in the source: `/getPVsByDroppedEventsTypeChange` and `/getStorageRateReport` on mgmt both combine engine reports through `GetUrlContent.combineJSONArrays`, so an unavailable engine reads as "no PVs" and these two checks exit 0 for it; checkConnectedPVs.py does see an unavailable engine through the missing counts. Correcting the two server actions is outside this milestone and is stated on the scripting page.
 
 ##### Test Plan
 
@@ -3642,6 +3672,8 @@ Last Compared: 2026-10-04 08:46 UTC; issue #24 read back with matching title and
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Phase 2 | M35 | Report stored-data deletion failures through management BPL | Milestone | Complete | No | | Correction landed as 48c0a692; 857 default tests, 4 Java integration executions and 664 real CLI/PB/ZIP checks pass; issue #18 body reconciled and closed as completed on 2026-10-01; [detail](#m35---report-stored-data-deletion-failures-through-management-bpl) |
+| Phase 2 | M40 | Modernize the retained state-changing sample scripts | Milestone | Not started | No | M37 | Each of the seven retained scripts that change appliance state has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m40---modernize-the-retained-state-changing-sample-scripts) |
+| Phase 2 | M41 | Mail delivery for the alert checks | Milestone | Not started | No | M37 | emailHandler.py's mail delivery is available to the on-demand alert checks of M37 with a defined configuration, timeout and failure contract and is verified against a real SMTP endpoint; [detail](#m41---mail-delivery-for-the-alert-checks) |
 
 ### Backlog Details
 
@@ -3762,6 +3794,142 @@ Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-10-01 16:57 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/18` confirms closed/completed, the title above, bug label, assignee jeonghanlee, no milestone and updated_at/closed_at 2026-10-01T16:47:15Z. The remote body records the landed 48c0a692 correction and actual verification, exactly matches the prepared body and has ten checked criteria. The closure comment was read back and exactly matches the prepared file. No projection difference remains.
 
+#### M40 - Modernize the retained state-changing sample scripts
+
+Origin: daff1b7 / M40
+Identity History: split from M37 on 2026-10-04
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+M37 originally held fourteen retained sample scripts. On 2026-10-04 the owner kept the read-only and alert groups in M37 and moved the two groups that change appliance state here: recovery selection (abortNeverConnectedPVs.py, resumePausedPVsMatchingPattern.py) and storage and configuration (consolidatePausedPVs.py, consolidateArchivedData.py, changeArchiveStore.py, addPostProcessingOperator.py, removeMetaFields.py). M37's Summary records their current defects: no timeouts, HTTP 200 taken as success, the unchecked pause, consolidate and resume sequence with an unconditional resume, the full PVTypeInfo post with override=true, and the getAllPVs default limit of 500.
+
+##### Scope
+
+Bring these seven scripts to the contract M37 defines for its scripts (explicit BPL URL, per-request `--timeout`, exit 0, 1 and 2, results on stdout and diagnostics on stderr), reusing M37's shared Bash mechanics, while keeping each script's target selection, request order, side effects and final state explicit. Document each in the scripting page.
+
+Out of scope: the M37 scripts; the eight commands delivered by M17; server corrections, which take their own scope when a script exposes a defect.
+
+##### Completion Criteria
+
+- Each of the seven scripts has a defined input, response, dependency, timeout and failure contract, reports an application-level rejection and an uncertain outcome as such, and does not report success on HTTP 200 alone.
+- Each keeps the procedure recorded in M17's function map, and every intentional change from the legacy behavior is named with its reason.
+- Each is verified by executing its shipped entry point against the real appliance and the shipped IOC fixture, with the original and the replacement compared on the same fixtures before the original is removed; the scripting page documents each.
+
+##### Dependencies And Decisions
+
+- Origin: split from M37 by the owner on 2026-10-04; unassigned until the owner assigns it.
+- M37: the language (Bash), the per-request timeout and the shared mechanics come from M37.
+- Decisions carried from M37 (Decision Date 2026-10-04): consolidateArchivedData.py checks the result of each step and resumes only the PVs it paused itself; addPostProcessingOperator.py requests getAllPVs with an explicit limit; the three type-info scripts keep posting the complete PVTypeInfo with override=true, add a readback that confirms only the intended field changed, and document that a concurrent change between read and post can be overwritten.
+- Constraints carried from the research: the two consolidation scripts end in different states and stay separate procedures; removeMetaFields.py has no internal pause or resume; no automatic retry of a mutation.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Write each script's contract in this detail from the server actions it calls.
+2. Implement by group, recovery selection then storage and configuration, each closed by T1 and T2.
+3. Run the default suite and document each script. Closes with T3 and T4.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Client boundary | Run each shipped entry point as a subprocess with only the HTTP transport, filesystem or clock controlled | Selected shell tools; loopback endpoints | Valid, rejected, malformed, timed-out and uncertain responses produce the contract's output and exit status |
+| T2 | Real appliance | Run each shipped entry point against the four-WAR appliance and the shipped IOC fixture with independent readback of the resulting state; compare original and replacement on the same fixtures | JDK 21, Tomcat 9, SQLite appliance, softIocPVX | Each recorded procedure and final state are observed |
+| T3 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
+| T4 | Documentation | Execute the scripting page's commands for these scripts verbatim and build the book with the pinned tools | T2 environment; pinned book tools | Commands reproduce the documented output and state |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Selected shell tools; loopback endpoints | Pending | none |
+| T2 | Not run | Real appliance and shipped IOC fixture | Pending | none |
+| T3 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T4 | Not run | T2 environment; pinned book tools | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: none
+Labels: none
+GitHub Milestone: none
+Observed State: none
+Observed Labels: none
+Observed Milestone: none
+Last Compared: not created
+
+#### M41 - Mail delivery for the alert checks
+
+Origin: daff1b7 / M41
+Identity History: split from M37 on 2026-10-04
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The three alert scripts (checkConnectedPVs.py, checkTypeChangedPVs.py, storageSizeCheck.py) send their alerts by mail through the emailHandler.py helper. On 2026-10-04 the owner made them on-demand checks in M37 that report by stdout and exit status and send no mail, and moved emailHandler.py and mail delivery here. Today the helper reads its JSON configuration (named by `ARCHAPPL_NAGIOS_EMAIL_CONFIG`, default `/arch/tools/config/archappl_email_config`) at import, before the calling script parses its arguments; opens its SMTP connection without a timeout; and names only the first recipient in the To header while sending to all.
+
+##### Scope
+
+Provide mail delivery for the alert checks as an option on top of their stdout and exit-status contract: configuration read after argument parsing, a per-connection timeout, credentials kept off the command line, and a defined failure status.
+
+Out of scope: the alert checks themselves (M37).
+
+##### Completion Criteria
+
+- Mail delivery has a defined configuration, timeout and failure contract and is verified by sending through a real SMTP endpoint; a configuration or SMTP failure is reported and reflected in the exit status.
+
+##### Dependencies And Decisions
+
+- Origin: split from M37 by the owner on 2026-10-04; unassigned until the owner assigns it.
+- M37: the alert checks and their stdout and exit-status contract come from M37.
+- Decision carried from M37 (Decision Date 2026-10-04): emailHandler.py reads its configuration after the calling script has parsed its arguments.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settle with the owner whether mail stays in Bash through curl's SMTP support or another sender, and how the alert checks enable it.
+2. Implement and verify against a real SMTP endpoint.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Client boundary | Run the alert checks with mail enabled against a local SMTP endpoint, including a refused and a silent server | Selected shell tools; loopback SMTP | Mail is delivered with the expected headers and body; failures are reported with a nonzero exit within the timeout |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Selected shell tools; loopback SMTP | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: none
+Labels: none
+GitHub Milestone: none
+Observed State: none
+Observed Labels: none
+Observed Milestone: none
+Last Compared: not created
+
 ## Assignment History
 
 | Date | ID | From | To | Sync Commit | Note |
@@ -3776,6 +3944,8 @@ Last Compared: 2026-10-01 16:57 UTC; `gh api repos/jeonghanlee/epicsarchiverap-m
 | 2026-09-28 | M30 | Backlog | Milestone (Phase 2) | this synchronization commit | Assigned to Phase 2 with the rest of the backlog on the owner's direction; the plan stays draft. |
 | 2026-09-28 | M31 | Backlog | Milestone (Phase 2) | this synchronization commit | Assigned to Phase 2 with the rest of the backlog on the owner's direction; the plan stays draft. |
 | 2026-09-28 | M32 | Backlog | Milestone (Phase 2) | this synchronization commit | Assigned to Phase 2 with the rest of the backlog on the owner's direction; the plan stays draft. |
+| 2026-10-04 | M40 | Milestone (Phase 2), part of M37 | Backlog | this synchronization commit | The owner moved M37's recovery-selection and storage-and-configuration groups into a new Backlog row; M37 keeps the read-only and alert groups. |
+| 2026-10-04 | M41 | Milestone (Phase 2), part of M37 | Backlog | this synchronization commit | The owner made M37's alert scripts on-demand checks without mail and moved emailHandler.py and mail delivery into a new Backlog row. |
 
 ## History
 
