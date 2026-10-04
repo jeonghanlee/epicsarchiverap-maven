@@ -56,7 +56,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M34 | Preserve pending samples when pausing archiving | Milestone | Complete | No | | Correction 759337d5 and verified CLI/tests/docs fbc32120 landed; local regression, integration and live checks pass; Maven CI and Pages pass; #17 closed on 2026-09-29; [detail](#m34---preserve-pending-samples-when-pausing-archiving) |
 | Phase 2 | M36 | Honor nanosecond bounds in live retrieval | Milestone | Complete | No | | Correction dca485fd published on origin/modernize; 882 default tests, 4 selected integration tests and 70 real IOC checks pass, including exact/minus-one-nanosecond bounds and four-component restart; issue #21 closed as completed on 2026-10-02 UTC; [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) retains full VM revalidation; [detail](#m36---honor-nanosecond-bounds-in-live-retrieval) |
 | Phase 2 | M37 | Modernize the retained sample scripts | Milestone | Not started | Yes | | Each of the fourteen retained scripts has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m37---modernize-the-retained-sample-scripts) |
-| Phase 2 | M38 | PB last-line search reports a position past the end of a complete file | Milestone | Not started | Yes | | PBFileInfo reports the end of a complete PB file as its truncation point and the start of its last line as the last-sample position, for plain and ZIP_PER_PV files; a test fails on the current order and passes after, and the default suite passes; [detail](#m38---pb-last-line-search-reports-a-position-past-the-end-of-a-complete-file) |
+| Phase 2 | M38 | PB last-line search reports a position past the end of a complete file | Milestone | In progress | No | | PBFileInfo reports the end of a complete PB file as its truncation point and the start of its last line as the last-sample position, for plain and ZIP_PER_PV files; a test fails on the current order and passes after, and the default suite passes; [detail](#m38---pb-last-line-search-reports-a-position-past-the-end-of-a-complete-file) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -3502,7 +3502,7 @@ Last Compared: 2026-10-02 15:54 UTC; issue #22 read back with matching title and
 Origin: daff1b7 / M38
 Identity History: none
 GitHub Issue: [#23](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/23)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -3517,7 +3517,7 @@ Out of scope: the zip channel short reads (M33); other LineByteStream methods un
 ##### Completion Criteria
 
 - For a complete PB file, plain and ZIP_PER_PV, PBFileInfo reports the file size as the truncation point and the start of the last line as the last-sample position; for a crashed tail it reports the end of the last complete record.
-- A test on the real files fails on the current order and passes after; the default suite passes.
+- A test on the real files fails on the current order and passes after; the existing LineByteStream tests, slow-tagged methods included, pass before and after; the default suite passes.
 
 ##### Dependencies And Decisions
 
@@ -3526,27 +3526,31 @@ Out of scope: the zip channel short reads (M33); other LineByteStream methods un
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-04; owner accepted the four-step plan below after its first third-person review, whose one finding (the slow-tagged LineByteStream tests as T2) is applied.
+Implementation Authorization: 2026-10-04; owner authorized the accepted plan.
 Superseded Plan Artifacts: none
 
 1. Add a test that reads PBFileInfo of complete and crashed-tail PB files, plain and ZIP_PER_PV, and checks the truncation point and the last-sample position against the file bytes; observe it fail on the current order. Closes with T1 (before part).
-2. Set lastReadPointer after readNextBatch in seekToBeforeLastLine, as seekToBeforePreviousLine does, and rerun; tighten ZipAppendTailTest to the exact truncation point; run the default suite. Closes with T1 and T2.
+2. Set lastReadPointer after readNextBatch in seekToBeforeLastLine, as seekToBeforePreviousLine does, and rerun; tighten ZipAppendTailTest to the exact truncation point. Closes with T1.
+3. Run LineByteStreamTest and LineByteStreamByteArrayTest with the slow group included, before and after the change: their slow-tagged testLargeLinesSeekToLastLine and testLastAndFirstLinesWithBoundedStream call seekToBeforeLastLine and are outside the default suite, and testSeekToPreviousLine passes the position read after it to seekToBeforePreviousLine. Closes with T2.
+4. Run the default suite. Closes with T3.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
 | T1 | Unit, real files | ./mvnw -B -ntp test with the new test and ZipAppendTailTest | JDK 21, wrapper Maven | Before: the truncation point of a complete file exceeds its size; after: it equals the size and the last-sample position is the start of the last line, plain and ZIP_PER_PV |
-| T2 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
+| T2 | Unit, slow group | ./mvnw -B -ntp test -Dtest='LineByteStreamTest,LineByteStreamByteArrayTest' -Dtest.excludedGroups=integration,localEpics,flaky, before and after the change | JDK 21, wrapper Maven | All methods of both classes pass before and after, including testLargeLinesSeekToLastLine, testLastAndFirstLinesWithBoundedStream and testSeekToPreviousLine |
+| T3 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-10-04 06:21 UTC (before and after) | JDK 21, wrapper Maven, tree 351302fe plus the test (before) and the change (after) | Pass | PBFileInfoPositionTest before the change: the four complete-file cases fail (last-sample position 396 for 190 with 10 samples, 1405586 for 1389202 with 86400, plain and ZIP_PER_PV), the four crashed-tail cases pass. After: all 8 pass, and ZipAppendTailTest passes 6 of 6 with the exact truncation point. |
+| T2 | 2026-10-04 05:58 UTC (before); 06:33 UTC (after) | JDK 21, wrapper Maven, slow group included, tree 351302fe (before) and with the change (after) | Pass | LineByteStreamTest 8 and LineByteStreamByteArrayTest 7 methods, including testLargeLinesSeekToLastLine, testLastAndFirstLinesWithBoundedStream and testSeekToPreviousLine: 15 pass before and 15 pass after. |
+| T3 | 2026-10-04 07:00 UTC | JDK 21, wrapper Maven, tree 351302fe plus the change | Pass | ./mvnw -B -ntp clean verify: BUILD SUCCESS, 900 tests, 0 failures, 0 errors, 0 skipped. |
 
 ##### Closure Evidence
 
