@@ -147,7 +147,44 @@ def unarchived_pvs_cases(run):
     run.compare("unarchivedPVs-padded-first-column", "unarchivedPVs", [run.bpl, padded], first_column_trimmed)
 
 
-CASES = {"unarchivedPVs": unarchived_pvs_cases}
+def archived_pvs_not_in_list_cases(run):
+    configured = run.request("getAllPVs", {"limit": -1})
+    save(run.root, "not-in-list-configured.json", configured)
+    listed = run.pvs[:12] + [f"{run.prefix}unknown_0"]
+    csv = run.root / "not-in-list-input.csv"
+    csv.write_text("\n".join(f"{name},meta" for name in listed) + "\n")
+
+    def expected_absent(original, replacement):
+        reason = same_output(original, replacement)
+        if reason:
+            return reason
+        expected = sorted(set(configured) - set(listed))
+        if replacement.stdout.splitlines() != expected:
+            return "output is not the configured PVs absent from the list"
+        return None
+
+    run.compare("archivedPVsNotInList-partial", "archivedPVsNotInList", [run.bpl, csv], expected_absent)
+
+    everything = run.root / "not-in-list-all.csv"
+    everything.write_text("\n".join(configured) + "\n")
+    run.compare("archivedPVsNotInList-all-listed", "archivedPVsNotInList", [run.bpl, everything])
+
+    empty = run.root / "not-in-list-empty.csv"
+    empty.write_text("\n")
+
+    def empty_rejected_before_http(original, replacement):
+        # Intentional change: an input without names exits 2 before HTTP. The original sends
+        # one empty name, which the server does not treat as empty, so it lists every configured PV.
+        if replacement.returncode != 2 or replacement.stdout or "contains no names" not in replacement.stderr:
+            return f"replacement exit {replacement.returncode}; expected 2 with a diagnostic"
+        if original.returncode != 0 or original.stdout.splitlines() != sorted(configured):
+            return "original did not list every configured PV for the blank line"
+        return None
+
+    run.compare("archivedPVsNotInList-empty", "archivedPVsNotInList", [run.bpl, empty], empty_rejected_before_http)
+
+
+CASES = {"unarchivedPVs": unarchived_pvs_cases, "archivedPVsNotInList": archived_pvs_not_in_list_cases}
 
 
 def main():
