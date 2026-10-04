@@ -52,10 +52,11 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M30 | ETLDetails post-processor time shown under the wrong label | Milestone | Complete | No | | The per-PV ETL details row labelled executePostETLTasks shows that phase's time (0fbd5592); ETLDetailsTest fails on the old label and passes after, 883 default tests and the Maven workflow pass; issue #14 closed as completed on 2026-10-03; [detail](#m30---etldetails-post-processor-time-shown-under-the-wrong-label) |
 | Phase 2 | M31 | PlainPB stale-file age uses 60 instead of 1000 for seconds to milliseconds | Milestone | Complete | No | | The stale zero-byte and empty-file checks in PlainPBStoragePlugin compare the file age with the intended (hold + 1) partitions in milliseconds (54085ea0); PlainPBStaleEmptyFileTest fails on the old factor and passes after, 886 default tests and the Maven workflow pass; issue #15 closed as completed on 2026-10-03; [detail](#m31---plainpb-stale-file-age-uses-60-instead-of-1000-for-seconds-to-milliseconds) |
 | Phase 2 | M32 | Unknown OutOfSpaceHandling value leaves PVs without ETL | Milestone | Complete | No | | A misspelled org.epics.archiverappliance.etl.common.OutOfSpaceHandling value falls back to the default with one ERROR line instead of leaving every PV without ETL (0e0c01dd); ETLOutOfSpaceHandlingTest fails on the old code and passes after, 884 default tests and the Maven workflow pass; issue #16 closed as completed on 2026-10-03; [detail](#m32---unknown-outofspacehandling-value-leaves-pvs-without-etl) |
-| Phase 2 | M33 | ZipETLTest reads back fewer events than written | Milestone | Not started | Yes | | The cause of the 1093 events missing from the slow-group ZipETLTest read-back is found on the real path and fixed in the code or in the test; the class passes with the slow-group command and the default suite passes; [detail](#m33---zipetltest-reads-back-fewer-events-than-written) |
+| Phase 2 | M33 | ZipETLTest reads back fewer events than written | Milestone | In progress | No | | The cause of the 1093 events missing from the slow-group ZipETLTest read-back is found on the real path and fixed in the code or in the test; the class passes with the slow-group command and the default suite passes; [detail](#m33---zipetltest-reads-back-fewer-events-than-written) |
 | Phase 2 | M34 | Preserve pending samples when pausing archiving | Milestone | Complete | No | | Correction 759337d5 and verified CLI/tests/docs fbc32120 landed; local regression, integration and live checks pass; Maven CI and Pages pass; #17 closed on 2026-09-29; [detail](#m34---preserve-pending-samples-when-pausing-archiving) |
 | Phase 2 | M36 | Honor nanosecond bounds in live retrieval | Milestone | Complete | No | | Correction dca485fd published on origin/modernize; 882 default tests, 4 selected integration tests and 70 real IOC checks pass, including exact/minus-one-nanosecond bounds and four-component restart; issue #21 closed as completed on 2026-10-02 UTC; [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) retains full VM revalidation; [detail](#m36---honor-nanosecond-bounds-in-live-retrieval) |
 | Phase 2 | M37 | Modernize the retained sample scripts | Milestone | Not started | Yes | | Each of the fourteen retained scripts has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m37---modernize-the-retained-sample-scripts) |
+| Phase 2 | M38 | PB last-line search reports a position past the end of a complete file | Milestone | Not started | Yes | | PBFileInfo reports the end of a complete PB file as its truncation point and the start of its last line as the last-sample position, for plain and ZIP_PER_PV files; a test fails on the current order and passes after, and the default suite passes; [detail](#m38---pb-last-line-search-reports-a-position-past-the-end-of-a-complete-file) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -3128,7 +3129,7 @@ Last Compared: 2026-10-03 06:01 UTC; `gh api repos/jeonghanlee/epicsarchiverap-m
 Origin: daff1b7 / M33
 Identity History: none
 GitHub Issue: [#19](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/19)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -3148,16 +3149,18 @@ Out of scope: the pass scheduler (M25); the other slow-group tests.
 
 - Origin: the whole slow-group run of M25 / T10 on 2026-09-28; the shortfall is recorded there and here only.
 - Observation (2026-09-28): 31534907 events read back on the step 6 tree (d8a7813f plus the slow-group test) and on d4ee97bc; the assertion accepts 31535999 or more.
+- Cause (2026-10-03): ETL truncates complete ZIP_PER_PV day entries. After the bulk append, AppendDataStateData.updateStateBasedOnExistingFile reads PBFileInfo of the entry; WrappedSeekableByteChannel.read returns fewer bytes than a 16 KiB read asks near the end of a deflated entry (229 of 276 entries), so LineByteStream.seekToBeforeLastLine picks an earlier line as the last one and truncateCorruptFile (9faee2e3) cuts the entry there. In the run of 2026-10-03 the source held 7689600 events and the destination 23845307; 25 day entries were each short by the lines cut at their end, 1093 in total, with one truncation warning per entry.
+- Decision Date: 2026-10-03. The fix goes into WrappedSeekableByteChannel: read fills the buffer until it is full or the entry ends, and position repeats skip until it reaches the target. The position overshoot of seekToBeforeLastLine found during verification is M38, not part of this milestone; ZipAppendTailTest checks only that the truncation point does not cut into a complete entry.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-03; owner accepted the two-step plan below.
+Implementation Authorization: 2026-10-03; owner authorized step 1 and the report of the located cause; the fix in step 2 follows the owner's direction on that cause.
 Superseded Plan Artifacts: none
 
-1. Rerun the class alone with the slow-group command, count the source and the destination separately, and locate the gap (the day of the run date, a zip entry, or the read-back). Closes with T1 (before part).
-2. Fix the cause and rerun; run the default suite. Closes with T1 and T2.
+1. In ZipETLTest, log the source and destination counts separately and name both in the assertion message, leaving the threshold unchanged. Rerun the class alone with the slow-group command and locate the gap (the day of the run date, a zip entry, or the read-back), counting per day file or per zip entry read-only where needed. Report the located cause to the owner. Closes with T1 (before part).
+2. Fix the cause in the code or in the test as the owner directs and rerun; run the default suite. Closes with T1 and T2.
 
 ##### Test Plan
 
@@ -3170,8 +3173,8 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, wrapper Maven, slow group | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-10-04 01:52 UTC (before); 02:29 and 02:30 UTC (after) | JDK 21, wrapper Maven, slow group, tree 6a1fb7c8 plus the change | Pass | Before the change: 31534907 read back, 7689600 from the source and 23845307 from the destination, 25 truncation warnings; the destination zip's 25 short day entries were short by 1093 lines in total. After: 31536000 on two consecutive runs, 7689600 and 23846400, no truncation warning. ZipAppendTailTest (default suite): 4 of 6 fail on the unchanged channel (short 16 KiB read, wrong last sample, re-append and crashed tail in a zip entry), 6 of 6 pass after. |
+| T2 | 2026-10-04 02:58 UTC | JDK 21, wrapper Maven, tree 6a1fb7c8 plus the change | Pass | ./mvnw -B -ntp clean verify: BUILD SUCCESS, 892 tests, 0 failures, 0 errors, 0 skipped. |
 
 ##### Closure Evidence
 
@@ -3492,6 +3495,71 @@ Observed State: OPEN
 Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-02 15:54 UTC; issue #22 read back with matching title and body, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-02T15:54:13Z. Recheck with gh issue view 22 on jeonghanlee/epicsarchiverap-maven.
+
+#### M38 - PB last-line search reports a position past the end of a complete file
+
+Origin: daff1b7 / M38
+Identity History: none
+GitHub Issue: [#23](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/23)
+Status: Not started
+
+##### Summary
+
+LineByteStream.seekToBeforeLastLine sets lastReadPointer to the seek position before it calls readNextBatch, and readNextBatch first adds the previous batch's bytesRead to lastReadPointer. Every position read after the search is therefore too large by the size of the previous batch, up to 16384 bytes. seekToBeforePreviousLine sets lastReadPointer after readNextBatch and is correct. PBFileInfo.lookupLastEvent takes the last-sample position and the truncation point from this search. On a complete day file of ZipAppendTailTest the truncation point was 1405597 for a 1389213-byte entry (observed 2026-10-03 while working on M33, with the channel correction of M33 in place). AppendDataStateData.truncateCorruptFile cuts only below the file size, so the overshoot truncates nothing today, and a crashed tail is located through seekToBeforePreviousLine. In main code getTruncationPoint has that one caller and getPositionOfLastSample has none.
+
+##### Scope
+
+Correct the position bookkeeping of seekToBeforeLastLine so that the positions read after it are file offsets, and confirm PBFileInfo's last-sample position and truncation point on plain and ZIP_PER_PV files, complete and with a crashed tail.
+
+Out of scope: the zip channel short reads (M33); other LineByteStream methods unless the accepted plan names them.
+
+##### Completion Criteria
+
+- For a complete PB file, plain and ZIP_PER_PV, PBFileInfo reports the file size as the truncation point and the start of the last line as the last-sample position; for a crashed tail it reports the end of the last complete record.
+- A test on the real files fails on the current order and passes after; the default suite passes.
+
+##### Dependencies And Decisions
+
+- Origin: found while verifying M33 on 2026-10-03; the owner directed the same day that it be recorded as its own milestone and issue rather than fixed under M33.
+- M33's ZipAppendTailTest checks only that the truncation point does not cut into a complete entry; this milestone tightens the check to the exact value.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Add a test that reads PBFileInfo of complete and crashed-tail PB files, plain and ZIP_PER_PV, and checks the truncation point and the last-sample position against the file bytes; observe it fail on the current order. Closes with T1 (before part).
+2. Set lastReadPointer after readNextBatch in seekToBeforeLastLine, as seekToBeforePreviousLine does, and rerun; tighten ZipAppendTailTest to the exact truncation point; run the default suite. Closes with T1 and T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit, real files | ./mvnw -B -ntp test with the new test and ZipAppendTailTest | JDK 21, wrapper Maven | Before: the truncation point of a complete file exceeds its size; after: it equals the size and the last-sample position is the start of the last line, plain and ZIP_PER_PV |
+| T2 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Report file offsets after the PB last-line search
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-04 02:37 UTC; issue #23 read back with matching title and body, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-04T02:37:27Z. Recheck with gh issue view 23 on jeonghanlee/epicsarchiverap-maven.
 
 ## Backlog
 
