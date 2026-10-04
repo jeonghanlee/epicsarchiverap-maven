@@ -67,7 +67,7 @@ class Run:
         return path
 
     def execute(self, label, command):
-        result = subprocess.run(command, env=self.env, text=True, capture_output=True, timeout=HTTP_TIMEOUT + 30)
+        result = subprocess.run(command, env=self.env, text=True, capture_output=True, timeout=HTTP_TIMEOUT + 60)
         (self.root / f"{label}.stdout").write_text(result.stdout)
         (self.root / f"{label}.stderr").write_text(result.stderr)
         return result
@@ -217,8 +217,41 @@ def list_type_changes_cases(run):
     run.compare("listTypeChanges-changed", "listTypeChanges", [run.bpl], names_changed_pv)
 
 
+def check_for_engine_activity_cases(run):
+    sts = run.root / "appliance/stores/sts"
+    interval = "25"
+
+    def both_saw_changes(original, replacement):
+        # The two runs cover different windows, so only the presence of changes is compared.
+        if original.returncode != 0 or replacement.returncode != 0 or replacement.stderr:
+            return f"exit {original.returncode}/{replacement.returncode}"
+        for result in (original, replacement):
+            words = result.stdout.split()
+            if len(words) != 7 or not words[0].isdigit() or int(words[0]) < 1 \
+                    or " ".join(words[1:]) != f"changes were detected in {interval} seconds":
+                return f"unexpected output: {result.stdout!r}"
+        return None
+
+    run.compare("checkForEngineActivity-sts", "checkForEngineActivity", ["-t", interval, sts], both_saw_changes)
+
+    quiet = run.root / "quiet-store"
+    (quiet / "PV").mkdir(parents=True)
+    (quiet / "PV/static.pb").write_bytes(b"static")
+
+    def no_change_exits_1(original, replacement):
+        # Intentional change: no change exits 1 instead of -1 (status 255).
+        expected = "No changes detected in the last 3 seconds\n"
+        if original.returncode != 255 or replacement.returncode != 1:
+            return f"exit {original.returncode}/{replacement.returncode}; expected 255/1"
+        if original.stdout != expected or replacement.stdout != expected or replacement.stderr:
+            return "outputs differ"
+        return None
+
+    run.compare("checkForEngineActivity-quiet", "checkForEngineActivity", ["-t", "3", quiet], no_change_exits_1)
+
+
 CASES = {"unarchivedPVs": unarchived_pvs_cases, "archivedPVsNotInList": archived_pvs_not_in_list_cases,
-         "listTypeChanges": list_type_changes_cases}
+         "listTypeChanges": list_type_changes_cases, "checkForEngineActivity": check_for_engine_activity_cases}
 
 
 def main():
