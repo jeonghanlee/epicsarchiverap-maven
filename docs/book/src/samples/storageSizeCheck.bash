@@ -3,8 +3,9 @@
 # /getStorageRateReport?limit=N returns the engines' top entries; the management service forwards
 # the limit to every engine and concatenates their reports, so the limit applies per appliance.
 # Each PV keeps the last rate the report gives for it. PVs above MAXSIZE GB per year are printed
-# in descending rate under a "PVs with estimated storage greater than ..." line, with the rate as
-# the server formats it. The report drops an engine that does not answer.
+# in descending rate under a "PVs with estimated storage greater than ..." line, each rate in the
+# largest of B, KB, MB, GB and TB per year that keeps it at least 1, in steps of 1024, with three
+# significant digits. The report drops an engine that does not answer.
 #
 # Usage: storageSizeCheck.bash [--limit N] [--timeout SEC] BPL_URL MAXSIZE
 # Exit status: 0 nothing to report, 1 alert reported on stdout, 2 invalid arguments,
@@ -21,6 +22,31 @@ fi
 
 readonly DEFAULT_LIMIT=100
 readonly NUMBER='^-?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][-+]?[0-9]+)?$'
+
+# Reads "<name><TAB><GB per year>" lines and prints "PV: <name> Size: <value> <unit>/year" lines.
+# The unit is the largest of B to TB that keeps the value at least 1, in steps of 1024; a value
+# that rounds to 1024 moves to the next unit. Three significant digits, without an exponent.
+# shellcheck disable=SC2016  # the $ references belong to awk
+readonly FORMAT_RATES='
+function digits(v) {
+    if (v >= 100) return sprintf("%.0f", v)
+    if (v >= 10) return sprintf("%.1f", v)
+    if (v >= 1) return sprintf("%.2f", v)
+    return sprintf("%#.3g", v)
+}
+function readable(gb,    v, i, text) {
+    v = gb * 1024 * 1024 * 1024
+    if (v == 0) return "0 B"
+    i = 1
+    while (v >= 1024 && i < 5) { v /= 1024; i++ }
+    text = digits(v)
+    while (text + 0 >= 1024 && i < 5) { v /= 1024; i++; text = digits(v) }
+    while (text != digits(text + 0)) text = digits(text + 0)
+    return text " " unit[i]
+}
+BEGIN { FS = "\t"; split("B KB MB GB TB", unit, " ") }
+{ printf "PV: %s Size: %s/year\n", $1, readable($2 + 0) }
+'
 
 # Prints the usage text; with "help" on stdout and exit 0, otherwise on stderr and exit 2.
 usage() {
@@ -106,11 +132,11 @@ main() {
         | to_entries
         | map(select((.value | tonumber) > ($max | tonumber)))
         | sort_by(-(.value | tonumber))
-        | .[] | "PV: \(.key) Size(GB/year): \(.value)"' "$ARC_TMP/report.json")
+        | .[] | "\(.key)\t\(.value)"' "$ARC_TMP/report.json" | LC_ALL=C awk "$FORMAT_RATES")
     if (( ${#lines[@]} == 0 )); then
         exit "$ARC_EXIT_OK"
     fi
-    printf 'PVs with estimated storage greater than %sGB/year in %s\n' "$maxsize" "$bpl"
+    printf 'PVs with estimated storage greater than %s GB/year in %s\n' "$maxsize" "$bpl"
     printf '%s\n' "${lines[@]}"
     exit "$ARC_EXIT_FAILED"
 }

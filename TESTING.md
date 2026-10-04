@@ -708,7 +708,7 @@ and engine activity is read from the live short-term store. Outputs must
 agree except for the intentional changes each case names: skipped blank
 lines, a trimmed first column, an empty list rejected before HTTP, exit 1
 instead of 255 for no engine activity, alerts on stdout with exit 1, and
-storage rates in the server's number format. `--script NAME` limits the run
+storage rates in readable units. `--script NAME` limits the run
 to one script, and `--port-base` and `--ca-port` move the ports. The runner
 stops only its own launcher and IOC and fails unless the launcher exits 143
 with no owned JVM left.

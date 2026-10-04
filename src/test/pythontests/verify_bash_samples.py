@@ -392,12 +392,22 @@ def check_type_changed_pvs_cases(run):
 def storage_size_check_cases(run):
     mail = run.mail_env()
 
-    def rows(lines):
-        parsed = []
+    units = {"B": 0, "KB": 1, "MB": 2, "GB": 3, "TB": 4}
+
+    def original_rows(lines):
+        rows = []
         for line in lines:
             name, value = line[len("PV: "):].rsplit(" Size(GB/year): ", 1)
-            parsed.append((name, float(value)))
-        return parsed
+            rows.append((name, float(value)))
+        return rows
+
+    def replacement_rows(lines):
+        rows = []
+        for line in lines:
+            name, value = line[len("PV: "):].rsplit(" Size: ", 1)
+            number, unit = value.removesuffix("/year").split(" ")
+            rows.append((name, float(number) * 1024 ** units[unit] / 1024 ** 3))
+        return rows
 
     def judge_alert(original, replacement):
         sent = mail.messages[judge_alert.before:]
@@ -406,11 +416,22 @@ def storage_size_check_cases(run):
             return f"exit {original.returncode}/{replacement.returncode}, {len(sent)} mails"
         body = mail_body(sent[0]).splitlines()
         lines = replacement.stdout.splitlines()
-        if body[0] != lines[0]:
+        # Intentional change: the header puts a space before the unit and rates print in readable
+        # units with three significant digits, so names compare exactly and rates within rounding.
+        if body[0].replace("GB/year", " GB/year") != lines[0]:
             return "header differs"
-        # Intentional change: rates are printed as the server formats them, so values compare as numbers.
-        if rows(body[1:]) != rows(lines[1:]) or not lines[1:]:
-            return "PV order or rates differ from the mail"
+        # The server re-estimates rates while archiving, so each printed rate must match, within
+        # rounding, the original's mail or a report read right after the replacement ran.
+        readback = {row["pvName"]: float(row["storageRate_GBperYear"])
+                    for row in run.request("getStorageRateReport", {"limit": 15})}
+        mailed, got = dict(original_rows(body[1:])), replacement_rows(lines[1:])
+        if not got or {name for name, _ in got} != set(mailed):
+            return "the replacement reports a different set of PVs than the mail"
+        for name, value in got:
+            if not any(abs(value - ref) <= 0.005 * ref for ref in (mailed[name], readback.get(name, -1.0))):
+                return f"rate of {name} matches neither the mail nor the readback within rounding"
+        if [value for _, value in got] != sorted((value for _, value in got), reverse=True):
+            return "the replacement's rates are not in descending order"
         return None
 
     def judge_quiet(original, replacement):

@@ -67,18 +67,32 @@ class StorageSizeCheckBashTest(unittest.TestCase):
                                 rate("TEST:a", "3.5"), rate("TEST:d", "3.5"), rate("TEST:e", "0.01")]).encode()
         result = self.cli("--limit", "7", self.url, "1E-4")
         self.assertEqual(result.returncode, 1, result.stderr)
-        self.assertEqual(result.stdout, f"PVs with estimated storage greater than 1E-4GB/year in {self.url}\n"
-                                        "PV: TEST:c Size(GB/year): 7.25\n"
-                                        "PV: TEST:a Size(GB/year): 3.5\n"
-                                        "PV: TEST:d Size(GB/year): 3.5\n"
-                                        "PV: TEST:e Size(GB/year): 0.01\n"
-                                        "PV: TEST:b Size(GB/year): 1.5E-4\n")
+        self.assertEqual(result.stdout, f"PVs with estimated storage greater than 1E-4 GB/year in {self.url}\n"
+                                        "PV: TEST:c Size: 7.25 GB/year\n"
+                                        "PV: TEST:a Size: 3.50 GB/year\n"
+                                        "PV: TEST:d Size: 3.50 GB/year\n"
+                                        "PV: TEST:e Size: 10.2 MB/year\n"
+                                        "PV: TEST:b Size: 157 KB/year\n")
         self.assertEqual(parse_qs(urlsplit(self.requests[0]).query), {"limit": ["7"]})
 
     def test_negative_limit_reports_every_pv(self):
         result = self.cli(self.url, "-1")
         self.assertEqual(result.returncode, 1)
-        self.assertIn("PV: TEST:a Size(GB/year): 0.5", result.stdout)
+        self.assertIn("PV: TEST:a Size: 512 MB/year", result.stdout)
+
+    def test_units_cover_bytes_to_terabytes_with_three_significant_digits(self):
+        cases = [("0.0", "0 B/year"), ("4.656612873077393E-10", "0.500 B/year"), ("9.313225746154785E-10", "1.00 B/year"),
+                 ("9.5367431640625E-7", "1.00 KB/year"), ("1.1175870895385742E-6", "1.17 KB/year"),
+                 ("9.765625E-4", "1.00 MB/year"), ("0.0999", "102 MB/year"), ("0.99999", "1.00 GB/year"),
+                 ("1.0", "1.00 GB/year"), ("1023.0", "1023 GB/year"), ("1024.0", "1.00 TB/year"),
+                 ("2097152.0", "2048 TB/year"), (repr(9.996 / 1024), "10.0 MB/year"), (repr(99.96 / 1024), "100 MB/year"),
+                 (repr(1023.6 / 1024), "1.00 GB/year"), (repr(1023.6 / 1024 / 1024), "1.00 MB/year")]
+        self.body = json.dumps([rate(f"TEST:{i:02d}", gb) for i, (gb, _) in enumerate(cases)]).encode()
+        result = self.cli(self.url, "-1")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        got = {line.split()[1]: line.split("Size: ", 1)[1] for line in result.stdout.splitlines()[1:]}
+        for i, (gb, expected) in enumerate(cases):
+            self.assertEqual(got[f"TEST:{i:02d}"], expected, gb)
 
     def test_failures_exit_3(self):
         self.status = 500

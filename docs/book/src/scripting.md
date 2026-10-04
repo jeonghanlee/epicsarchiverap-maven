@@ -450,8 +450,18 @@ as above, run the three checks:
 - [storageSizeCheck.bash](samples/storageSizeCheck.bash) prints the PVs
   whose estimated storage exceeds the given GB per year, highest first.
   `--limit` sets how many entries each appliance reports (default 100), so
-  the alert covers only those entries. Rates appear as the server formats
-  them, for example `1.5E-4`.
+  the alert covers only those entries. Each rate is printed in the largest
+  of B, KB, MB, GB, and TB per year that keeps it at least 1, with three
+  significant digits, for example `7.08 GB/year` or `157 KB/year`.
+
+An alert from `storageSizeCheck.bash` looks like this, with your appliance
+URL and PV names:
+
+```text
+PVs with estimated storage greater than 50 GB/year in http://127.0.0.1:17665/mgmt/bpl
+PV: <pv_name> Size: 72.4 GB/year
+PV: <pv_name> Size: 51.0 GB/year
+```
 
 ## Other sample scripts
 
