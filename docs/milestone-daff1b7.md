@@ -58,7 +58,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M37 | Modernize the retained sample scripts | Milestone | Complete | No | | The seven read-only and alert-check sample scripts are Bash on a shared archiverClient.bash (bcff5f27 through e08f9007), each compared with its Python original on a local appliance before removal; 66 client boundary cases, 18 appliance comparisons, 900 default tests and the Maven workflow pass; issue #22 closed as completed on 2026-10-04; the state-changing scripts and mail delivery continue in M40 and M41; [detail](#m37---modernize-the-retained-sample-scripts) |
 | Phase 2 | M38 | PB last-line search reports a position past the end of a complete file | Milestone | Complete | No | | seekToBeforeLastLine sets lastReadPointer after readNextBatch (76c7707d); PBFileInfo reports the file size as the truncation point and the last line's start as the last-sample position for plain and ZIP_PER_PV files; PBFileInfoPositionTest fails 4 of 8 before and passes after, the slow LineByteStream tests pass before and after, 900 default tests and the Maven workflow pass; issue #23 closed as completed on 2026-10-04; [detail](#m38---pb-last-line-search-reports-a-position-past-the-end-of-a-complete-file) |
 | Phase 2 | M39 | Per-request INFO logging without requester or outcome | Milestone | Not started | Yes | | Each remaining per-request INFO statement (BasicDispatcher Servicing, engine BPLServlet Beginning request, GetEngineDataAction Found a total) is kept with requester and outcome fields, replaced by one record per request, or moved below INFO, with the decision recorded; output at the default level under load contains only the kept lines; the default suite passes; [detail](#m39---per-request-info-logging-without-requester-or-outcome) |
-| Phase 2 | M42 | Human-readable storage rates in storageSizeCheck.bash | Milestone | Not started | Yes | | storageSizeCheck.bash prints rates and its threshold in B to TB units per year with three significant digits, verified by client boundary cases and on a local appliance; the scripting page shows the output; the default suite passes; [detail](#m42---human-readable-storage-rates-in-storagesizecheckbash) |
+| Phase 2 | M42 | Human-readable storage rates in storageSizeCheck.bash | Milestone | In progress | No | | storageSizeCheck.bash prints rates and its threshold in B to TB units per year with three significant digits, verified by client boundary cases and on a local appliance; the scripting page shows the output; the default suite passes; [detail](#m42---human-readable-storage-rates-in-storagesizecheckbash) |
 | Phase 2 | M43 | One engine CA context never receives search replies | Milestone | Not started | Yes | | The cause of one CAJ context's channels never connecting while its search socket shares a UDP port with another context is confirmed or rejected on the real path, and if confirmed a correction verified by a reproduction prevents or recovers from the shared port; the default suite passes; [detail](#m43---one-engine-ca-context-never-receives-search-replies) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
@@ -3679,7 +3679,7 @@ Last Compared: 2026-10-04 08:46 UTC; issue #24 read back with matching title and
 Origin: daff1b7 / M42
 Identity History: none
 GitHub Issue: [#25](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/25)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -3702,9 +3702,9 @@ Out of scope: the server's rate report; the other sample scripts.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-04; owner accepted the two-step plan and the format in issue #25 when directing that the next item proceed.
+Implementation Authorization: 2026-10-04; owner authorized the accepted plan.
 Superseded Plan Artifacts: none
 
 1. Add the unit formatting to storageSizeCheck.bash with client boundary cases that fail on the current output; update the scripting page. Closes with T1.
@@ -3722,9 +3722,9 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | System Python standard library, bash, curl, jq | Pending | none |
-| T2 | Not run | M37 / T2 environment | Pending | none |
-| T3 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-10-04 20:37 UTC | System Python 3.13 standard library, bash 5.2, curl 8.14.1, jq 1.7, shellcheck | Pass | `bash -n` and `shellcheck -x` clean; test_storage_size_check_bash.py fails 2 cases (and errors on the new range case) on the server-formatted output, and after the change passes 6 cases, including 15 rates from 0 B to 2048 TB per year and the rounding boundaries 9.996 MB, 99.96 MB, 1023.6 KB and 1023.6 MB. |
+| T2 | 2026-10-04 20:42 UTC | M37 / T2 environment (WARs aa-20261004-30109eaf, EPICS-env-distribution 1.3.0) | Pass | verify_bash_samples.py --script storageSizeCheck --script documented, evidence work/m42-t2-b: quiet and alert cases pass and the documented commands run; the PV set matches the mail, rates descend, and each rate matches the mail or a report read right after the run within three-significant-digit rounding. The first run (work/m42-t2) showed the server re-estimating rates between the original's and the replacement's run (1.018 against 1.04 GB/year; the shipped formatter prints 1.02 for 1.018), so the judge reads the report back instead of requiring the earlier value. |
+| T3 | 2026-10-04 21:10 UTC | JDK 21, wrapper Maven | Pass | ./mvnw -B -ntp clean verify: BUILD SUCCESS, 900 tests, 0 failures, 0 errors, 0 skipped. |
 
 ##### Closure Evidence
 
