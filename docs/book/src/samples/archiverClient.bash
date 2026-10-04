@@ -77,17 +77,19 @@ arc_timeout() {
 # removed, blank lines are skipped, and a row whose first column is empty is
 # rejected. Fills ARC_NAMES with the names and ARC_ROWS with the trimmed rows.
 arc_read_rows() {
-    local file="$1" line row name number=0
+    local file="$1" content line row name number=0
     ARC_NAMES=()
     ARC_ROWS=()
-    if [[ ! -f "$file" || ! -r "$file" ]]; then
+    if [[ -d "$file" || ! -r "$file" ]]; then
         arc_error "cannot read PV file: $file"
         return 1
     fi
-    if ! iconv -f UTF-8 -t UTF-8 "$file" >/dev/null 2>&1; then
+    # The file is read once, so a pipe or process substitution works as input.
+    if ! content="$(iconv -f UTF-8 -t UTF-8 < "$file" 2>/dev/null && printf x)"; then
         arc_error "PV file is not valid UTF-8: $file"
         return 1
     fi
+    content="${content%x}"
     while IFS= read -r line || [[ -n "$line" ]]; do
         number=$((number + 1))
         line="${line%$'\r'}"
@@ -100,7 +102,7 @@ arc_read_rows() {
         fi
         ARC_NAMES+=("$name")
         ARC_ROWS+=("$row")
-    done < "$file"
+    done <<< "$content"
 }
 
 # Prints the argument without leading and trailing whitespace.
