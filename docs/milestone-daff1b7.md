@@ -3772,13 +3772,13 @@ Out of scope: the ETL soak; the IOC's CA server.
 ##### Implementation Plan
 
 Plan Status: accepted
-Plan Acceptance: 2026-10-04; owner accepted stage 1 (steps 1 and 2) as discussed with the epicsarchiverap-env session; step 3 stays draft until stage 1 has evidence.
-Implementation Authorization: 2026-10-04; owner authorized stage 1, including the request for a Rocky 8.10 guest from cloud-provision.
+Plan Acceptance: 2026-10-04; owner accepted stage 1 (steps 1 and 2) as discussed with the epicsarchiverap-env session, and after the stage-1 evidence accepted step 3 as written below (option 3: detect a shared search port at engine start and recreate the losing context).
+Implementation Authorization: 2026-10-04; owner authorized stage 1, including the request for a Rocky 8.10 guest from cloud-provision, and stage 2 (step 3); deploying a build to the guest also needs ansible-provision's agreement.
 Superseded Plan Artifacts: none
 
 1. Reproduce the port sharing outside the appliance: a standalone probe creates 10 real `CAJContext`s per round, as the engine's command threads do, records each context's search port, and repeats; a raw variant opens 10 `DatagramChannel`s bound as CAJ binds them, with and without `SO_REUSEADDR`, for many more rounds. Run on the Rocky 8.10 guest and this Debian 13 host, recording `uname -r` and the JDK. Closes with T1.
 2. On the Rocky guest, start the engine on the aa-env deploy path at least 30 times; at each start record `ss -uanp` for the engine and the connected and never-connected counts per command thread, so a shared port and a dead context are shown to coincide or not. Closes with T2.
-3. (stage 2, after stage-1 evidence) Choose a local correction with the owner, on the jca or the engine side, and verify it with the probe, repeated engine starts and the default suite. Closes with T1, T2 and T3.
+3. (stage 2) In `EngineContext`, create all command threads, initialize each CAJ context before any thread starts, and read each context's search port. When two ports are equal, destroy the earlier-bound context, which loses the replies, replace its command thread with a new one, and check again, at most 10 times; past that, log FATAL and refuse to start. Start the threads after the check. First add a test that builds an `EngineContext` with 200 command threads several times and requires distinct search ports, and show it fails without the check. Verify with that test, the engine CA tests, the default suite, and repeated engine starts of a build carrying the change on the Rocky guest. Scope: sharing among the engine's own CAJ contexts; sockets of other components in the JVM are outside it. Closes with T1, T2 and T3.
 
 ##### Test Plan
 
@@ -3792,9 +3792,9 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | 2026-10-04 21:35 UTC (Debian 13); 21:50 UTC (Rocky 8.10) | This host: Debian 13, kernel 6.12.111+deb13-amd64, OpenJDK 21.0.12; a fresh Rocky 8.10 guest from cloud-provision: kernel 4.18.0-553.el8_10, OpenJDK 21.0.12.1 (java-21-openjdk-headless); jca 2.4.12; probe src/tools/org/epics/archiverappliance/engine/pv/CajSearchPortProbe.java | Pass: mechanism reproduced on both kernels | Ten real CAJContexts per round (`caj`): two contexts on one search port in 17 of 10,000 rounds on Rocky 8.10 and 11 of 10,000 on Debian 13. Ten DatagramChannels bound as CAJ binds them: with SO_REUSEADDR 18 and 16 of 10,000 rounds shared a port, without it 0 of 10,000 on both. `deliver`: in 3 of 3 shared-port trials on each host, all 100 unicast datagrams reached the later-bound socket and none the earlier one. Evidence work/m43-probe-rocky810 and work/m43-probe-debian13. |
-| T2 | Not run | Rocky 8.10 lab deployment | Pending | none |
-| T3 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-10-04 21:35 UTC (Debian 13); 21:50 UTC (Rocky 8.10) | This host: Debian 13, kernel 6.12.111+deb13-amd64, OpenJDK 21.0.12; a fresh Rocky 8.10 guest from cloud-provision: kernel 4.18.0-553.el8_10, OpenJDK 21.0.12.1 (java-21-openjdk-headless); jca 2.4.12; probe src/tools/org/epics/archiverappliance/engine/pv/CajSearchPortProbe.java | Pass: mechanism reproduced on both kernels | Ten real CAJContexts per round (`caj`): two contexts on one search port in 17 of 10,000 rounds on Rocky 8.10 and 11 of 10,000 on Debian 13. Ten DatagramChannels bound as CAJ binds them: with SO_REUSEADDR 18 and 16 of 10,000 rounds shared a port, without it 0 of 10,000 on both. `deliver`: in 3 of 3 shared-port trials on each host, all 100 unicast datagrams reached the later-bound socket and none the earlier one. Evidence work/m43-probe-rocky810 and work/m43-probe-debian13. Stage 2 (2026-10-04 22:36 UTC): CommandThreadSearchPortTest builds 200 command threads through EngineContext.createCommandThreads eight times; without the check it failed with 6 shared ports in 8 builds, with it it passes, recreating 9 contexts (work/m43-t1-engine-before.log, work/m43-t1-engine-after.log). |
+| T2 | 2026-10-04 21:46 to 22:17 UTC | The Rocky 8.10 guest (kernel 4.18.0-553.el8_10) with the archiver_dev species applied by ansible-provision: epicsarchiverap-env d09dca7, epicsarchiverap-maven 254a6542, 903-PV fixture IOC, default 10 CA command threads, OpenJDK 21.0.12.1 | Measured: 0 occurrences in 30 starts | 30 restarts of epicsarchiverap-maven.service: every start connected 903 PVs within 51 to 55 s, the engine JVM held 13 UDP sockets with no duplicated port, and no PV was disconnected or pending a meta get. With 0 of 30 the 95% upper bound on the per-start rate is about 10% (rule of three), so the run neither shows nor excludes the field rate of about 1 in 10 deployments; the probe's 0.17% per ten-context round is consistent with no occurrence here. Evidence work/m43-partb (per-start ss and reports, summary.txt). Stage 2 (23:22 to 23:54 UTC): the guest's exploded engine webapp was saved (tar and 878-file sha256 manifest) and replaced so that only the six corrected class files differed; 30 restarts connected 903 PVs within 51 to 61 s with no duplicated port and no context recreated; the original was restored with an identical manifest and one restart connected 903 (work/m43-stage2). The engine CA tests (`-P localEpics`, engine.test, 26 tests in 11 classes) pass with the change (work/m43-localepics-engine.log). |
+| T3 | 2026-10-04 23:20 UTC | JDK 21, wrapper Maven, tree 20e9a133 plus the change | Pass | ./mvnw -B -ntp clean verify: BUILD SUCCESS, 901 tests, 0 failures, 0 errors, 0 skipped. |
 
 ##### Closure Evidence
 
@@ -3808,7 +3808,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-04 20:32 UTC; issue #26 read back with matching title and body, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-04T20:32:40Z. Recheck with gh issue view 26 on jeonghanlee/epicsarchiverap-maven.
+Last Compared: 2026-10-04 22:19 UTC; issue #26 open with its title, bug label, assignee jeonghanlee and no GitHub milestone; the stage-1 results were posted as [a comment](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/26#issuecomment-5985074826) whose readback matches `work/issue-caj-stage1-comment.md`, and reported to the epicsarchiverap-env session for jeonghanlee/epicsarchiverap-env#58. Recheck with gh issue view 26 on jeonghanlee/epicsarchiverap-maven.
 
 ## Backlog
 
