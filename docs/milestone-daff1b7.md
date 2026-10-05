@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. Every remaining Ready row (M12, M7, M26 and M39) needs an owner decision before implementation: M12 the backends to remove, M7 the site's item list, M26 the settled output form under D31, M39 the per-statement keep, enrich or demote decision. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
+Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. M26 (issue #20) is Complete. M12 and M7 need an owner decision before implementation: M12 the backends to remove, M7 the site's item list. M39 is In progress: its plan was accepted on 2026-10-05 and the baseline measurement comes first. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -45,7 +45,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M23 | Code defects found while rewriting the docs | Milestone | Complete | No | | Each listed defect is fixed and verified, or kept with a recorded reason; [detail](#m23---code-defects-found-while-rewriting-the-docs) |
 | Phase 2 | M24 | Per-request retrieval logging at DEBUG | Milestone | Complete | No | D31 | The five retrieval lines written for every data request log at DEBUG; a deployed retrieval WAR writes none of those a single-PV request passes through at the default level; the build and the default suite pass; [detail](#m24---per-request-retrieval-logging-at-debug) |
 | Phase 2 | M25 | ETL pass scheduler in place of per-PV timers | Milestone | Complete | No | | The design of docs/design-etl-pass-scheduler.md is implemented: one pass driver per (transition index, cadence) fires on a fixed grid, the reported ETL values come from pass records, and the default suite and the slow-group test pass; [detail](#m25---etl-pass-scheduler-in-place-of-per-pv-timers) |
-| Phase 2 | M26 | etl error bursts and mgmt workflow tick logging | Milestone | In progress | No | D31 | A failing store is reported in the settled bounded form, and the settled mgmt tick lines leave the default level; [detail](#m26---etl-error-bursts-and-mgmt-workflow-tick-logging) |
+| Phase 2 | M26 | etl error bursts and mgmt workflow tick logging | Milestone | Complete | No | D31 | A pass reports a failing store with one ERROR carrying the transition, cadence, plannedAt and failure counts, the per-partition stack traces are at DEBUG, and the two per-tick mgmt lines are at DEBUG (bdcbe03e); the tests fail before and pass after, a local launcher's mgmt console log dropped from 16 pairs of INFO lines to none in 150 s, 904 default tests and the Maven workflow pass; issue #20 closed as completed on 2026-10-05; [detail](#m26---etl-error-bursts-and-mgmt-workflow-tick-logging) |
 | Phase 2 | M27 | Reduced bins missing after ETL with a post-processor | Milestone | Complete | No | | The cause of the reduced-bin shortfall in ETLPostProcessorTest is found and fixed, and the test and the default suite pass on repeated runs; [detail](#m27---reduced-bins-missing-after-etl-with-a-post-processor) |
 | Phase 2 | M28 | ETL pass scheduler soak on the deploy path | Milestone | In progress | No | M25, G4 | The ansible-provision lab runs the pass scheduler of M25 through the aa-env deploy path on the soak chain and on the aa-env default chain: passes fire on the grid, the reported rows read as designed, the unit's stop time is measured, and the comparison with the 2026-09-24 to 2026-09-26 run is recorded; [detail](#m28---etl-pass-scheduler-soak-on-the-deploy-path) |
 | Phase 2 | M29 | Remaining per-request retrieval INFO lines | Milestone | Complete | No | | The five per-request retrieval messages and the same messages on the multi-PV and PVAccess paths log at DEBUG (d80eef3a); the retrieval tests' appliance output drops from 41 such lines to 0, 886 default tests and the Maven workflow pass; issue #13 closed as completed on 2026-10-03; [detail](#m29---remaining-per-request-retrieval-info-lines) |
@@ -57,7 +57,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M36 | Honor nanosecond bounds in live retrieval | Milestone | Complete | No | | Correction dca485fd published on origin/modernize; 882 default tests, 4 selected integration tests and 70 real IOC checks pass, including exact/minus-one-nanosecond bounds and four-component restart; issue #21 closed as completed on 2026-10-02 UTC; [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) retains full VM revalidation; [detail](#m36---honor-nanosecond-bounds-in-live-retrieval) |
 | Phase 2 | M37 | Modernize the retained sample scripts | Milestone | Complete | No | | The seven read-only and alert-check sample scripts are Bash on a shared archiverClient.bash (bcff5f27 through e08f9007), each compared with its Python original on a local appliance before removal; 66 client boundary cases, 18 appliance comparisons, 900 default tests and the Maven workflow pass; issue #22 closed as completed on 2026-10-04; the state-changing scripts and mail delivery continue in M40 and M41; [detail](#m37---modernize-the-retained-sample-scripts) |
 | Phase 2 | M38 | PB last-line search reports a position past the end of a complete file | Milestone | Complete | No | | seekToBeforeLastLine sets lastReadPointer after readNextBatch (76c7707d); PBFileInfo reports the file size as the truncation point and the last line's start as the last-sample position for plain and ZIP_PER_PV files; PBFileInfoPositionTest fails 4 of 8 before and passes after, the slow LineByteStream tests pass before and after, 900 default tests and the Maven workflow pass; issue #23 closed as completed on 2026-10-04; [detail](#m38---pb-last-line-search-reports-a-position-past-the-end-of-a-complete-file) |
-| Phase 2 | M39 | Per-request INFO logging without requester or outcome | Milestone | Not started | Yes | | Each remaining per-request INFO statement (BasicDispatcher Servicing, engine BPLServlet Beginning request, GetEngineDataAction Found a total) is kept with requester and outcome fields, replaced by one record per request, or moved below INFO, with the decision recorded; output at the default level under load contains only the kept lines; the default suite passes; [detail](#m39---per-request-info-logging-without-requester-or-outcome) |
+| Phase 2 | M39 | Per-request INFO logging without requester or outcome | Milestone | In progress | No | | Each remaining per-request INFO statement (BasicDispatcher Servicing, engine BPLServlet Beginning request, GetEngineDataAction Found a total) is kept with requester and outcome fields, replaced by one record per request, or moved below INFO, with the decision recorded; output at the default level under load contains only the kept lines; the default suite passes; [detail](#m39---per-request-info-logging-without-requester-or-outcome) |
 | Phase 2 | M42 | Human-readable storage rates in storageSizeCheck.bash | Milestone | Complete | No | | storageSizeCheck.bash prints rates and its threshold in B to TB per year with three significant digits (af1e67ac); the client boundary tests fail before and pass after, the local appliance comparison and 900 default tests pass, and the Maven workflow passes; issue #25 closed as completed on 2026-10-04; [detail](#m42---human-readable-storage-rates-in-storagesizecheckbash) |
 | Phase 2 | M43 | One engine CA context never receives search replies | Milestone | Complete | No | | The shared UDP search port is reproduced with real CAJ contexts on Rocky 8.10 and Debian 13; the engine compares its command threads' search ports and recreates the earlier-bound context of a sharing pair (7adc7d5a); the new test fails without the check and passes with it, 901 default tests, 26 engine CA tests and the Maven workflow pass, and 30 restarts on a Rocky 8.10 guest were clean; issue #26 closed as completed on 2026-10-05; why the field rate exceeds the probe rate stays open; [detail](#m43---one-engine-ca-context-never-receives-search-replies) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
@@ -2663,7 +2663,7 @@ Last Compared: 2026-09-28 (gh issue view 11 --repo jeonghanlee/epicsarchiverap-m
 Origin: daff1b7 / M26
 Identity History: none
 GitHub Issue: [#20](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/20)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -2717,17 +2717,18 @@ Superseded Plan Artifacts: none
 
 ##### Closure Evidence
 
-- none
+- Landed on 2026-10-05: the change is bdcbe03e and the plan and test record 7f4a1082579e66ca74652dc6af4d1d360737d47a. Directly after the push at 03:11 UTC, fetch showed local HEAD and origin/modernize both at 7f4a1082, and `git ls-remote --exit-code origin refs/heads/modernize` returned it. The Maven workflow run 37258430036 on 7f4a1082 succeeded at 03:44 UTC.
+- Linked issue #20: body reconciled with the change and its verification, all four acceptance criteria checked with the limits stated (a destination whose root path is a regular file stands for the unwritable store, not a deployed appliance; the commit-failure and post-processor ERRORs were not exercised), and closed as completed on 2026-10-05 at 03:48:09 UTC with a [closure comment](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/20#issuecomment-5987755490). M26 is Complete.
 
 ##### GitHub Projection
 
 Title: Bound ETL storage-error logging and quiet management workflow ticks
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: closed
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-09-30 09:40:26 UTC; issue #20 read back with matching title and body, assignee jeonghanlee and no GitHub milestone. Recheck with gh issue view 20 on jeonghanlee/epicsarchiverap-maven.
+Last Compared: 2026-10-05 03:49 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/20` confirms state closed with state_reason completed, closed_at 2026-10-05T03:48:09Z, the title above, enhancement label, no milestone and assignee jeonghanlee. Readback of the body matches `work/issue-etl-error-burst-final.md` and the closure comment matches `work/issue-etl-error-burst-close.md`.
 
 #### M27 - Reduced bins missing after ETL with a post-processor
 
@@ -3617,7 +3618,7 @@ Last Compared: 2026-10-04 08:15 UTC; `gh api repos/jeonghanlee/epicsarchiverap-m
 Origin: daff1b7 / M39
 Identity History: none
 GitHub Issue: [#24](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/24)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -3625,43 +3626,50 @@ The ansible-provision lab measured on 2026-10-04, on a Rocky 8.10 deployment of 
 
 ##### Scope
 
-Decide for each remaining per-request INFO statement whether it is used and for what; either replace the statements with one record per external request at its end (requester, path and key parameters, HTTP status, events and elapsed time, with a request identifier the retrieval-to-engine hop carries) or move them below INFO; keep the log level controls able to restore the detail.
+Decide for each remaining per-request INFO statement whether it is used and for what; either replace the statements with one record per external request at its end (requester, path and key parameters, HTTP status, events and elapsed time) or move them below INFO; keep the log level controls able to restore the detail. The decision of 2026-10-05 applies this to the engine data request only: its record carries an outcome instead of the HTTP status, because only a served response (200) and a failure (500) are recorded, and no request identifier crosses the retrieval-to-engine hop.
 
-Out of scope: the journald version or host configuration; ETL storage-error logging and the mgmt workflow tick (M26); the retrieval lines already at DEBUG (M29).
+Out of scope: the journald version or host configuration; ETL storage-error logging and the mgmt workflow tick (M26); the retrieval lines already at DEBUG (M29); the retrieval INFO lines that depend on the request shape and stay as they are (DataRetrievalServlet function-call syntax parsing, `.VAL` removal, and proxying or redirecting to another appliance or remote server).
 
 ##### Completion Criteria
 
 - Each listed statement is kept with added fields, replaced by the single request record, or moved below INFO, with the decision and its reason recorded here.
 - Under a retrieval and BPL request load, appliance output at the default level contains only the lines the decision keeps; the build and the default suite pass.
+- The engine data record has the level the plan sets for each outcome (served and header-only empty INFO, failed INFO without a stack trace, HTTP 404 DEBUG, HTTP 400 unlogged), and verify_retrieval_bounds.py passes against it.
 
 ##### Dependencies And Decisions
 
 - Origin: request from the ansible-provision session on 2026-10-04, relaying the owner's direction that this logging carry who, what, outcome and a correlation id if it is useful, and go below INFO if it is not.
 - Decision Date: 2026-10-04. File the issue adjusted to the current HEAD and track it as its own milestone rather than inside M26.
+- Decision Date: 2026-10-05. The three per-request start statements move to DEBUG; the engine data statement becomes one end-of-request record that also covers header-only empty responses and failed requests; a PV the engine holds no channel for (HTTP 404) stays DEBUG. A request identifier carried across the retrieval-to-engine hop is not part of this work.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-05; owner accepted the plan below with the decisions above.
+Implementation Authorization: 2026-10-05; owner authorized the accepted plan.
 Superseded Plan Artifacts: none
 
-1. Settle with the owner, statement by statement, whether a single request record is wanted and which fields it carries, or whether the statements move to DEBUG.
-2. Implement the settled form, verify it on the real request path before and after, and run the default suite.
+1. Measure the T1 baseline before any code change with scripts/count-request-log-lines.bash: build the four WARs from the current HEAD, start the appliance at the default log level, send N retrieval requests that reach the engine and N BPL requests of one named endpoint, and count in the console.log of each of the four components the lines `Servicing`, `Beginning request`, `Found a total of` and all INFO lines. Record N, the endpoint, the counts per request and the bounds runner result in Verification Results.
+2. Move BasicDispatcher "Servicing <path>" and both engine BPLServlet "Beginning request" statements (GET and POST) to DEBUG. The request path is then recorded only at DEBUG; at INFO the engine data record of step 3 is the only line written for every request regardless of its shape.
+3. Replace GetEngineDataAction "Found a total of N in N(ms)" with one record per engine data request, written when the request ends, carrying the PV name, the requester address, the event count, the elapsed time and the outcome. The level follows the outcome: a served stream and a header-only empty response are INFO; an exception is INFO with outcome failed and no stack trace, because BasicDispatcher already logs the exception once at ERROR with its stack trace; "no data for the PV in this engine" (HTTP 404) stays DEBUG, since the retrieval side already logs a WARN for every non-200 engine response (PBOverHTTPStoragePlugin); a request without a `pv` parameter (HTTP 400) stays unlogged as it is today. The record keeps the literal prefix `Found a total of` after the class name, so that a reader and a script find it by one stable marker.
+4. The requester the engine can see is the remote address of the connection, which is the retrieval server's address (the request is an HttpGet of PBOverHTTPStoragePlugin that sends no ARCHAPPL_COMPONENT header); the end user and a correlation across the hop are not available here and are not part of this work; at closure, state this limit in Closure Evidence and in issue #24.
+5. Run src/test/pythontests/verify_retrieval_bounds.py against the record of step 3. It counts the engine's `GetEngineDataAction` and `Found a total of` lines at the default level (exactly one for a request that reaches the engine, none for one that does not); change it only where its counts or marker no longer match.
+6. Write tests first: they capture the log of the shipped classes over the real request path and fail on the current code (per-request INFO lines present, no record for a header-only or failed request, and no check that the record carries the marker the bounds runner reads). The tests cover all five outcomes: served stream, header-only empty response, failed request, HTTP 404 and HTTP 400, each against the level step 3 sets. Then implement.
+7. Repeat the step 1 measurement with the same N and endpoint on WARs built after the change, including the bounds runner of step 5, then run T2.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Integration | Count the appliance output lines of a real retrieval and BPL request load at the default level before and after the change, from freshly built WARs | JDK 21, Tomcat 9, integration profile | Before, the listed lines per request; after, only the lines the decision keeps |
+| T1 | Integration | Count the appliance output lines of a real retrieval and BPL request load at the default level before and after the change, from freshly built WARs with the same N and BPL endpoint before and after, counting `Servicing`, `Beginning request`, `Found a total of` and all INFO lines in the console.log of the four components; run src/test/pythontests/verify_retrieval_bounds.py on the same WARs | JDK 21, Tomcat 9, integration profile | Before, the listed lines per request; after, only the lines the decision keeps, one record per engine data request, and the bounds runner passes |
 | T2 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, Tomcat 9, integration profile | Pending | none |
-| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-10-05 | JDK 21, Tomcat 9, integration profile, WARs built with the change (baseline WARs from 7f4a1082) | Pass | scripts/count-request-log-lines.bash --requests 20, i.e. 20 retrieval requests reaching the engine and N=20 mgmt getApplianceInfo requests, every request 200. Before (work/m39-s-before.txt): mgmt 20 INFO lines, engine 60 (20 each of `Servicing`, `Beginning request`, `Found a total of`), etl and retrieval 0. After (work/m39-s-after.txt): mgmt 0, engine 20 (all `Found a total of ... pv= requester= outcome=served`), etl and retrieval 0. EngineRequestLoggingTest, six tests, fails 6 of 6 before the change (work/m39-test-before.log) and passes 6 of 6 after. verify_retrieval_bounds.py: the unmodified runner fails live-minus-one-engine-participation on 7f4a1082 as well (retrieval URL line 0, engine completion 1, work/m39-bounds-run-base), because the URL line has been DEBUG since M29; with the runner raising only the PBOverHTTPStoragePlugin logger to DEBUG it passes 70 of 70 checks (work/m39-bounds-run2). |
+| T2 | 2026-10-05 | JDK 21, wrapper Maven | Pass | ./mvnw -B -ntp clean verify, BUILD SUCCESS, 910 tests, 0 failures, 0 errors, 0 skipped (work/m39-verify.log). |
 
 ##### Closure Evidence
 
