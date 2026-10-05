@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. M26 (issue #20) is Complete. M39 (issue #24) is Complete. M12 is In progress with its scope settled on 2026-10-05 as the removal of the Redis persistence layer, and M7 needs the site's item list before implementation. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
+Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. M26 (issue #20) is Complete. M39 (issue #24) is Complete. M12 (issue #4) is Complete: on 2026-10-05 the owner selected the Redis persistence layer for removal and kept the other backends. M7 needs the site's item list before implementation. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -32,7 +32,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 1 | M15 | Separate non-test utilities out of src/test | Milestone | Complete | No | | 16 of the 20 main() utilities move to src/tools; 4 @Test-referenced fixtures stay in src/test; [detail](#m15---separate-non-test-utilities-out-of-srctest) |
 | Phase 1 | M16 | mgmt API reference generated from code | Milestone | Complete | No | D14 | mgmt WAR ships ui/api generated from the BPL registry and annotations; no scp, taglet, or sphinx in package; registry to document agreement test passes; [detail](#m16---mgmt-api-reference-generated-from-code) |
 | Phase 2 | M11 | sqlite-jdbc runtime dependency | Milestone | Complete | No | | Driver org.xerial:sqlite-jdbc 3.53.4.0 added (runtime) and allowlisted; SQLite persistence path verified by SQLitePersistenceTest and the 777/777 regression; [detail](#m11---sqlite-jdbc-runtime-dependency) |
-| Phase 2 | M12 | Persistence and storage backend pruning | Milestone | In progress | No | | The Redis persistence layer and its dependencies are removed, the appliance starts on the default persistence, the build and tests pass; [detail](#m12---persistence-and-storage-backend-pruning) |
+| Phase 2 | M12 | Persistence and storage backend pruning | Milestone | Complete | No | | The Redis persistence layer, its dependency and the four JARs only it brought in are removed (33c93659), LICENCES/NOTICE lists exactly the 46 JARs of the four WARs, the appliance starts on the default persistence, 912 tests and the Maven workflow pass; issue #4 closed as completed on 2026-10-05; JDBM2, InMemory, MySQL and the storage plugins stay by decision; [detail](#m12---persistence-and-storage-backend-pruning) |
 | Phase 2 | M13 | Selectable persistence backend: MariaDB and SQLite | Milestone | Complete | No | M11, G2, G4 | Both drivers ship; the backend is chosen by the JNDI DataSource; MariaDB and SQLite paths verified; [detail](#m13---selectable-persistence-backend-mariadb-and-sqlite) |
 | Phase 2 | M17 | Modernize the narrative doc content for the single-instance fork | Milestone | Complete | No | M34, M35 | Eight core commands are verified and landed; the final inventory classifies all 25 CLIs and both helpers (decision 2026-10-02), with script modernization moved to M37. The six live runners and 84 client boundary tests pass on the final tree; the corrected scripting page landed as ed2ff676 and is published; issue #6 closed as completed on 2026-10-02; [detail](#m17---modernize-the-narrative-doc-content-for-the-single-instance-fork) |
 | Phase 2 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; awaiting the owner's item list; [detail](#m7---site-required-features-and-fixes) |
@@ -938,7 +938,7 @@ Last Compared: never
 Origin: daff1b7 / M12
 Identity History: none
 GitHub Issue: #4
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -989,17 +989,20 @@ Superseded Plan Artifacts: none
 
 ##### Closure Evidence
 
-- none
+- Landed on 2026-10-05: the change is 33c93659 and the result record and row move is f8637fd485fe27fd377a9e8caa08c97cb6e670e9. Directly after the push, local HEAD and origin/modernize were both at f8637fd4. The Maven workflow run 37351389788 on f8637fd4 succeeded at 18:25 UTC.
+- Linked issue #4: body reconciled with the change and its verification, both acceptance criteria checked with the inventory and the limits stated, and closed as completed on 2026-10-05 at 19:38:11 UTC with a [closure comment](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/4#issuecomment-6001675610). M12 is Complete.
+- Limits: a deployment that names the Redis class in `ARCHAPPL_PERSISTENCE_LAYER` stops at startup with a `ConfigException`, and the settings of deployments in other repositories were not checked; JDBM2 stays because six integration tests and the shared Tomcat test setup use it, and InMemory, MySQL and the PB, PBOverHTTP and PlainPB storage plugins were not selected for removal; the appliance start was one run on a local appliance, not a deployed one.
 
 ##### GitHub Projection
 
 Title: Prune the unneeded persistence and storage backends
 Labels: enhancement
 GitHub Milestone: none
-Observed State: open
+Observed State: closed
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-09-26 (gh issue view 4 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
+Last Compared: 2026-10-05 19:39 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/4` confirms state closed with state_reason completed, closed_at 2026-10-05T19:38:11Z, the title above, enhancement label, no milestone and assignee jeonghanlee. Readback of the body matches `work/issue-prune-backends-final.md` and the closure comment matches `work/issue-prune-backends-close.md`.
+
 
 #### M13 - Selectable persistence backend: MariaDB and SQLite
 
