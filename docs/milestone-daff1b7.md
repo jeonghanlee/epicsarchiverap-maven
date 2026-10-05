@@ -45,7 +45,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M23 | Code defects found while rewriting the docs | Milestone | Complete | No | | Each listed defect is fixed and verified, or kept with a recorded reason; [detail](#m23---code-defects-found-while-rewriting-the-docs) |
 | Phase 2 | M24 | Per-request retrieval logging at DEBUG | Milestone | Complete | No | D31 | The five retrieval lines written for every data request log at DEBUG; a deployed retrieval WAR writes none of those a single-PV request passes through at the default level; the build and the default suite pass; [detail](#m24---per-request-retrieval-logging-at-debug) |
 | Phase 2 | M25 | ETL pass scheduler in place of per-PV timers | Milestone | Complete | No | | The design of docs/design-etl-pass-scheduler.md is implemented: one pass driver per (transition index, cadence) fires on a fixed grid, the reported ETL values come from pass records, and the default suite and the slow-group test pass; [detail](#m25---etl-pass-scheduler-in-place-of-per-pv-timers) |
-| Phase 2 | M26 | etl error bursts and mgmt workflow tick logging | Milestone | Not started | Yes | D31 | A failing store is reported in the settled bounded form, and the settled mgmt tick lines leave the default level; [detail](#m26---etl-error-bursts-and-mgmt-workflow-tick-logging) |
+| Phase 2 | M26 | etl error bursts and mgmt workflow tick logging | Milestone | In progress | No | D31 | A failing store is reported in the settled bounded form, and the settled mgmt tick lines leave the default level; [detail](#m26---etl-error-bursts-and-mgmt-workflow-tick-logging) |
 | Phase 2 | M27 | Reduced bins missing after ETL with a post-processor | Milestone | Complete | No | | The cause of the reduced-bin shortfall in ETLPostProcessorTest is found and fixed, and the test and the default suite pass on repeated runs; [detail](#m27---reduced-bins-missing-after-etl-with-a-post-processor) |
 | Phase 2 | M28 | ETL pass scheduler soak on the deploy path | Milestone | In progress | No | M25, G4 | The ansible-provision lab runs the pass scheduler of M25 through the aa-env deploy path on the soak chain and on the aa-env default chain: passes fire on the grid, the reported rows read as designed, the unit's stop time is measured, and the comparison with the 2026-09-24 to 2026-09-26 run is recorded; [detail](#m28---etl-pass-scheduler-soak-on-the-deploy-path) |
 | Phase 2 | M29 | Remaining per-request retrieval INFO lines | Milestone | Complete | No | | The five per-request retrieval messages and the same messages on the multi-PV and PVAccess paths log at DEBUG (d80eef3a); the retrieval tests' appliance output drops from 41 such lines to 0, 886 default tests and the Maven workflow pass; issue #13 closed as completed on 2026-10-03; [detail](#m29---remaining-per-request-retrieval-info-lines) |
@@ -2663,7 +2663,7 @@ Last Compared: 2026-09-28 (gh issue view 11 --repo jeonghanlee/epicsarchiverap-m
 Origin: daff1b7 / M26
 Identity History: none
 GitHub Issue: [#20](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/20)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -2684,17 +2684,20 @@ Out of scope: the retrieval per-request lines (M24); engine and CA client loggin
 - D31 (journald collects).
 - Owner decision (2026-09-26): take the item into this register.
 - Closure ordering: the default suite of T3 passes only after M27, because ETLPostProcessorTest fails until then; work can start now.
-- Open for the plan: the reproduction environment for T1, a local run of the real ETL or the ansible-provision lab VM with aa-env's deploy path.
+- Decision Date: 2026-10-05. A failing store is reported by one ERROR per transition per pass, written by ETLPassDriver at the end of the pass: a fixed leading phrase, then the transition, the cadence, the plannedAt value, the failed-partition count, the affected-PV count, and the first PV and first exception message; the per-partition ERROR and its stack trace in ETLJob move to DEBUG, and the failure count and first failure travel in ETLRunReport. A job that runs outside a pass driver (consolidation at pause or shutdown) logs one ERROR per PV without the stack trace, which goes to DEBUG. The ansible-provision lab confirmed the form and asked for the pass identifiers (its soak tools read passes.jsonl, not store errors, from the journal).
+- Decision Date: 2026-10-05. The mgmt tick lines are two INFO statements: `Running the archive PV workflow with N requests pending` (MgmtRuntimeState) and `Appliances that have loaded their PVs` + names (DefaultConfigService.hasClusterFinishedInitialization), written by every call, which the tick makes first and six BPL actions also make. Both move to DEBUG, and the second gets the missing separator (`... their PVs: appliance0`). The measured period is 10 s, 720 lines per hour for the two lines.
+- Decision Date: 2026-10-05. T1 runs locally over real PlainPB stores and the shipped ETLPassDriver with a destination whose root path is a regular file (the unusable store of ETLJobRunReportTest); T2 reads the mgmt log of the local launcher at the default level. The lab VM is not used.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-05; owner accepted the plan below with the decisions above and asked that the missing separator in the cluster-initialization line be fixed too.
+Implementation Authorization: 2026-10-05; owner authorized the accepted plan.
 Superseded Plan Artifacts: none
 
-1. Settle with the owner how a failing store is reported (for example one ERROR per store per pass with the partition count, and the stack trace at DEBUG) and which mgmt tick lines move to DEBUG.
-2. Reproduce both on the real path, change the logging, and verify.
+1. (done 2026-10-05) Settle how a failing store is reported and which mgmt tick lines move to DEBUG.
+2. Write tests first: a pass over several PVs whose destination is unusable must log one ERROR for the transition with the settled fields and no ERROR with a stack trace per partition, and a consolidation job must log one ERROR per PV without a stack trace; a default-level run of the cluster-initialization check and of the tick must write no INFO line. Show that they fail on the current code. Closes with T1 and T2 (before part).
+3. Change ETLJob, ETLRunReport, ETLPassDriver, MgmtRuntimeState and DefaultConfigService; rerun the tests, the real-launcher tick count and the default suite. Closes with T1, T2 and T3.
 
 ##### Test Plan
 
@@ -2708,9 +2711,9 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21 | Pending | none |
-| T2 | Not run | Tomcat 9, integration profile | Pending | none |
-| T3 | Not run | JDK 21, wrapper Maven | Pending | none |
+| T1 | 2026-10-05 02:07 UTC (before); 02:12 UTC (after) | JDK 21, wrapper Maven, real PlainPB stores with a destination whose root path is a regular file, the shipped ETLPassDriver and ETLJob | Pass | ETLFailingStoreLoggingTest fails on the committed code (a pass over 5 PVs logged one ERROR with a stack trace per failed partition, 3 per PV; a job outside a pass the same) and passes with the change: one ERROR per transition with the fixed phrase, transition, source and destination, cadence, plannedAt, failed-partition count 15, affected-PV count 5, first PV and first error, no ERROR with a stack trace, the stack traces at DEBUG; a job outside a pass logs one ERROR for its PV without a stack trace. Only the per-partition append failure was an ERROR source in this scenario; the commit-failure and post-processor ERRORs were not exercised and are unchanged. work/m26-t1-before.log, work/m26-after.log. |
+| T2 | 2026-10-05 02:18 UTC (before); 02:46 UTC (after) | The local launcher at the default log level, mgmt console log over 150 s after readiness: WARs built from the committed tree 843a0d84 (before) and from the working tree with the change (after) | Pass | Before: 16 INFO `Running the archive PV workflow` lines and 16 INFO `Appliances that have loaded their PVs` lines (one pair per 10 s tick, 309 mgmt console lines in all); after: 0 and 0 (277 console lines), the after WAR's hasClusterFinishedInitialization calls Logger.debug. MgmtWorkflowTickLoggingTest fails on the committed code (both lines at INFO, no separator) and passes with the change. work/m26-tick-before.txt, work/m26-tick-after.txt. |
+| T3 | 2026-10-05 02:42 UTC | JDK 21, wrapper Maven, tree 843a0d84 plus the change | Pass | ./mvnw -B -ntp clean verify: BUILD SUCCESS, 904 tests, 0 failures, 0 errors, 0 skipped. |
 
 ##### Closure Evidence
 
