@@ -125,6 +125,27 @@ public class JCACommandThread extends Thread {
         return this.jca_context.createChannel(name, conn_callback);
     }
 
+    /**
+     * Initializes this thread's CA context if the constructor has not already done so and returns the
+     * local UDP port of the context's search socket.
+     */
+    public int initializeContextAndGetSearchPort() throws CAException {
+        if (!this.jca_context.isInitialized()) {
+            this.jca_context.initialize();
+        }
+        return this.jca_context.getBroadcastTransport().getChannel().socket().getLocalPort();
+    }
+
+    /** Returns the local UDP port of the initialized context's search socket. */
+    public int getSearchPort() {
+        return this.jca_context.getBroadcastTransport().getChannel().socket().getLocalPort();
+    }
+
+    /** Destroys the CA context of a thread that has not been started. */
+    public void destroyUnstartedContext() throws CAException {
+        this.jca_context.destroy();
+    }
+
     public boolean hasContextBeenInitialized() {
         return this.jca_context != null && this.jca_context.isInitialized();
     }

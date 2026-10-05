@@ -8,6 +8,7 @@
 package org.epics.archiverappliance.engine.pv;
 
 import com.google.common.eventbus.Subscribe;
+import gov.aps.jca.CAException;
 import gov.aps.jca.Channel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +39,7 @@ import org.json.simple.JSONValue;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -57,6 +59,8 @@ import java.util.concurrent.TimeUnit;
 public class EngineContext {
     private static final Logger logger = LogManager.getLogger(EngineContext.class.getName());
     private static final Logger configlogger = LogManager.getLogger("config." + EngineContext.class.getName());
+    /** Rounds of recreating CA contexts that share a search port before the engine refuses to start. */
+    private static final int MAX_SEARCH_PORT_ROUNDS = 10;
 
     private static double MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS = 5.0;
     private static int METACHANNELS_TO_START_AT_A_TIME = 10000;
@@ -141,6 +145,65 @@ public class EngineContext {
     }
 
     /**
+     * Creates the CA command threads, each with an initialized CA context on its own UDP search port,
+     * and returns them unstarted. CAJ binds each search socket to port 0 with SO_REUSEADDR, and the
+     * kernel can give two such sockets one port; unicast search replies then reach only the later-bound
+     * socket and the earlier context's channels never connect. A thread whose port is also held by a
+     * later-bound thread is replaced by a new one, bound after all others, until every port is distinct
+     * or MAX_SEARCH_PORT_ROUNDS rounds have passed.
+     */
+    static JCACommandThread[] createCommandThreads(int count) throws ConfigException {
+        JCACommandThread[] threads = new JCACommandThread[count];
+        int[] ports = new int[count];
+        long[] bindOrder = new long[count];
+        long nextBind = 0;
+        for (int threadNum = 0; threadNum < count; threadNum++) {
+            threads[threadNum] = new JCACommandThread();
+            ports[threadNum] = initializeSearchPort(threads[threadNum], threadNum);
+            bindOrder[threadNum] = nextBind++;
+        }
+        for (int round = 0; round < MAX_SEARCH_PORT_ROUNDS; round++) {
+            Map<Integer, Integer> lastBoundForPort = new HashMap<>();
+            for (int threadNum = 0; threadNum < count; threadNum++) {
+                Integer other = lastBoundForPort.get(ports[threadNum]);
+                if (other == null || bindOrder[threadNum] > bindOrder[other]) {
+                    lastBoundForPort.put(ports[threadNum], threadNum);
+                }
+            }
+            if (lastBoundForPort.size() == count) {
+                return threads;
+            }
+            for (int threadNum = 0; threadNum < count; threadNum++) {
+                if (lastBoundForPort.get(ports[threadNum]) == threadNum) {
+                    continue;
+                }
+                configlogger.warn("CA command thread " + threadNum + " shares search port " + ports[threadNum]
+                        + " with a later-bound thread; recreating its CA context");
+                try {
+                    threads[threadNum].destroyUnstartedContext();
+                } catch (CAException ex) {
+                    throw new ConfigException("Cannot destroy CA context " + threadNum, ex);
+                }
+                threads[threadNum] = new JCACommandThread();
+                ports[threadNum] = initializeSearchPort(threads[threadNum], threadNum);
+                bindOrder[threadNum] = nextBind++;
+            }
+        }
+        configlogger.fatal("CA command threads still share a search port after " + MAX_SEARCH_PORT_ROUNDS
+                + " rounds; refusing to start the engine");
+        throw new ConfigException("CA command threads still share a search port after " + MAX_SEARCH_PORT_ROUNDS
+                + " rounds");
+    }
+
+    private static int initializeSearchPort(JCACommandThread thread, int threadNum) throws ConfigException {
+        try {
+            return thread.initializeContextAndGetSearchPort();
+        } catch (CAException ex) {
+            throw new ConfigException("Cannot initialize CA context " + threadNum, ex);
+        }
+    }
+
+    /**
      * This EngineContext should always be singleton
      * @param configService the config service to initialize the engine context
      */
@@ -151,11 +214,10 @@ public class EngineContext {
         configlogger.info("Creating " + commandThreadCountStr + " command threads as specified by "
                 + commandThreadCountVarName + " in archappl.properties");
         int commandThreadCount = Integer.parseInt(commandThreadCountStr);
-        command_threads = new JCACommandThread[commandThreadCount];
         System.getProperties().setProperty("jca.use_env", "true");
-        for (int threadNum = 0; threadNum < command_threads.length; threadNum++) {
-            command_threads[threadNum] = new JCACommandThread();
-            command_threads[threadNum].start();
+        command_threads = createCommandThreads(commandThreadCount);
+        for (JCACommandThread commandThread : command_threads) {
+            commandThread.start();
         }
 
         MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS = Double.parseDouble(configService
