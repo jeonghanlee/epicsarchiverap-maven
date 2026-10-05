@@ -27,10 +27,12 @@ public class ETLJob implements Runnable {
     private long ETLRunStartEpochSeconds = 0;
     private Instant runAsIfAtTime = null;
     private Exception exceptionFromLastRun = null;
+    private final boolean failuresReportedByPass;
 
     public ETLJob(ETLPVLookupItems lookupItem) {
         this.lookupItem = lookupItem;
         this.runAsIfAtTime = null;
+        this.failuresReportedByPass = false;
     }
 
     /**
@@ -40,8 +42,22 @@ public class ETLJob implements Runnable {
      * @param runAsIfAtTime Instant
      */
     public ETLJob(ETLPVLookupItems lookupItem, Instant runAsIfAtTime) {
+        this(lookupItem, runAsIfAtTime, false);
+    }
+
+    /**
+     * A job whose failed partitions are reported once for the whole pass by its ETLPassDriver, through the run report.
+     * A job outside a pass logs one ERROR for its PV when partitions fail; the stack trace of each failure is
+     * logged at DEBUG either way.
+     *
+     * @param lookupItem             ETLPVLookupItems
+     * @param runAsIfAtTime          Instant
+     * @param failuresReportedByPass true when a pass driver reports the failures of this job
+     */
+    public ETLJob(ETLPVLookupItems lookupItem, Instant runAsIfAtTime, boolean failuresReportedByPass) {
         this.lookupItem = lookupItem;
         this.runAsIfAtTime = runAsIfAtTime;
+        this.failuresReportedByPass = failuresReportedByPass;
     }
 
     @Override
@@ -102,6 +118,8 @@ public class ETLJob implements Runnable {
         int streamsDeletedForSpace = 0;
         boolean commitAttempted = false;
         boolean commitSucceeded = false;
+        int partitionsFailed = 0;
+        String firstFailure = null;
 
         // We create a brand new context for each run.
         try (ETLContext etlContext = new ETLContext()) {
@@ -217,7 +235,11 @@ public class ETLJob implements Runnable {
                     } catch (IOException ex) {
                         // TODO What do we do in the case of exceptions? Do we remove the source still? Do we stop the
                         // engine from recording this PV?
-                        logger.error("Exception processing " + infoItem.getKey(), ex);
+                        partitionsFailed++;
+                        if (firstFailure == null) {
+                            firstFailure = ex.getClass().getSimpleName() + ": " + ex.getMessage();
+                        }
+                        logger.debug("Exception processing " + infoItem.getKey(), ex);
                     }
                 }
 
@@ -287,6 +309,11 @@ public class ETLJob implements Runnable {
         } catch (IOException ex) {
             logger.error("IOException processing ETL for pv " + lookupItem.getPvName(), ex);
         } finally {
+            if (partitionsFailed > 0 && !failuresReportedByPass) {
+                logger.error("ETL job failed to move " + partitionsFailed + " partitions for PV " + pvName + " from "
+                        + ETLPassDriver.storeName(lookupItem.getETLSource()) + " to "
+                        + ETLPassDriver.storeName(lookupItem.getETLDest()) + ": " + firstFailure);
+            }
             lookupItem.setLastRunReport(new ETLRunReport(
                     streamsCompleted,
                     streamsReturned,
@@ -294,7 +321,9 @@ public class ETLJob implements Runnable {
                     bytesMoved,
                     streamsDeletedForSpace,
                     commitAttempted,
-                    commitSucceeded));
+                    commitSucceeded,
+                    partitionsFailed,
+                    firstFailure));
             currentlyRunning = false;
         }
     }

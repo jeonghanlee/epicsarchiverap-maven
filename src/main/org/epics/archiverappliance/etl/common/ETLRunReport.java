@@ -12,6 +12,8 @@ package org.epics.archiverappliance.etl.common;
  *                               counted only when the commit succeeded, since only then are they marked for deletion
  * @param commitAttempted        the job reached the commit of the destination
  * @param commitSucceeded        the commit returned success without an exception
+ * @param partitionsFailed       the count of streams whose append to the destination threw an exception
+ * @param firstFailure           the exception class and message of the first such stream, or null when none failed
  */
 public record ETLRunReport(
         boolean streamsCompleted,
@@ -20,4 +22,6 @@ public record ETLRunReport(
         long bytesMoved,
         int streamsDeletedForSpace,
         boolean commitAttempted,
-        boolean commitSucceeded) {}
+        boolean commitSucceeded,
+        int partitionsFailed,
+        String firstFailure) {}

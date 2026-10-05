@@ -159,7 +159,7 @@ public class MgmtRuntimeState {
 						return;
 					}
 					LinkedList<ArchivePVState> archivePVStates = new LinkedList<ArchivePVState>(currentPVRequests.values());
-					logger.info("Running the archive PV workflow with " + archivePVStates.size() + " requests pending");
+					logger.debug("Running the archive PV workflow with " + archivePVStates.size() + " requests pending");
 					Collections.sort(archivePVStates, new Comparator<ArchivePVState>() {
 						@Override
 						public int compare(ArchivePVState state0, ArchivePVState state1) {

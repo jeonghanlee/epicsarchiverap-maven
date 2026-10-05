@@ -1003,7 +1003,7 @@ public class DefaultConfigService implements ConfigService {
 
     @Override
     public boolean hasClusterFinishedInitialization() {
-        logger.info("Appliances that have loaded their PVs" + String.join(",", appliancesConfigLoaded.keySet()));
+        logger.debug("Appliances that have loaded their PVs: " + String.join(",", appliancesConfigLoaded.keySet()));
         return appliancesConfigLoaded.keySet().containsAll(appliances.keySet());
     }
 

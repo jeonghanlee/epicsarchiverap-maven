@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -44,6 +45,9 @@ public final class ETLPassDriver {
 
     /** Offset of the grid of transition index 0; transition index t uses (t + 1) times this. */
     public static final long OFFSET_STEP_SECONDS = 5L * 60;
+
+    /** The leading phrase of the one ERROR a pass writes for each pair of stores that failed to take partitions. */
+    public static final String FAILED_PASS_PHRASE = "ETL pass failed to move partitions";
 
     private static final long SECONDS_PER_DAY = 24L * 60 * 60;
     private static final int WEEKLY_DAYS = 7;
@@ -300,7 +304,9 @@ public final class ETLPassDriver {
             boolean overrun = endedAt.isAfter(nextGridAfter(planned));
             Instant after = planned.isAfter(endedAt) ? planned : endedAt;
             List<Runnable> leftover;
+            List<String> failureLines;
             synchronized (this) {
+                failureLines = progress.failureMessages(transitionIndex, cadenceSeconds);
                 record = progress.toRecord(endedAt, overrun, cadenceSeconds);
                 lastCompleted = record;
                 inProgress = null;
@@ -315,6 +321,9 @@ public final class ETLPassDriver {
                 nextPlannedAt = nextGridAfter(after);
             }
             logger.debug("ETL pass of transition " + transitionIndex + " cadence " + cadenceSeconds + " s: " + record);
+            for (String failure : failureLines) {
+                logger.error(failure);
+            }
             for (Runnable task : leftover) {
                 try {
                     task.run();
@@ -327,7 +336,7 @@ public final class ETLPassDriver {
     }
 
     private void runJob(ETLPVLookupItems item, Instant processingTime, Progress progress) {
-        ETLJob job = new ETLJob(item, processingTime);
+        ETLJob job = new ETLJob(item, processingTime, true);
         synchronized (this) {
             currentJobPv = item.getPvName();
         }
@@ -343,6 +352,29 @@ public final class ETLPassDriver {
         synchronized (this) {
             currentJobPv = null;
             progress.addJob(item.getPvName(), millis, item.getLastRunReport(), job.getExceptionFromLastRun(), aborted);
+            progress.addFailedPartitions(item, item.getLastRunReport());
+        }
+    }
+
+    /** The name of a store for the logs: the plugin name when the store has one, else its description. */
+    static String storeName(Object store) {
+        return store instanceof StoragePlugin plugin ? plugin.getName() : String.valueOf(store);
+    }
+
+    /** What failed in one pass for one pair of stores. */
+    private static final class FailedStores {
+        final String source;
+        final String destination;
+        final String firstPv;
+        final String firstFailure;
+        int partitions;
+        int pvs;
+
+        FailedStores(String source, String destination, String firstPv, String firstFailure) {
+            this.source = source;
+            this.destination = destination;
+            this.firstPv = firstPv;
+            this.firstFailure = firstFailure;
         }
     }
 
@@ -365,6 +397,7 @@ public final class ETLPassDriver {
         int maxPartitionsMovedByOnePv;
         boolean aborted;
         final List<String> skippedPvs = new ArrayList<>();
+        final Map<String, FailedStores> failedStores = new LinkedHashMap<>();
 
         Progress(Instant plannedAt, Instant startedAt, Instant processingTime, int pvCount) {
             this.plannedAt = plannedAt;
@@ -403,6 +436,33 @@ public final class ETLPassDriver {
             if (escaped) {
                 jobsAborted++;
             }
+        }
+
+        /** Adds the partitions the job could not append to the pair of stores of its lookup item. */
+        void addFailedPartitions(ETLPVLookupItems item, ETLRunReport report) {
+            if (report == null || report.partitionsFailed() == 0) {
+                return;
+            }
+            String source = storeName(item.getETLSource());
+            String destination = storeName(item.getETLDest());
+            FailedStores failed = failedStores.computeIfAbsent(
+                    source + "\n" + destination,
+                    key -> new FailedStores(source, destination, item.getPvName(), report.firstFailure()));
+            failed.partitions += report.partitionsFailed();
+            failed.pvs++;
+        }
+
+        /** One line per pair of stores that failed in the pass, each starting with the same fixed phrase. */
+        List<String> failureMessages(int transitionIndex, long cadenceSeconds) {
+            List<String> lines = new ArrayList<>();
+            for (FailedStores failed : failedStores.values()) {
+                lines.add(FAILED_PASS_PHRASE + ": transition=" + transitionIndex + " source=" + failed.source
+                        + " destination=" + failed.destination + " cadence=" + cadenceSeconds + " plannedAt="
+                        + plannedAt + " failedPartitions=" + failed.partitions + " affectedPVs=" + failed.pvs
+                        + " firstPV=" + failed.firstPv + " firstError="
+                        + String.valueOf(failed.firstFailure).replaceAll("\\s+", " "));
+            }
+            return lines;
         }
 
         ETLPassRecord toRecord(Instant endedAt, boolean overrun, long cadenceSeconds) {
