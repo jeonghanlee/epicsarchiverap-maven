@@ -12,7 +12,7 @@ LICENSE and NOTICE entries inside dependency JARs and browser files remain
 part of their distributions; this inventory does not replace those entries.
 Dependency upgrades require updating the corresponding inventory and notices.
 
-Runtime libraries (49 JARs shared by the four WARs)
+Runtime libraries (46 JARs shared by the four WARs)
 -------------------------------------------------
 
 Apache-2.0; local text: Apache_2.0_License.txt
@@ -28,13 +28,11 @@ Apache-2.0; local text: Apache_2.0_License.txt
   commons-lang3-3.20.0.jar
   commons-logging-1.4.0.jar
   commons-math3-3.6.1.jar
-  commons-pool2-2.11.1.jar
   commons-text-1.13.1.jar
   commons-validator-1.11.0.jar
   disruptor-4.0.0.jar
   error_prone_annotations-2.50.0.jar
   failureaccess-1.0.3.jar
-  gson-2.10.1.jar
   guava-33.7.1-jre.jar
   hazelcast-5.7.0.jar
   httpclient-4.5.14.jar
@@ -50,6 +48,7 @@ Apache-2.0; local text: Apache_2.0_License.txt
   log4j-jul-2.26.1.jar
   log4j-slf4j2-impl-2.26.1.jar
   opencsv-5.12.0.jar
+  sqlite-jdbc-3.53.4.0.jar
 
 Other licenses:
 
@@ -71,9 +70,6 @@ Other licenses:
   jca-2.4.12.jar
     License: EPICS; bundled CAJ has LICENSE-CAJ (GPL-2.0)
     Text: jca_license.txt, GNU_GPL_license.txt
-  jedis-4.4.0.jar
-    License: MIT
-    Text: jedis_license.txt
   jmatio-1.0.jar
     License: BSD-2-Clause
     Text: jmatio_license.txt
@@ -83,9 +79,6 @@ Other licenses:
   jna-platform-5.13.0.jar
     License: Apache-2.0 OR LGPL-2.1-or-later
     Text: jna_license.txt, Apache_2.0_License.txt, mariadb_license.txt
-  json-20230227.jar
-    License: Public Domain
-    Text: json_license.txt
   jython-standalone-2.7.4.jar
     License: Jython/PSF and incorporated licenses
     Text: jython_license.txt
@@ -110,6 +103,9 @@ JCA source archive:
   https://repo.maven.apache.org/maven2/org/epics/jca/2.4.12/jca-2.4.12-sources.jar
 JDBM 2's author's release announcement identifies Apache-2.0:
   https://kotek.net/blog/jdbm2_released/
+The sqlite-jdbc JAR declares Apache-2.0 in its Maven metadata and also includes
+META-INF/maven/org.xerial/sqlite-jdbc/LICENSE.zentus, a notice of Copyright (c)
+2006 David Crawshaw; this bundled notice must be preserved.
 Jython includes additional licenses in LICENSE and META-INF. Hazelcast includes
 LICENSE-ClassGraph.txt, META-INF/FastDoubleParser-LICENSE,
 META-INF/FastDoubleParser-NOTICE, META-INF/NOTICE and
@@ -184,16 +180,12 @@ License text sources
     https://raw.githubusercontent.com/aFarkas/html5shiv/3.7.3/MIT%20and%20GPL2%20licenses.md
   jca_license.txt
     https://raw.githubusercontent.com/epics-base/jca/jca-2.4.12/LICENSE.txt
-  jedis_license.txt
-    https://raw.githubusercontent.com/redis/jedis/v4.4.0/LICENSE.txt
   jquery-3.1.0_license.txt
     https://raw.githubusercontent.com/jquery/jquery/3.1.0/LICENSE.txt
   jquery-3.6.0_license.txt
     https://raw.githubusercontent.com/jquery/jquery/3.6.0/LICENSE.txt
   jquery_license.txt
     https://raw.githubusercontent.com/jquery/jquery/1.8.2/MIT-LICENSE.txt
-  json_license.txt
-    https://raw.githubusercontent.com/stleary/JSON-java/20230227/LICENSE
   jython_license.txt
     https://raw.githubusercontent.com/jython/jython/v2.7.4/LICENSE.txt
   lodash_license.txt

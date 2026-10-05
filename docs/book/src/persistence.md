@@ -38,9 +38,11 @@ in the other instances is not used.
   (`sqlite-jdbc`) ship inside the WARs; they are not copied into
   Tomcat's `lib/`.
 
-The other layers, `InMemoryPersistence`, `JDBM2Persistence` and
-`RedisPersistence`, remain in the code; the tests use
-`InMemoryPersistence`, which keeps nothing across a restart.
+The other layers, `InMemoryPersistence` and `JDBM2Persistence`, remain in
+the code. `InMemoryPersistence` keeps nothing across a restart; it backs the
+unit tests and the appliances of the integration tests that name no layer.
+`JDBM2Persistence` keeps one file, and the integration tests that name a
+layer use it.
 
 ## Setting up MariaDB
 
