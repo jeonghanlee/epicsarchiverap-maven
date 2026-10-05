@@ -1,8 +1,16 @@
 name: Maven
 
+# The work register and the closed-door record do not take part in the build, so a push or pull request that changes
+# only these files does not start the build.
 on:
   push:
+    paths-ignore:
+      - docs/milestone-*.md
+      - docs/CLOSED_DOORS.md
   pull_request:
+    paths-ignore:
+      - docs/milestone-*.md
+      - docs/CLOSED_DOORS.md
   workflow_dispatch:
 
 permissions:
