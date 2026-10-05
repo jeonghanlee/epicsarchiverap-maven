@@ -21,8 +21,8 @@ retrieval and selection, keeping the fork's own retrieval behavior instead.
 What makes this fork distinct from upstream:
 
 - **Build**: Maven-only through the committed Maven Wrapper (`./mvnw`); the
-  Gradle build is removed, and the one remaining site-specific Ant step runs
-  inside Maven.
+  Gradle and Ant builds are removed, and the site-specific files are applied
+  by the Maven build.
 - **Tests**: the test platform was rebuilt on JUnit 5 — hermetic and
   HTTP-based rather than Selenium (see `TESTING.md`).
 - **Toolchain**: JDK 21 and Tomcat 9.

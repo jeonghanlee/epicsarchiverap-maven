@@ -536,54 +536,29 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>3.0.0</version>
-        <executions>
-        <!--
-          The SVG viewer asset is vendored as a committed resource at
-          src/main/org/epics/archiverappliance/retrieval/staticcontent/viewer.zip
-          (source: https://github.com/archiver-appliance/svg_viewer, tag v1.2.1),
-          so the build needs no outbound network. The stage-resources execution
-          below copies that directory into the stage, which places viewer.zip
-          where the retrieval WAR expects it. The refresh procedure for a new
-          upstream version is documented in docs/svg-viewer.md.
-        -->
-          <execution>
-            <id>create-version-txt</id>
-            <phase>package</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <echo file="${stage.dir}/org/epics/archiverappliance/staticcontent/version.txt" message="Archiver Appliance Version ${project.version}"/>
-              </target>
-            </configuration>
-          </execution>
-          <execution>
-            <id>sitespecificantscript</id>
-            <phase>package</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <property name="ant.classes" refid="maven.runtime.classpath"/>
-                <property name="archapplsite" value="${archapplsite}"/>
-                <property name="sitespecificpath" value="${sitespecific.path}"/>
-                <property name="stage" value="${stage.dir}"/>
-                <ant antfile="${project.basedir}/build.xml" target="sitespecificbuild"/>
-              </target>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.3.0</version>
         <executions>
+          <!-- The site folder is applied to the staged static content before the WAR executions below package it:
+               the version file, the site template merged into the staged management pages, and the site images and
+               stylesheets copied over the staged defaults. A site folder that still holds a build.xml stops the build. -->
+          <execution>
+            <id>site-overlay</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.epics.archiverappliance.common.SiteOverlay</mainClass>
+              <arguments>
+                <argument>${sitespecific.path}</argument>
+                <argument>${stage.dir}</argument>
+                <argument>${project.version}</argument>
+              </arguments>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
           <!-- The mgmt API reference is generated from the BPLServlet registry and the
                BPLEndpoint annotations straight into the mgmt staticcontent stage, which the
                mgmt WAR ships under ui/api. -->
@@ -663,6 +638,15 @@
               </resources>
             </configuration>
           </execution>
+          <!--
+            The SVG viewer asset is vendored as a committed resource at
+            src/main/org/epics/archiverappliance/retrieval/staticcontent/viewer.zip
+            (source: https://github.com/archiver-appliance/svg_viewer, tag v1.2.1),
+            so the build needs no outbound network. The stage-resources execution
+            below copies that directory into the stage, which places viewer.zip
+            where the retrieval WAR expects it. The refresh procedure for a new
+            upstream version is documented in docs/svg-viewer.md.
+          -->
           <execution>
             <id>stage-resources</id>
             <phase>prepare-package</phase>

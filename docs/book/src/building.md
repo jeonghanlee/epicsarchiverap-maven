@@ -68,19 +68,32 @@ PB file utilities (`pb2json.sh`, `printTimes.sh`, `validate.sh`,
 
 ## Building for a site
 
-Site-specific files live in `src/sitespecific/<site>/`. The build copies
-`src/sitespecific/<site>/classpathfiles/` into `WEB-INF/classes` of all
-four WARs, so the web applications find `policies.py`,
-`archappl.properties` and, if present, `appliances.xml` there. If the
-site folder has a `build.xml`, the build runs it with Ant before the
-WARs are packed; it can replace images and text in the web interface.
-The script receives the build class path in the Ant property
-`ant.classes`, the staging folder in `stage` and the site name in
-`archapplsite`. Files under
-`stage/org/epics/archiverappliance/staticcontent/` go to `ui/comm/` of
-all four WARs, and files under
-`stage/org/epics/archiverappliance/mgmt/staticcontent/` go to `ui/` of
-the mgmt WAR; `src/sitespecific/tests/build.xml` is a working example.
+Site-specific files live in `src/sitespecific/<site>/`. The folder
+`classpathfiles/` must exist; `img/`, the two stylesheets and
+`template_changes.html` are optional. The build applies them in this
+order:
+
+| Site file | Result in the build |
+| --- | --- |
+| `template_changes.html` | Each block between `<!-- @begin(name) -->` and `<!-- @end(name) -->` replaces the block of the same name in every management page, before the files below are copied. The pages carry the blocks `main_includes`, `site_header`, `site_navbar` and `site_footer`, and the index page also `site_contact_text`; a block the pages do not carry has no effect. |
+| `img/` with its subfolders | Copied to `ui/comm/img/` of all four WARs, replacing the default images of the same path. |
+| `css/main.css` | Copied to `ui/comm/css/main.css` of all four WARs, replacing the default stylesheet. |
+| `css/mgmt.css` | Copied to `ui/css/mgmt.css` of the mgmt WAR, replacing the default stylesheet. |
+| `classpathfiles/` | Copied into `WEB-INF/classes` of all four WARs, so the web applications find `policies.py`, `archappl.properties` and, if present, `appliances.xml` there. |
+
+The build writes the version file `ui/comm/version.txt` of all four WARs
+from the project version. A file the site does not provide keeps the
+default of this repository.
+
+The build prints a warning for each file under `css/` other than
+`main.css` and `mgmt.css`, and for each folder of the site other than
+`img`, `css` and `classpathfiles`, because it does not apply them. A
+site name without a folder under `src/sitespecific/`, and a site folder
+that holds a `build.xml`, stop the build with an error that names the
+folder or the file; move the site's changes into the files of the table.
+The build runs no other site step, so a change that the table does not
+cover has to be made in this repository. `src/sitespecific/tests/` is a
+working example.
 
 The site is chosen with the `ARCHAPPL_SITEID` environment variable at
 build time; without it the build uses the `default` site.
