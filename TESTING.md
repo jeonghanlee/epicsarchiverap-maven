@@ -506,10 +506,13 @@ Python starts the existing four-JVM SQLite launcher and original IOC under
 a unique prefix. It records each target as integer seconds/nanoseconds,
 value, status and severity. The same immutable live target must be in the
 engine buffer before and after the public minus-one-nanosecond/equality
-pair. Production logs must show the actual internal engine URL and engine
-handler completion for each request; exact internal bounds must match the
-public bounds. Stored-only controls require engine exclusion and actual PB
-records; mixed controls require both stored records and engine participation.
+pair. The engine handler completion line is written at INFO. The internal
+engine URL line is written at DEBUG, so the runner raises only the logger of
+`PBOverHTTPStoragePlugin` to DEBUG after each appliance start. The logs must
+show the actual internal engine URL and engine handler completion for each
+request; exact internal bounds must match the public bounds. Stored-only
+controls require engine exclusion and actual PB records; mixed controls
+require both stored records and engine participation.
 
 The runner checks second rollover and the supported preceding value at
 `from`. It retains storage and keeps the IOC alive while stopping and

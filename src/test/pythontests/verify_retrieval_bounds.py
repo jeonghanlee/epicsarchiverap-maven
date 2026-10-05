@@ -29,6 +29,7 @@ START_TIMEOUT = 180
 ARCHIVE_TIMEOUT = 360
 OBSERVE_TIMEOUT = 120
 HTTP_TIMEOUT = 15
+ENGINE_URL_LOGGER = "edu.stanford.slac.archiverappliance.PBOverHTTP.PBOverHTTPStoragePlugin"
 HTTP_READ_SIZE = 64 * 1024
 READER_TIMEOUT = 20
 STOP_TIMEOUT = 300
@@ -297,6 +298,12 @@ class Verification:
         self.require(f"deployed-{self.generation}", all(digest(self.root / f"appliance/instances/{c}/webapps/{c}.war")
                      == self.wars[str(self.args.war_dir.resolve() / f"{self.args.war_basename}-{c}.war")]
                      for c in COMPONENTS))
+        self.log_engine_urls()
+
+    def log_engine_urls(self):
+        """Raises only the logger of the retrieval-to-engine plugin to DEBUG, since the URL line is not written at INFO."""
+        self.request(f"http://127.0.0.1:{self.args.port_base + 3}/retrieval/bpl/setLogLevel",
+                     {"logger": ENGINE_URL_LOGGER, "level": "DEBUG"})
 
     def stop_app(self):
         if self.app is None:

@@ -33,7 +33,23 @@ import java.util.HashMap;
  */
 public class GetEngineDataAction implements BPLAction {
 	private static final Logger logger = LogManager.getLogger(GetEngineDataAction.class);
-	
+	private static final String OUTCOME_SERVED = "served";
+	private static final String OUTCOME_EMPTY = "empty";
+	private static final String OUTCOME_FAILED = "failed";
+
+	/** What one request did, for the record written when it ends. */
+	private static final class Result {
+		String outcome = OUTCOME_FAILED;
+		int totalEvents = 0;
+		boolean report = true;
+	}
+
+	/**
+	 * Streams the buffered data of one PV and writes one INFO record when the request ends: the number of events, the
+	 * elapsed time, the PV, the address of the requester and the outcome (served, empty or failed). A PV without a channel
+	 * in this engine answers HTTP 404 and a request without a PV answers HTTP 400; neither writes the record. A failure
+	 * propagates to the dispatcher, which logs the exception once.
+	 */
 	@Override
 	public void execute(HttpServletRequest req, HttpServletResponse resp,
 			ConfigService configService) throws IOException {
@@ -42,6 +58,21 @@ public class GetEngineDataAction implements BPLAction {
 			resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
 			return;
 		}
+
+		long requestStart = System.currentTimeMillis();
+		Result result = new Result();
+		try {
+			serve(pvName, req, resp, configService, result);
+		} finally {
+			if(result.report) {
+				logger.info("Found a total of " + result.totalEvents + " in " + (System.currentTimeMillis() - requestStart)
+						+ "(ms) pv=" + pvName + " requester=" + req.getRemoteAddr() + " outcome=" + result.outcome);
+			}
+		}
+	}
+
+	private void serve(String pvName, HttpServletRequest req, HttpServletResponse resp,
+			ConfigService configService, Result result) throws IOException {
 
 		String startTimeStr = req.getParameter("from"); 
 		String endTimeStr = req.getParameter("to");
@@ -66,10 +97,8 @@ public class GetEngineDataAction implements BPLAction {
 			if(st != null && !st.isEmpty()) {
 				OutputStream os = resp.getOutputStream();
 				try {
-					long s = System.currentTimeMillis();
-					int totalEvents = StreamPBIntoOutput.streamPBIntoOutputStream(st, os, start, end);
-					long e = System.currentTimeMillis();
-					logger.info("Found a total of " + totalEvents + " in " + (e-s) + "(ms)");
+					result.totalEvents = StreamPBIntoOutput.streamPBIntoOutputStream(st, os, start, end);
+					result.outcome = OUTCOME_SERVED;
 				} finally {
 					try { os.flush(); os.close(); } catch(Throwable t) {}
 				}
@@ -89,6 +118,7 @@ public class GetEngineDataAction implements BPLAction {
 						}
 						desc.addHeaders(metaFields);
 						StreamPBIntoOutput.writeHeaderOnly(os, desc);
+						result.outcome = OUTCOME_EMPTY;
 					} finally {
 						try { os.flush(); os.close(); } catch(Throwable t) {}
 					}
@@ -97,6 +127,7 @@ public class GetEngineDataAction implements BPLAction {
 			}
 		}
 
+		result.report = false;
 		logger.debug("No data for PV " + pvName + " in this engine.");
 		resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 		return;
