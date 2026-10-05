@@ -3618,7 +3618,7 @@ Status: Not started
 
 ##### Summary
 
-The ansible-provision lab measured on 2026-10-04, on a Rocky 8.10 deployment of epicsarchiverap-env d09dca7 with 3bdf378c, 32,191 journal lines in 29 minutes under a 903-PV fixture and a two-worker retrieval probe every five minutes, about 31,800 of them seven INFO lines per retrieval request. Five of the seven moved to DEBUG in d80eef3a (M29), which that deployment did not include. At 254a6542 these per-request INFO statements remain: BasicDispatcher.java:44 "Servicing <path>" for every BPL request in all four components, before validation; engine BPLServlet.java:106 and :120 "Beginning request into Engine servlet"; GetEngineDataAction.java:72 "Found a total of N in N(ms)" for every retrieval-to-engine data request. None carries the requester, the HTTP status or a request identifier. On Rocky 8.10 (systemd 239) journald silently drops lines from concurrent request bursts (65 to 137 lines per run with two client workers, none with one; none on Debian 13 with systemd 257), so per-request volume raises the chance of losing lines that matter.
+The ansible-provision lab measured on 2026-10-04, on a Rocky 8.10 deployment of epicsarchiverap-env d09dca7 with 3bdf378c, 32,191 journal lines in 29 minutes under a 903-PV fixture and a two-worker retrieval probe every five minutes, about 31,800 of them seven INFO lines per retrieval request. Five of the seven moved to DEBUG in d80eef3a (M29), which that deployment did not include. At 254a6542 these per-request INFO statements remain: BasicDispatcher.java:44 "Servicing <path>" for every BPL request in all four components, before validation; engine BPLServlet.java:106 and :120 "Beginning request into Engine servlet"; GetEngineDataAction.java:72 "Found a total of N in N(ms)" for every retrieval-to-engine data request. None carries the requester, the HTTP status or a request identifier. The volume drives the journal size budget. On Rocky 8.10, systemd 239's journalctl also hides identical consecutive lines that share a timestamp, such as the per-thread Servicing line under concurrent requests; the entries are stored and systemd 257 returns them (fixed upstream in v248), and distinct lines such as errors are not affected (correction from the ansible-provision lab, 2026-10-04, replacing its earlier report of lost lines).
 
 ##### Scope
 
@@ -3672,7 +3672,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-04 08:46 UTC; issue #24 read back with matching title and body, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-04T08:46:17Z. Recheck with gh issue view 24 on jeonghanlee/epicsarchiverap-maven.
+Last Compared: 2026-10-05 01:09 UTC; issue #24 body corrected (the Rocky 8.10 journal finding is hidden entries in systemd 239's journalctl, not lost lines) and read back matching `work/issue-per-request-info-logging-body.md`, with the title above, assignee jeonghanlee and no GitHub milestone; remote updatedAt is 2026-10-05T01:09:37Z. Recheck with gh issue view 24 on jeonghanlee/epicsarchiverap-maven.
 
 #### M42 - Human-readable storage rates in storageSizeCheck.bash
 
@@ -3798,7 +3798,8 @@ Superseded Plan Artifacts: none
 
 ##### Closure Evidence
 
-- none
+- Stage 2 landed on 2026-10-05: the correction is 7adc7d5a and its verification record aa953a44bd2e6fb2a299224b97d365e7753a2fd8. Directly after the push at 00:49 UTC, fetch showed local HEAD and origin/modernize both at aa953a44, and `git ls-remote --exit-code origin refs/heads/modernize` returned it. The Maven workflow run 37249019863 on aa953a44 succeeded at 01:22 UTC. The owner considers 7adc7d5a final; ansible-provision was told it may move its soak pin to aa953a44, and the epicsarchiverap-env session was informed for jeonghanlee/epicsarchiverap-env#58.
+- Open: issue #26 stays open until the owner decides on closure; the gap between the field rate (about 1 in 10 deployments) and the probe rate is unexplained.
 
 ##### GitHub Projection
 
