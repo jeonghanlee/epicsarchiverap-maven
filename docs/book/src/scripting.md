@@ -463,6 +463,101 @@ PV: <pv_name> Size: 72.4 GB/year
 PV: <pv_name> Size: 51.0 GB/year
 ```
 
+## Extract samples to CSV files and compute statistics
+
+Two Bash scripts in `docs/book/src/samples` extract the samples of several
+PVs over a time range into one CSV file per PV, and compute statistics on
+the client from such a file. They read the samples as the appliance stores
+them and do not use the server's post-processing operators ([Retrieving
+data](retrieval.md#post-processing)). Each script sources
+[archiverClient.bash](samples/archiverClient.bash) from its own folder, so
+keep them together. Both need Bash 4 or later and `awk`;
+`getDataToCsv.bash` also needs `curl`, `jq`, `iconv` and GNU `date`.
+
+### Extract the samples of several PVs
+
+[getDataToCsv.bash](samples/getDataToCsv.bash) takes the data retrieval
+base URL, a PV file, a start and an end time, and an output folder. The
+base URL is the `data_retrieval_url` of `appliances.xml`, such as
+`http://localhost:17668/retrieval`; the script appends
+`/data/getData.json` ([Retrieving data](retrieval.md)). The PV file is
+UTF-8 CSV and the first column of each row names a PV, as for the scripts
+above. The times are ISO 8601 instants with seconds and with `Z` or a
+numeric offset, such as `2026-09-24T08:00:00Z` or
+`2026-09-24T01:00:00-07:00`; the script sends them to the appliance in
+UTC.
+
+The script makes one `getData.json` request per PV, one after the other.
+It writes the file of a PV after the response of that PV is checked, so a
+PV that fails leaves no file, the other PVs are still requested, and the
+failure is reported on stderr with the PV name. A PV that the appliance
+does not know answers HTTP 404 and is reported the same way. `--timeout
+SEC` limits each request, as for the scripts above.
+
+| Limit or check | Value |
+| --- | --- |
+| PVs per run | at most 10 |
+| Time range | at most 7 days; the end is after the start |
+| Names | no duplicate name; no two names with the same file name |
+| Output | an existing file is not replaced; the folder is created when missing |
+
+The script checks these before it sends a request. A file is named after
+its PV, with every character other than letters, digits, `.`, `_` and `-`
+replaced by `_`. Each file has the header line
+`time_utc,secs,nanos,value,severity,status` and one row per sample:
+`time_utc` is the UTC time with nine fraction digits, `secs` and `nanos`
+are the epoch seconds and nanoseconds, and a waveform value is written as
+its elements joined by spaces in one field. A PV whose samples have a
+structured value, such as an object, fails as a whole: the script reports
+it and writes no file for it.
+
+| Exit status | Meaning |
+| --- | --- |
+| 0 | Every PV written |
+| 1 | No PV written |
+| 2 | Invalid arguments or input, before any request |
+| 3 | Some PVs written and some failed |
+
+The limits bound the requests, not the number of samples. A PV with a high
+sample rate over seven days returns many samples, and `jq` holds the
+response of one PV in memory, so choose a shorter range for such a PV.
+Set `PV_FILE`, `FROM`, `TO` and `OUT_DIR`, then extract the samples:
+
+```bash
+samples=docs/book/src/samples
+retrieval=${RETRIEVAL_URL:-http://127.0.0.1:17668/retrieval}
+"$samples/getDataToCsv.bash" "$retrieval" "$PV_FILE" "$FROM" "$TO" "$OUT_DIR"
+```
+
+The script prints one line per written PV with its sample count and file.
+
+### Compute statistics of an extracted file
+
+[csvStats.bash](samples/csvStats.bash) reads a file written by
+`getDataToCsv.bash`, or standard input when the file is `-`, and has three
+modes. A row whose value is not a number, such as a waveform, a text or an
+empty value, is counted, reported on stderr and skipped before any window
+or bin is formed. The standard deviation is the sample standard deviation,
+which divides by the count minus one and is 0 for one value.
+
+| Mode | Output |
+| --- | --- |
+| `summary` | One line `n=… skipped=… mean=… sd=… min=… max=…` for all numeric values |
+| `moving --window N` | A CSV with `time_utc,mean,sd` for every window of N consecutive numeric samples; the time is that of the last sample of the window |
+| `histogram --bins N [--min X] [--max Y]` | A CSV with `bin_from,bin_to,count` for N equal bins, N from 1 to 10000; the bounds default to the minimum and maximum of the data, and values outside given bounds are reported on stderr and not counted |
+
+The script exits 1 when the file has no numeric row or fewer numeric rows
+than the window, and 2 for invalid arguments or a file that does not have
+the header of `getDataToCsv.bash`. Set `CSV_FILE` to one of the written
+files, then compute a summary, a moving window of 10 samples and a
+histogram of 20 bins:
+
+```bash
+"$samples/csvStats.bash" summary "$CSV_FILE"
+"$samples/csvStats.bash" moving --window 10 "$CSV_FILE"
+"$samples/csvStats.bash" histogram --bins 20 "$CSV_FILE"
+```
+
 ## Other sample scripts
 
 The repository folder

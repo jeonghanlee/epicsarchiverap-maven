@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""Compare the Bash sample scripts with their Python originals on a dedicated local appliance.
+"""Check the Bash sample scripts on a dedicated local appliance.
 
 The runner starts the real launcher and the shipped IOC fixture, archives a set of fixture PVs,
 then runs each selected script's original (read from git at ORIGINAL_COMMIT) and its .bash
 replacement on the same inputs. Outputs must agree except for the intentional changes each
-case names. Evidence is retained in the run folder.
+case names. The scripts that have no original, getDataToCsv.bash and csvStats.bash, are checked
+against independent requests and computations of the same samples. Evidence is retained in the run folder.
 """
 
 import argparse
+import csv
 import datetime
+import io
 import json
 import os
 from pathlib import Path
@@ -16,6 +19,7 @@ import shutil
 import signal
 import socket
 import socketserver
+import statistics
 import subprocess
 import threading
 import sys
@@ -86,8 +90,9 @@ def mail_body(message):
 class Run:
     """Holds the appliance, the evidence folder and the case results of one verification run."""
 
-    def __init__(self, root, env, bpl, prefix, pvs):
+    def __init__(self, root, env, bpl, prefix, pvs, retrieval=None):
         self.root = root
+        self.retrieval = retrieval
         self.env = env
         self.bpl = bpl
         self.prefix = prefix
@@ -473,10 +478,207 @@ def documented_cases(run):
         raise RuntimeError("documented commands failed; see documented-commands.stdout and .stderr")
 
 
+DATA_PV_NAMES = ("UnitTestNoNamingConvention:sine", "UnitTestNoNamingConvention:cosine", "--ArchUnitTest:sine")
+DATA_WINDOW_SECONDS = 60
+DATA_MINIMUM_SAMPLES = 25
+DATA_TIMEOUT = 240
+UTC_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
+
+def retrieval_samples(run, pv, start, end):
+    """Reads the samples of one PV with a request of its own, independent of the script under test."""
+    query = urlencode({"pv": pv, "from": start, "to": end})
+    with run.http.open(Request(f"{run.retrieval}/data/getData.json?{query}"), timeout=HTTP_TIMEOUT) as response:
+        body = json.load(response)
+    return body[0]["data"] if body else []
+
+
+def data_window(run):
+    """Archives the data PVs, waits until each holds enough samples, and returns a closed past window."""
+    pvs = [run.prefix + name for name in DATA_PV_NAMES]
+
+    def archived():
+        states = run.request("getPVStatus", {"pv": run.prefix + "*", "limit": -1})
+        return {row["pvName"] for row in states if row["status"] == "Being archived"}
+
+    missing = [pv for pv in pvs if pv not in archived()]
+    if missing:
+        run.request("archivePV", data=[{"pv": pv, "samplingmethod": "MONITOR", "samplingperiod": "1"}
+                                       for pv in missing])
+
+    def ready():
+        if not set(pvs) <= archived():
+            return False
+        end = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=3)
+        start = end - datetime.timedelta(seconds=DATA_WINDOW_SECONDS)
+        return all(len(retrieval_samples(run, pv, start.strftime(UTC_FORMAT), end.strftime(UTC_FORMAT)))
+                   >= DATA_MINIMUM_SAMPLES for pv in pvs)
+
+    wait_for(ready, DATA_TIMEOUT, f"{DATA_MINIMUM_SAMPLES} samples of each data PV")
+    end = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0) - datetime.timedelta(seconds=3)
+    start = end - datetime.timedelta(seconds=DATA_WINDOW_SECONDS)
+    return pvs, start.strftime(UTC_FORMAT), end.strftime(UTC_FORMAT)
+
+
+def file_name(pv):
+    return "".join(ch if ch.isalnum() and ch.isascii() or ch in "._-" else "_" for ch in pv) + ".csv"
+
+
+def record(run, case, passed, detail):
+    run.results.append({"case": case, "passed": passed, **detail})
+    save(run.root, "results.json", run.results)
+    print(f"[ {'PASS' if passed else 'FAIL'} ] {case}: {detail.get('summary', '')}", flush=True)
+    if not passed:
+        raise RuntimeError(f"{case} failed: {detail}")
+
+
+def expected_time(sample):
+    moment = datetime.datetime.fromtimestamp(sample["secs"], datetime.timezone.utc)
+    return moment.strftime("%Y-%m-%dT%H:%M:%S") + f".{sample['nanos']:09d}Z"
+
+
+def get_data_to_csv_cases(run):
+    """Runs getDataToCsv.bash on archived PVs and compares every CSV row with an independent request."""
+    pvs, start, end = data_window(run)
+    pv_file = run.root / "data-pvs.csv"
+    pv_file.write_text("".join(f"{pv}\n" for pv in pvs))
+    out = run.root / "data-csv"
+    result = run.execute("getDataToCsv-real", [str(SAMPLES / "getDataToCsv.bash"), run.retrieval, str(pv_file),
+                                              start, end, str(out)])
+    problems = []
+    if result.returncode != 0 or result.stderr:
+        problems.append(f"exit {result.returncode}, stderr {result.stderr!r}")
+    rows_total = 0
+    for pv in pvs:
+        expected = retrieval_samples(run, pv, start, end)
+        path = out / file_name(pv)
+        if not path.is_file():
+            problems.append(f"missing {path.name}")
+            continue
+        rows = list(csv.reader(io.StringIO(path.read_text(encoding="utf-8"))))
+        if rows[0] != ["time_utc", "secs", "nanos", "value", "severity", "status"]:
+            problems.append(f"{path.name}: header {rows[0]}")
+        body = rows[1:]
+        rows_total += len(body)
+        if len(body) != len(expected) or len(body) < DATA_MINIMUM_SAMPLES:
+            problems.append(f"{path.name}: {len(body)} rows, independent request {len(expected)}")
+            continue
+        for row, sample in zip(body, expected):
+            actual = (row[0], int(row[1]), int(row[2]), float(row[3]), int(row[4]), int(row[5]))
+            wanted = (expected_time(sample), sample["secs"], sample["nanos"], float(sample["val"]),
+                      sample["severity"], sample["status"])
+            if actual != wanted:
+                problems.append(f"{path.name}: row {actual} differs from {wanted}")
+                break
+    record(run, "getDataToCsv-real", not problems, {"summary": f"{len(pvs)} files, {rows_total} rows equal the "
+           "independent requests" if not problems else "; ".join(problems), "pvs": pvs, "from": start, "to": end})
+    unknown = run.prefix + "unknown_data"
+    unknown_file = run.root / "data-unknown-pvs.csv"
+    unknown_file.write_text(f"{pvs[0]}\n{unknown}\n")
+    unknown_out = run.root / "data-csv-unknown"
+    observed = run.execute("getDataToCsv-unknown", [str(SAMPLES / "getDataToCsv.bash"), run.retrieval,
+                                                    str(unknown_file), start, end, str(unknown_out)])
+    files = sorted(p.name for p in unknown_out.iterdir()) if unknown_out.exists() else []
+    problems = []
+    if observed.returncode != 3:
+        problems.append(f"exit {observed.returncode}, expected 3")
+    if files != [file_name(pvs[0])]:
+        problems.append(f"files {files}, expected only the file of the known PV")
+    if "HTTP 404" not in observed.stderr or unknown not in observed.stderr:
+        problems.append(f"stderr does not name the unknown PV and HTTP 404: {observed.stderr!r}")
+    if f"{pvs[0]}: " not in observed.stdout or unknown in observed.stdout:
+        problems.append(f"stdout {observed.stdout!r}")
+    record(run, "getDataToCsv-unknown-pv", not problems, {
+        "summary": "the unknown PV answers HTTP 404, is reported by name, leaves no file, the known PV is written "
+                   "and the exit status is 3" if not problems else "; ".join(problems),
+        "exit": observed.returncode, "files": files})
+
+
+def documented_data_cases(run):
+    """Executes the commands of the extraction and statistics section of the scripting page verbatim."""
+    page = (REPO / "docs/book/src/scripting.md").read_text()
+    section = page.split("## Extract samples to CSV files and compute statistics\n", 1)[1].split("\n## ", 1)[0]
+    blocks = [part.split("```", 1)[0] for part in section.split("```bash\n")[1:]]
+    pvs, start, end = data_window(run)
+    pv_file = run.root / "documented-data-pvs.csv"
+    pv_file.write_text("".join(f"{pv}\n" for pv in pvs))
+    out = run.root / "documented-data-csv"
+    env = dict(run.env, RETRIEVAL_URL=run.retrieval, PV_FILE=str(pv_file), FROM=start, TO=end, OUT_DIR=str(out),
+               CSV_FILE=str(out / file_name(pvs[0])))
+    result = subprocess.run(["bash", "-e", "-c", "\n".join(blocks)], cwd=REPO, env=env, text=True,
+                            capture_output=True, timeout=300)
+    (run.root / "documented-data-commands.stdout").write_text(result.stdout)
+    (run.root / "documented-data-commands.stderr").write_text(result.stderr)
+    lines = result.stdout.splitlines()
+    passed = (result.returncode == 0 and not result.stderr and len(blocks) == 2
+              and sum("samples written to" in line for line in lines) == len(pvs)
+              and any(line.startswith("n=") for line in lines) and "bin_from,bin_to,count" in lines
+              and "time_utc,mean,sd" in lines)
+    record(run, "documented-data-commands", passed, {
+        "summary": f"{len(blocks)} blocks, exit {result.returncode}, {len(lines)} lines",
+        "blocks": len(blocks), "exit": result.returncode})
+
+
+def csv_stats_cases(run):
+    """Runs csvStats.bash on a CSV from getDataToCsv.bash and compares each mode with an independent computation."""
+    pvs, start, end = data_window(run)
+    pv = pvs[0]
+    out = run.root / "stats-csv"
+    pv_file = run.root / "stats-pvs.csv"
+    pv_file.write_text(f"{pv}\n")
+    extraction = run.execute("csvStats-extract", [str(SAMPLES / "getDataToCsv.bash"), run.retrieval, str(pv_file),
+                                                 start, end, str(out)])
+    if extraction.returncode != 0:
+        raise RuntimeError(f"extraction for the statistics failed: {extraction.stderr}")
+    path = out / file_name(pv)
+    values = [float(sample["val"]) for sample in retrieval_samples(run, pv, start, end)]
+    times = [expected_time(sample) for sample in retrieval_samples(run, pv, start, end)]
+    problems = []
+
+    def close(label, actual, wanted):
+        if not (abs(actual - wanted) <= 1e-9 * max(1.0, abs(wanted))):
+            problems.append(f"{label}: {actual} != {wanted}")
+
+    summary = run.execute("csvStats-summary", [str(SAMPLES / "csvStats.bash"), "summary", str(path)])
+    fields = dict(part.split("=") for part in summary.stdout.split())
+    if summary.returncode != 0 or int(fields.get("n", -1)) != len(values) or fields.get("skipped") != "0":
+        problems.append(f"summary: exit {summary.returncode}, {summary.stdout!r}")
+    else:
+        close("mean", float(fields["mean"]), statistics.fmean(values))
+        close("sd", float(fields["sd"]), statistics.stdev(values))
+        close("min", float(fields["min"]), min(values))
+        close("max", float(fields["max"]), max(values))
+    window = 5
+    moving = run.execute("csvStats-moving", [str(SAMPLES / "csvStats.bash"), "moving", "--window", str(window), str(path)])
+    rows = list(csv.reader(io.StringIO(moving.stdout)))
+    if moving.returncode != 0 or len(rows) - 1 != len(values) - window + 1:
+        problems.append(f"moving: exit {moving.returncode}, {len(rows) - 1} rows for {len(values)} samples")
+    else:
+        for position, row in enumerate(rows[1:]):
+            part = values[position:position + window]
+            if row[0] != times[position + window - 1]:
+                problems.append(f"moving row {position}: time {row[0]}")
+                break
+            close(f"moving mean {position}", float(row[1]), statistics.fmean(part))
+            close(f"moving sd {position}", float(row[2]), statistics.stdev(part))
+    bins = 6
+    histogram = run.execute("csvStats-histogram", [str(SAMPLES / "csvStats.bash"), "histogram", "--bins", str(bins), str(path)])
+    rows = list(csv.reader(io.StringIO(histogram.stdout)))
+    low, high = min(values), max(values)
+    wanted = [0] * bins
+    for value in values:
+        wanted[min(bins - 1, int((value - low) / (high - low) * bins))] += 1
+    if histogram.returncode != 0 or [int(row[2]) for row in rows[1:]] != wanted:
+        problems.append(f"histogram: exit {histogram.returncode}, {[row[2] for row in rows[1:]]} != {wanted}")
+    record(run, "csvStats-real", not problems, {"summary": f"{len(values)} samples: summary, moving window {window} and "
+           f"{bins}-bin histogram equal the independent computations" if not problems else "; ".join(problems)})
+
+
 CASES = {"unarchivedPVs": unarchived_pvs_cases, "archivedPVsNotInList": archived_pvs_not_in_list_cases,
          "listTypeChanges": list_type_changes_cases, "checkForEngineActivity": check_for_engine_activity_cases,
          "checkConnectedPVs": check_connected_pvs_cases, "checkTypeChangedPVs": check_type_changed_pvs_cases,
-         "storageSizeCheck": storage_size_check_cases, "documented": documented_cases}
+         "storageSizeCheck": storage_size_check_cases, "getDataToCsv": get_data_to_csv_cases,
+         "csvStats": csv_stats_cases, "documentedData": documented_data_cases, "documented": documented_cases}
 # Cases that need the type-change report to be empty; they run before any case changes a type.
 EMPTY_TYPE_REPORT_CASES = {"listTypeChanges": list_type_changes_empty, "checkTypeChangedPVs": check_type_changed_pvs_empty}
 
@@ -508,7 +710,7 @@ def main():
     bpl = f"http://127.0.0.1:{args.port_base}/mgmt/bpl"
     prefix = f"M37BASH:{uuid.uuid4().hex[:8]}:"
     pvs = [f"{prefix}test_{i}" for i in range(PV_COUNT)]
-    run = Run(root, env, bpl, prefix, pvs)
+    run = Run(root, env, bpl, prefix, pvs, retrieval=f"http://127.0.0.1:{args.port_base + 3}/retrieval")
     app = ioc = None
     print(f"Evidence: {root}", flush=True)
     wars = sorted(args.war_dir.resolve().glob("*.war"))
@@ -516,7 +718,7 @@ def main():
         "observed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
         "original_commit": ORIGINAL_COMMIT, "scripts": scripts, "python": sys.version,
-        "replacements": {name: digest(SAMPLES / f"{name}.bash") for name in scripts if name != "documented"},
+        "replacements": {name: digest(SAMPLES / f"{name}.bash") for name in scripts if not name.startswith("documented")},
         "client_sha256": digest(SAMPLES / "archiverClient.bash"), "fixture_sha256": digest(FIXTURE),
         "wars": {str(path): digest(path) for path in wars}, "prefix": prefix, "pvs": pvs,
         "ca_port": args.ca_port, "bpl_url": bpl,

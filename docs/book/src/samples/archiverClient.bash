@@ -65,6 +65,25 @@ arc_bpl_url() {
     printf '%s\n' "$stripped"
 }
 
+# Validates an HTTP(S) data retrieval base URL, such as the data_retrieval_url of appliances.xml,
+# without credentials, query, fragment or whitespace, and prints it without trailing slashes.
+arc_retrieval_url() {
+    local value="$1" stripped port
+    local pattern='^https?://([A-Za-z0-9._-]+|\[[0-9A-Fa-f:.]+\])(:([0-9]{1,5}))?(/[^?#[:space:]@]*)?$'
+    if [[ ! "$value" =~ $pattern ]]; then
+        return 1
+    fi
+    port="${BASH_REMATCH[3]}"
+    if [[ -n "$port" ]] && (( 10#$port < 1 || 10#$port > 65535 )); then
+        return 1
+    fi
+    stripped="$value"
+    while [[ "$stripped" == */ ]]; do
+        stripped="${stripped%/}"
+    done
+    printf '%s\n' "$stripped"
+}
+
 # Validates a timeout in seconds: a decimal number greater than 0 and at most 86400.
 # Prints nothing; the return status is the result.
 arc_timeout() {

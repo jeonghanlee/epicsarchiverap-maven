@@ -678,8 +678,10 @@ normal shutdown; retain every run folder on success or failure.
 
 ## Bash sample scripts
 
-The seven Bash scripts under `docs/book/src/samples` and their shared
-`archiverClient.bash` are checked in two layers; Maven does not run either.
+The seven Bash scripts under `docs/book/src/samples` that replace Python
+originals, the two data scripts `getDataToCsv.bash` and `csvStats.bash`, and
+their shared `archiverClient.bash` are checked in two layers; Maven does not
+run either.
 Both need Bash, `curl`, `jq`, `iconv`, GNU `find` and coreutils, and Python
 3's standard library; the static check also needs `shellcheck`.
 
@@ -715,3 +717,13 @@ storage rates in readable units. `--script NAME` limits the run
 to one script, and `--port-base` and `--ca-port` move the ports. The runner
 stops only its own launcher and IOC and fails unless the launcher exits 143
 with no owned JVM left.
+
+`getDataToCsv.bash` and `csvStats.bash` have no original. For them the runner
+archives three sine and cosine PVs of the fixture, waits until each holds 25
+samples in a closed past minute, and compares every CSV row with an
+independent `getData.json` request of the same PV and range. It compares the
+summary, a moving window of 5 samples and a 6-bin histogram of one PV with
+computations in Python on the samples of that request, and runs the commands
+of the extraction section of the scripting page verbatim. A PV that the
+appliance does not know must answer HTTP 404, be reported by name, leave no
+file, and give exit status 3 while the known PV is written.
