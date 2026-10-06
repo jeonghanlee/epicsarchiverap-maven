@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. M26 (issue #20) is Complete. M39 (issue #24) is Complete. M12 (issue #4) is Complete: on 2026-10-05 the owner selected the Redis persistence layer for removal and kept the other backends. M10 (issue #3) is Complete: the Ant build is removed and the site build contract of D33 is in force; the environment configuration session adopts it on its own schedule. M7 needs the site's item list before implementation, and M28 waits for the soak report. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
+Next session entry point: M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. M26 (issue #20) is Complete. M39 (issue #24) is Complete. M12 (issue #4) is Complete: on 2026-10-05 the owner selected the Redis persistence layer for removal and kept the other backends. M10 (issue #3) is Complete: the Ant build is removed and the site build contract of D33 is in force; the environment configuration session adopts it on its own schedule. M7 (issue #2) is Complete: its first and only item, the client-side data extraction and statistics sample scripts, landed in 26882333, and on 2026-10-05 the owner stated that the item list is finished for now; a further site-required item becomes a new row with its own issue. M28 waits for the soak report. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the soak report arrives. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -35,7 +35,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M12 | Persistence and storage backend pruning | Milestone | Complete | No | | The Redis persistence layer, its dependency and the four JARs only it brought in are removed (33c93659), LICENCES/NOTICE lists exactly the 46 JARs of the four WARs, the appliance starts on the default persistence, 912 tests and the Maven workflow pass; issue #4 closed as completed on 2026-10-05; JDBM2, InMemory, MySQL and the storage plugins stay by decision; [detail](#m12---persistence-and-storage-backend-pruning) |
 | Phase 2 | M13 | Selectable persistence backend: MariaDB and SQLite | Milestone | Complete | No | M11, G2, G4 | Both drivers ship; the backend is chosen by the JNDI DataSource; MariaDB and SQLite paths verified; [detail](#m13---selectable-persistence-backend-mariadb-and-sqlite) |
 | Phase 2 | M17 | Modernize the narrative doc content for the single-instance fork | Milestone | Complete | No | M34, M35 | Eight core commands are verified and landed; the final inventory classifies all 25 CLIs and both helpers (decision 2026-10-02), with script modernization moved to M37. The six live runners and 84 client boundary tests pass on the final tree; the corrected scripting page landed as ed2ff676 and is published; issue #6 closed as completed on 2026-10-02; [detail](#m17---modernize-the-narrative-doc-content-for-the-single-instance-fork) |
-| Phase 2 | M7 | Site-required features and fixes | Milestone | Not started | Yes | | Owner-identified items implemented and verified; awaiting the owner's item list; [detail](#m7---site-required-features-and-fixes) |
+| Phase 2 | M7 | Site-required features and fixes | Milestone | Complete | No | | The owner-identified item list is implemented and verified: the client-side extraction of several PVs over a time range into one CSV file per PV and the client-side summary, moving and histogram statistics of such a CSV landed in 26882333 with issue #2 closed on 2026-10-05; further items become new rows; [detail](#m7---site-required-features-and-fixes) |
 | Phase 2 | M10 | Ant removal: final Maven-only consolidation | Milestone | Complete | No | D7, D33 | No maven-antrun-plugin execution and no build.xml remain (af2e7348); the four WARs of the default and tests sites match the previous build except the new SiteOverlay class and the embedded pom.xml; a leftover site build.xml or a missing site folder stops the build with a message; 920 tests and the Maven workflow pass; issue #3 closed as completed on 2026-10-05; [detail](#m10---ant-removal-final-maven-only-consolidation) |
 | Phase 2 | M18 | Appliance logging model: journald-first log4j2 layout and lifecycle | Milestone | Complete | No | D31, G3 | The shipped log4j2.xml emits the <N> priority prefix with a ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO} root level and a capped, commented RollingFile fallback; the operating-model page and the faq/install-guide fixes land; [detail](#m18---appliance-logging-model-journald-first-log4j2-layout-and-lifecycle) |
 | Phase 2 | M19 | Tomcat log4j jar set from the build | Milestone | Complete | No | D32 | The build writes log4j-api, log4j-core, log4j-appserver and log4j-jul at ${log4j.version} to target/tomcat-log4j and the release tarball carries them; the logging page describes Tomcat and java.util.logging lines through log4j2; [detail](#m19---tomcat-log4j-jar-set-from-the-build) |
@@ -1940,7 +1940,7 @@ Last Compared: 2026-10-02 19:58 UTC; `gh api repos/jeonghanlee/epicsarchiverap-m
 Origin: daff1b7 / M7
 Identity History: none
 GitHub Issue: #2
-Status: Not started
+Status: Complete
 
 ##### Summary
 
@@ -1950,51 +1950,68 @@ Implement the features and fixes this site needs in aa-maven, independent of ups
 
 Owner-identified features and defects implemented directly in the fork on the Maven build.
 
-Out of scope: upstream picks (M6).
+First item (owner, 2026-10-05): two Bash sample scripts in the style of the existing sample clients. The first reads a list of PV names and a start and end time, requests the samples of each PV with its own `getData.json` request, one after the other, and writes one CSV file per PV. The second reads such a CSV file and computes, on the client from the extracted samples, summary statistics of the whole range and moving statistics over a sliding window, and a histogram. The server post-processing operators (`mean`, `std` and the others) are not used.
+
+Out of scope: upstream picks (M6); adding statistics operators to the server; further items, which the owner may add.
 
 ##### Completion Criteria
 
 - Each owner-identified item is implemented and verified.
+- First item: the extraction script writes, for every requested PV, a CSV file whose rows equal the samples of an independent JSON request for the same range, and stops with a message before any request when a limit is exceeded, a file name would collide or a time is invalid, and reports each PV the server refuses; the statistics script prints summary, moving and histogram results that equal the values an independent computation gives for the same CSV, and reports the rows it skips; both scripts are verified on a real appliance and their tests and the book page `scripting.md` are in place; the default suite passes.
 
 ##### Dependencies And Decisions
 
-- D11 (Phase 1); awaiting the owner's item list.
+- D11 (Phase 1); the owner's item list is collected item by item.
+- Decision Date: 2026-10-05. First item as in Scope, with these settings from the owner's direction ("both" summary and moving statistics, computed on the client) and the recommended defaults: Bash with `jq` and `awk` on the shared `archiverClient.bash`; one CSV per PV with the columns `time_utc,secs,nanos,value,severity,status`; a waveform value is written as its elements joined by spaces in one field; a file name replaces every character other than letters, digits, `.`, `_` and `-` by `_`, and a collision stops the run before any file is written; the moving window is counted in samples; histogram bins are limited to 10,000 by a named constant, a limit added after review because a bin count of 100,000,000 ran for more than 20 seconds on two samples (owner, 2026-10-06, recommended value); histogram bounds default to the minimum and maximum of the data; a row whose value is not a number is counted, reported and skipped. The script names are proposals: `getDataToCsv.bash` and `csvStats.bash`.
+- Decision Date: 2026-10-05. Limits of the extraction script, set by the owner: at most 10 PVs and a range of at most 7 days (end minus start; exactly 7 days is allowed). Both are checked before any request and stop the run with a usage error that names the limit and the given value. The limits are named constants at the top of the script. A duplicate PV name is an error, because two names would write one file. The start and end times are normalized to UTC before the request. The limits bound the requests but not the number of samples, which depends on the sample rate: 10 PVs over 7 days are 6,048,000 PV-seconds, so one sample per second per PV returns about 6 million samples in all. Owner decision 2026-10-05: one `getData.json` request per PV, at most 10 in sequence, instead of one `getDataForPVs.json` request, so that the response held in memory is that of one PV and a failure names its PV. A PV with a very high sample rate over 7 days is still large for a `jq` that reads the whole document; the book states this and the way of choosing a shorter range. A file is written only after the response of its PV has been checked, a failed PV is reported and the remaining PVs are still requested; the exit status is 0 when every PV was written, 3 (incomplete, as in the existing sample clients) when some were written and some failed, and 1 when none was written.
+
+- Decision Date: 2026-10-05. The owner stated that the item list is finished for now and the row and issue #2 may close after the landing; a further site-required item is added as a new row with its own issue and plan, and this row is not reopened for it.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-05; owner accepted the plan below for the first item with the decisions above.
+Implementation Authorization: 2026-10-05; owner authorized the accepted plan for the first item.
 Superseded Plan Artifacts: none
 
-1. Collect the owner's list.
-2. Implement and verify each item.
+1. Record the baseline for the shared client: the existing Bash sample tests and the real-appliance runner pass before any change, so that a later change of `archiverClient.bash` can be shown not to alter the seven existing scripts.
+2. Write the tests first, in the style of the existing Bash sample tests (a controlled HTTP server only at the outer boundary, and no request is sent when a limit is exceeded): the extraction script with missing arguments, an unreadable list, invalid, equal and reversed times, exactly 10 PVs accepted and 11 refused, exactly 7 days accepted and 7 days plus one second refused, a duplicate name, a refused request for one PV among several (the other files are written and the exit status is 3), malformed JSON, a PV without samples, a file name collision, a waveform value and the column layout; the statistics script on inputs with known results (summary, moving window larger than the data, histogram edges including a value equal to the maximum, empty input, non-numeric rows). They fail before the scripts exist.
+3. Implement `getDataToCsv.bash` and `csvStats.bash` in `docs/book/src/samples/`; the retrieval base URL is validated by a new function of `archiverClient.bash` that leaves the management URL validation as it is.
+4. Verify on a real appliance with the fixture IOC: several archived PVs, a time range holding data, a PV the archiver does not know (its observed response decides the documented behavior), the extraction of each PV compared with an independent `getData.json` request, and the statistics compared with an independent computation of the same CSV.
+5. Document both scripts, with the limits, the exit statuses and the memory note, in `docs/book/src/scripting.md`; every command shown is run as shown.
+6. Run the default suite; review; commit.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Integration | Reproduce and re-test each item | JDK 21, Tomcat 9 | Each item resolved |
+| T1 | Integration | Boundary and arithmetic cases of both scripts, and the existing Bash sample tests, run before and after | JDK 21, wrapper Maven or the Python test runner | The new cases fail before and pass after; the existing cases still pass |
+| T2 | Integration | Real appliance with the fixture IOC: extraction and statistics compared with independent computations | JDK 21, Tomcat 9, local launcher | CSV rows of each PV equal an independent `getData.json` request; statistics equal an independent computation; the documented commands run as shown |
+| T3 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, Tomcat 9 | Pending | none |
+| T1 | 2026-10-06 | JDK 21, Python test runner, local launcher, Debian 13 | Pass | Baseline before the change (HEAD 4fe0d83b): static check of the Bash samples with no failure, 67 client boundary tests OK, 18 real-appliance comparisons PASS (work/m7-baseline-result.txt). After the change: the static check of 10 Bash files has no failure (the seven samples, `archiverClient.bash` and the two new scripts), and the client boundary tests ran 110 tests OK (work/m7-full-result2.txt). Of the 43 new tests, 38 failed before the scripts existed, 3 failed before the header fix and 1 failed before the histogram bin limit, and the test of a structured value passed on its first run because the behavior was already in place (work/m7-tests-before.log, work/m7-tests-red2.log, work/m7-tests-red3.log). The 22 real-appliance cases all PASS after the last change of the scripts, among them the same 18 comparisons as the baseline (work/m7-final-run.log). A scale check on one million numeric rows ran the summary in 0.8 seconds, the moving window of 100 in 1.8 seconds and a 20-bin histogram in 1.1 seconds, and the count, mean and standard deviation of the summary equal a Python computation to ten significant digits. Seven mutations of the new scripts (the PV limit, the range edge, the exit status 3, the nanosecond padding, the standard deviation divisor, the last histogram bin, the window check) each made the intended tests fail (work/m7-mut-*.log). |
+| T2 | 2026-10-06 | JDK 21, Tomcat 9, local launcher, fixture IOC, appliance of this build | Pass | The first real-appliance run found a defect that the unit tests missed: the header line written by `getDataToCsv.bash` was quoted, so `csvStats.bash` refused every file with exit 2, because the statistics tests built their own plain header and the extraction tests parsed the quotes away (work/m7-data-run1.log). Three tests were written first (a plain header line, the extraction output read by `csvStats.bash`, a quoted header accepted) and failed, then both scripts were fixed. On the fixed scripts the real runner passes: every row of the CSV files of three PVs (75 rows) equals an independent `getData.json` request of the same PV and range; the summary, a moving window of 5 and a 6-bin histogram of 25 samples equal Python computations on the samples of that request; the commands of the new section of the scripting page, run verbatim, exit 0 with 42 lines of output; a PV the appliance does not know answers HTTP 404, is reported by name and leaves no file while the known PV is written and the exit status is 3 (work/m7-data-run2.log, work/m7-final-run.log). |
+| T3 | 2026-10-06 | JDK 21, wrapper Maven | Pass | ./mvnw -B -ntp clean verify: BUILD SUCCESS, 920 tests, 0 failures, 0 errors, 0 skipped, and the dependency analysis reports no problems; the count equals the previous build because the Python tests and the runner are not part of Maven (work/m7-verify.log). |
 
 ##### Closure Evidence
 
-- none
+- Landed on 2026-10-05: the change is 26882333c74988b4b52f5738444a8c99d183347e. Directly after the push at 19:54 PDT, local HEAD and origin/modernize were both at 26882333. The Maven workflow run 37406384517 on 26882333 succeeded (job "Build and test on JDK 21", finished 20:32 PDT), and the Pages deployment run 37406384515 on the same commit succeeded.
+- Linked issue #2: body rewritten with the two scripts, their limits and the verification, all five acceptance criteria checked, a [closure comment](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/2#issuecomment-6008944819) posted, and closed as completed on 2026-10-05 at 20:49:21 PDT. M7 is Complete.
+- Limits: the limits of the extraction script bound the requests and the time range and not the number of samples, so a high sample rate needs a shorter range; the script tests run with the Python runner and not in the Maven build; further site-required items are not part of this row.
 
 ##### GitHub Projection
 
 Title: Implement the site-required features and fixes
 Labels: enhancement
 GitHub Milestone: none
-Observed State: open
+Observed State: closed
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-09-25 (gh issue view 2 --repo jeonghanlee/epicsarchiverap-maven --json state,labels,milestone)
+Last Compared: 2026-10-05 20:50 PDT; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/2` confirms state closed with state_reason completed, closed_at 2026-10-06T03:49:21Z, the title above, enhancement label, no milestone and assignee jeonghanlee. Readback of the body matches `work/issue-site-features-body.md` and the closure comment matches `work/issue-site-features-close.md`.
 
 #### M10 - Ant removal: final Maven-only consolidation
 
