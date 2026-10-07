@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: Read M28 in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07. Both startup transfers and the shortened STS repeat preserved the expected old interval; a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. Issue #12 holds the accepted plan, 33-test evidence and new development-appliance automatic/HTTP results, startup overrun observation and local stop measurement; exact body readback on 2026-10-07 confirmed three criteria checked, six unchecked and the issue open. M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. M26 (issue #20) is Complete. M39 (issue #24) is Complete. M12 (issue #4) is Complete: on 2026-10-05 the owner selected the Redis persistence layer for removal and kept the other backends. M10 (issue #3) is Complete: the Ant build is removed and the site build contract of D33 is in force; the environment configuration session adopts it on its own schedule. M7 (issue #2) is Complete: its first and only item, the client-side data extraction and statistics sample scripts, landed in 26882333, and on 2026-10-05 the owner stated that the item list is finished for now; a further site-required item becomes a new row with its own issue. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the revised focused checks and soak criteria have execution evidence; prior observations remain separate. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
+Next session entry point: Finish repository landing and issue #28 body reconciliation/closure for the accepted M45 full-cadence deadline correction in `docs/milestone-daff1b7.md`; local T1-T5 passed, including 43 focused tests, 956 default tests and four WARs; owner acceptance and implementation authorization were given on 2026-10-07; G5 is Complete; issue #28 is created and its exact body and metadata are verified; after landing and issue closure, resume M28 in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07. Both startup transfers and the shortened STS repeat preserved the expected old interval; a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. Issue #12 holds the accepted plan, 33-test evidence and new development-appliance automatic/HTTP results, startup overrun observation and local stop measurement; exact body readback on 2026-10-07 confirmed three criteria checked, six unchecked and the issue open. M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. M26 (issue #20) is Complete. M39 (issue #24) is Complete. M12 (issue #4) is Complete: on 2026-10-05 the owner selected the Redis persistence layer for removal and kept the other backends. M10 (issue #3) is Complete: the Ant build is removed and the site build contract of D33 is in force; the environment configuration session adopts it on its own schedule. M7 (issue #2) is Complete: its first and only item, the client-side data extraction and statistics sample scripts, landed in 26882333, and on 2026-10-05 the owner stated that the item list is finished for now; a further site-required item becomes a new row with its own issue. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the revised focused checks and soak criteria have execution evidence; prior observations remain separate. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -63,10 +63,12 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M42 | Human-readable storage rates in storageSizeCheck.bash | Milestone | Complete | No | | storageSizeCheck.bash prints rates and its threshold in B to TB per year with three significant digits (af1e67ac); the client boundary tests fail before and pass after, the local appliance comparison and 900 default tests pass, and the Maven workflow passes; issue #25 closed as completed on 2026-10-04; [detail](#m42---human-readable-storage-rates-in-storagesizecheckbash) |
 | Phase 2 | M43 | One engine CA context never receives search replies | Milestone | Complete | No | | The shared UDP search port is reproduced with real CAJ contexts on Rocky 8.10 and Debian 13; the engine compares its command threads' search ports and recreates the earlier-bound context of a sharing pair (7adc7d5a); the new test fails without the check and passes with it, 901 default tests, 26 engine CA tests and the Maven workflow pass, and 30 restarts on a Rocky 8.10 guest were clean; issue #26 closed as completed on 2026-10-05; why the field rate exceeds the probe rate stays open; [detail](#m43---one-engine-ca-context-never-receives-search-replies) |
 | Phase 2 | M44 | Preserve ETL source data when append fails | Milestone | In progress | No | | A failed append retains its source partition, is excluded from moved totals and is reported as a failed job; recovery and ordinary transfers preserve the required samples; [detail](#m44---preserve-etl-source-data-when-append-fails) |
+| Phase 2 | M45 | Use a full-cadence deadline for ETL startup and scheduled passes | Milestone | In progress | No | G5 | Overrun means endedAt is strictly later than plannedAt plus cadence; real-job regressions cover startup wait, scheduled delay and deadline boundaries, with scheduling and physical transfer preserved; [detail](#m45---use-a-full-cadence-deadline-for-etl-startup-and-scheduled-passes) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
 | Tracking | G4 | ansible-provision deploy path for aa-env with SQLite | External gate | Complete | No | | ansible-provision deploys aa-env at or past bbe0968 with the MariaDB and the SQLite backend on a lab VM, and LAB-ansible-provision reports it; [detail](#g4---ansible-provision-deploy-path-for-aa-env-with-sqlite) |
+| Tracking | G5 | ETL pass deadline plan authorization and issue creation | External gate | Complete | No | | The current M45 plan is accepted and explicitly authorized, and its prepared bug issue exists on GitHub before implementation; [detail](#g5---etl-pass-deadline-plan-authorization-and-issue-creation) |
 
 ### Decisions
 
@@ -4139,6 +4141,127 @@ Observed Milestone: none
 Observed Assignee: jeonghanlee
 Observed Closed At: 2026-10-07 00:11:04 UTC
 Last Compared: 2026-10-06; live issue readback matched `work/issue-etl-append-failure.md` and `work/issue-etl-append-failure-close.md`
+
+#### M45 - Use a full-cadence deadline for ETL startup and scheduled passes
+
+Origin: daff1b7 / M45
+Identity History: none
+GitHub Issue: #28 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/28)
+Status: In progress
+
+##### Summary
+
+Give each ETL pass one complete cadence from its planned time to finish. A startup pass is planned when start() arms the driver, while a regular pass is planned on the existing UTC grid. Before the correction, nextGridAfter(plannedAt) gave startup only the remainder of a grid interval; ordinary waiting could therefore produce overrun=true even when the pass itself was brief. The verified working-tree correction changes the deadline indicator, not the transfer algorithm or the regular execution grid.
+
+##### Scope
+
+Change ETLPassDriver's completed-record overrun calculation to endedAt.isAfter(plannedAt.plusSeconds(cadenceSeconds)). Update the overrun and startup planned-time contract in ETLPassRecord's documentation and docs/design-etl-pass-scheduler.md. Add real-job regressions to ETLPassDriverTest with the existing PlainPB writers/readers and controlled outer Clock. Derive exact start delay from startedAt minus plannedAt, and elapsed pass time from endedAt minus startedAt, keeping them distinct from busyMillis and the thresholded lateSeconds value.
+
+Out of scope: changing cadence derivation, the 8-hour cap, transition offsets, ticker timing, worker count, ordering, nextPlannedAt, processingTime's 60-second margin, hold/gather, reduction, append/commit/deletion, storage policy or shutdown; adding a new record field or reinterpreting lateSeconds; deployment, VM operations, the 903-PV soak, or a claim that the previous startup record passed the revised definition.
+
+##### Completion Criteria
+
+- Every completed pass reports overrun exactly when endedAt is strictly later than plannedAt plus cadenceSeconds. Equality is not an overrun; nanosecond precision is retained.
+- Startup retains armedAt as plannedAt and includes tick, ordering and worker waiting in its full-cadence budget. Crossing an intervening regular grid boundary alone does not establish an overrun.
+- A regular pass retains its grid plannedAt. A delayed start followed by a short execution still reports overrun if it finishes after plannedAt plus cadence; the deadline does not move with startedAt.
+- Real shipped driver/ticker, ETLJob and PlainPB regressions establish the old startup defect before the source correction and the corrected behavior afterward. Physical source/destination event lists and multiplicity remain correct.
+- Existing grid advancement, transition ordering and backward-clock behavior remain valid. The DEBUG record timestamps permit exact start-delay and pass-duration calculations; lateSeconds=0 is not evidence of zero delay.
+- The focused and default Maven checks pass, the technical contract matches the shipped source, repository landing evidence is recorded, and the linked bug issue is reconciled and closed.
+
+##### Dependencies And Decisions
+
+- Decision Date: 2026-10-07. Use the completion-deadline definition discussed as option 1: regular plannedAt plus cadence, and startup armedAt plus cadence. Because startup already records armedAt as plannedAt, both cases use the same expression.
+- G5 completed on 2026-10-07: the owner accepted and authorized the current plan after the readiness explanation. Issue #28 creation and exact body/metadata readback were verified at 2026-10-07T20:10:14Z. M45 resumed as Not started and entered In progress with regression implementation. The agreed deadline definition remains unchanged.
+- This work uses M28's startup observation as defect evidence and is independent of its deployment and soak execution. M28 retains its existing scope and before-correction evidence; its final no-overrun conclusion requires records from the corrected artifact.
+- Before-correction observation: f8fa719d product classes, local development appliance, transition 0, cadence 300 s; plannedAt=2026-10-07T08:29:56.501543841Z, startedAt=2026-10-07T08:30:01.412867966Z, endedAt=2026-10-07T08:30:01.444066837Z. Start delay was 4.911324125 s, elapsed pass time 0.031198871 s, and the completed record reported overrun=true and lateSeconds=0. Four jobs completed without failure or abort, moving eight partitions. Evidence: work/m28-validation/automatic/r4/automatic-pass-records.log and the corresponding physical/HTTP results in M28. This is an observation of the existing implementation, not verification of the proposed correction.
+- Keep exact timing in the completed record. For verification, calculate startedAt minus plannedAt and endedAt minus startedAt independently; neither busyMillis nor the cadence-thresholded lateSeconds substitutes for those intervals.
+- Preserve the existing M28 test changes and their retained 33-test result. New deadline cases have separate test names and evidence; do not relabel earlier logs as corrected-code execution.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-07; owner accepted the current implementation and test plan by directing execution after the readiness explanation
+Implementation Authorization: 2026-10-07; explicit owner direction to execute the current plan
+Superseded Plan Artifacts: none
+
+1. With G5 complete, add a deterministic regression in src/test/org/epics/archiverappliance/etl/ETLPassDriverTest.java using real PlainPB source events, ETLPassTicker/ETLPassDriver, ETLJob and the existing writer/reader helpers. Arm startup just before a regular grid boundary and advance only the outer Clock so the next tick starts afterward, well before armedAt plus cadence. Await the real Future, assert the independently expected timestamps, correct physical movement and overrun=false, and retain its assertion failure against the unchanged production source. Closes with T1.
+2. Replace only the deadline operand in ETLPassDriver.runPass() with planned.plusSeconds(cadenceSeconds). Keep the strict Instant.isAfter comparison, clock source, completion path and nextPlannedAt calculation. Exercise startup and regular deadlines before, at and one nanosecond after the deadline, plus a delayed regular pass whose runtime is short but whose total planned-to-end interval exceeds cadence. Closes with T1 and T2.
+3. Verify the existing schedule/order/clock behavior through the real driver/ticker fixtures and include the case where startup finishes after an intervening grid time. Verify the resulting nextPlannedAt and exact physical events rather than inferring behavior from the flag alone. Closes with T3.
+4. Update only the functional timing contract in src/main/org/epics/archiverappliance/etl/common/ETLPassRecord.java and docs/design-etl-pass-scheduler.md: startup plannedAt is the arming time, overrun uses the full-cadence deadline, and start delay and elapsed time are separate timestamp differences. Check the real ETLMetrics consumer still reports the completed record's flag; preserve lateSeconds' existing threshold and the record/metrics interfaces. Closes with T4.
+5. Run ./mvnw -o -B -ntp test -Dtest=ETLPassDriverTest, then the repository's default ./mvnw -o -B -ntp clean verify. Retain the commands, source hashes, actual environment and complete reports under work/m45-validation; record new results only after execution. Reconcile the linked issue from this detail. Commit, push and issue mutations remain separate git-workflow operations. Closes with T5 and the landing/issue criteria.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Defect regression | Arm real startup immediately before a grid boundary, advance the outer Clock across it before the real ticker dispatch, await the real pass and independently compare its physical source/destination events | JDK 21, wrapper Maven, existing shipped ETLPassDriverTest helpers, real ETLJob and PlainPB; only outer Clock and environment input controlled | Unchanged production source fails the overrun=false assertion; corrected source passes without data loss or duplicate events |
+| T2 | Deadline boundaries | Parameterize startup and regular passes for 300, 900, 3600 and 28800 s cadences, including both transition indices and actual source granularities; finish before, exactly at and 1 ns after plannedAt plus cadence; include late startup/regular starts with short execution | Same real driver/job/storage path; deterministic outer Clock | Only the after-deadline cases overrun; waiting counts toward the budget, and actual startedAt does not extend the deadline |
+| T3 | Schedule and data regression | Run real grid, offset, ordered-transition and backward-clock cases; check grid advancement after startup crosses a boundary and after an overrun; read the physical fixture events | Real ETLPassTicker/ETLPassDriver and PlainPB fixtures | Regular grids, no overlap, transition ordering, skipped-grid handling and physical event expectations remain unchanged |
+| T4 | Reporting contract | Compare the source, ETLPassRecord Javadoc and scheduler requirements/record/testing clauses; observe a real completed record and its actual ETLMetrics output; calculate start delay and elapsed independently from timestamps | Real record and consumer, current technical document | Same completed overrun flag is exposed; exact timestamp differences remain available and lateSeconds retains its documented cadence threshold |
+| T5 | Default build and suite | Execute the focused driver class and ./mvnw -o -B -ntp clean verify with the normal default test selection; preserve complete reports and source hashes | Actual local JDK 21 and wrapper Maven, offline dependencies | Focused and default checks pass with no concealed failure; four WARs and normal build validation succeed |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-07T20:39:00Z baseline; 2026-10-07T20:56:40Z corrected | JDK 21.0.12.1, wrapper Maven 3.9.16; shipped ticker/driver/job and PlainPB; controlled outer Clock | Pass | Unchanged product source failed the overrun=false assertion (1 test, 1 failure, 0 errors/skips); the corrected real startup passed within the 43-test focused run. Actual corrected record: plannedAt 00:09:59.500Z, startedAt 00:10:01.500Z, endedAt 00:10:01.525Z on 2026-01-01; start delay 2 s, elapsed 25 ms, lateSeconds 0, overrun false. One partition moved, two exact old events reached destination, one recent event stayed in source, and nextPlannedAt was 00:15:00Z. See work/m45-validation/baseline and focused logs/XML/source hashes |
+| T2 | 2026-10-07T20:56:40Z | Real ETLJob and PlainPB source granularities, both transition indices, deterministic outer Clock and real executor | Pass | 48 before/equal/1-ns-after cases and 16 late-start cases passed across 300/900/3600/28800 s cadences. All 64 logged records independently satisfy nanosecond deadline arithmetic. A real occupied worker queued startup while the outer Clock advanced 301 s; the pass then completed in 25 ms of driver Clock time, retained plannedAt and reported overrun true. See focused/maven.log and the 43-test XML |
+| T3 | 2026-10-07T20:56:40Z | Real ticker/driver, source/destination stores and physical PB readers | Pass | Existing 33 driver cases passed with the new 10 invocations. Grid/offset, transition ordering and backward-clock checks passed; all 64 timing cases asserted next-grid advancement, no early dispatch, exact physical events and source deletion, then ran another real scheduled pass with no repeated transfer. See focused XML and source-sha256.txt |
+| T4 | 2026-10-07T20:56:40Z | Actual ETLMetrics over completed real driver records; current Javadoc and scheduler contract | Pass | All 64 real consumer rows matched their completed record flags; start delay and elapsed time were checked separately. lateSeconds retained 0 for sub-cadence waiting and cadence+1 for the late-start cases. Source/document clauses specify arming time, strict completion deadline, equality and timestamp precision. See focused/maven.log, ETLPassRecord.java and docs/design-etl-pass-scheduler.md |
+| T5 | 2026-10-07T20:56:40Z focused; 2026-10-07T21:32:28Z default | Debian 13.7, Linux 6.12.111+deb13-amd64, JDK 21.0.12.1, wrapper Maven 3.9.16, offline dependencies | Pass | Focused command passed 43 tests with 0 failures/errors/skips. MAVEN_OPTS=-Xmx1g ./mvnw -o -B -ntp clean verify -DargLine=-Xmx2g completed with BUILD SUCCESS in 35:18 min: 95 suites, 956 tests, 0 failures/errors/skips; normal default test selection is unchanged. All four WARs, release assembly, Javadoc, dependency convergence, upper-bound and duplicate-class checks and dependency analysis succeeded. All 64 deadline records in each corrected run independently matched exact nanosecond arithmetic and real metrics flags. Preserved default reports total 95 XML and 95 text files; work/m45-validation/execution.json and verification-summary.json record commands, environment, source hashes, counts and WAR/class hashes |
+
+##### Closure Evidence
+
+- Current working-tree correction changes only the completion-deadline operand in ETLPassDriver.runPass(); ETLPassRecord changes are documentation only. Before-correction product source SHA-256 is 359194ecd4b886068cd42e26db35072b7eb5333002d1067ee298e375899a91e5. Corrected driver source SHA-256 is 298019672186c962fdc5b9838d0dcb9a9a78ddc22dea6efd3f665129a5516c2f; test source SHA-256 is 809d22e34bee93471352efb18f67d7fc0872c29f26cf426bbbbefb2743431579. The observed regression failure and corrected focused/default results are retained separately under work/m45-validation. Local T1 through T5 are Pass; repository landing and issue closure remain outstanding, so M45 stays In progress.
+- At 2026-10-07T21:33:19Z, the evidence parser checked all 64 actual completed deadline records from each corrected run, compared their full-precision timestamp arithmetic and actual metrics flags, and verified that all four WARs contain exactly the driver class produced in target/classes by the clean build. That class SHA-256 is 6f8150055bfce84063193b1b82ee825e6013069bc624affcf56d3d6bfbe8b710. The WAR basename retains the prior HEAD abbreviation f8fa719d; these are corrected working-tree artifacts, not artifacts of the unchanged f8fa719d commit or new deployment/soak evidence. The current source/document artifacts were rechecked against the accepted deadline, schedule, data and reporting criteria; no plan deviation is recorded.
+
+| Corrected Local Artifact | Bytes | SHA-256 |
+| --- | --- | --- |
+| target/aa-20261007-f8fa719d-engine.war | 109894107 | a64269de609d209634a1ff8d89b0b2715d73e64f9f07e5af463509b4526813d7 |
+| target/aa-20261007-f8fa719d-etl.war | 109894141 | 8136ffb91521b69a4edc45b46a85f21f06a5135fd47ff2f68ffa98df58dd69b2 |
+| target/aa-20261007-f8fa719d-mgmt.war | 109940670 | 85c9257188dd1b64a10823d20458ef24fe2be790991e7317169e82f0b7fe1ee2 |
+| target/aa-20261007-f8fa719d-retrieval.war | 112266465 | 02b30eff55ca41364379442ddbd8a0213c5090992a931ece5abb4533149b0653 |
+
+- On 2026-10-07T20:10:14Z, issue #28 was created under Issue delegation and live readback exactly matched the prepared body: OPEN, bug label, assignee jeonghanlee, no GitHub milestone, six criteria unchecked. Its remote updatedAt was 2026-10-07T20:08:25Z. At that observation time no product correction or new verification had executed, and the plan had no acceptance or implementation authority. Owner acceptance and explicit implementation authorization were subsequently given on 2026-10-07; no correction commit, landing or issue closure is claimed.
+
+##### GitHub Projection
+
+Title: Use one cadence from the planned time as the ETL pass deadline
+Labels: bug
+GitHub Milestone: none
+Assignee: jeonghanlee
+Observed State: OPEN
+Observed Labels: bug
+Observed Milestone: none
+Observed Assignee: jeonghanlee
+Observed Updated At: 2026-10-07T20:08:25Z
+Last Compared: 2026-10-07T21:33:00Z; gh issue view 28 --repo jeonghanlee/epicsarchiverap-maven --json number,url,title,state,labels,milestone,assignees,updatedAt,body confirmed the original remote body and metadata
+ProjectionStatus: local updated body prepared from the accepted plan and executed T1-T5 results in work/issue-etl-pass-deadline-body.md; all six verification criteria are satisfied locally, while the remote body still has six unchecked criteria. Applying that body, repository landing and linked-issue closure remain separate operations.
+
+#### G5 - ETL pass deadline plan authorization and issue creation
+
+Origin: daff1b7 / G5
+GitHub Issue: #28 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/28)
+Status: Complete
+
+##### Summary
+
+The repository owner accepts and explicitly authorizes the current M45 implementation/test plan and creates its prepared GitHub bug issue, directly or through Issue delegation. This condition affects M45 only and must be complete before production edits begin.
+
+##### Completion Criteria
+
+- M45 records acceptance and explicit implementation authorization for its current plan.
+- The prepared issue exists in jeonghanlee/epicsarchiverap-maven; live readback confirms its body, bug label, assignee jeonghanlee and no GitHub milestone, and M45 records the actual issue number and URL.
+
+##### Verification Results
+
+| Observed At | Result | Evidence |
+| --- | --- | --- |
+| 2026-10-07 | Complete | Issue #28 creation and exact body/metadata readback were verified at 2026-10-07T20:10:14Z; current-plan acceptance and explicit implementation authority are recorded in M45 |
+
+##### Closure Evidence
+
+- G5 completed on 2026-10-07. Issue creation is verified at 2026-10-07T20:10:14Z, and the owner subsequently accepted and explicitly authorized the current implementation/test plan after its readiness explanation. This later execution direction supplies implementation authority; Issue and Push delegation remain separate operations.
 
 ## Backlog
 

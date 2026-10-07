@@ -301,7 +301,7 @@ public final class ETLPassDriver {
             }
         } finally {
             Instant endedAt = clock.instant();
-            boolean overrun = endedAt.isAfter(nextGridAfter(planned));
+            boolean overrun = endedAt.isAfter(planned.plusSeconds(cadenceSeconds));
             Instant after = planned.isAfter(endedAt) ? planned : endedAt;
             List<Runnable> leftover;
             List<String> failureLines;

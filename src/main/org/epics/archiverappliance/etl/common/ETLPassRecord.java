@@ -7,8 +7,9 @@ import java.util.List;
  * One ETL pass of one driver: the jobs of every PV of the driver, started by one firing.
  * Times read from the driver clock are plannedAt, startedAt, endedAt and processingTime; busyMillis and
  * slowestMillis are wall-clock job durations. endedAt is null for the pass in progress.
+ * Start delay is startedAt minus plannedAt; elapsed pass time is endedAt minus startedAt.
  *
- * @param plannedAt                 the planned firing time; the start time for a start-up pass
+ * @param plannedAt                 the grid firing time; the driver arming time for a start-up pass
  * @param startedAt                 driver clock at the start of the pass
  * @param endedAt                   driver clock at the end of the pass, or null while it runs
  * @param lateSeconds               startedAt minus plannedAt when that exceeds one cadence, else 0
@@ -27,7 +28,7 @@ import java.util.List;
  * @param slowestPv                 the PV of the longest job, or null when no job ran
  * @param slowestMillis             the duration of the longest job
  * @param maxPartitionsMovedByOnePv the largest count of partitions one job moved
- * @param overrun                   endedAt is past the next grid time after plannedAt
+ * @param overrun                   endedAt is strictly later than plannedAt plus one driver cadence
  * @param aborted                   the stop flag ended the pass before every PV was visited
  * @param skippedPvs                the PVs counted in jobsSkipped
  */

@@ -46,6 +46,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -55,6 +56,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -82,7 +84,7 @@ public class ETLPassDriverTest {
     /** A clock whose instant the test sets, and which advances by a fixed step on every read when one is set. */
     private static final class TestClock extends Clock {
         private Instant instant;
-        private long stepSeconds = 0;
+        private Duration step = Duration.ZERO;
 
         TestClock(Instant instant) {
             this.instant = instant;
@@ -93,13 +95,17 @@ public class ETLPassDriverTest {
         }
 
         synchronized void setStepSeconds(long stepSeconds) {
-            this.stepSeconds = stepSeconds;
+            this.step = Duration.ofSeconds(stepSeconds);
+        }
+
+        synchronized void setStep(Duration step) {
+            this.step = step;
         }
 
         @Override
         public synchronized Instant instant() {
             Instant now = instant;
-            instant = instant.plusSeconds(stepSeconds);
+            instant = instant.plus(step);
             return now;
         }
 
@@ -201,6 +207,16 @@ public class ETLPassDriverTest {
     private static Stream<Arguments> reductionPolicies() {
         return Stream.of(hops().get(1), hops().get(3))
                 .flatMap(hop -> Stream.of(10, 30, 60).map(interval -> Arguments.of(hop, interval)));
+    }
+
+    private static Stream<Hop> deadlineHops() {
+        return Stream.of(
+                new Hop("fiveMinute", PartitionGranularity.PARTITION_5MIN, PartitionGranularity.PARTITION_HOUR, 0),
+                new Hop("fifteenMinute", PartitionGranularity.PARTITION_15MIN, PartitionGranularity.PARTITION_HOUR, 0),
+                new Hop("hourly", PartitionGranularity.PARTITION_HOUR, PartitionGranularity.PARTITION_DAY, 0),
+                new Hop("eightHour", PartitionGranularity.PARTITION_DAY, PartitionGranularity.PARTITION_YEAR, 0))
+                .flatMap(hop -> Stream.of(0, 1).map(index ->
+                        new Hop(hop.name(), hop.source(), hop.destination(), index)));
     }
 
     private void writeSamples(String pv, String storeUrl, List<Sample> samples) throws Exception {
@@ -639,6 +655,185 @@ public class ETLPassDriverTest {
         assertSuccessfulPass(transfer, transfer.lookup(), 25, 600, 2,
                 transfer.sourceSizes().get(0) + transfer.sourceSizes().get(1));
         assertSuccessfulPass(transfer, transfer.lookup(), 30, 900, 1, transfer.sourceSizes().get(2));
+    }
+
+    @Test
+    public void startupCrossingTheGridStillHasOneCadenceToFinish() throws Exception {
+        String pv = "ArchUnitTest:ETLPassDriver:startupDeadline";
+        String source = url("STS", "sts", "PARTITION_5MIN");
+        String destination = url("MTS", "mts", "PARTITION_HOUR");
+        List<Sample> input = List.of(sample(at(0), 1), sample(at(299), 2), sample(at(600), 3));
+        writeSamples(pv, source, input);
+        List<PhysicalSample> original = expectedPhysical(input);
+        Assertions.assertEquals(original, physicalSamples(pv, source), "writer baseline");
+        Path[] files = pvFiles(pv, source);
+        Instant armedAt = at(600).minusMillis(500);
+        Instant startedAt = at(601).plusMillis(500);
+        TestClock clock = new TestClock(armedAt);
+        ETLPassDriver driver = new ETLPassDriver(0, 300, clock, name -> null, worker0);
+        driver.addPV(item(pv, source, destination, 0));
+        ETLPassTicker ticker = new ETLPassTicker(clock);
+        ticker.addDriver(driver);
+        driver.start();
+        clock.setStep(Duration.ofMillis(25));
+        ETLPassRecord record = tickOne(ticker, clock, startedAt);
+        clock.setStep(Duration.ZERO);
+
+        Assertions.assertEquals(armedAt, record.plannedAt());
+        Assertions.assertEquals(startedAt.plusMillis(25), record.endedAt());
+        Assertions.assertEquals(Duration.ofSeconds(2), Duration.between(record.plannedAt(), record.startedAt()));
+        Assertions.assertEquals(Duration.ofMillis(25), Duration.between(record.startedAt(), record.endedAt()));
+        Assertions.assertEquals(0, record.lateSeconds(), "sub-cadence waiting is not reported as lateSeconds");
+        Assertions.assertEquals(1, record.jobsRun());
+        Assertions.assertEquals(1, record.partitionsMoved());
+        Assertions.assertEquals(original.subList(0, 2), physicalSamples(pv, destination));
+        Assertions.assertEquals(original.subList(2, 3), physicalSamples(pv, source));
+        assertSourceFiles(pv, source, files, 1);
+        Assertions.assertEquals(at(900), driver.getNextPlannedAt(), "regular scheduling stays on the grid");
+        Assertions.assertFalse(record.overrun(), "crossing a grid does not consume the full startup cadence");
+        logger.info("Startup grid-crossing deadline record={}", record);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("deadlineHops")
+    public void completionDeadlinesPreserveTimingAndPhysicalEvents(Hop hop) throws Exception {
+        for (boolean startup : new boolean[] {true, false}) {
+            for (long nanos : new long[] {-1, 0, 1}) {
+                verifyCompletionDeadline(hop, startup, nanos, false);
+            }
+            verifyCompletionDeadline(hop, startup, 0, true);
+        }
+    }
+
+    private void verifyCompletionDeadline(Hop hop, boolean startup, long nanos, boolean lateStart) throws Exception {
+        String caseId = hop.name() + "-" + hop.transition() + "-" + startup + "-" + nanos + "-" + lateStart;
+        String pv = "ArchUnitTest:ETLPassDriver:deadline:" + caseId;
+        String source = url("SOURCE", "source/" + caseId, hop.source().name());
+        String destination = url("DEST", "destination/" + caseId, hop.destination().name());
+        long partition = hop.source().getApproxSecondsPerChunk();
+        long cadence = hop.source() == PartitionGranularity.PARTITION_DAY ? 28800 : partition;
+        Instant origin = at(FIXTURE_DAY_SECONDS);
+        Instant grid = origin.plusSeconds(3 * partition + (hop.transition() == 0 ? 300 : 600));
+        Instant planned = startup ? grid.minusMillis(500) : grid;
+        TestClock clock = new TestClock(startup ? planned : planned.minusSeconds(cadence));
+        ETLPassDriver driver = driver(hop, clock, pv, source, destination);
+        Assertions.assertEquals(cadence, driver.getCadenceSeconds(), "cadence from the actual source granularity");
+        ETLPassTicker ticker = new ETLPassTicker(clock);
+        ticker.addDriver(driver);
+        driver.start();
+        if (!startup) {
+            tickOne(ticker, clock, planned.minusSeconds(cadence));
+            Assertions.assertEquals(planned, driver.getNextPlannedAt(), "regular pass keeps its grid time");
+        }
+
+        List<Sample> input = List.of(sample(origin, 1), sample(origin.plusSeconds(1), 1),
+                sample(origin.plusSeconds(partition - 1), 2), sample(origin.plusSeconds(10 * partition), 3));
+        writeSamples(pv, source, input);
+        List<PhysicalSample> original = expectedPhysical(input);
+        Assertions.assertEquals(original, physicalSamples(pv, source), "writer baseline");
+        Path[] files = pvFiles(pv, source);
+        long waitSeconds = lateStart ? cadence + 1 : cadence - 1;
+        Duration elapsed = lateStart ? Duration.ofMillis(25) : Duration.ofSeconds(1).plusNanos(nanos);
+        Instant started = planned.plusSeconds(waitSeconds);
+        clock.setStep(elapsed);
+        ETLPassRecord record = tickOne(ticker, clock, started);
+        clock.setStep(Duration.ZERO);
+        clock.set(record.endedAt());
+        boolean expectedOverrun = lateStart || nanos > 0;
+
+        Assertions.assertEquals(planned, record.plannedAt());
+        Assertions.assertEquals(started.plus(elapsed), record.endedAt());
+        Assertions.assertEquals(Duration.ofSeconds(waitSeconds), Duration.between(planned, record.startedAt()));
+        Assertions.assertEquals(elapsed, Duration.between(record.startedAt(), record.endedAt()));
+        Assertions.assertEquals(lateStart ? cadence + 1 : 0, record.lateSeconds(), "existing lateness threshold");
+        Assertions.assertEquals(1, record.jobsRun());
+        Assertions.assertEquals(1, record.streamsReturned());
+        Assertions.assertEquals(1, record.partitionsMoved());
+        Assertions.assertTrue(record.bytesMoved() > 0);
+        Assertions.assertEquals(original.subList(0, 3), physicalSamples(pv, destination), "event multiplicity survives");
+        Assertions.assertEquals(original.subList(3, 4), physicalSamples(pv, source), "recent events stay in source");
+        assertSourceFiles(pv, source, files, 1);
+        Assertions.assertEquals(expectedOverrun, record.overrun(), "deadline anchored at the planned time");
+        Instant next = grid.plusSeconds(cadence * (lateStart || (!startup && nanos >= 0) ? 2 : 1));
+        Assertions.assertEquals(next, driver.getNextPlannedAt(), "grid advancement is independent of overrun");
+        Assertions.assertTrue(ticker.tickAll(next.minusNanos(1)).isEmpty(), "no pass before the next grid");
+
+        ETLMetrics metrics = new ETLMetrics();
+        metrics.setDrivers(ticker::getDrivers, clock);
+        String id = "ETL(" + hop.transition() + "&raquo;" + (hop.transition() + 1) + ")";
+        var rows = metrics.details(configService);
+        var overrunRows = rows.stream()
+                .filter(row -> row.get("name").equals("Last pass in " + id + " overran the cadence")).toList();
+        Assertions.assertEquals(1, overrunRows.size());
+        Assertions.assertEquals(expectedOverrun ? "yes" : "no", overrunRows.getFirst().get("value"));
+        var lateRows = rows.stream()
+                .filter(row -> row.get("name").equals("Last pass in " + id + " late by (s)")).toList();
+        Assertions.assertEquals(1, lateRows.size());
+        Assertions.assertEquals(Long.toString(lateStart ? cadence + 1 : 0), lateRows.getFirst().get("value"));
+        Assertions.assertEquals(startup ? "1" : "2", metrics.metrics().get("totalETLRuns(" + hop.transition() + ")"));
+        logger.info("Deadline case source={} transition={} startup={} lateStart={} offsetNanos={} next={} record={} rows={}",
+                hop.source(), hop.transition(), startup, lateStart, nanos, next, record, overrunRows);
+
+        ETLPassRecord repeat = tickOne(ticker, clock, next);
+        Assertions.assertEquals(next, repeat.plannedAt());
+        Assertions.assertFalse(repeat.overrun());
+        Assertions.assertEquals(0, repeat.partitionsMoved(), "a following pass does not transfer old events again");
+        Assertions.assertEquals(original.subList(0, 3), physicalSamples(pv, destination), "no duplicate transfer");
+        Assertions.assertEquals(original.subList(3, 4), physicalSamples(pv, source));
+        Assertions.assertEquals(next.plusSeconds(cadence), driver.getNextPlannedAt());
+    }
+
+    @Test
+    public void workerWaitingConsumesTheStartupDeadline() throws Exception {
+        String pv = "ArchUnitTest:ETLPassDriver:queuedDeadline";
+        String source = url("STS", "sts", "PARTITION_5MIN");
+        String destination = url("MTS", "mts", "PARTITION_HOUR");
+        List<Sample> input = List.of(sample(at(0), 1), sample(at(299), 2), sample(at(1800), 3));
+        writeSamples(pv, source, input);
+        List<PhysicalSample> original = expectedPhysical(input);
+        Assertions.assertEquals(original, physicalSamples(pv, source));
+        Instant planned = at(600).minusMillis(500);
+        Instant started = planned.plusSeconds(301);
+        TestClock clock = new TestClock(planned);
+        ETLPassDriver driver = new ETLPassDriver(0, 300, clock, name -> null, worker0);
+        driver.addPV(item(pv, source, destination, 0));
+        ETLPassTicker ticker = new ETLPassTicker(clock);
+        ticker.addDriver(driver);
+        CountDownLatch occupied = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        Future<Boolean> blocker = worker0.submit(() -> {
+            occupied.countDown();
+            return release.await(WAIT_SECONDS, TimeUnit.SECONDS);
+        });
+        ETLPassRecord record;
+        try {
+            Assertions.assertTrue(occupied.await(WAIT_SECONDS, TimeUnit.SECONDS));
+            driver.start();
+            List<Future<ETLPassRecord>> passes = ticker.tickAll(planned);
+            Assertions.assertEquals(1, passes.size());
+            Assertions.assertFalse(passes.getFirst().isDone(), "the real worker has not started the queued pass");
+            Assertions.assertNull(driver.getInProgress());
+            Assertions.assertEquals(original, physicalSamples(pv, source));
+            clock.set(started);
+            clock.setStep(Duration.ofMillis(25));
+            release.countDown();
+            record = await(passes.getFirst());
+        } finally {
+            release.countDown();
+        }
+        Assertions.assertTrue(blocker.get(WAIT_SECONDS, TimeUnit.SECONDS));
+        Assertions.assertEquals(planned, record.plannedAt());
+        Assertions.assertEquals(started, record.startedAt());
+        Assertions.assertEquals(started.plusMillis(25), record.endedAt());
+        Assertions.assertEquals(301, record.lateSeconds());
+        Assertions.assertEquals(1, record.jobsRun());
+        Assertions.assertEquals(0, record.jobsFailed());
+        Assertions.assertEquals(1, record.partitionsMoved());
+        Assertions.assertEquals(original.subList(0, 2), physicalSamples(pv, destination));
+        Assertions.assertEquals(original.subList(2, 3), physicalSamples(pv, source));
+        Assertions.assertTrue(record.overrun(), "worker waiting does not move the planned deadline");
+        Assertions.assertEquals(at(1200), driver.getNextPlannedAt());
+        logger.info("Worker-wait deadline record={}", record);
     }
 
     @Test
