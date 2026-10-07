@@ -2,17 +2,24 @@ package org.epics.archiverappliance.etl;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
 import org.epics.archiverappliance.Event;
+import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.CapturedLog;
+import org.epics.archiverappliance.common.POJOEvent;
+import org.epics.archiverappliance.common.PartitionGranularity;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.ScalarValue;
+import org.epics.archiverappliance.data.AlarmInfo;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.etl.common.ETLMetricsForLifetime;
+import org.epics.archiverappliance.etl.common.ETLMetrics;
 import org.epics.archiverappliance.etl.common.ETLPVLookupItems;
 import org.epics.archiverappliance.etl.common.ETLPassDriver;
 import org.epics.archiverappliance.etl.common.ETLPassRecord;
@@ -20,6 +27,7 @@ import org.epics.archiverappliance.etl.common.ETLPassTicker;
 import org.epics.archiverappliance.etl.common.ETLRunReport;
 import org.epics.archiverappliance.etl.common.OutOfSpaceHandling;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
+import org.epics.archiverappliance.retrieval.workers.CurrentThreadWorkerEventStream;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 import org.epics.archiverappliance.utils.nio.ArchPaths;
 import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
@@ -30,6 +38,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -47,16 +58,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 /**
  * ETL pass driver and ticker over real PlainPB stores and the shipped ETLJob. The only substitutes are the driver
  * clock (a settable clock, and a stepping clock for the overrun case) and the environment reader.
  */
 public class ETLPassDriverTest {
+    private static final Logger logger = LogManager.getLogger(ETLPassDriverTest.class);
     private static final long WAIT_SECONDS = 60;
     private static final int TRANSFER_SAMPLES = 900;
     private static final int PARTITION_SAMPLES = 300;
     private static final String INVALID_REDUCTION = "&reducedata=firstSample_notAnInteger";
+    private static final long FIXTURE_DAY_SECONDS = 4 * 86400L;
+    private static final String HOLD_AND_GATHER = "&hold=2&gather=1";
     private final String base =
             ConfigServiceForTests.getDefaultPBTestFolder() + "/" + ETLPassDriverTest.class.getSimpleName();
     private ConfigServiceForTests configService;
@@ -157,6 +172,247 @@ public class ETLPassDriverTest {
     }
 
     private record PhysicalSample(Instant timestamp, String eventBytes) {}
+
+    private record Sample(Instant timestamp, double value, int status, int severity) {
+        Event event() {
+            return new POJOEvent(ArchDBRTypes.DBR_SCALAR_DOUBLE, timestamp,
+                    new ScalarValue<Double>(value), status, severity);
+        }
+    }
+
+    private record Hop(String name, PartitionGranularity source, PartitionGranularity destination, int transition) {}
+
+    private static List<Hop> hops() {
+        return List.of(
+                new Hop("shortenedSTS", PartitionGranularity.PARTITION_5MIN, PartitionGranularity.PARTITION_HOUR, 0),
+                new Hop("shortenedMTS", PartitionGranularity.PARTITION_HOUR, PartitionGranularity.PARTITION_DAY, 1),
+                new Hop("defaultSTS", PartitionGranularity.PARTITION_HOUR, PartitionGranularity.PARTITION_DAY, 0),
+                new Hop("defaultMTS", PartitionGranularity.PARTITION_DAY, PartitionGranularity.PARTITION_YEAR, 1));
+    }
+
+    private static Stream<Arguments> selectionBoundaries() {
+        return hops().stream().flatMap(hop -> Stream.of(-1, 0, 1).map(offset -> Arguments.of(hop, offset)));
+    }
+
+    private static Stream<Arguments> chains() {
+        return Stream.of(Arguments.of(hops().get(0), hops().get(1)), Arguments.of(hops().get(2), hops().get(3)));
+    }
+
+    private static Stream<Arguments> reductionPolicies() {
+        return Stream.of(hops().get(1), hops().get(3))
+                .flatMap(hop -> Stream.of(10, 30, 60).map(interval -> Arguments.of(hop, interval)));
+    }
+
+    private void writeSamples(String pv, String storeUrl, List<Sample> samples) throws Exception {
+        PlainPBStoragePlugin store =
+                (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(storeUrl, configService);
+        ArrayListEventStream events = new ArrayListEventStream(samples.size(),
+                new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, pv, TimeUtils.getCurrentYear()));
+        for (Sample sample : samples) {
+            events.add(sample.event());
+        }
+        try (BasicContext context = new BasicContext()) {
+            store.appendData(context, pv, events);
+        }
+    }
+
+    private static PhysicalSample physicalSample(Event event) {
+        ByteArray raw = event.getRawForm();
+        return new PhysicalSample(event.getEventTimeStamp(), Base64.getEncoder().encodeToString(
+                Arrays.copyOfRange(raw.data, raw.off, raw.off + raw.len)));
+    }
+
+    private List<PhysicalSample> expectedPhysical(List<Sample> samples) {
+        return samples.stream().map(sample -> physicalSample(sample.event())).toList();
+    }
+
+    private Sample sample(Instant timestamp, int value) {
+        return new Sample(timestamp, value, value % 3, value % 2);
+    }
+
+    private ETLPassDriver driver(Hop hop, TestClock clock, String pv, String source, String destination)
+            throws Exception {
+        ETLPassDriver driver = new ETLPassDriver(hop.transition(), ETLPassDriver.cadenceFor(hop.source()),
+                clock, name -> null, hop.transition() == 0 ? worker0 : worker1);
+        driver.addPV(item(pv, source, destination, hop.transition()));
+        return driver;
+    }
+
+    /** All futures finish before the outer clock advances or physical storage is inspected. */
+    private ETLPassRecord tickOne(ETLPassTicker ticker, TestClock clock, Instant time) throws Exception {
+        clock.set(time);
+        List<Future<ETLPassRecord>> passes = ticker.tickAll(time);
+        Assertions.assertEquals(1, passes.size(), "exactly one transition must be due");
+        ETLPassRecord pass = await(passes.getFirst());
+        Assertions.assertEquals(time, pass.startedAt());
+        Assertions.assertEquals(time.minusSeconds(60), pass.processingTime());
+        Assertions.assertEquals(0, pass.jobsFailed());
+        Assertions.assertEquals(0, pass.jobsAborted());
+        Assertions.assertEquals(0, pass.streamsDeletedForSpace());
+        return pass;
+    }
+
+    private void assertSourceFiles(String pv, String source, Path[] original, int removed) throws Exception {
+        List<Path> expected = Arrays.asList(original).subList(removed, original.length);
+        List<Path> actual = Arrays.asList(pvFiles(pv, source));
+        Assertions.assertEquals(expected, actual, "retained source file paths");
+        for (int i = 0; i < removed; i++) {
+            Assertions.assertFalse(Files.exists(original[i]), "source file must be deleted: " + original[i]);
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, startup boundary offset {1} s")
+    @MethodSource("selectionBoundaries")
+    public void holdBoundaryPreservesPhysicalSamplesAtStartupAndScheduledPass(Hop hop, int offset) throws Exception {
+        String pv = "ArchUnitTest:ETLPassDriver:boundary:" + hop.name();
+        String source = url("SOURCE", "source", hop.source().name()) + HOLD_AND_GATHER;
+        String destination = url("DEST", "destination", hop.destination().name());
+        long partition = hop.source().getApproxSecondsPerChunk();
+        Instant origin = at(FIXTURE_DAY_SECONDS);
+        // Four partitions: two events before the cutoff, three in the next partition, and two recent events.
+        List<Sample> input = List.of(sample(origin, 1), sample(origin.plusSeconds(partition - 1), 2),
+                sample(origin.plusSeconds(partition), 3), sample(origin.plusSeconds(partition + 1), 4),
+                sample(origin.plusSeconds(2 * partition - 1), 5), sample(origin.plusSeconds(2 * partition), 6),
+                sample(origin.plusSeconds(3 * partition), 7));
+        writeSamples(pv, source, input);
+        List<PhysicalSample> original = expectedPhysical(input);
+        Assertions.assertEquals(original, physicalSamples(pv, source), "writer baseline");
+        Path[] files = pvFiles(pv, source);
+        Assertions.assertEquals(4, files.length);
+        Instant start = origin.plusSeconds(3 * partition + 60 + offset);
+        TestClock clock = new TestClock(start);
+        ETLPassDriver driver = driver(hop, clock, pv, source, destination);
+        ETLPassTicker ticker = new ETLPassTicker(clock);
+        ticker.addDriver(driver);
+        driver.start();
+        ETLPassRecord startup = tickOne(ticker, clock, start);
+        int moved = offset < 0 ? 0 : 2;
+        Assertions.assertEquals(start, startup.plannedAt(), "startup is armed at service start");
+        Assertions.assertEquals(original.subList(0, moved), physicalSamples(pv, destination));
+        Assertions.assertEquals(original.subList(moved, input.size()), physicalSamples(pv, source));
+        assertSourceFiles(pv, source, files, offset < 0 ? 0 : 1);
+
+        // The first scheduled pass follows the same boundary but includes the transition's grid offset.
+        long gridOffset = hop.transition() == 0 ? 300 : 600;
+        Instant scheduled = origin.plusSeconds(3 * partition + gridOffset);
+        if (partition == 300) {
+            scheduled = origin.plusSeconds(4 * partition);
+        }
+        Assertions.assertEquals(scheduled, driver.getNextPlannedAt());
+        clock.set(scheduled.minusSeconds(1));
+        Assertions.assertTrue(ticker.tickAll(clock.instant()).isEmpty(), "no pass before its grid time");
+        ETLPassRecord next = tickOne(ticker, clock, scheduled);
+        Assertions.assertEquals(scheduled, next.plannedAt());
+        Assertions.assertEquals(original.subList(0, 2), physicalSamples(pv, destination),
+                "scheduled pass preserves multiplicities, including already moved events");
+        Assertions.assertEquals(original.subList(2, input.size()), physicalSamples(pv, source));
+        assertSourceFiles(pv, source, files, 1);
+    }
+
+    @ParameterizedTest
+    @MethodSource("chains")
+    public void bothTransitionsPreserveIntermediateFilesAndRetainRecentSamples(Hop firstHop, Hop secondHop)
+            throws Exception {
+        String pv = "ArchUnitTest:ETLPassDriver:chain:" + firstHop.name();
+        String sts = url("STS", "sts", firstHop.source().name()) + HOLD_AND_GATHER;
+        String mts = url("MTS", "mts", secondHop.source().name()) + HOLD_AND_GATHER;
+        String lts = url("LTS", "lts", secondHop.destination().name());
+        long firstPartition = firstHop.source().getApproxSecondsPerChunk();
+        long secondPartition = secondHop.source().getApproxSecondsPerChunk();
+        Instant origin = at(FIXTURE_DAY_SECONDS);
+        List<Sample> input = List.of(sample(origin, 1), sample(origin.plusSeconds(firstPartition - 1), 2),
+                sample(origin.plusSeconds(2 * secondPartition), 3), sample(origin.plusSeconds(3 * secondPartition), 4));
+        writeSamples(pv, sts, input);
+        List<PhysicalSample> original = expectedPhysical(input);
+        Assertions.assertEquals(original, physicalSamples(pv, sts));
+        Path[] stsFiles = pvFiles(pv, sts);
+        Assertions.assertEquals(3, stsFiles.length);
+        Instant firstStart = origin.plusSeconds(3 * firstPartition + 60);
+        TestClock clock = new TestClock(firstStart);
+        ETLPassDriver first = driver(firstHop, clock, pv, sts, mts);
+        ETLPassDriver second = driver(secondHop, clock, pv, mts, lts);
+        ETLPassTicker ticker = new ETLPassTicker(clock);
+        ticker.addDriver(first);
+        first.start();
+        tickOne(ticker, clock, firstStart);
+        Assertions.assertEquals(original.subList(0, 2), physicalSamples(pv, mts), "first intermediate transfer");
+        Assertions.assertEquals(original.subList(2, 4), physicalSamples(pv, sts));
+        assertSourceFiles(pv, sts, stsFiles, 1);
+        Assertions.assertTrue(physicalSamples(pv, lts).isEmpty());
+
+        Instant secondStart = origin.plusSeconds(3 * secondPartition + 60);
+        tickOne(ticker, clock, secondStart);
+        Assertions.assertEquals(original.subList(0, 3), physicalSamples(pv, mts), "complete intermediate baseline");
+        Assertions.assertEquals(original.subList(3, 4), physicalSamples(pv, sts));
+        assertSourceFiles(pv, sts, stsFiles, 2);
+        Path[] mtsFiles = pvFiles(pv, mts);
+        Assertions.assertEquals(2, mtsFiles.length);
+        // Local verification inspects MTS before enabling the next real transition at the same clock time.
+        ticker.addDriver(second);
+        second.start();
+        tickOne(ticker, clock, secondStart);
+        Assertions.assertEquals(original.subList(0, 2), physicalSamples(pv, lts));
+        Assertions.assertEquals(original.subList(2, 3), physicalSamples(pv, mts));
+        Assertions.assertEquals(original.subList(3, 4), physicalSamples(pv, sts));
+        assertSourceFiles(pv, mts, mtsFiles, 1);
+    }
+
+    private static Sample decodedSample(Event event) {
+        AlarmInfo alarm = (AlarmInfo) event;
+        return new Sample(event.getEventTimeStamp(), event.getSampleValue().getValue().doubleValue(),
+                alarm.getStatus(), alarm.getSeverity());
+    }
+
+    @ParameterizedTest(name = "{0}, lastSample_{1}")
+    @MethodSource("reductionPolicies")
+    public void lastSamplePoliciesPreserveIndependentBoundaryExpectations(Hop hop, int interval) throws Exception {
+        String pv = "ArchUnitTest:ETLPassDriver:reduction:" + hop.name() + ":" + interval;
+        String source = url("MTS", "mts", hop.source().name()) + HOLD_AND_GATHER;
+        String destination = url("LTS", "lts", hop.destination().name()) + "&reducedata=lastSample_" + interval;
+        Instant origin = at(FIXTURE_DAY_SECONDS);
+        List<Sample> input = List.of(sample(origin.plusSeconds(1), 1),
+                sample(origin.plusSeconds(interval).minusNanos(1), 2), sample(origin.plusSeconds(interval), 3),
+                sample(origin.plusSeconds(interval).plusNanos(1), 4),
+                sample(origin.plusSeconds(2L * interval).minusNanos(1), 5),
+                sample(origin.plusSeconds(2L * interval), 6), sample(origin.plusSeconds(2L * interval).plusNanos(1), 7),
+                sample(origin.plusSeconds(4L * interval), 8));
+        // Last events in bins 0, 1, 2 and 4; bin 3 is empty and must not be filled.
+        List<Sample> expected = List.of(input.get(1), input.get(4), input.get(6), input.get(7));
+        writeSamples(pv, source, input);
+        Assertions.assertEquals(expectedPhysical(input), physicalSamples(pv, source));
+        Path[] sourceFiles = pvFiles(pv, source);
+        Assertions.assertEquals(1, sourceFiles.length);
+        Instant start = origin.plusSeconds(3L * hop.source().getApproxSecondsPerChunk() + 60);
+        TestClock clock = new TestClock(start);
+        ETLPassDriver driver = driver(hop, clock, pv, source, destination);
+        ETLPassTicker ticker = new ETLPassTicker(clock);
+        ticker.addDriver(driver);
+        driver.start();
+        tickOne(ticker, clock, start);
+        assertSourceFiles(pv, source, sourceFiles, 1);
+        List<Sample> actual = new ArrayList<>();
+        for (Path path : pvFiles(pv, destination)) {
+            try (var stream = new FileBackedPBEventStream(pv, path, ArchDBRTypes.DBR_SCALAR_DOUBLE)) {
+                for (Event event : stream) {
+                    actual.add(decodedSample(event));
+                }
+            }
+        }
+        Assertions.assertEquals(expected, actual, "physical reduced timestamps, values, status and severity");
+        PlainPBStoragePlugin store =
+                (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(destination, configService);
+        List<Sample> retrieved = new ArrayList<>();
+        try (BasicContext context = new BasicContext(); EventStream stream = new CurrentThreadWorkerEventStream(pv,
+                store.getDataForPV(context, pv, origin, origin.plusSeconds(5L * interval)))) {
+            for (Event event : stream) {
+                retrieved.add(decodedSample(event));
+            }
+        }
+        Assertions.assertEquals(expected, retrieved, "storage retrieval matches the independent expectation");
+        tickOne(ticker, clock, driver.getNextPlannedAt());
+        Assertions.assertEquals(expectedPhysical(expected), physicalSamples(pv, destination),
+                "a scheduled pass with no source input adds no duplicate reduced events");
+    }
 
     private record Transfer(
             String pv, String sourceUrl, String destinationUrl, ETLPVLookupItems lookup,
