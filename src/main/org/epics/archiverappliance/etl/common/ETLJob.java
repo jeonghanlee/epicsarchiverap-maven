@@ -219,15 +219,19 @@ public class ETLJob implements Runnable {
                         }
                         long time3 = System.currentTimeMillis();
                         boolean status = curETLDest.appendToETLAppendData(pvName, stream, etlContext);
-                        movedList.add(infoItem);
                         time4appendToETLAppendData = time4appendToETLAppendData + System.currentTimeMillis() - time3;
                         if (status) {
+                            movedList.add(infoItem);
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Successfully appended ETLInfo with key = " + infoItem.getKey()
                                         + " for PV " + pvName + "itemInfo partitionGranularity = "
                                         + infoItem.getGranularity().toString());
                             }
                         } else {
+                            partitionsFailed++;
+                            if (firstFailure == null) {
+                                firstFailure = "appendToETLAppendData returned false for partition " + infoItem.getKey();
+                            }
                             logger.warn("Invalid status when processing ETLInfo with key = " + infoItem.getKey()
                                     + " for PV " + pvName + "itemInfo partitionGranularity = "
                                     + infoItem.getGranularity().toString());

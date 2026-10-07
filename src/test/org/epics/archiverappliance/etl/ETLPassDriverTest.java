@@ -1,7 +1,11 @@
 package org.epics.archiverappliance.etl;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.Level;
+import org.epics.archiverappliance.ByteArray;
+import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.common.BasicContext;
+import org.epics.archiverappliance.common.CapturedLog;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
@@ -13,9 +17,13 @@ import org.epics.archiverappliance.etl.common.ETLPVLookupItems;
 import org.epics.archiverappliance.etl.common.ETLPassDriver;
 import org.epics.archiverappliance.etl.common.ETLPassRecord;
 import org.epics.archiverappliance.etl.common.ETLPassTicker;
+import org.epics.archiverappliance.etl.common.ETLRunReport;
 import org.epics.archiverappliance.etl.common.OutOfSpaceHandling;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
+import org.epics.archiverappliance.utils.nio.ArchPaths;
+import edu.stanford.slac.archiverappliance.PlainPB.FileBackedPBEventStream;
+import edu.stanford.slac.archiverappliance.PlainPB.PlainPBPathNameUtility;
 import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -25,11 +33,16 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -41,6 +54,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class ETLPassDriverTest {
     private static final long WAIT_SECONDS = 60;
+    private static final int TRANSFER_SAMPLES = 900;
+    private static final int PARTITION_SAMPLES = 300;
+    private static final String INVALID_REDUCTION = "&reducedata=firstSample_notAnInteger";
     private final String base =
             ConfigServiceForTests.getDefaultPBTestFolder() + "/" + ETLPassDriverTest.class.getSimpleName();
     private ConfigServiceForTests configService;
@@ -138,6 +154,235 @@ public class ETLPassDriverTest {
     private static ETLPassRecord await(Future<ETLPassRecord> pass) throws Exception {
         Assertions.assertNotNull(pass, "a pass was expected to start");
         return pass.get(WAIT_SECONDS, TimeUnit.SECONDS);
+    }
+
+    private record PhysicalSample(Instant timestamp, String eventBytes) {}
+
+    private record Transfer(
+            String pv, String sourceUrl, String destinationUrl, ETLPVLookupItems lookup,
+            TestClock clock, ETLPassDriver driver, List<PhysicalSample> original, List<Long> sourceSizes) {}
+
+    /** Lists only this PV's physical files, without retrieval merging or deduplication. */
+    private Path[] pvFiles(String pv, String storeUrl) throws Exception {
+        PlainPBStoragePlugin store =
+                (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(storeUrl, configService);
+        if (!Files.isDirectory(Path.of(store.getRootFolder()))) {
+            return new Path[0];
+        }
+        return PlainPBPathNameUtility.getAllPathsForPV(
+                new ArchPaths(), store.getRootFolder(), pv, store.getExtensionString(),
+                store.getPartitionGranularity(), PlainPBStoragePlugin.CompressionMode.NONE,
+                configService.getPVNameToKeyConverter());
+    }
+
+    private List<PhysicalSample> physicalSamples(String pv, String storeUrl) throws Exception {
+        List<PhysicalSample> samples = new ArrayList<>();
+        for (Path path : pvFiles(pv, storeUrl)) {
+            try (var stream = new FileBackedPBEventStream(pv, path, ArchDBRTypes.DBR_SCALAR_DOUBLE)) {
+                for (Event event : stream) {
+                    ByteArray raw = event.getRawForm();
+                    samples.add(new PhysicalSample(event.getEventTimeStamp(), Base64.getEncoder().encodeToString(
+                            Arrays.copyOfRange(raw.data, raw.off, raw.off + raw.len))));
+                }
+            }
+        }
+        samples.sort(Comparator.comparing(PhysicalSample::timestamp).thenComparing(PhysicalSample::eventBytes));
+        return samples;
+    }
+
+    private Transfer transfer(String name, boolean invalidReduction) throws Exception {
+        String pv = "ArchUnitTest:ETLPassDriver:" + name;
+        String source = url("STS", "sts", "PARTITION_5MIN") + "&hold=2&gather=1";
+        String destination = url("MTS", "mts", "PARTITION_HOUR") + "&hold=2&gather=1";
+        ETLPVLookupItems lookup = item(pv, source, destination + (invalidReduction ? INVALID_REDUCTION : ""), 0);
+        write(pv, source, TRANSFER_SAMPLES);
+        List<PhysicalSample> original = physicalSamples(pv, source);
+        Assertions.assertEquals(TRANSFER_SAMPLES, original.size());
+        List<Long> sizes = new ArrayList<>();
+        for (Path path : pvFiles(pv, source)) {
+            sizes.add(Files.size(path));
+        }
+        Assertions.assertEquals(3, sizes.size());
+        TestClock clock = new TestClock(at(15 * 60));
+        ETLPassDriver driver = new ETLPassDriver(0, 300, clock, nameInEnvironment -> null, worker0);
+        driver.addPV(lookup);
+        driver.start();
+        return new Transfer(pv, source, destination, lookup, clock, driver, original, sizes);
+    }
+
+    private ETLPassRecord runAt(ETLPassDriver driver, TestClock clock, int minute) throws Exception {
+        Instant time = at(minute * 60L);
+        clock.set(time);
+        ETLPassRecord record = await(driver.tick(time));
+        Assertions.assertEquals(time, record.plannedAt());
+        Assertions.assertEquals(time, record.startedAt());
+        Assertions.assertEquals(time.minusSeconds(60), record.processingTime());
+        return record;
+    }
+
+    private void assertPhysicalState(Transfer transfer, int movedSamples) throws Exception {
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(
+                        transfer.original().subList(movedSamples, TRANSFER_SAMPLES),
+                        physicalSamples(transfer.pv(), transfer.sourceUrl()), "retained source events"),
+                () -> Assertions.assertEquals(
+                        transfer.original().subList(0, movedSamples),
+                        physicalSamples(transfer.pv(), transfer.destinationUrl()), "destination events"));
+    }
+
+    private void assertStartup(Transfer transfer) throws Exception {
+        ETLPassRecord record = runAt(transfer.driver(), transfer.clock(), 15);
+        Assertions.assertEquals(0, record.streamsReturned());
+        Assertions.assertEquals(0, record.partitionsMoved());
+        Assertions.assertEquals(0, record.jobsFailed());
+        assertPhysicalState(transfer, 0);
+    }
+
+    private void assertFailedTransfer(Transfer transfer, ETLPassRecord record, int partitions) throws Exception {
+        ETLRunReport job = transfer.lookup().getLastRunReport();
+        Assertions.assertAll(
+                () -> assertPhysicalState(transfer, 0),
+                () -> Assertions.assertEquals(partitions, record.streamsReturned()),
+                () -> Assertions.assertEquals(1, record.jobsRun()),
+                () -> Assertions.assertEquals(1, record.jobsFailed()),
+                () -> Assertions.assertEquals(0, record.jobsAborted()),
+                () -> Assertions.assertEquals(0, record.jobsSkipped()),
+                () -> Assertions.assertEquals(0, record.partitionsMoved()),
+                () -> Assertions.assertEquals(0, record.bytesMoved()),
+                () -> Assertions.assertEquals(0, record.streamsDeletedForSpace()),
+                () -> Assertions.assertEquals(partitions, job.partitionsFailed()),
+                () -> Assertions.assertNotNull(job.firstFailure()),
+                () -> Assertions.assertTrue(String.valueOf(job.firstFailure()).contains("returned false")),
+                () -> Assertions.assertTrue(String.valueOf(job.firstFailure()).contains(
+                        pvFiles(transfer.pv(), transfer.sourceUrl())[0].toAbsolutePath().toString())));
+    }
+
+    private void assertFailureLog(CapturedLog log, ETLPassRecord record, String pv, int partitions) throws Exception {
+        log.settle();
+        List<CapturedLog.Entry> failures = log.at(Level.ERROR).stream()
+                .filter(entry -> entry.message().startsWith("ETL pass failed to move partitions:"))
+                .filter(entry -> entry.message().contains("plannedAt=" + record.plannedAt() + " "))
+                .toList();
+        Assertions.assertEquals(1, failures.size(), "failure log for " + record.plannedAt());
+        String message = failures.getFirst().message();
+        Assertions.assertTrue(message.contains("source=STS destination=MTS "), message);
+        Assertions.assertTrue(message.contains("failedPartitions=" + partitions + " "), message);
+        Assertions.assertTrue(message.contains("affectedPVs=1 "), message);
+        Assertions.assertTrue(message.contains("firstPV=" + pv + " "), message);
+        Assertions.assertTrue(message.contains("returned false"), message);
+    }
+
+    @Test
+    public void falseAppendRetainsSourceAndReportsFailure() throws Exception {
+        Transfer transfer = transfer("falseAppend", true);
+        assertStartup(transfer);
+        try (CapturedLog log = new CapturedLog("org.epics.archiverappliance.etl", Level.DEBUG)) {
+            ETLPassRecord record = runAt(transfer.driver(), transfer.clock(), 20);
+            assertFailedTransfer(transfer, record, 1);
+            assertFailureLog(log, record, transfer.pv(), 1);
+        }
+    }
+
+    @Test
+    public void falseAppendContinuesThroughTwoPartitionsOfOnePV() throws Exception {
+        Transfer transfer = transfer("twoFalseAppends", true);
+        assertStartup(transfer);
+        try (CapturedLog log = new CapturedLog("org.epics.archiverappliance.etl", Level.DEBUG)) {
+            ETLPassRecord first = runAt(transfer.driver(), transfer.clock(), 20);
+            assertFailedTransfer(transfer, first, 1);
+            assertFailureLog(log, first, transfer.pv(), 1);
+            ETLPassRecord second = runAt(transfer.driver(), transfer.clock(), 25);
+            assertFailedTransfer(transfer, second, 2);
+            assertFailureLog(log, second, transfer.pv(), 2);
+        }
+    }
+
+    @Test
+    public void falseAppendDoesNotStopLaterPVsOrInflateMovedTotals() throws Exception {
+        Transfer a = transfer("mixed:A", false);
+        Transfer b = transfer("mixed:B", true);
+        Transfer c = transfer("mixed:C", false);
+        // One driver owns the ordered pass over all three PVs.
+        a.driver().addPV(b.lookup());
+        a.driver().addPV(c.lookup());
+        assertStartup(a);
+        assertPhysicalState(b, 0);
+        assertPhysicalState(c, 0);
+        try (CapturedLog log = new CapturedLog("org.epics.archiverappliance.etl", Level.DEBUG)) {
+            ETLPassRecord record = runAt(a.driver(), a.clock(), 20);
+            Assertions.assertAll(
+                    () -> assertPhysicalState(a, PARTITION_SAMPLES),
+                    () -> assertPhysicalState(b, 0),
+                    () -> assertPhysicalState(c, PARTITION_SAMPLES),
+                    () -> Assertions.assertEquals(3, record.jobsRun()),
+                    () -> Assertions.assertEquals(1, record.jobsFailed()),
+                    () -> Assertions.assertEquals(0, record.jobsAborted()),
+                    () -> Assertions.assertEquals(0, record.jobsSkipped()),
+                    () -> Assertions.assertEquals(3, record.streamsReturned()),
+                    () -> Assertions.assertEquals(2, record.partitionsMoved()),
+                    () -> Assertions.assertEquals(a.sourceSizes().getFirst() + c.sourceSizes().getFirst(), record.bytesMoved()),
+                    () -> Assertions.assertEquals(0, record.streamsDeletedForSpace()),
+                    () -> Assertions.assertEquals(0, a.lookup().getLastRunReport().partitionsFailed()),
+                    () -> Assertions.assertEquals(1, b.lookup().getLastRunReport().partitionsFailed()),
+                    () -> Assertions.assertEquals(0, c.lookup().getLastRunReport().partitionsFailed()));
+            assertFailureLog(log, record, b.pv(), 1);
+        }
+    }
+
+    private void assertSuccessfulPass(Transfer transfer, ETLPVLookupItems lookup, int minute,
+            int movedSamples, int partitions, long bytes) throws Exception {
+        ETLPassRecord record = runAt(transfer.driver(), transfer.clock(), minute);
+        assertPhysicalState(transfer, movedSamples);
+        Assertions.assertEquals(0, record.jobsFailed());
+        Assertions.assertEquals(0, lookup.getLastRunReport().partitionsFailed());
+        Assertions.assertEquals(0, record.streamsDeletedForSpace());
+        Assertions.assertEquals(partitions, record.partitionsMoved());
+        Assertions.assertEquals(bytes, record.bytesMoved());
+    }
+
+    @Test
+    public void retainedFilesRecoverAfterRemovingInvalidReduction() throws Exception {
+        Transfer transfer = transfer("reductionRetry", true);
+        assertStartup(transfer);
+        try (CapturedLog log = new CapturedLog("org.epics.archiverappliance.etl", Level.DEBUG)) {
+            ETLPassRecord failed = runAt(transfer.driver(), transfer.clock(), 20);
+            assertFailedTransfer(transfer, failed, 1);
+            assertFailureLog(log, failed, transfer.pv(), 1);
+        }
+        ETLPVLookupItems corrected = item(transfer.pv(), transfer.sourceUrl(), transfer.destinationUrl(), 0);
+        transfer.driver().addPV(corrected);
+        assertSuccessfulPass(transfer, corrected, 25, 600, 2,
+                transfer.sourceSizes().get(0) + transfer.sourceSizes().get(1));
+        assertSuccessfulPass(transfer, corrected, 30, 900, 1, transfer.sourceSizes().get(2));
+        assertSuccessfulPass(transfer, corrected, 35, 900, 0, 0);
+    }
+
+    @Test
+    public void heldPartitionsMoveWithoutChangingPhysicalSamples() throws Exception {
+        Transfer transfer = transfer("exactMovement", false);
+        assertStartup(transfer);
+        for (int partition = 0; partition < 3; partition++) {
+            assertSuccessfulPass(transfer, transfer.lookup(), 20 + partition * 5,
+                    (partition + 1) * PARTITION_SAMPLES, 1, transfer.sourceSizes().get(partition));
+        }
+    }
+
+    @Test
+    public void filesystemFailureRetainsPhysicalSamplesUntilRecovery() throws Exception {
+        Path blocked = Path.of(base, "mts");
+        Files.writeString(blocked, "not a directory");
+        Transfer transfer = transfer("filesystemRetry", false);
+        assertStartup(transfer);
+        ETLPassRecord failed = runAt(transfer.driver(), transfer.clock(), 20);
+        Assertions.assertEquals(1, failed.jobsFailed());
+        Assertions.assertEquals(0, failed.partitionsMoved());
+        Assertions.assertEquals(0, failed.bytesMoved());
+        assertPhysicalState(transfer, 0);
+        Files.move(blocked, Path.of(base, "blocked-destination-marker"));
+        Files.createDirectory(blocked);
+        assertSuccessfulPass(transfer, transfer.lookup(), 25, 600, 2,
+                transfer.sourceSizes().get(0) + transfer.sourceSizes().get(1));
+        assertSuccessfulPass(transfer, transfer.lookup(), 30, 900, 1, transfer.sourceSizes().get(2));
     }
 
     @Test
