@@ -112,7 +112,8 @@ class Verification:
             "prefix": self.prefix, "pvs": self.pvs,
             "sources": {str(path.relative_to(REPO)): digest(path) for path in [
                 CLI, CLI.parent / "archiverClient.py", CLI.parent / "listArchivedPVs.py",
-                CLI.parent / "archivePVList.py", CLI.parent / "pausePVList.py", Path(__file__).resolve(),
+                CLI.parent / "archivePVList.bash", CLI.parent / "archiverClient.bash",
+                CLI.parent / "pausePVList.py", Path(__file__).resolve(),
                 REPO / "src/test/pythontests/test_disconnected_client.py",
                 REPO / "src/test/org/epics/archiverappliance/mgmt/CurrentlyDisconnectedPVsTest.java",
                 REPO / "src/test/org/epics/archiverappliance/mgmt/bpl/reports/CurrentlyDisconnectedPVsResponseTest.java",
@@ -308,7 +309,7 @@ class Verification:
     def cli(self, name, script, inputs):
         path = self.root / (name + ".txt")
         path.write_text("\n".join(inputs) + "\n")
-        command = [sys.executable, str(CLI.parent / script), self.bpl, str(path)]
+        command = ["bash" if script.endswith(".bash") else sys.executable, str(CLI.parent / script), self.bpl, str(path)]
         result = subprocess.run(command, cwd=REPO, env=self.env, text=True, capture_output=True, timeout=120)
         save(self.root, name + "-command.json", command)
         (self.root / (name + ".stdout")).write_text(result.stdout)
@@ -412,7 +413,7 @@ class Verification:
     def ioc_workflow(self):
         self.began = time.time_ns()
         self.start_ioc()
-        self.cli("archive-targets", "archivePVList.py", self.pvs)
+        self.cli("archive-targets", "archivePVList.bash", self.pvs)
         self.wait(lambda: all(row["status"] == "Being archived" for row in self.api(
             "getPVStatus", {"pv": ",".join(self.pvs)})), time.monotonic() + 360, "archived", poll=1)
         for pv in self.pvs:

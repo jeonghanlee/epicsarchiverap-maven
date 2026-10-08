@@ -16,7 +16,7 @@ from urllib.parse import parse_qs, urlsplit
 
 SAMPLES = Path(__file__).resolve().parents[3] / "docs/book/src/samples"
 MUTATIONS = {"renamePV", "archivePV", "pauseArchivingPV", "resumeArchivingPV"}
-SCRIPTS = ("renamePVList.py", "archivePVList.py", "pausePVList.py", "resumePVList.py")
+SCRIPTS = ("renamePVList.py", "archivePVList.bash", "pausePVList.py", "resumePVList.py")
 
 
 class RenameClientTest(unittest.TestCase):
@@ -118,12 +118,13 @@ class RenameClientTest(unittest.TestCase):
             row.update({component + "_pvName": name, component + "_status": "ok"})
         return [row]
 
-    def cli(self, *options, script="renamePVList.py", url=None, file=None):
+    def cli(self, *options, script="renamePVList.py", url=None, file=None, env=None):
         path = file or self.file
-        command = [sys.executable, str(SAMPLES / script), url or self.url, str(path), *options]
+        command = ["bash" if script.endswith(".bash") else sys.executable, str(SAMPLES / script), url or self.url, str(path), *options]
         result = subprocess.run(command, capture_output=True, text=True, timeout=8,
                                 env={**os.environ, "NO_PROXY": "*", "no_proxy": "*",
-                                     "PYTHONDONTWRITEBYTECODE": "1", "PYTHONIOENCODING": "ascii"})
+                                     "PYTHONDONTWRITEBYTECODE": "1", "PYTHONIOENCODING": "ascii",
+                                     **(env or {})})
         self.executions.append({"command": command, "input_hex": path.read_bytes().hex() if path.exists() else None,
                                 "exit": result.returncode, "stdout": result.stdout, "stderr": result.stderr})
         return result
@@ -283,6 +284,38 @@ class RenameClientTest(unittest.TestCase):
         self.check(self.cli(script="getPVStatus.py"), 0)
         self.assertFalse(self.mutations())
         self.assertEqual(len(self.redirect_requests), 1)
+
+    def test_archive_url_is_literal_and_each_action_is_sent_once(self):
+        self.file.write_text("TEST:A\n")
+        origin = self.url.rsplit("/mgmt/bpl", 1)[0]
+        for base in ("/mgmt/{literal}/bpl", "/mgmt/{left,right}/bpl",
+                     "/mgmt/[1-2]/bpl", "/mgmt/%7Bliteral%7D/bpl"):
+            with self.subTest(base=base):
+                self.requests.clear()
+                self.received.clear()
+                result = self.cli(script="archivePVList.bash", url=origin + base)
+                self.check(result, 0)
+                self.assertIn("Total 1   Successful 1   Failed 0", result.stdout)
+                self.assertEqual([(r["method"], urlsplit(r["path"]).path) for r in self.received], [
+                    ("GET", base + "/getAllAliases"),
+                    ("GET", base + "/getPVTypeInfo"),
+                    ("POST", base + "/archivePV"),
+                ])
+                self.assertEqual(self.mutations()[0]["payload"][0]["pv"], "TEST:A")
+
+    def test_curl_config_cannot_enable_archive_redirects(self):
+        self.file.write_text("TEST:A\n")
+        (self.file.parent / ".curlrc").write_text("location\n")
+        for code in (301, 302, 303, 307, 308):
+            for server in self.servers:
+                with self.subTest(code=code, port=server.server_port):
+                    self.redirect = (code, f"http://127.0.0.1:{server.server_port}/redirect-target")
+                    self.requests.clear()
+                    self.redirect_requests.clear()
+                    result = self.cli(script="archivePVList.bash", env={"CURL_HOME": str(self.file.parent)})
+                    self.check(result, 1, f"HTTP {code}")
+                    self.assertEqual(len(self.mutations()), 1)
+                    self.assertEqual(self.redirect_requests, [])
 
 
 if __name__ == "__main__":

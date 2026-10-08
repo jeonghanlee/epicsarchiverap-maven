@@ -85,7 +85,7 @@ def main():
     results, store_roots = [], set()
     http = build_opener(ProxyHandler({}))
     began = time.time_ns()
-    sources = [SAMPLES / n for n in ("archivePVList.py", "getPVStatus.py", "pausePVList.py", "resumePVList.py", "archiverClient.py", "listArchivedPVs.py")]
+    sources = [SAMPLES / n for n in ("archivePVList.bash", "archiverClient.bash", "getPVStatus.py", "pausePVList.py", "resumePVList.py", "archiverClient.py", "listArchivedPVs.py")]
     sources += [Path(__file__), Path(__file__).with_name("verify_list_archived_pvs.py"),
                 REPO / "src/test/org/epics/archiverappliance/verification/PVSampleDump.java"]
     sources += [REPO / "src/main" / path for path in (
@@ -151,7 +151,7 @@ def main():
     def cli(name, script, names, statuses=None, code=0):
         path = root / (name + ".txt")
         path.write_text("\n".join(names) + "\n")
-        command = [sys.executable, str(SAMPLES / script), bpl, str(path)]
+        command = ["bash" if script.endswith(".bash") else sys.executable, str(SAMPLES / script), bpl, str(path)]
         result = subprocess.run(command, env=env, text=True, capture_output=True, timeout=READY_TIMEOUT)
         (root / (name + ".stdout")).write_text(result.stdout)
         (root / (name + ".stderr")).write_text(result.stderr)
@@ -246,7 +246,7 @@ def main():
         with (root / "ioc.log").open("w") as log:
             ioc = subprocess.Popen(command, env=env, cwd=root, stdin=subprocess.PIPE, stdout=log,
                                    stderr=subprocess.STDOUT, text=True)
-        cli("archive", "archivePVList.py", pvs, ["Archive request submitted"] * len(pvs))
+        cli("archive", "archivePVList.bash", pvs, ["Archive request submitted"] * len(pvs))
         await_state(pvs, "Being archived", "initial-archiving", ARCHIVE_TIMEOUT)
         for pv in pvs:
             info = api("getPVTypeInfo", {"pv": pv})

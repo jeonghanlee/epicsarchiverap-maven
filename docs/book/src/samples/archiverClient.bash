@@ -19,6 +19,7 @@ readonly ARC_MAX_TIMEOUT=86400
 readonly ARC_JSON_TYPE="application/json"
 
 ARC_TMP=""
+ARC_HTTP_STATUS=""
 
 # Prints one diagnostic line on stderr with bytes outside printable ASCII shown as "?".
 arc_error() {
@@ -136,11 +137,13 @@ arc_trim() {
 # Usage: arc_request <timeout> <outfile> <url> [curl arguments...]
 # curl's own message goes to <outfile>.err, so place <outfile> under ARC_TMP.
 # Redirects are not followed; a transport error, timeout, truncated body or other
-# status is reported on stderr and returns 1.
+# status is reported on stderr and returns 1. curl configuration files are ignored.
+# URL globbing is disabled, preserving the supplied path and one request per call.
 arc_request() {
     local timeout="$1" outfile="$2" url="$3" status rc
     shift 3
-    status="$(curl --silent --show-error --proto '=http,https' --max-time "$timeout" \
+    ARC_HTTP_STATUS=""
+    status="$(curl -q --globoff --silent --show-error --proto '=http,https' --max-time "$timeout" \
         --header "Accept: $ARC_JSON_TYPE" --output "$outfile" --write-out '%{http_code}' \
         "$@" -- "$url" 2>"$outfile.err")"
     rc=$?
@@ -152,6 +155,7 @@ arc_request() {
         arc_error "request failed: $(head -n 1 "$outfile.err")"
         return 1
     fi
+    ARC_HTTP_STATUS="$status"
     if [[ "$status" != "200" ]]; then
         arc_error "HTTP $status; expected 200"
         return 1

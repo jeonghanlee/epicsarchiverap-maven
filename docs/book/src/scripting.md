@@ -112,11 +112,12 @@ that continuously sends a large response.
 
 ## Request archiving and inspect status
 
-Use [archivePVList.py](samples/archivePVList.py) to submit requests and
+Use [archivePVList.bash](samples/archivePVList.bash) to submit requests and
 [getPVStatus.py](samples/getPVStatus.py) to read the appliance's actual state.
-Keep both scripts with [archiverClient.py](samples/archiverClient.py) and
-[listArchivedPVs.py](samples/listArchivedPVs.py) in the same directory.
-They use only Python 3's standard library.
+Keep the archive script with [archiverClient.bash](samples/archiverClient.bash).
+It requires Bash 4 or later, curl, jq, iconv, and awk.
+Keep the status script with [archiverClient.py](samples/archiverClient.py) and
+[listArchivedPVs.py](samples/listArchivedPVs.py). Status queries use Python 3's standard library.
 
 Start the [local appliance](developer.md#run-a-local-appliance) or select an
 existing appliance. Set `BPL_URL` to its management URL ending in `/bpl` and
@@ -130,12 +131,12 @@ samples=docs/book/src/samples
 bpl=${BPL_URL:?Set BPL_URL to the management BPL base URL}
 pv_file=${PV_FILE:?Set PV_FILE to your input file}
 work/list-pvs-venv/bin/python "$samples/getPVStatus.py" "$bpl" "$pv_file"
-work/list-pvs-venv/bin/python "$samples/archivePVList.py" "$bpl" "$pv_file"
+bash "$samples/archivePVList.bash" "$bpl" "$pv_file"
 work/list-pvs-venv/bin/python "$samples/getPVStatus.py" "$bpl" "$pv_file"
 ```
 
-Both commands print an aligned ASCII table with `PV Name` and `Status`, in
-input order, followed by total, successful and failed counts. Successful
+Both commands report per-PV results in an aligned ASCII table with `PV Name`
+and `Status`, in input order, followed by total, successful and failed counts. Successful
 status queries can report `Not being archived` or `Initial sampling`.
 `Being archived` is separate from archive request acceptance, and does not
 by itself prove that the IOC is connected. Repeat the status command to
@@ -150,7 +151,8 @@ sampling-parameter operation to change an existing configuration.
 
 Input names must be printable ASCII without spaces, commas, `*` or `?`.
 Blank lines are skipped, surrounding whitespace is stripped, and `#` is a
-literal name character. There is no comment syntax. Archive inputs must be
+literal name character. LF, CRLF, and CR line endings are accepted.
+There is no comment syntax. Archive inputs must be
 independent: duplicate names, protocol/`.VAL` equivalents and configured
 alias collisions are rejected before mutation. Multiple fields of the same
 record are conservatively rejected in one archive batch because the server
@@ -161,15 +163,25 @@ resolved by this check; use canonical IOC names for new requests.
 Both scripts accept `--timeout` with the listing script's bounds. Exit 0
 means every query/request succeeded, exit 1 means at least one failed, and
 exit 2 means local input or identity overlap was rejected. Local input
-errors send no HTTP; alias overlap checks use only read requests. Archive
-preflight failures send no archive request. A server rejection or uncertain
-mutation is shown for its PV, details go to stderr, and subsequent independent
-inputs are still processed. Timeouts and unusable responses produce
-`Outcome unknown`; inspect actual status before retrying. No automatic
-mutation retries or batch rollback are performed. The server validates
-PV-specific syntax beyond the input-file restrictions above.
+errors send no HTTP; alias overlap checks use only read requests.
 
-The [test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-archive-and-status-examples)
+Archive preflight failures print errors to stderr, produce no result table,
+and send no archive request. Status query failures appear as `Query failed`
+for the affected PV, with details on stderr; subsequent inputs are still queried.
+Archive POST timeouts and unusable responses appear as `Outcome unknown`;
+inspect actual status before retrying. A server rejection or uncertain archive
+outcome is shown for its PV, details go to stderr, and subsequent independent
+inputs are still processed. No automatic mutation retries or batch rollback
+are performed. The server validates PV-specific syntax beyond the input-file
+restrictions above.
+
+The Bash archive client's timeout bounds the complete HTTP request.
+It rounds the requested timeout up to the next millisecond, with a minimum
+of 0.001 seconds. Its HTTP transport honors the curl proxy environment,
+ignores curl configuration files, and does not follow redirects.
+It preserves the supplied URL path, including braces and brackets.
+
+The [test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#archive-and-status-examples)
 uses the shipped IOC fixture to reproduce these states and sampling checks.
 
 ## Pause and resume archiving

@@ -124,7 +124,7 @@ class Verification:
             raise RuntimeError("war-dir must contain only the explicitly selected four-WAR bundle")
         sources = [Path(__file__), REPO / "src/test/org/epics/archiverappliance/mgmt/RenamePVTest.java",
                    REPO / "src/test/org/epics/archiverappliance/verification/PVSampleDump.java"]
-        sources += [SAMPLES / name for name in ("renamePVList.py", "archiverClient.py", "archivePVList.py",
+        sources += [SAMPLES / name for name in ("renamePVList.py", "archiverClient.py", "archivePVList.bash", "archiverClient.bash",
                                                "pausePVList.py", "resumePVList.py", "getPVStatus.py", "listArchivedPVs.py")]
         save(self.root, "manifest.json", {
             "observed_at": instant(self.began), "head": subprocess.check_output(
@@ -182,7 +182,7 @@ class Verification:
     def cli(self, name, script, inputs, statuses=None, code=0, options=()):
         path = self.root / (name + ".txt")
         path.write_text("\n".join(inputs) + "\n")
-        command = [sys.executable, str(SAMPLES / script), self.bpl, str(path), *options]
+        command = ["bash" if script.endswith(".bash") else sys.executable, str(SAMPLES / script), self.bpl, str(path), *options]
         # Observe the real HTTP syscalls without routing, replacing or replaying requests.
         trace = self.root / (name + "-http.trace")
         result = subprocess.run([self.args.strace, "-f", "-s", "65535", "-e", "trace=network",
@@ -298,7 +298,7 @@ class Verification:
         with (self.root / "ioc.log").open("w") as log:
             self.ioc = subprocess.Popen(command, env=self.env, cwd=self.root, stdin=subprocess.PIPE, text=True,
                                         stdout=log, stderr=subprocess.STDOUT)
-        self.cli("archive", "archivePVList.py", self.pvs, ["Archive request submitted"] * len(self.pvs),
+        self.cli("archive", "archivePVList.bash", self.pvs, ["Archive request submitted"] * len(self.pvs),
                  options=("--sampling-period", ARCHIVE_PERIOD))
         self.await_state(self.pvs, "Being archived", "initial-archive", ARCHIVE_TIMEOUT)
         self.wait(lambda: all(len(self.values(pv)) >= 3 for pv in self.pvs), READY_TIMEOUT, "baseline")

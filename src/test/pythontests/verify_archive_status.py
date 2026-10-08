@@ -53,7 +53,7 @@ def main():
     app = ioc = None
     results = []
     http = build_opener(ProxyHandler({}))
-    sources = [SAMPLES / name for name in ("archivePVList.py", "getPVStatus.py", "archiverClient.py", "listArchivedPVs.py")]
+    sources = [SAMPLES / name for name in ("archivePVList.bash", "archiverClient.bash", "getPVStatus.py", "archiverClient.py", "listArchivedPVs.py")]
     sources.extend((Path(__file__), Path(__file__).with_name("verify_list_archived_pvs.py")))
     save(root, "manifest.json", {
         "observed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -82,7 +82,7 @@ def main():
     def cli(name, script, names, statuses=None, options=(), code=0, message=None):
         input_file = root / (name + ".txt")
         input_file.write_text("\n".join(names) + "\n")
-        command = [sys.executable, str(SAMPLES / script), bpl, str(input_file), *options]
+        command = ["bash" if script.endswith(".bash") else sys.executable, str(SAMPLES / script), bpl, str(input_file), *options]
         result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=120)
         (root / (name + ".stdout")).write_text(result.stdout)
         (root / (name + ".stderr")).write_text(result.stderr)
@@ -129,9 +129,9 @@ def main():
 
         wait_for(ready, START_TIMEOUT, "appliance startup")
         cli("unknown", "getPVStatus.py", pvs + [unavailable], ["Not being archived"] * 4)
-        cli("submit-monitor", "archivePVList.py", [pvs[0], unavailable], ["Archive request submitted"] * 2)
-        cli("submit-scan", "archivePVList.py", [pvs[1]], ["Archive request submitted"], ("--sampling-method", "SCAN", "--sampling-period", "2"))
-        cli("submit-minimum", "archivePVList.py", [pvs[2]], ["Archive request submitted"], ("--sampling-period", "0.000_1"))
+        cli("submit-monitor", "archivePVList.bash", [pvs[0], unavailable], ["Archive request submitted"] * 2)
+        cli("submit-scan", "archivePVList.bash", [pvs[1]], ["Archive request submitted"], ("--sampling-method", "SCAN", "--sampling-period", "2"))
+        cli("submit-minimum", "archivePVList.bash", [pvs[2]], ["Archive request submitted"], ("--sampling-period", "0.000_1"))
         cli("initial-sampling", "getPVStatus.py", pvs + [unavailable], ["Initial sampling"] * 4)
         command = [str(Path(args.ioc).resolve()), "-m", "P=" + prefix, "-d", str(FIXTURE)]
         save(root, "ioc-command.json", command)
@@ -143,7 +143,7 @@ def main():
                and float(actual[pvs[0]]["samplingPeriod"]) == 1 and float(actual[pvs[1]]["samplingPeriod"]) == 2
                and abs(float(actual[pvs[2]]["samplingPeriod"]) - 0.1) < 1e-6, response=actual)
         cli("archived-and-pending", "getPVStatus.py", pvs + [unavailable], ["Being archived"] * 3 + ["Initial sampling"])
-        cli("repeat", "archivePVList.py", pvs, ["Already submitted"] * 3, ("--sampling-method", "SCAN", "--sampling-period", "7"))
+        cli("repeat", "archivePVList.bash", pvs, ["Already submitted"] * 3, ("--sampling-method", "SCAN", "--sampling-period", "7"))
         after = {row["pvName"]: row for row in states(pvs)}
         record("repeat-preserves-settings", all((row["isMonitored"], row["samplingPeriod"]) ==
                (after[pv]["isMonitored"], after[pv]["samplingPeriod"]) for pv, row in actual.items()))
@@ -152,16 +152,16 @@ def main():
         record("alias-setup", response.get("status") == "ok")
         cli("alias-query", "getPVStatus.py", [alias], ["Being archived"])
         before = request("getAllPVs", {"limit": -1})
-        cli("alias-overlap", "archivePVList.py", [pvs[0], alias], code=2, message="overlapping")
-        cli("normalized-overlap", "archivePVList.py", [pvs[0], pvs[0] + ".VAL"], code=2, message="overlapping")
+        cli("alias-overlap", "archivePVList.bash", [pvs[0], alias], code=2, message="overlapping")
+        cli("normalized-overlap", "archivePVList.bash", [pvs[0], pvs[0] + ".VAL"], code=2, message="overlapping")
         record("overlap-preserves-config", before == request("getAllPVs", {"limit": -1}))
-        cli("alias-repeat", "archivePVList.py", [alias], ["Already submitted"])
+        cli("alias-repeat", "archivePVList.bash", [alias], ["Already submitted"])
         for position in range(3):
             names = [prefix + f"test_{20 + position * 3 + j}" for j in range(3)]
             names[position] = prefix + f"invalid{position}."
             expected = ["Archive request submitted"] * 3
             expected[position] = "Outcome unknown"
-            cli(f"mixed-{position}", "archivePVList.py", names, expected, code=1)
+            cli(f"mixed-{position}", "archivePVList.bash", names, expected, code=1)
             good = [pv for pv in names if not pv.endswith(".")]
             await_archived(good)
             invalid_status = states([names[position]])

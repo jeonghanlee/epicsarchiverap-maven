@@ -124,14 +124,20 @@ failure and no surviving owned JVM, and retains its evidence under `work/`:
 work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_listing_runner_cleanup.py -v
 ```
 
-## Python archive and status examples
+## Archive and status examples
 
-The shipped `archivePVList.py` and `getPVStatus.py` share `archiverClient.py`
+The shipped `archivePVList.bash` uses `archiverClient.bash`; `getPVStatus.py` uses `archiverClient.py`
 and the URL/timeout validators in `listArchivedPVs.py`. Run their subprocess
-tests against a controlled outer HTTP boundary:
+tests against a controlled outer HTTP boundary. They verify line endings,
+literal backslashes in aliases, rejection and status values with control
+characters, positive millisecond deadlines, and single POST delivery even
+when a curl configuration file requests retries. The mutation-client suite
+also verifies that curl configuration cannot enable redirects and that archive
+URL paths remain literal, with one request per action:
 
 ```bash
 work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_archive_status_clients.py -v
+work/list-pvs-venv/bin/python -m unittest discover -s src/test/pythontests -p test_rename_client.py -v
 ```
 
 With the same built WARs, JDK 21, Tomcat and EPICS environment as the listing
