@@ -236,7 +236,7 @@
     <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
-      <version>3.3.3</version>
+      <version>3.5.10</version>
       <scope>runtime</scope>
       <exclusions>
         <!-- Commons Logging supplies the JCL API and routes directly to Log4j. -->
