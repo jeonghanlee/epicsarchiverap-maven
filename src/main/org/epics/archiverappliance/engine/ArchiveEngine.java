@@ -63,6 +63,21 @@ public class ArchiveEngine {
 	private static final Logger logger = LogManager.getLogger(ArchiveEngine.class.getName());
 
 	/**
+	 * Compute the sample buffer capacity of a PV: the samples expected within one write period plus a margin
+	 * given in seconds, so that a late buffer swap costs the same amount of time at every sampling rate.
+	 * The margin is at least one sample.
+	 * @param writePeriod seconds between two writes of the same buffer
+	 * @param samplingPeriod seconds between two samples of the PV; must be positive
+	 * @param marginSeconds seconds of write delay the buffer absorbs without dropping a sample
+	 * @return capacity in samples
+	 */
+	public static int computeBufferCapacity(double writePeriod, double samplingPeriod, double marginSeconds) {
+		int expectedSamples = (int) Math.round(Math.max(writePeriod / samplingPeriod, 1.0));
+		int marginSamples = (int) Math.ceil(marginSeconds / samplingPeriod);
+		return expectedSamples + Math.max(marginSamples, 1);
+	}
+
+	/**
 	 * Create the channel for the PV and register it in the places where it needs to be registered.
 	 * @param name  &emsp; 
 	 * @param writer  First destination  
@@ -98,7 +113,7 @@ public class ArchiveEngine {
 			pvSamplingPeriod = PolicyConfig.DEFAULT_MONITOR_SAMPLING_PERIOD;
 		}
 
-		int buffer_capacity = ((int) Math.round(Math.max((write_period/pvSamplingPeriod)*engineContext.getSampleBufferCapacityAdjustment(), 1.0))) + 1;
+		int buffer_capacity = computeBufferCapacity(write_period, pvSamplingPeriod, engineContext.getSampleBufferMarginSeconds());
 		if (buffer_capacity < 2) {
 			logger.debug("Enforcing a minimum capacity for sample buffer size.");
 			buffer_capacity = 2;

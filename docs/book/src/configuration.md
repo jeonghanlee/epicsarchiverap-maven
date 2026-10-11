@@ -72,7 +72,7 @@ with `org.epics.archiverappliance.`, left out here.
 | `config.ConvertPVNameToKey.siteNameSpaceTerminator` | `:` | character that ends a store path |
 | `mgmt.bpl.ArchivePVAction.minimumSamplingPeriod` | `0.1` | smallest sampling period accepted, in seconds |
 | `config.PVTypeInfo.secondsToBuffer` | `10` | engine write period, in seconds |
-| `config.PVTypeInfo.sampleBufferCapacityAdjustment` | `1.0` | multiplier on every PV's buffer size |
+| `config.PVTypeInfo.sampleBufferMarginSeconds` | `1.0` | write delay every PV's buffer absorbs without dropping a sample, in seconds; values below 1.0 are raised to 1.0 |
 | `retrieval.DefaultUseReducedPostProcessor` | `...postprocessors.TwoWeekRaw` | post-processor used when a request asks for reduced data |
 | `engine.epics.JCAConfigGen.useCAJ` | `true` | use the pure Java CA client |
 | `engine.epics.commandThreadCount` | `10` | number of CA contexts |

@@ -45,6 +45,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
@@ -112,7 +113,12 @@ public class EngineContext {
 
     private ScheduledFuture<?> disconnectFuture = null;
 
-    private double sampleBufferCapacityAdjustment = 1.0;
+    public static final String SAMPLE_BUFFER_MARGIN_SECONDS_PROPERTY =
+            "org.epics.archiverappliance.config.PVTypeInfo.sampleBufferMarginSeconds";
+    public static final double DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS = 1.0;
+    public static final double MIN_SAMPLE_BUFFER_MARGIN_SECONDS = 1.0;
+
+    private double sampleBufferMarginSeconds = DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS;
 
     /**
      * An optimization for EngineMetrics. Note; this value may not be all that accurate but should be reasonably accurate.
@@ -332,10 +338,8 @@ public class EngineContext {
 
         this.iniV4ChannelProvidert();
 
-        this.sampleBufferCapacityAdjustment = Double.parseDouble(configService
-                .getInstallationProperties()
-                .getProperty("org.epics.archiverappliance.config.PVTypeInfo.sampleBufferCapacityAdjustment", "1.0"));
-        logger.debug("Buffer capacity adjustment is " + this.sampleBufferCapacityAdjustment);
+        this.sampleBufferMarginSeconds = sampleBufferMarginSecondsFrom(configService.getInstallationProperties());
+        logger.debug("Sample buffer margin in seconds is " + this.sampleBufferMarginSeconds);
     }
 
     /**
@@ -792,13 +796,48 @@ public class EngineContext {
     }
 
     /**
-     * Per FRIB/PSI, we have a configuration knob to increase/decrease the sample buffer size used by the engine for all PV's.
-     * This comes from archappl.properties and is a double - by default 1.0 which means we leave the buffer size computation as is.
-     * If you want to increase buffer size globally to 150% of what is normally computed, set this to 1.5
-     * @return sampleBufferCapacityAdjustment  &emsp;
+     * Seconds of write delay every sample buffer absorbs before it drops a sample, from archappl.properties.
+     * A buffer holds the samples expected within one write period plus this margin converted to samples at the
+     * PV's own sampling period, so a late buffer swap costs the same amount of time at every sampling rate.
+     * @return sampleBufferMarginSeconds  &emsp;
      */
-    public double getSampleBufferCapacityAdjustment() {
-        return sampleBufferCapacityAdjustment;
+    public double getSampleBufferMarginSeconds() {
+        return sampleBufferMarginSeconds;
+    }
+
+    /**
+     * Read the sample buffer margin from the installation properties. A missing key gives the default. A finite
+     * value below the minimum is raised to the minimum, and a value that is not a finite number is replaced by
+     * the default. Every case that does not use the configured value as given is logged, so the margin in effect
+     * can be read from the engine log. A bad entry can therefore neither stop the engine nor hand a buffer a
+     * margin smaller than the one the engine guarantees.
+     * @param properties installation properties
+     * @return margin in seconds, at least MIN_SAMPLE_BUFFER_MARGIN_SECONDS
+     */
+    public static double sampleBufferMarginSecondsFrom(Properties properties) {
+        String text = properties.getProperty(SAMPLE_BUFFER_MARGIN_SECONDS_PROPERTY);
+        if (text == null) {
+            logger.info(SAMPLE_BUFFER_MARGIN_SECONDS_PROPERTY + " is not set. Using the default of "
+                    + DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS + " seconds.");
+            return DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS;
+        }
+        double margin;
+        try {
+            margin = Double.parseDouble(text.trim());
+        } catch (NumberFormatException e) {
+            margin = Double.NaN;
+        }
+        if (!Double.isFinite(margin)) {
+            logger.warn(SAMPLE_BUFFER_MARGIN_SECONDS_PROPERTY + " is not a finite number: '" + text + "'. Using "
+                    + DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS + " seconds.");
+            return DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS;
+        }
+        if (margin < MIN_SAMPLE_BUFFER_MARGIN_SECONDS) {
+            logger.warn(SAMPLE_BUFFER_MARGIN_SECONDS_PROPERTY + " is " + margin + ", below the minimum. Using "
+                    + MIN_SAMPLE_BUFFER_MARGIN_SECONDS + " seconds.");
+            return MIN_SAMPLE_BUFFER_MARGIN_SECONDS;
+        }
+        return margin;
     }
 
     /**

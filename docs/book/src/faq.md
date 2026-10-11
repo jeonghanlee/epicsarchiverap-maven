@@ -21,13 +21,17 @@ they keep.
   out once per write period. The buffer holds
 
   ```
-  round(max(secondsToBuffer / samplingPeriod * sampleBufferCapacityAdjustment, 1)) + 1
+  round(max(secondsToBuffer / samplingPeriod, 1)) + max(ceil(sampleBufferMarginSeconds / samplingPeriod), 1)
   ```
 
-  samples, and at least 2. With the default write period of 10 s and a
-  sampling period of 1 s, the buffer holds 11 samples; a PV that changes
-  faster than that loses the updates that arrive while its buffer is
-  full, until the next write.
+  samples, and at least 2. The second term is a margin of
+  `sampleBufferMarginSeconds` (default 1 s, never below 1 s) converted
+  to samples, so a late write pass costs a 0.1 s PV and a 1 s PV the
+  same amount of time.
+  With the default write period of 10 s, a 1 s PV holds 11 samples and
+  a 0.1 s PV holds 110. A PV that changes faster than its sampling
+  period fills its buffer before the next write; each further update
+  then drops the oldest sample in the buffer.
 - **SCAN** keeps only the latest update and writes it once per sampling
   period, so a PV scanned at 1 s gives one sample per second whatever its
   update rate.
