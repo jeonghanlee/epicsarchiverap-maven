@@ -638,15 +638,6 @@
               </resources>
             </configuration>
           </execution>
-          <!--
-            The SVG viewer asset is vendored as a committed resource at
-            src/main/org/epics/archiverappliance/retrieval/staticcontent/viewer.zip
-            (source: https://github.com/archiver-appliance/svg_viewer, tag v1.2.1),
-            so the build needs no outbound network. The stage-resources execution
-            below copies that directory into the stage, which places viewer.zip
-            where the retrieval WAR expects it. The refresh procedure for a new
-            upstream version is documented in docs/svg-viewer.md.
-          -->
           <execution>
             <id>stage-resources</id>
             <phase>prepare-package</phase>

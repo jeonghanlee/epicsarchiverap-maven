@@ -116,31 +116,13 @@ the original text is reproduced without substituting an inferred date.
 Browser assets
 --------------
 
-Common UI (source: src/main/org/epics/archiverappliance/staticcontent/js;
-WAR location: ui/comm/js):
+Common UI (source: src/main/org/epics/archiverappliance/staticcontent/js/vendor;
+WAR location: ui/comm/js/vendor):
 
-  jquery-1.8.2.min.js: MIT; jquery_license.txt
-  jquery-ui-1.9.1.custom.zip: MIT; jquery_ui_license.txt
-    The ZIP also contains jQuery 1.8.2, covered by jquery_license.txt.
-  jquery.flot.js and jquery.flot.navigate.js (Flot 0.7): MIT; flot_license.txt
-  dateformat.js (Date Format 1.2.3): MIT; dateformat_license.txt
-    The appliance's own copyright header also applies to this source file.
-
-SVG Viewer v1.2.1 (retrieval WAR: ui/viewer.zip):
-  https://github.com/archiver-appliance/svg_viewer/tree/v1.2.1
-
-  lib/jquery-3.1.0.min.js: MIT; jquery-3.1.0_license.txt
-  lib/lodash-4.17.10.min.js: MIT; lodash_license.txt
-    Includes the Underscore.js 1.8.3 / DocumentCloud attribution and terms.
-  lib/mustache-3.0.0.min.js: MIT; mustache_license.txt
-  lib/noty_3.1.4.min.js and lib/noty_3.1.4.css: MIT; noty_license.txt
-  lib/plotly-2.35.2.min.js: MIT; plotly_license.txt
-    Additional bundled notices: plotly_bundled_notices.txt
-  lib/bootstrap-3.3.7 (Bootstrap CSS, JS and Glyphicons Halflings fonts):
-    MIT; bootstrap_license.txt
-  lib/bootstrap-3.3.7/js/bootstrap-datetimepicker.min.js and corresponding CSS
-    (4.17.42): MIT; bootstrap_datetimepicker_license.txt
-  lib/bootstrap-3.3.7/js/moment.js (2.14.1): MIT; moment_license.txt
+  d3.min.js (D3 7.9.0): ISC; d3_license.txt
+    dist/d3.min.js of the npm tarball d3-7.9.0.tgz. d3.SOURCE.txt beside the
+    file records the tarball integrity and the SHA-256 of the file, and
+    d3.LICENSE.txt beside it carries the same license text.
 
 Generated documentation (mgmt WAR: ui/help/_static):
 
@@ -155,55 +137,25 @@ Generated documentation (mgmt WAR: ui/help/_static):
   Roboto Slab fonts: Apache-2.0; sphinx_theme_roboto_license.txt
   Font Awesome 4.7.0: fonts SIL OFL 1.1, CSS MIT; fontawesome_license.txt
 
-Unresolved upstream declarations
---------------------------------
-
-SVG Viewer v1.2.1 does not include a license for its own viewer code.
-Its lib/fapaths.json contains Font Awesome icon paths, but the archive does
-not declare the originating version or license for this derived asset.
-The third-party licenses above do not establish permission for these two
-items. Their license declarations require confirmation from the upstream
-project; no license is assigned here by inference.
-
 License text sources
 --------------------
 
   GNU_GPL_license.txt
     https://raw.githubusercontent.com/epics-base/jca/jca-2.4.12/caj/LICENSE-CAJ
-  bootstrap_license.txt
-    https://raw.githubusercontent.com/twbs/bootstrap/v3.3.7/LICENSE
   bouncycastle_license.html
     https://raw.githubusercontent.com/bcgit/bc-java/r1rv82/LICENSE.html
-  flot_license.txt
-    https://raw.githubusercontent.com/flot/flot/v0.7/LICENSE.txt
   html5shiv_licenses.md
     https://raw.githubusercontent.com/aFarkas/html5shiv/3.7.3/MIT%20and%20GPL2%20licenses.md
   jca_license.txt
     https://raw.githubusercontent.com/epics-base/jca/jca-2.4.12/LICENSE.txt
-  jquery-3.1.0_license.txt
-    https://raw.githubusercontent.com/jquery/jquery/3.1.0/LICENSE.txt
   jquery-3.6.0_license.txt
     https://raw.githubusercontent.com/jquery/jquery/3.6.0/LICENSE.txt
-  jquery_license.txt
-    https://raw.githubusercontent.com/jquery/jquery/1.8.2/MIT-LICENSE.txt
   jython_license.txt
     https://raw.githubusercontent.com/jython/jython/v2.7.4/LICENSE.txt
-  lodash_license.txt
-    https://raw.githubusercontent.com/lodash/lodash/4.17.10/LICENSE
   mariadb_license.txt
     https://raw.githubusercontent.com/mariadb-corporation/mariadb-connector-j/3.3.3/LICENSE
-  moment_license.txt
-    https://raw.githubusercontent.com/moment/moment/2.14.1/LICENSE
-  mustache_license.txt
-    https://raw.githubusercontent.com/janl/mustache.js/v3.0.0/LICENSE
-  noty_license.txt
-    https://raw.githubusercontent.com/needim/noty/v3.1.4/LICENSE.txt
   phoebus_license.txt
     https://raw.githubusercontent.com/ControlSystemStudio/phoebus/v5.0.5/LICENSE
-  plotly_bundled_notices.txt
-    https://cdn.plot.ly/plotly-2.35.2.min.js.LICENSE.txt
-  plotly_license.txt
-    https://raw.githubusercontent.com/plotly/plotly.js/v2.35.2/LICENSE
   protobuf_license.txt
     https://raw.githubusercontent.com/protocolbuffers/protobuf/v36.1/LICENSE
   sphinx_theme_font_licenses.txt
@@ -214,24 +166,16 @@ License text sources
     https://raw.githubusercontent.com/Waffle/waffle/waffle-parent-3.3.0/LICENSE
 
   checker_qual_license.txt: checker-qual-3.32.0.jar!/META-INF/LICENSE.txt
+  d3_license.txt: copy of src/main/org/epics/archiverappliance/staticcontent/js/vendor/
+    d3.LICENSE.txt, the ISC license text supplied with the D3 7.9.0 files.
   slf4j_license.txt: slf4j-api-2.0.19.jar!/META-INF/LICENSE.txt
   jna_license.txt: jna-5.13.0.jar!/META-INF/LICENSE
   jmatio_license.txt: JMatIO attribution supplied with this repository;
     artifact metadata: net.sourceforge.jmatio:jmatio:1.0 (BSD).
-  jquery_ui_license.txt:
-    jquery-ui-1.9.1.custom.zip!/development-bundle/MIT-LICENSE.txt
-  bootstrap_datetimepicker_license.txt:
-    viewer.zip!/lib/bootstrap-3.3.7/js/bootstrap-datetimepicker.min.js
-    (complete embedded license comment)
   sphinx_license.txt: Sphinx 7.2.6 distribution LICENSE
   sphinx_rtd_theme_license.txt: sphinx_rtd_theme 1.3.0rc1 distribution LICENSE
-  dateformat_license.txt: copyright and MIT declaration in dateformat.js;
-    standard MIT terms, also reproduced in jquery-3.6.0_license.txt.
-    https://blog.stevenlevithan.com/archives/date-time-format
   fontawesome_license.txt: copyright from the distributed SVG font metadata;
     license selection from the Font Awesome v4.7.0 README and theme CSS header.
     https://github.com/FortAwesome/Font-Awesome/blob/v4.7.0/README.md
     Standard OFL and MIT terms are also reproduced in
     sphinx_theme_font_licenses.txt and jquery-3.6.0_license.txt, respectively.
-  lodash_license.txt also preserves the complete Underscore.js 1.8.3
-    copyright and MIT notice supplied with this repository.

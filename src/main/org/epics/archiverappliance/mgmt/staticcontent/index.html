@@ -1,24 +1,18 @@
 <!DOCTYPE html>
-<html>
-  <title>appliance archiver - Home</title>
+<html lang="en">
   <head>
-    <!-- @begin(main_includes) -->
-    <script type="text/javascript" src="comm/js/jquery-1.8.2.min.js"></script>
-    <link
-      type="text/css"
-      href="comm/js/jquery-ui-1.9.1.custom/css/cupertino/jquery-ui-1.9.1.custom.css"
-      rel="Stylesheet"
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http: https:; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
-    <script
-      type="text/javascript"
-      src="comm/js/jquery-ui-1.9.1.custom/js/jquery-ui-1.9.1.custom.min.js"
-    ></script>
-    <link type="text/css" href="comm/css/main.css" rel="Stylesheet" />
-    <script type="text/javascript" src="comm/js/common.js"></script>
-    <!-- @end(main_includes) -->
-    <link type="text/css" href="css/mgmt.css" rel="Stylesheet" />
-    <script type="text/javascript" src="js/reporttable.js"></script>
-    <script type="text/javascript" src="js/mgmt.js"></script>
+    <title>appliance archiver - Work</title>
+    <link rel="stylesheet" href="comm/css/main.css" />
+    <link rel="stylesheet" href="comm/css/chart.css" />
+    <link rel="stylesheet" href="css/workspace.css" />
+    <script src="comm/js/vendor/d3.min.js" defer></script>
+    <script type="module" src="js/work.js"></script>
   </head>
   <body>
     <!-- @begin(site_header) -->
@@ -43,190 +37,195 @@
     </div>
     <!-- @end(site_navbar) -->
 
-    <div class="page">
-      <div id="archivehelpdesk">
-        <!-- @begin(site_contact_text) -->
-        This is the archiver appliance management console for the EPICS
-        archiver.
-        <!-- @end(site_contact_text) -->
-      </div>
+    <main class="work">
+      <section class="finder" aria-label="Find PVs">
+        <h2>Find</h2>
+        <label for="q" class="hint">Words in any order, case ignored</label>
+        <input id="q" class="search" type="search" placeholder="bpm c02 x" autocomplete="off" spellcheck="false" />
+        <div class="modes" id="modes" role="group" aria-label="Search mode">
+          <button type="button" data-mode="contains">Contains</button>
+          <button type="button" data-mode="glob">Glob</button>
+          <button type="button" data-mode="regex">Regex</button>
+        </div>
+        <p id="searchError" class="error" role="status"></p>
+        <label for="report" class="hint">Show</label>
+        <select id="report">
+          <option value="">All archived PVs</option>
+          <optgroup label="State">
+            <option value="disconnected">Disconnected now</option>
+            <option value="paused">Paused</option>
+            <option value="never">May not exist (never connected)</option>
+            <option value="metagets">Waiting for their first connection</option>
+          </optgroup>
+          <optgroup label="Recent changes">
+            <option value="recent">Recently added</option>
+            <option value="modified">Recently changed</option>
+          </optgroup>
+          <optgroup label="Load">
+            <option value="eventrate">Highest event rate</option>
+            <option value="storagerate">Highest storage rate</option>
+            <option value="consumed">Most storage used</option>
+          </optgroup>
+          <optgroup label="Problems">
+            <option value="lost">Most connection drops</option>
+            <option value="silent">Silent for the longest time</option>
+            <option value="droppedtime">Most events dropped for a wrong time stamp</option>
+            <option value="droppedbuffer">Most events dropped by buffer overflow</option>
+            <option value="droppedtype">Most events dropped by a type change</option>
+          </optgroup>
+        </select>
+        <p id="reportNote" class="hint"></p>
+        <div class="chips" id="groups" role="group" aria-label="Name groups"></div>
+        <p class="count"><span id="count"></span> <span id="indexCount" class="faint">Loading PV names…</span></p>
+        <div id="archiveOffer" class="offer"></div>
+        <div
+          class="results"
+          id="results"
+          tabindex="0"
+          role="listbox"
+          aria-multiselectable="true"
+          aria-label="PVs found. Use the arrow keys to move and the space key to select."
+        >
+          <div id="resultsSpacer" class="spacer">
+            <ul id="resultRows" role="presentation"></ul>
+          </div>
+        </div>
+      </section>
 
-      <div id="archivePVDiv">
-        To check the status of or to archive some PV's, please type in some PV
-        names here.
-        <div id="archstatpVNamesdiv">
-          <textarea id="archstatpVNames"></textarea>
+      <section class="board" aria-label="Selected PVs">
+        <div class="bar">
+          <h2>Selected <span id="selN" class="num">0</span></h2>
+          <div class="ranges" id="ranges" role="group" aria-label="Time range">
+            <button type="button" data-minutes="10">10m</button>
+            <button type="button" data-minutes="60">1h</button>
+            <button type="button" data-minutes="360">6h</button>
+            <button type="button" data-minutes="1440">24h</button>
+            <button type="button" data-minutes="10080">7d</button>
+          </div>
+          <span class="limits num">
+            scan list <span id="limScan">0</span>/<span id="limScanMax">100</span> &middot; chart
+            <span id="limChart">0</span>/<span id="limChartMax">5</span>
+          </span>
         </div>
-        <div id="archstatpVButtonsdiv">
-          <input
-            type="button"
-            id="archstatCheckStatus"
-            name="Check status"
-            value="Check Status"
-            onclick="checkPVStatus(); return false"
-          />
-          <input
-            type="button"
-            id="archstatArchive"
-            name="Archive"
-            value="Archive"
-            onclick="archivePVs(); return false"
-          />
-          <input
-            type="button"
-            id="archstatArchiveWithPeriod"
-            name="Archive"
-            value="Archive (specify sampling period)"
-            onclick="archivePVsWithDetails(); return false"
-          />
-          <input
-            type="button"
-            id="lookupPVs"
-            name="Lookup"
-            value="Lookup"
-            onclick="lookupPVs(); return false"
-          />
-          <input
-            type="button"
-            id="pause"
-            name="Pause"
-            value="Pause"
-            onclick="pauseMultiplePVs(); return false"
-          />
-          <input
-            type="button"
-            id="resume"
-            name="Resume"
-            value="Resume"
-            onclick="resumeMultiplePVs(); return false"
-          />
-          <input
-            type="button"
-            id="delete"
-            name="Delete"
-            value="Delete"
-            onclick="deleteMultiplePVs(); return false"
-          />
-        </div>
-        <div id="archstatsdiv">
-          <table id="archstats">
+        <p id="limitNote" class="error" role="status"></p>
+        <p id="actionNote" class="sub" role="status"></p>
+
+        <h2 class="area">Scan</h2>
+        <div class="scroll">
+          <table class="scan" id="scan">
             <thead>
               <tr>
-                <th>PV Name</th>
-                <th>Status</th>
-                <th>Connected?</th>
-                <th>Monitored?</th>
-                <th>Sampling period</th>
-                <th>Last event</th>
-                <th>Engine last flush</th>
-                <th>Details</th>
-                <th>Quick chart</th>
+                <th>State</th>
+                <th>PV</th>
+                <th>Last hour</th>
+                <th class="r">Now</th>
+                <th class="r">Last event</th>
               </tr>
             </thead>
-            <tbody>
-              <!--  The table data will go here -->
-              <template>
-                <tr>
-                  <td>1</td>
-                  <td>2</td>
-                  <td>3</td>
-                  <td>4</td>
-                  <td>5</td>
-                  <td>6</td>
-                  <td>7</td>
-                  <td><img height="25px" src="comm/img/details.png" /></td>
-                  <td><img height="25px" src="comm/img/chart.png" /></td>
-                </tr>
-                <tr>
-                  <td>1</td>
-                  <td>2</td>
-                  <td>3</td>
-                  <td>4</td>
-                  <td>5</td>
-                  <td>6</td>
-                  <td>7</td>
-                  <td><img height="25px" src="comm/img/details.png" /></td>
-                  <td><img height="25px" src="comm/img/chart.png" /></td>
-                </tr>
-              </template>
-            </tbody>
+            <tbody></tbody>
           </table>
         </div>
-      </div>
-      <div
-        id="pvDetailsChangeParamDiv"
-        title="Specify the sampling period for these PVs"
-      >
-        <div id="pvDetailsParams">
-          <div>Choose the sampling mode for these PVs:</div>
-          <div>
-            <select id="pvDetailsSamplingMethod">
-              <option value="MONITOR" selected="selected">Monitor</option>
-              <option value="SCAN">Scan</option>
-            </select>
-          </div>
-          <div>Set the sampling period for these PVs:</div>
-          <div><input type="text" id="pvDetailsSamplingPeriod" />(secs)</div>
-          <div>
-            Enter PV name be used to conditionally archive these PVs (can be
-            blank)
-          </div>
-          <div><input type="text" id="pvDetailsControllingPV" /></div>
-          <div>Use this policy (can be blank):</div>
-          <div>
-            <select id="pvDetailsPolicies">
-              <option value="" selected="selected">Select</option>
-            </select>
-          </div>
-          <div id="pvDetailsParamsOkdiv">
-            <input id="pvDetailsParamsOk" type="button" name="Ok" value="Ok" />
-          </div>
-        </div>
-      </div>
 
-      <div
-        id="pvStopArchivingParamsDiv"
-        title="Are you certain you want to stop archiving the PV?"
-      >
-        <div id="pvStopArchivingParams">
+        <div class="bulk" id="bulk" hidden>
+          <button type="button" id="bulkPause" class="plain">Pause all selected…</button>
+          <button type="button" id="bulkResume" class="plain">Resume all selected…</button>
+          <button type="button" id="bulkStop" class="plain danger">Stop archiving all selected…</button>
+          <a id="viewerAll" class="plain-link" href="#" hidden>Open all selected in the viewer</a>
+        </div>
+
+        <h2 class="area">Inspect</h2>
+        <h3 id="chartTitle">Time series</h3>
+        <div class="zoombar">
+          <button type="button" id="panEarlier" class="plain" hidden>&laquo; Earlier</button>
+          <button type="button" id="panLater" class="plain" hidden>Later &raquo;</button>
+          <button type="button" id="zoomReset" class="plain" hidden>Back to the selected range</button>
+        </div>
+        <p id="chartNote" class="sub"></p>
+        <div id="chart" class="chart"></div>
+        <div class="pair">
           <div>
-            <input id="pvStopArchivingDeleteData" type="checkbox" />Do you want
-            to delete any data stored for this PV?
+            <h3>Distribution</h3>
+            <p id="histNote" class="sub"></p>
+            <div id="hist" class="plot"></div>
           </div>
-          <div id="pvStopArchivingdiv">
-            <input id="pvStopArchivingOk" type="button" name="Ok" value="Ok" />
+          <div>
+            <h3>Two PVs against each other</h3>
+            <p id="scatterNote" class="sub"></p>
+            <div id="scatter" class="plot"></div>
           </div>
         </div>
-      </div>
+        <h3>Summary of the chart</h3>
+        <div class="scroll">
+          <table class="stats" id="stats">
+            <thead>
+              <tr>
+                <th>PV</th>
+                <th>Samples</th>
+                <th>Min</th>
+                <th>Mean</th>
+                <th>Max</th>
+                <th>Std dev</th>
+                <th>Last</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <h2 class="area">Detail</h2>
+        <div class="detail" id="detail"></div>
+      </section>
+    </main>
+
+    <dialog id="archiveDialog">
+      <form id="archiveForm">
+        <h2>Archive</h2>
+        <p class="pv" id="archiveNames"></p>
+        <label for="archiveMethod">Sampling mode</label>
+        <select id="archiveMethod">
+          <option value="MONITOR">Monitor: store each change</option>
+          <option value="SCAN">Scan: store at a fixed period</option>
+        </select>
+        <label for="archivePeriod">Sampling period in seconds</label>
+        <input id="archivePeriod" type="number" step="any" min="0.1" value="1" required />
+        <p id="archiveError" class="error" role="status"></p>
+        <div class="dialog-actions">
+          <button type="submit">Archive</button>
+          <button type="button" id="archiveCancel" class="quiet">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="maintainDialog">
+      <form id="maintainForm">
+        <h2 id="maintainTitle"></h2>
+        <p class="pv" id="maintainName"></p>
+        <p class="muted" id="maintainText"></p>
+        <div id="maintainFields"></div>
+        <label class="check" id="maintainAckRow" hidden><input id="maintainAck" type="checkbox" /> <span id="maintainAckText"></span></label>
+        <p id="maintainError" class="error" role="status"></p>
+        <div class="dialog-actions">
+          <button type="submit" id="maintainSubmit">Apply</button>
+          <button type="button" id="maintainCancel" class="quiet">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="stopDialog">
+      <form id="stopForm">
+        <h2>Stop archiving</h2>
+        <p class="pv" id="stopName"></p>
+        <p class="muted">The PV is paused and then removed from the archiver. Stored data stays unless you also delete it.</p>
+        <label class="check"><input id="stopDeleteData" type="checkbox" /> Delete the stored data of this PV</label>
+        <div class="dialog-actions">
+          <button type="submit" class="danger">Stop archiving</button>
+          <button type="button" id="stopCancel" class="quiet">Cancel</button>
+        </div>
+      </form>
+    </dialog>
 
       <!-- @begin(site_footer) -->
       <div class="pagefooter"></div>
       <!-- @end(site_footer) -->
-    </div>
-
-    <div id="archapplversions"></div>
-
-    <script type="text/javascript">
-      $(document).ready(function () {
-        $("#pvDetailsParams").hide();
-
-        // See if we have any pv names in session storage
-        if (sessionStorage && "archstatpVNames" in sessionStorage) {
-          $("#archstatpVNames").val(sessionStorage["archstatpVNames"]);
-        }
-
-        // If we have any PVs in the textarea, make a fresh JSON call to refresh status.
-        var pvText = $("#archstatpVNames").val();
-        if (pvText != null && pvText.length > 0) {
-          checkPVStatus();
-        }
-
-        showVersions();
-
-        $(document).ready(function () {
-          $("#pvStopArchivingParams").hide();
-        });
-      });
-    </script>
   </body>
 </html>

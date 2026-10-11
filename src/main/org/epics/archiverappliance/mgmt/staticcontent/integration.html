@@ -1,25 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
-    <title>Integration with other data sources</title>
-    <!-- @begin(main_includes) -->
-    <script type="text/javascript" src="comm/js/jquery-1.8.2.min.js"></script>
-    <link
-      type="text/css"
-      href="comm/js/jquery-ui-1.9.1.custom/css/cupertino/jquery-ui-1.9.1.custom.css"
-      rel="Stylesheet"
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
-    <script
-      type="text/javascript"
-      src="comm/js/jquery-ui-1.9.1.custom/js/jquery-ui-1.9.1.custom.min.js"
-    ></script>
-    <link type="text/css" href="comm/css/main.css" rel="Stylesheet" />
-    <script type="text/javascript" src="comm/js/common.js"></script>
-    <!-- @end(main_includes) -->
-    <link type="text/css" href="css/mgmt.css" rel="Stylesheet" />
-    <script type="text/javascript" src="js/reporttable.js"></script>
-    <script type="text/javascript" src="js/mgmt.js"></script>
+    <title>appliance archiver - Integration</title>
+    <link rel="stylesheet" href="comm/css/main.css" />
+    <link rel="stylesheet" href="css/integration.css" />
+    <script type="module" src="js/integration.js"></script>
   </head>
   <body>
     <!-- @begin(site_header) -->
@@ -44,175 +35,113 @@
     </div>
     <!-- @end(site_navbar) -->
 
-    <div class="page">
-      <div id="msg" class="confirmationmessage"></div>
-      <div id="uploaddiv">
-        <h1 class="internalheading">Upload Channel Archiver Configuration</h1>
-        <form
-          action="../bpl/uploadChannelArchiverConfiguration"
-          method="post"
-          enctype="multipart/form-data"
-          id="configuploadform"
-        >
-          <div>
-            To upload a Channel Archiver configuration file, please choose a
-            file and then click on the Upload button
-          </div>
-          <div>
-            <input
-              type="file"
-              name="channelarchiverconfigfile"
-              id="configupload"
-              accept="text/xml"
-              multiple
-            />
-          </div>
-          <input type="button" name="upload" value="Upload" id="uploadbtn" />
+    <main class="integration">
+      <p id="message" class="message" role="status"></p>
+
+      <section aria-labelledby="uploadHeading">
+        <h2 id="uploadHeading">Channel Archiver configuration</h2>
+        <p class="sub">
+          Upload one or more Channel Archiver configuration files, in XML. The archiver imports the PVs they describe.
+        </p>
+        <form id="uploadForm" action="../bpl/uploadChannelArchiverConfiguration" method="post" enctype="multipart/form-data">
+          <label for="configFile">Configuration files</label>
+          <input id="configFile" name="channelarchiverconfigfile" type="file" accept="text/xml" multiple />
+          <p id="uploadError" class="error" role="status"></p>
+          <button type="submit">Upload</button>
         </form>
-      </div>
+      </section>
 
-      <div id="externalCAdiv">
-        <h1 class="internalheading">External Archiver data server(s)</h1>
-        <div id="addchannelarchiverform">
-          To support proxying of data from an external Archiver Data Server,
-          please click
-          <input
-            type="button"
-            name="Add"
-            value="Add"
-            id="addchannelarchiversubmitbtn"
-          />
+      <section aria-labelledby="externalHeading">
+        <h2 id="externalHeading">External archiver data servers</h2>
+        <p class="sub">
+          The archiver can serve data that another archiver holds, so that clients ask one place. Each server below is
+          proxied by this appliance.
+        </p>
+        <div class="scroll">
+          <table class="grid" id="servers">
+            <thead>
+              <tr>
+                <th>Server URL</th>
+                <th>Indexes</th>
+                <th><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-        <div id="externalCAlistview"></div>
+        <p><button type="button" id="addServer">Add a server…</button></p>
+      </section>
 
-        <div
-          id="addchannelarchiverdialog"
-          title="Add external Archiver Data Server"
-        >
-          <div id="addchannelarchiverGetUrl">
-            <div>
-              <select id="externalServerType">
-                <option value="1">
-                  External Channel Archiver XMLRPC Data Server
-                </option>
-                <option value="2">External EPICS Archiver Appliance</option>
-              </select>
-            </div>
-            <div id="externalXMLRPCText">
-              To proxy data from an external Channel Archiver Data Server,
-              please provide the XMLRPC URL to the server:
-            </div>
-            <div id="externalApplianceText">
-              To proxy data from an external EPICS Archiver Appliance, please
-              provide the <code>data_retrieval_url</code> of the cluster as
-              defined in the <code>appliances.xml</code>:
-            </div>
-            <div><input type="text" id="addchannelarchiverurl" /></div>
-            <div id="addchannelarchiverurlokdiv">
-              <input
-                id="addchannelarchiverurlok"
-                type="button"
-                name="Ok"
-                value="Ok"
-              />
-            </div>
-          </div>
-
-          <div id="addchannelarchiversuccess">
-            <div id="addchannelarchivermsg"></div>
-            <div id="addchannelarchiverarchivesdiv">
-              <select
-                multiple="multiple"
-                id="addchannelarchiverarchives"
-                size="6"
-              ></select>
-            </div>
-            <input
-              id="addchannelarchiversuccessok"
-              type="button"
-              name="Ok"
-              value="Ok"
-            />
-          </div>
+      <section aria-labelledby="compareHeading">
+        <h2 id="compareHeading">Compare with a Channel Archiver</h2>
+        <p class="sub">
+          Reads the same PV from a Channel Archiver data server and from this archiver, so that the samples can be
+          checked side by side.
+        </p>
+        <form id="compareForm" class="compare">
+          <label for="comparePV">PV name</label>
+          <input id="comparePV" type="text" spellcheck="false" required />
+          <label for="compareURL">Channel Archiver data server URL</label>
+          <input id="compareURL" type="url" required />
+          <label for="compareIndex">Archive index, usually 1</label>
+          <input id="compareIndex" type="text" inputmode="numeric" value="1" required />
+          <p id="compareError" class="error" role="status"></p>
+          <button type="submit">Compare</button>
+        </form>
+        <div class="scroll">
+          <table class="grid" id="comparison" hidden>
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>Time stamp</th>
+                <th class="r">Nanoseconds</th>
+                <th>Severity</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
 
-    <script type="text/javascript">
-      $(document).ready(function () {
-        $("#uploadbtn").click(function () {
-          var filenames = $("#configupload").prop("files");
-          if (
-            filenames == undefined ||
-            filenames == null ||
-            filenames.length < 1
-          ) {
-            alert("Please choose a valid file.");
-            return;
-          }
+    <dialog id="addDialog">
+      <form id="addForm">
+        <h2>Add an external archiver data server</h2>
+        <label for="serverType">Kind of server</label>
+        <select id="serverType">
+          <option value="CA_XMLRPC">Channel Archiver XMLRPC data server</option>
+          <option value="ARCHAPPL_PBRAW">EPICS Archiver Appliance</option>
+        </select>
+        <p id="serverHint" class="sub"></p>
+        <label for="serverUrl">Server URL</label>
+        <input id="serverUrl" type="url" spellcheck="false" required />
+        <div id="archivesStep" hidden>
+          <p id="archivesMessage" class="sub"></p>
+          <label for="archives">Archives to serve</label>
+          <select id="archives" multiple size="6"></select>
+        </div>
+        <p id="addError" class="error" role="status"></p>
+        <div class="dialog-actions">
+          <button type="submit" id="addSubmit">Connect</button>
+          <button type="button" id="addCancel" class="quiet">Cancel</button>
+        </div>
+      </form>
+    </dialog>
 
-          $("#configuploadform").submit();
-        });
-        var params = getQueryParams();
-        var message = params["message"];
-        if (message != undefined && message != null) {
-          if (message.indexOf("Error") != -1 && message.indexOf("Error") < 3) {
-            alert(message);
-          } else {
-            $("#msg").text(message);
-            $("#msg")
-              .delay(5000)
-              .fadeOut(5000, function () {
-                $(location).attr("href", "./integration.html"); // remove the message from the URL
-              });
-          }
-        }
-
-        $("#externalServerType").change(function () {
-          var externCAType = $("#externalServerType").val();
-          console.log(externCAType);
-          if (externCAType == 1) {
-            $("#externalXMLRPCText").show();
-            $("#externalApplianceText").hide();
-          } else if (externCAType == 2) {
-            $("#externalXMLRPCText").hide();
-            $("#externalApplianceText").show();
-          }
-        });
-
-        showExternalCAListView();
-
-        $("#addchannelarchiversubmitbtn").click(function () {
-          $("#addchannelarchiverGetUrl").show();
-          $("#addchannelarchiverdialog").dialog({
-            height: 300,
-            width: 600,
-            modal: true,
-          });
-        });
-
-        $("#addchannelarchiverurlok").click(function () {
-          var serverUrl = $("#addchannelarchiverurl").val();
-          var externCATypeSelection = $("#externalServerType").val();
-          var externCAType = "CA_XMLRPC";
-          if (externCATypeSelection == 2) {
-            externCAType = "ARCHAPPL_PBRAW";
-          }
-          if (serverUrl != "") {
-            addExternalChannelArchiverServer(serverUrl, externCAType);
-          } else {
-            alert(
-              "Please enter a valid URL to a External Archiver Data Server."
-            );
-          }
-        });
-
-        $("#addchannelarchiversuccessok").click(function () {
-          var serverUrl = $("#addchannelarchiverurl").val();
-          selectExternalChannelArchiveServerArchives(serverUrl);
-        });
-      });
-    </script>
+    <dialog id="removeDialog">
+      <form id="removeForm">
+        <h2>Remove the server</h2>
+        <p id="removeName" class="pv"></p>
+        <p class="sub">
+          The archiver stops proxying this server. The cluster may have to be restarted before the change takes effect.
+        </p>
+        <div class="dialog-actions">
+          <button type="submit" class="danger">Remove</button>
+          <button type="button" id="removeCancel" class="quiet">Cancel</button>
+        </div>
+      </form>
+    </dialog>
 
       <!-- @begin(site_footer) -->
       <div class="pagefooter"></div>

@@ -76,7 +76,7 @@ order:
 | Site file | Result in the build |
 | --- | --- |
 | `template_changes.html` | Each block between `<!-- @begin(name) -->` and `<!-- @end(name) -->` replaces the block of the same name in every management page, before the files below are copied. The pages carry the blocks `main_includes`, `site_header`, `site_navbar` and `site_footer`, and the index page also `site_contact_text`; a block the pages do not carry has no effect. |
-| `img/` with its subfolders | Copied to `ui/comm/img/` of all four WARs, replacing the default images of the same path. |
+| `img/` with its subfolders | Copied to `ui/comm/img/` of all four WARs; a file of the same path replaces the default image. The default set is `archiverheader.svg` and the four images that `mgmt.css` names. |
 | `css/main.css` | Copied to `ui/comm/css/main.css` of all four WARs, replacing the default stylesheet. |
 | `css/mgmt.css` | Copied to `ui/css/mgmt.css` of the mgmt WAR, replacing the default stylesheet. |
 | `classpathfiles/` | Copied into `WEB-INF/classes` of all four WARs, so the web applications find `policies.py`, `archappl.properties` and, if present, `appliances.xml` there. |
