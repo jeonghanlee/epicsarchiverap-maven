@@ -35,6 +35,8 @@ public class JCACommandThread extends Thread {
      * which is probably good, but also increases the latency.
      */
     private static final long DELAY_MILLIS = 100;
+    /** Polls of DELAY_MILLIS that shutdown() waits for the command queue to drain: 30 s in all. */
+    private static final int SHUTDOWN_POLLS = 300;
 
     private static final Logger logger = LogManager.getLogger(JCACommandThread.class.getName());
 
@@ -103,7 +105,8 @@ public class JCACommandThread extends Thread {
     }
 
     /**
-     * Stop the thread and wait for it to finish
+     * Queue the destruction of the CA context, wait until the command queue has drained (at most 30 s,
+     * polled at the thread's own cadence) and then stop the thread.
      *
      * @throws InterruptedException  &emsp;
      */
@@ -113,9 +116,8 @@ public class JCACommandThread extends Thread {
 
         destoryContext();
 
-        for (int m = 0; m < 30; m++) {
-            Thread.sleep(1000);
-            if (command_queue.isEmpty()) break;
+        for (int m = 0; m < SHUTDOWN_POLLS && !command_queue.isEmpty(); m++) {
+            Thread.sleep(DELAY_MILLIS);
         }
         run = false;
     }
