@@ -8,6 +8,7 @@
 - [Configuration](configuration.md)
 - [Persistence](persistence.md)
 - [Operating](operating.md)
+- [Management interface](interface.md)
 - [Logging](logging.md)
 - [Retrieving data](retrieval.md)
 - [Scripting](scripting.md)
