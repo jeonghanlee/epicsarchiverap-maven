@@ -56,9 +56,8 @@ public class PVAccessUtil {
 
     public static HashMap<Instant, Event> getReceivedEvents(MemBufWriter writer, ConfigService configService)
             throws Exception {
-        double secondsToBuffer = configService.getEngineContext().getWritePeriod();
-        // Need to wait for the writer to write all the received data.
-        Thread.sleep((long) secondsToBuffer * 1000);
+        // Write every buffered sample now instead of waiting for the next write pass.
+        configService.getEngineContext().getWriteThead().flushBuffer();
 
         HashMap<Instant, Event> actualValues = new HashMap<>();
         try {
@@ -140,6 +139,13 @@ public class PVAccessUtil {
             Thread.sleep(samplingPeriodMilliSeconds + 1000);
         }
         return pvChannel;
+    }
+
+    /** Wait until the engine has archived at least {@code count} events of the channel, so a test reads what it sent. */
+    public static void waitForEventCount(ArchiveChannel pvChannel, long count) {
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .untilAsserted(() -> Assertions.assertTrue(pvChannel.getPVMetrics().getEventCounts() >= count));
     }
 
     public static void waitForIsConnected(ArchiveChannel pvChannel) {

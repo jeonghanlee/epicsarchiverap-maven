@@ -40,6 +40,8 @@ import java.time.Instant;
 public class ZipRetrievalTest {
 	private static Logger logger = LogManager.getLogger(ZipRetrievalTest.class.getName());
 	File testFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "ZipRetrievalTest");
+	/** Seconds between simulated samples; a year at this period still spans every partition. */
+	private static final int SIMULATION_PERIOD_SECONDS = 10;
 	private ConfigService configService;
 
 
@@ -105,7 +107,7 @@ public class ZipRetrievalTest {
 		ArchDBRTypes dbrType = ArchDBRTypes.DBR_SCALAR_DOUBLE;
 		int phasediffindegrees = 10;
         short currentYear = TimeUtils.getCurrentYear();
-        SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), 1);
+        SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), SIMULATION_PERIOD_SECONDS);
 		try(BasicContext context = new BasicContext()) {
 			storagePlugin.appendData(context, pvName, simstream);
 		}
@@ -135,7 +137,7 @@ public class ZipRetrievalTest {
 			logger.info(storagePlugin.getURLRepresentation());
 			int phasediffindegrees = 10;
             short currentYear = TimeUtils.getCurrentYear();
-            SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), 1);
+            SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), SIMULATION_PERIOD_SECONDS);
 			try(BasicContext context = new BasicContext()) {
 				storagePlugin.appendData(context, pvName, simstream);
 			}
@@ -146,7 +148,7 @@ public class ZipRetrievalTest {
 			logger.info(storagePlugin.getURLRepresentation());
 			int phasediffindegrees = 10;
             short currentYear = TimeUtils.getCurrentYear();
-            SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), 1);
+            SimulationEventStream simstream = new SimulationEventStream(dbrType, new SineGenerator(phasediffindegrees), TimeUtils.getStartOfYear(currentYear), TimeUtils.getEndOfYear(currentYear), SIMULATION_PERIOD_SECONDS);
 			try(BasicContext context = new BasicContext()) {
 				storagePlugin.appendData(context, pvName, simstream);
 			}
