@@ -20,9 +20,10 @@ can archive the same small set of critical PVs:
   shorter retention, for example an LTS that is a `blackhole` store.
 
 On the secondary, add the primary as an external data server, on the
-Integration page or with the `addExternalArchiverServer` call, giving the
-type `ARCHAPPL_PBRAW` and the primary's `data_retrieval_url` with the
-`mergeDuringRetrieval` parameter:
+Integration page (the kind **EPICS Archiver Appliance**) or with the
+`addExternalArchiverServer` call, giving the type `ARCHAPPL_PBRAW` and
+the primary's `data_retrieval_url` with the `mergeDuringRetrieval`
+parameter:
 
 ```
 http://primary.example.org:17668/retrieval?mergeDuringRetrieval=true
@@ -48,5 +49,5 @@ every client reads them the same way. Other PVData structures are stored
 in their PVAccess serialization and can be retrieved in the `raw` and
 `json` formats.
 
-The `archivePV` call and the Home page take the protocol from the PV
+The `archivePV` call and the Work page take the protocol from the PV
 name: a name that starts with `pva://` is archived over PVAccess.

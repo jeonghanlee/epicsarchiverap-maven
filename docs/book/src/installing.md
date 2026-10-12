@@ -137,6 +137,10 @@ curl -s http://archiver.example.org:17665/mgmt/bpl/getApplianceInfo
 The reply is a JSON object with the appliance's identity and URLs. The
 web interface is at `http://archiver.example.org:17665/mgmt/ui/index.html`.
 
-```admonish note title="Screenshot"
-Placeholder: the mgmt Home page right after a fresh deployment.
-```
+The System page, at
+`http://archiver.example.org:17665/mgmt/ui/system.html`, shows the state
+of the appliance. When the four web applications run at one version,
+the **Components** row reads *all running* and the version line names
+the appliance version.
+
+![The System overview of a running appliance](images/system-overview.png)

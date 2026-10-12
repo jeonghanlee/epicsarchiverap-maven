@@ -50,8 +50,10 @@ the existing configuration.
 
 ## How do I stop archiving a PV and keep its data?
 
-Pause the PV, then delete it with `deleteData=false`, the default
-([Operating](operating.md#managing-a-pv)). The files stay in the stores,
+Select **Stop archiving** on the PV and leave **Delete the stored data**
+unticked, or pause the PV and delete it with `deleteData=false`, the
+default of the `deletePV` call ([Operating](operating.md#managing-a-pv)).
+The files stay in the stores,
 but retrieval no longer knows the PV. To read them, pass the name of a
 similar archived PV as the `retiredPVTemplate` retrieval parameter, or
 set the `org.epics.archiverappliance.retrieval.SearchStoreForRetiredPvs`

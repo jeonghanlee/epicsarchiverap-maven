@@ -27,6 +27,10 @@ page.
 
 ## Work page
 
+The Work page, with three PVs selected:
+
+![The Work page](images/work-page.png)
+
 | Part | Behavior |
 | :--- | :--- |
 | Find | Words in any order with case ignored, glob, or regular expression; chips group the matches by the first two `:` segments; the rows in view show the state of a PV that is not in the scan list (paused, not archived), read in one call for at most 60 rows |
@@ -64,7 +68,8 @@ holds rename, change of type and consolidation; each of them pauses the PV
 first, and a change of type asks for a confirmation that a backup exists.
 Pause, Resume and Stop archiving also work on all selected PVs at once.
 
-The state is kept in the address, so a link reproduces the view:
+The state is kept in the fragment of the address, the part after `#`
+(`index.html#q=bpm&range=10&pv=SR:BPM:01:X`), so a link reproduces the view:
 
 | Parameter | Meaning |
 | :--- | :--- |
@@ -93,6 +98,17 @@ once with the time it is current to, and then keeps it current:
 
 ## What the System pages judge
 
+The Overview gives three verdicts and one row per measure, with its meaning
+and a link to the detail:
+
+![The System overview](images/system-overview.png)
+
+The Operations page gives the reading behind each verdict, in the sections
+Samples, Samples lost, Write path, Stores, Processes and Configuration in
+effect; the next figure shows its first sections:
+
+![The first sections of the System operations page](images/system-operations.png)
+
 The judgements are starting values, shown on the Operations page next to
 their basis. A measure that the appliance does not report is shown as Not
 reported and is never shown as Normal.
@@ -118,6 +134,32 @@ the JVMs, not of the appliance.
 Disconnected PVs are grouped by the host the Channel Access connection
 came from and the time they were lost, because the appliance reports no
 IOC name. A PV Access PV has no host and is listed under an unknown host.
+
+## Retrieval performance page
+
+The page has two halves. **Measure from this browser** makes one ordinary
+data request for a PV and a range of the last hour, day, week or 30 days
+and shows the samples, the size and the time to the first byte and to the
+end. **What the server says** shows the retrieval process, the requests
+and users counted so far, the retrieval heap, the load average and
+whether an ETL pass is running; the heap trend appears when the appliance
+has two hours of values. **Data available for a PV** looks a PV up in the
+stores.
+
+![The Retrieval performance page after one measurement](images/system-retrieval.png)
+
+## Integration page
+
+The page has three parts. **Channel Archiver configuration** uploads
+Channel Archiver configuration files in XML; the archiver imports the PVs
+they describe. **External archiver data servers** lists the servers whose
+data this appliance serves, and adds one of the kind Channel Archiver
+XMLRPC data server or EPICS Archiver Appliance, or removes one.
+**Compare with a Channel Archiver** reads one PV from a Channel Archiver
+data server and from this archiver so that the samples can be checked
+side by side.
+
+![The Integration page](images/integration.png)
 
 ## Limits and refresh
 

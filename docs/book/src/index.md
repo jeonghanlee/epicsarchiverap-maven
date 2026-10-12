@@ -50,6 +50,7 @@ the mgmt web application (see [Scripting](scripting.md)).
 | [Configuration](configuration.md) | environment variables, properties, policies and stores |
 | [Persistence](persistence.md) | the configuration database |
 | [Operating](operating.md) | the web interface, PV lifecycle, reports and backup |
+| [Management interface](interface.md) | the pages of the web interface, their judgements, limits and site skin |
 | [Logging](logging.md) | where the logs go and how to change log levels |
 | [Retrieving data](retrieval.md) | the data retrieval URLs, formats and post-processing |
 | [Scripting](scripting.md) | the management calls from scripts |

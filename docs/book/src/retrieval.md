@@ -4,7 +4,7 @@
 
 This page covers the data retrieval URLs of the retrieval web
 application, their parameters and formats, server-side post-processing,
-and reading data from Phoebus, MATLAB and Python.
+the data viewer, and reading data from Phoebus, MATLAB and Python.
 
 **Out of scope:** the management calls ([Scripting](scripting.md)) and
 the byte layout of the raw format ([Developer guide](developer.md#pbhttp)).
@@ -112,6 +112,34 @@ The statistics operators, `optimized` and `optimLastSample` fill empty
 bins with the previous value; the variants with `Sample` appended, such
 as `meanSample`, leave them empty.
 
+## The data viewer
+
+The retrieval web application serves a data viewer at
+`http://archiver.example.org:17668/retrieval/ui/viewer/archViewer.html`.
+It reads the data of its own appliance through the `getData.json` URL
+and draws one chart per unit, with at most eight PVs in a chart:
+
+```
+http://archiver.example.org:17668/retrieval/ui/viewer/archViewer.html?pv=TEST:PV:1&pv=TEST:PV:2&from=2026-09-24T00:00:00.000Z&to=2026-09-24T01:00:00.000Z
+```
+
+![The data viewer with four PVs in two charts](images/viewer.png)
+
+| Part | Use |
+| --- | --- |
+| `pv` (repeatable) | the PVs to show; the **Add a PV** box suggests archived names |
+| `from`, `to` | the window, ISO 8601; without them the viewer shows the last hour |
+| The range buttons and the **From** and **To** fields | change the window |
+| **Copy link** | copies an address that reproduces the view |
+| **Download CSV** | the values as drawn, with the column `interval_seconds` |
+
+A window of up to 11 minutes shows the stored samples. A longer window
+shows means over equal intervals, requested as `meanSample_N`, and the
+chart says so. An interval without a sample has no value and the line
+stops there, so a lost connection is never drawn as a held value. The
+Work page of the web interface opens the selected PVs in the viewer
+([Operating](operating.md#the-web-interface)).
+
 ## Phoebus Data Browser
 
 The Phoebus Data Browser reads the appliance over PB/HTTP. Replace
@@ -126,10 +154,6 @@ org.csstudio.trends.databrowser3/archives=pbraw://archiver.example.org:17668/ret
 `urls` lists the data servers offered in the Data Browser, and
 `archives` the default ones for newly added channels. Several servers are
 separated by `*`; the part after `|` is the name shown.
-
-```admonish note title="Screenshot"
-Placeholder: a Phoebus Data Browser plot of an archived PV.
-```
 
 ## MATLAB
 
