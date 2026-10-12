@@ -18,9 +18,8 @@ import java.util.stream.Stream;
  * <li>writes the version file with the project version;</li>
  * <li>when the site folder has <code>template_changes.html</code>, merges it into the staged management pages with
  * {@link SyncStaticContentHeadersFooters};</li>
- * <li>copies <code>img/</code> (with its subfolders) over the staged <code>staticcontent/img</code>, <code>css/main.css</code>
- * over the staged <code>staticcontent/css/main.css</code> and <code>css/mgmt.css</code> over the staged
- * <code>mgmt/staticcontent/css/mgmt.css</code>, replacing the staged defaults.</li>
+ * <li>copies <code>img/</code> (with its subfolders) over the staged <code>staticcontent/img</code> and
+ * <code>css/main.css</code> over the staged <code>staticcontent/css/main.css</code>, replacing the staged defaults.</li>
  * </ol>
  * Each file of the site folder is optional, and the <code>classpathfiles</code> folder is packaged by the WAR build, not
  * here. A site folder that does not exist, or that still holds a <code>build.xml</code>, stops the build before anything
@@ -36,7 +35,7 @@ public final class SiteOverlay {
     private static final String VERSION_FILE = "version.txt";
     private static final String VERSION_PREFIX = "Archiver Appliance Version ";
     private static final String TEMPLATE_FILE = "template_changes.html";
-    private static final Set<String> APPLIED_STYLESHEETS = Set.of("main.css", "mgmt.css");
+    private static final Set<String> APPLIED_STYLESHEETS = Set.of("main.css");
     private static final Set<String> APPLIED_FOLDERS = Set.of("img", "css", "classpathfiles");
 
     private SiteOverlay() {}
@@ -83,7 +82,6 @@ public final class SiteOverlay {
 
         copyTree(site.resolve("img"), commonStage.resolve("img"));
         copyFile(site.resolve("css/main.css"), commonStage.resolve("css/main.css"));
-        copyFile(site.resolve("css/mgmt.css"), mgmtStage.resolve("css/mgmt.css"));
         return notApplied(site);
     }
 
@@ -97,7 +95,7 @@ public final class SiteOverlay {
                                 || !APPLIED_STYLESHEETS.contains(path.getFileName().toString()))
                         .sorted()
                         .forEach(path -> warnings.add("Not applied: " + path
-                                + ", only css/main.css and css/mgmt.css are copied."));
+                                + ", only css/main.css is copied."));
             }
         }
         try (Stream<Path> paths = Files.list(site)) {

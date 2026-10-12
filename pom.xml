@@ -124,7 +124,8 @@
     <groupId>org.apache.tomcat</groupId>
     <artifactId>tomcat-servlet-api</artifactId>
     <version>9.0.122</version>
-    <scope>compile</scope>
+    <!-- Tomcat supplies the servlet API; the WARs do not carry it. -->
+    <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.epics</groupId>
@@ -741,21 +742,11 @@
                 </resource>
                 <resource>
                 <!--
-                    copies from all of directory (staticcontent/* ) to targetPath folder (ui)
-                    css/mgmt.css
-                    js/mgmt.js
-                    js/reporttable.js
-                    appliance.html
-                    cacompare.html
-                    index.html
-                    integration.html
-                    metrics.html
-                    pvdetails.html
-                    redirect.html
-                    reports.html
-                    storage.html
-                    directory shall be ready before 'package' phase, so
-                    generate-resouces or prepare-package phase.
+                    copies the staged mgmt static content (the management pages with
+                    their css/ and js/, redirect.html and the generated api/ reference)
+                    to the ui folder of the WAR; the stage directory shall be ready
+                    before the 'package' phase, so generate-resources or
+                    prepare-package phase.
                 -->
                   <directory>${stage.dir}/org/epics/archiverappliance/mgmt/staticcontent</directory>
                   <targetPath>ui</targetPath>
@@ -796,8 +787,12 @@
               <webappDirectory>${project.build.directory}/${project.build.finalName}-etl</webappDirectory>
               <webXml>${src.main.dir}/org/epics/archiverappliance/etl/WEB-INF/web.xml</webXml>
               <webResources combine.children="append">
+                <!-- The etl WAR serves no page; it carries only the version file the BPL reads. -->
                 <resource>
                   <directory>${stage.dir}/org/epics/archiverappliance/staticcontent</directory>
+                  <includes>
+                    <include>version.txt</include>
+                  </includes>
                   <targetPath>ui/comm</targetPath>
                 </resource>
                 <resource>
@@ -818,8 +813,12 @@
               <webappDirectory>${project.build.directory}/${project.build.finalName}-engine</webappDirectory>
               <webXml>${src.main.dir}/org/epics/archiverappliance/engine/WEB-INF/web.xml</webXml>
               <webResources combine.children="append">
+                <!-- The engine WAR serves no page; it carries only the version file the BPL reads. -->
                 <resource>
                   <directory>${stage.dir}/org/epics/archiverappliance/staticcontent</directory>
+                  <includes>
+                    <include>version.txt</include>
+                  </includes>
                   <targetPath>ui/comm</targetPath>
                 </resource>
                 <resource>

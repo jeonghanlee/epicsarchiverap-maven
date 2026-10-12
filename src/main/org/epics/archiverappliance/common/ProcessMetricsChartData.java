@@ -67,7 +67,7 @@ public class ProcessMetricsChartData implements BPLAction {
 		GetUrlContent.combineJSONObjectsWithArrays(myProcessMetricsJSON, etlMetricsJSON);
 		GetUrlContent.combineJSONObjectsWithArrays(myProcessMetricsJSON, retrievalMetricsJSON);
 
-		// In the mgmt webapp, we convert this into a jflot friendly json, something like so....
+		// The management pages chart this as a list of series, each a label with [time, value] pairs, like so:
 		// [ 
 		//    { label: "engine_heap", data: [ [22414837000, 25.16], [22414838000, 26.82] ] },
 	    //    { label: "system_load", data: [ [22414837000, 0.36],  [22414838000, 0.13] ] } 

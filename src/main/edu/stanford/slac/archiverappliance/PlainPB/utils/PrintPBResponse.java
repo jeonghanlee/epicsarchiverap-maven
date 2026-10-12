@@ -33,7 +33,7 @@ public class PrintPBResponse {
     public static void main(String[] args) throws Exception {
         if (args == null || args.length < 1) {
             System.err.println(
-                    "Usage: java edu.stanford.slac.archiverappliance.PlainPB.utils.PrintTimes <PB/HTTP response dump>");
+                    "Usage: java edu.stanford.slac.archiverappliance.PlainPB.utils.PrintPBResponse <PB/HTTP response dump>");
             return;
         }
 

@@ -45,7 +45,7 @@ public class ChangePVName {
     public static void main(String[] args) throws Exception {
         if (args == null || args.length <= 2) {
             System.out.println(
-                    "Usage: run.sh edu.stanford.slac.archiverappliance.PlainPB.utils.ChangePVName <OldPVName> <NewPVName> <PBFiles>");
+                    "Usage: java edu.stanford.slac.archiverappliance.PlainPB.utils.ChangePVName <OldPVName> <NewPVName> <PBFiles>");
             return;
         }
 

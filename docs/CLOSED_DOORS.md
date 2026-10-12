@@ -27,3 +27,16 @@ Decision date: 2026-09-18.
 | CD-8 | Array-count metadata key rename to EAA_COUNT (PR423) | Keep | The rename is complete: no `NELM` literal remains in the tree, a single writer emits `EAA_COUNT`, and no in-tree reader depends on the key (external API readers only) | `config/MetaInfo.java:715`; no `NELM` in `src/main` or `src/test` |
 | CD-9 | Removed startup aggregate loop (PR408) | Keep | The deleted loop was redundant: the TYPEINFO change handler that builds `pvsForThisAppliance` also calls `applianceAggregateInfo.addInfoForPV` in the same block, so the aggregate is populated on the per-PV path | `config/DefaultConfigService.java:872,1824,1839` |
 | CD-10 | Two hands on EPICS_V3_PV (PR417/PR425) | Keep | Orthogonal: PR417 lowers post-stop monitor logs to debug, PR425 moves disconnect cleanup into a scheduled task. Log severity vs control flow, no interaction | `engine/pv/EPICS_V3_PV.java` (log levels ~467-896; scheduled cleanup ~565-580) |
+
+## M51 interface leftovers — unreferenced-code survey
+
+Survey of what the interface replacement (d0932d1b) left behind and of every
+main class whose simple name appears in no other source, resource, page,
+script or the pom. Examined state: commit `0097bc2d`. Decision date:
+2026-10-12. Candidates not listed here were removed under issue #34.
+
+| ID | Candidate | Verdict | Premise | Evidence |
+| --- | --- | --- | --- | --- |
+| CD-11 | mgmt endpoints `getPolicyText`, `getStorageMetrics`, `getStoresForPV`, `reshardPV`, called by the old pages and by no current page | Keep | They are part of the mgmt API that scripts and other clients reach through `/mgmt/bpl/`; `reshardPV` is an operation on stored data. A page not calling an endpoint says nothing about the endpoint's users | `mgmt/BPLServlet.java` registry; `git show d0932d1b^:src/main/org/epics/archiverappliance/mgmt/staticcontent/js/mgmt.js` for the old callers; no `bpl/<name>` in the current `mgmt/staticcontent` |
+| CD-12 | PB tools without a shipped script: `ChangePVName`, `SlicePBFile`, `MergePBFile`, `IsSubset`, `PrintFileInfo`, `PrintFirstAndLastTimes`, `PrintPBResponse`, `ReadAsDBRType`, `StatusSeverityCounts` in `PlainPB/utils`, and `utils/imprt/ExportCSV` | Keep | Each is a `main()` tool that runs from the mgmt WAR class path like the four scripted tools; rename, slice, merge, subset and header-less reading have no substitute. They are listed with their arguments in the developer guide's PB files section; a tool a site needs gets a script there. The three tools the scripts replace were removed instead | `docs/book/src/developer.md` (PB files); `install/pbutils/*.sh` for the scripted four |
+| CD-13 | `mgmt/pva/package-info.java`, the only `package-info` in a tree that describes packages with `package.html`, and empty | Keep | Filled with the description of the pvAccess management interface (`PvaServlet`, the RPC PV `pvaMgmtService`, `PvaMgmtService` and its actions); it now carries the same kind of text as the `package.html` files | `src/main/org/epics/archiverappliance/mgmt/pva/package-info.java` |

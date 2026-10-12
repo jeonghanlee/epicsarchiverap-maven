@@ -187,6 +187,27 @@ The mgmt WAR ships utilities for PB files under `install/pbutils/`:
 The scripts expect to run from inside an unpacked mgmt WAR, whose
 `WEB-INF/lib` and `WEB-INF/classes` form their class path.
 
+The same class path runs the PB tools that have no script, as
+`java -cp "<WEB-INF>/classes:<WEB-INF>/lib/*" <class> <arguments>`. A
+tool that a site needs gets its script and its description in the table
+above.
+
+| Class in `edu.stanford.slac.archiverappliance.PlainPB.utils` | Purpose |
+| --- | --- |
+| `ChangePVName <old PV> <new PV> <files>` | rewrite the header of PB files for a renamed PV |
+| `SlicePBFile <source> <start> <end> <destination>` | copy the samples between two ISO 8601 times into a new file |
+| `MergePBFile <file A> <file B> <destination>` | merge two files of the same PV and year into a new file |
+| `IsSubset <file A> <file B>` | report the timestamps of file A that file B lacks |
+| `PrintFileInfo <files or folder>` | print PV name, year, type and first and last sample time per file |
+| `PrintFirstAndLastTimes <files or folders>` | print the time range of each file |
+| `PrintPBResponse <saved response>` | decode a saved PB/HTTP retrieval response |
+| `ReadAsDBRType <type> <year> <file>` | read a file as the given type without its header, for a damaged header |
+| `StatusSeverityCounts <folder>` | count the status and severity values of every file under the folder |
+
+`org.epics.archiverappliance.utils.imprt.ExportCSV <file>` writes the
+samples of one file as ChannelArchiver CSV (EPICS epoch seconds,
+nanoseconds, value, status, severity) to standard output.
+
 ## PB/HTTP
 
 The `raw` retrieval format streams the same layout over HTTP, in one or

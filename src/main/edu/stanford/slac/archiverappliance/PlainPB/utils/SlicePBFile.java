@@ -99,12 +99,12 @@ public class SlicePBFile {
     private static void printHelpMsg() {
         System.out.println();
         System.out.println(
-                "Usage: run.sh edu.stanford.slac.archiverappliance.PlainPB.utils.SlicePBFile <Absolute Path to Source PB File> <ISO 8601 start time> <ISO 8601 end time> <Absolute Path to Dest PB File>");
+                "Usage: java edu.stanford.slac.archiverappliance.PlainPB.utils.SlicePBFile <Absolute Path to Source PB File> <ISO 8601 start time> <ISO 8601 end time> <Absolute Path to Dest PB File>");
         System.out.println();
         System.out.println(
                 "This utility copies the source PV file into the dest PB file; only the samples >= start time and < end time are copied over.");
         System.out.println(
-                "For example: run.sh edu.stanford.slac.archiverappliance.PlainPB.utils.SlicePBFile /arch/lts/ABC/DEF/XYZ\\:2015.pb 2013-01-01T00:00:00.000Z 2013-02-01T00:00:00.000Z Only_January_2013.pb");
+                "For example: java edu.stanford.slac.archiverappliance.PlainPB.utils.SlicePBFile /arch/lts/ABC/DEF/XYZ\\:2015.pb 2013-01-01T00:00:00.000Z 2013-02-01T00:00:00.000Z Only_January_2013.pb");
         System.out.println("\t-h Prints this help");
         System.out.println("\t-v Turns on verbose logging.");
         System.out.println();

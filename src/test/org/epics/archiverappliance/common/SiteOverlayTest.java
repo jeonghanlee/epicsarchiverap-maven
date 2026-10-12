@@ -78,12 +78,10 @@ public class SiteOverlayTest {
     @Test
     public void siteFilesOverwriteTheStagedDefaults() throws Exception {
         Path mainCss = stage.resolve(COMMON_STATIC + "/css/main.css");
-        Path mgmtCss = stage.resolve(MGMT_STATIC + "/css/mgmt.css");
         Path defaultImage = stage.resolve(COMMON_STATIC + "/img/archiverheader.svg");
-        Assertions.assertTrue(Files.isRegularFile(mainCss) && Files.isRegularFile(mgmtCss), "the defaults are staged");
+        Assertions.assertTrue(Files.isRegularFile(mainCss), "the default stylesheet is staged");
         Assertions.assertTrue(Files.isRegularFile(defaultImage), "the default image is staged");
         writeSite("css/main.css", "site main stylesheet\n");
-        writeSite("css/mgmt.css", "site management stylesheet\n");
         writeSite("img/archiverheader.svg", "site header image\n");
         writeSite("img/sitelogo.svg", "site logo\n");
         writeSite("img/more/nested.svg", "nested image\n");
@@ -91,7 +89,6 @@ public class SiteOverlayTest {
         SiteOverlay.apply(site, stage, VERSION);
 
         Assertions.assertEquals("site main stylesheet\n", Files.readString(mainCss));
-        Assertions.assertEquals("site management stylesheet\n", Files.readString(mgmtCss));
         Assertions.assertEquals("site header image\n", Files.readString(defaultImage));
         Assertions.assertEquals("site logo\n", Files.readString(stage.resolve(COMMON_STATIC + "/img/sitelogo.svg")));
         Assertions.assertEquals(
@@ -142,6 +139,7 @@ public class SiteOverlayTest {
     public void filesTheOverlayDoesNotApplyAreReported() throws Exception {
         writeSite("css/main.css", "site main stylesheet\n");
         writeSite("css/extra.css", "not applied\n");
+        writeSite("css/mgmt.css", "a management stylesheet no page links\n");
         writeSite("js/app.js", "not applied\n");
         writeSite("README.md", "documentation of the site\n");
         writeSite("img/logo.svg", "site logo\n");
@@ -150,12 +148,13 @@ public class SiteOverlayTest {
 
         Assertions.assertEquals(
                 java.util.List.of(
-                        "Not applied: " + site.resolve("css/extra.css")
-                                + ", only css/main.css and css/mgmt.css are copied.",
+                        "Not applied: " + site.resolve("css/extra.css") + ", only css/main.css is copied.",
+                        "Not applied: " + site.resolve("css/mgmt.css") + ", only css/main.css is copied.",
                         "Not applied: the folder " + site.resolve("js")
                                 + ", the site folders that are applied are img, css and classpathfiles."),
                 warnings);
         Assertions.assertFalse(Files.exists(stage.resolve(COMMON_STATIC + "/css/extra.css")));
+        Assertions.assertFalse(Files.exists(stage.resolve(MGMT_STATIC + "/css/mgmt.css")));
     }
 
     @Test

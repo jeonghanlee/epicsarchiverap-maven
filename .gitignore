@@ -2,7 +2,6 @@
 target/
 
 # Generated into the tracked docs/ tree by the build
-docs/api/
 docs/EPICSEvent.proto
 docs/LICENSE
 

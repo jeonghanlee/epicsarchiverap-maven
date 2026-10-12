@@ -69,24 +69,24 @@ PB file utilities (`pb2json.sh`, `printTimes.sh`, `validate.sh`,
 ## Building for a site
 
 Site-specific files live in `src/sitespecific/<site>/`. The folder
-`classpathfiles/` must exist; `img/`, the two stylesheets and
+`classpathfiles/` must exist; `img/`, `css/main.css` and
 `template_changes.html` are optional. The build applies them in this
 order:
 
 | Site file | Result in the build |
 | --- | --- |
 | `template_changes.html` | Each block between `<!-- @begin(name) -->` and `<!-- @end(name) -->` replaces the block of the same name in every management page, before the files below are copied. The pages carry the blocks `main_includes`, `site_header`, `site_navbar` and `site_footer`, and the index page also `site_contact_text`; a block the pages do not carry has no effect. |
-| `img/` with its subfolders | Copied to `ui/comm/img/` of all four WARs; a file of the same path replaces the default image. The default set is `archiverheader.svg` and the four images that `mgmt.css` names. |
-| `css/main.css` | Copied to `ui/comm/css/main.css` of all four WARs, replacing the default stylesheet. |
-| `css/mgmt.css` | Copied to `ui/css/mgmt.css` of the mgmt WAR, replacing the default stylesheet. |
+| `img/` with its subfolders | Copied to `ui/comm/img/` of the mgmt and retrieval WARs; a file of the same path replaces the default image. The default set is `archiverheader.svg`. |
+| `css/main.css` | Copied to `ui/comm/css/main.css` of the mgmt and retrieval WARs, replacing the default stylesheet. |
 | `classpathfiles/` | Copied into `WEB-INF/classes` of all four WARs, so the web applications find `policies.py`, `archappl.properties` and, if present, `appliances.xml` there. |
 
 The build writes the version file `ui/comm/version.txt` of all four WARs
-from the project version. A file the site does not provide keeps the
+from the project version; the etl and engine WARs, which serve no page,
+carry no other interface file. A file the site does not provide keeps the
 default of this repository.
 
 The build prints a warning for each file under `css/` other than
-`main.css` and `mgmt.css`, and for each folder of the site other than
+`main.css`, and for each folder of the site other than
 `img`, `css` and `classpathfiles`, because it does not apply them. A
 site name without a folder under `src/sitespecific/`, and a site folder
 that holds a `build.xml`, stop the build with an error that names the

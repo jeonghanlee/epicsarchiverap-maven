@@ -40,7 +40,7 @@ public class PrintFileInfo {
     public static void main(String[] args) throws Exception {
         if (args == null || args.length < 1) {
             System.err.println(
-                    "Usage: java edu.stanford.slac.archiverappliance.PlainPB.utils.PrintTimes <PBFiles or folder>");
+                    "Usage: java edu.stanford.slac.archiverappliance.PlainPB.utils.PrintFileInfo <PBFiles or folder>");
             return;
         }
 

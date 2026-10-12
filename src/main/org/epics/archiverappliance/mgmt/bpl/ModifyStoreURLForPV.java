@@ -32,7 +32,7 @@ import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
         params = {
             @BPLParam(name = "pv", description = "The name of the pv"),
             @BPLParam(name = "storage", description = "The name of the store to change ( for example, MTS )"),
-            @BPLParam(name = "plugin_url", description = "The new URL specification for this store; this is what you would have used in the policy file and is something that can be understood by <a href=\"../api/org/epics/archiverappliance/config/StoragePluginURLParser.html\">StoragePluginURLParser</a>.")
+            @BPLParam(name = "plugin_url", description = "The new URL specification for this store, in the form the policy file uses, as read by StoragePluginURLParser.")
         })
 public class ModifyStoreURLForPV implements BPLAction {
 	private static Logger logger = LogManager.getLogger(ModifyStoreURLForPV.class.getName());

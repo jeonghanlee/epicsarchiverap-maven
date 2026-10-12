@@ -1,8 +1,6 @@
 package org.epics.archiverappliance.common;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,12 +13,7 @@ import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -33,15 +26,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigService.STARTUP_SEQUENCE;
-import org.epics.archiverappliance.mgmt.bpl.SyncStaticContentHeadersFooters;
 
 /**
  * Serves static content in the web app...
  * Previously, org.apache.catalina.servlets.DefaultServlet was used for this purpose.
  * But this ties us to Tomcat and some expressed the desire to run this in other containers.
- * In addition, we needed the ability to serve content from within zip files.
- * This lets us upgrade JavaScript libraries easily; many of which are delivered a multiple files in a versioned zip.
- * 
+ *
  * This is code from http://balusc.blogspot.com/2009/02/fileservlet-supporting-resume-and.html substantially modified.
  * @author mshankar
  * 
@@ -56,16 +46,10 @@ public class StaticContentServlet extends HttpServlet {
 	
 	private ConfigService configService = null;
 	private String staticContentBasePath = "ui";
-	/**
-	 * List of paths for which we have to do template replacement
-	 */
-	private Set<String> templateReplacementPaths = new HashSet<String>();
-	
+
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		this.configService = (ConfigService) config.getServletContext().getAttribute(ConfigService.CONFIG_SERVICE_NAME);
-		templateReplacementPaths.add("viewer/index.html");
-		templateReplacementPaths.add("js/mgmt.js");
 	}
 
 	@Override
@@ -333,16 +317,13 @@ public class StaticContentServlet extends HttpServlet {
 
 	
 	/**
-	 * A sequence of paths; some of which may be in a zip file.
-	 * There are multiple possibilities here
+	 * The requested static file, found in one of two ways
 	 * <ol>
 	 * <li>The application server unpacks the WAR and we have a file on the file system</li>
-	 * <li>The application server unpacks the WAR and we have a file within a zip file on the file system</li>
 	 * <li>The application server refuses to unpack the WAR and we have a file that get as a input stream (but in this we do not have the file length readily available)</li>
-	 * <li>The application server refuses to unpack the WAR and we have a file within a input stream that is a zip file.</li>
 	 * </ol>
-	 * 
-	 * All of these result in basically the same thing
+	 *
+	 * Both of these result in basically the same thing
 	 * <ol>
 	 * <li>A stream containing the requested content that can simply be written out to the servlet output stream.</li>
 	 * <li>A length field that can be used as Content-Length</li>
@@ -380,12 +361,7 @@ public class StaticContentServlet extends HttpServlet {
 					logger.debug("Found " + fullPathToResource + " on the file system here - " + pathOnDisk);
 					this.length = f.length();
 					this.lastModified = f.lastModified();
-					if(templateReplacementPaths.contains(decodedPath)) { 
-						templateReplace(decodedPath, new FileInputStream(f));
-					} else { 
-						this.content = new BufferedInputStream(new FileInputStream(f));
-					}
-
+					this.content = new BufferedInputStream(new FileInputStream(f));
 					this.identifier = f.getAbsolutePath();
 					return;
 				}
@@ -396,98 +372,13 @@ public class StaticContentServlet extends HttpServlet {
 				URLConnection connection = pathURL.openConnection();
 				this.length = connection.getContentLengthLong();
 				this.lastModified = connection.getDate();
-				if(templateReplacementPaths.contains(decodedPath)) { 
-					templateReplace(decodedPath, connection.getInputStream());
-				} else { 
-					this.content = new BufferedInputStream(connection.getInputStream());
-				}
+				this.content = new BufferedInputStream(connection.getInputStream());
 				this.identifier = pathURL.toString();
-				return;
-			}
-			
-			Path pathSoFar = Paths.get(basePath);
-			Path searchPath = Paths.get(decodedPath);
-			int currentIndexIntoPath = 0;
-			for(Path pathComponent : searchPath) {
-				String potentialZipPath = pathSoFar.resolve(pathComponent.toString() + ".zip").toString();
-				logger.debug("Checking to see if zip file " + potentialZipPath + " exists.");
-				URL zipFileURL = servletContext.getResource(potentialZipPath);
-				if(zipFileURL != null) { 
-					logger.debug("Found zip file " + potentialZipPath + " at url " + zipFileURL);
-					String potentialPathWithinZip = searchPath.subpath(currentIndexIntoPath+1, searchPath.getNameCount()).toString();
-					logger.debug("Looking for '" + potentialPathWithinZip + "' within zip file " + zipFileURL.toString());
-					URLConnection connection = zipFileURL.openConnection();
-					try(ZipInputStream zis = new ZipInputStream(connection.getInputStream())) { 
-						ZipEntry zentry = zis.getNextEntry();
-						while(zentry != null) { 
-							// logger.debug("Zip entry '" + zentry.getName() + "'");
-							if((File.separator.equals("/") && zentry.getName().equals(potentialPathWithinZip)) || (File.separator.equals("\\") && zentry.getName().equals(potentialPathWithinZip.replace("\\", "/")))) {
-								this.length = zentry.getSize();
-								this.lastModified = zentry.getTime();
-								ByteArrayOutputStream bos = new ByteArrayOutputStream();
-								byte[] buf = new byte[1024];
-								int bytesRead = zis.read(buf);
-								while(bytesRead > 0) { 
-									bos.write(buf, 0, bytesRead);
-									bytesRead = zis.read(buf);
-								}
-								logger.debug("Read bytes " + bos.size() + " for content length " + this.length);
-								if(bos.size() != this.length) {
-									throw new IOException("ZipEntry for " + potentialPathWithinZip + " in zip file " + zipFileURL.toString() + " says the content length is " + this.length + " but we could only read " + bos.size() + " bytes");
-								}
-								if(templateReplacementPaths.contains(decodedPath)) { 
-									templateReplace(decodedPath, new ByteArrayInputStream(bos.toByteArray()));
-								} else { 
-									this.content = new BufferedInputStream(new ByteArrayInputStream(bos.toByteArray()));
-								}
-								this.identifier = zipFileURL.toString() + ".zip:" + potentialPathWithinZip;
-								return;
-							}
-							zentry = zis.getNextEntry();
-						}
-					}
-				}
-				pathSoFar = pathSoFar.resolve(pathComponent.toString());
-				currentIndexIntoPath++;
 			}
 		}
 
-		
-		public void templateReplace(String decodedPath, InputStream is) throws IOException {
-			logger.debug("Template replacement for " + decodedPath.toString());
-			
-			switch(decodedPath) { 
-			case "viewer/index.html": { 
-				HashMap<String, String> templateReplacementsForViewer = new HashMap<String, String>();
-				templateReplacementsForViewer.put("client_retrieval_url_base", 
-						"<script>\n" 
-				+ "window.global_options.retrieval_url_base = '" + configService.getMyApplianceInfo().getDataRetrievalURL() +  "';\n" 
-				+ "</script>");
-				ByteArrayInputStream replacedContent = SyncStaticContentHeadersFooters.templateReplaceChunksHTML(is, templateReplacementsForViewer);
-				this.content = new BufferedInputStream(replacedContent);
-				this.length = replacedContent.available();
-				return;
-			}
-			case "js/mgmt.js": { 
-				HashMap<String, String> templateReplacementsForViewer = new HashMap<String, String>();
-				templateReplacementsForViewer.put("archivePVWorkflowBatchSize", 
-						"var archivePVWorkflowBatchSize = " + configService.getMgmtRuntimeState().getArchivePVWorkflowBatchSize() +  ";\n");
-				templateReplacementsForViewer.put("minimumSamplingPeriod", 
-						"var minimumSamplingPeriod = " + configService.getInstallationProperties().getProperty("org.epics.archiverappliance.mgmt.bpl.ArchivePVAction.minimumSamplingPeriod", "0.1") +  ";\n");
-				ByteArrayInputStream replacedContent = SyncStaticContentHeadersFooters.templateReplaceChunksJavascript(is, templateReplacementsForViewer);
-				
 
-				this.content = new BufferedInputStream(replacedContent);
-				this.length = replacedContent.available();
-				break;
-			}
-			default:
-				logger.error("Template replacement for " + decodedPath.toString() + " that has been registered in error?");
-			}
-		}
-
-		
-		boolean exists() { 
+		boolean exists() {
 			return this.content != null;
 		}
 		

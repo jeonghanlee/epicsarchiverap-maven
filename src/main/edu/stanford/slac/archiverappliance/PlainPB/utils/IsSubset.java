@@ -28,7 +28,7 @@ import java.util.HashSet;
  *  This only compares timestamps; not the values or the meta fields.
  */
 public class IsSubset {
-    private static Logger logger = LogManager.getLogger(MergePBFile.class.getName());
+    private static Logger logger = LogManager.getLogger(IsSubset.class.getName());
 
     private static void printHelpMsg() {
         System.out.println();
