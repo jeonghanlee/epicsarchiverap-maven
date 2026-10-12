@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M46 and M48 in `docs/milestone-daff1b7.md` wait on G6 (ansible-provision's multi-hour run at or after 6c6b973a) and G7 (epicsarchiverap-env's MariaDB installation checks at or after 61e1b4c5); when either reports, record the result in the gate, check the remaining criterion of issue #29 or #31, close the issue and mark the row Complete. No other row of this register is open on this side.
+Next session entry point: Land M52, M54 and M53 of `docs/milestone-daff1b7.md` (issues #35, #37, #36) in that order, watch the Maven and Pages workflows, then reconcile and close the three issues and record the landing in each detail; M46 and M48 wait on G6 and G7, which other sessions report.
 
 Previous entry point (ETL work, unchanged): Finish repository landing and issue #28 body reconciliation/closure for the accepted M45 full-cadence deadline correction in `docs/milestone-daff1b7.md`; local T1-T5 passed, including 43 focused tests, 956 default tests and four WARs; owner acceptance and implementation authorization were given on 2026-10-07; G5 is Complete; issue #28 is created and its exact body and metadata are verified; after landing and issue closure, resume M28 in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07. Both startup transfers and the shortened STS repeat preserved the expected old interval; a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. Issue #12 holds the accepted plan, 33-test evidence and new development-appliance automatic/HTTP results, startup overrun observation and local stop measurement; exact body readback on 2026-10-07 confirmed three criteria checked, six unchecked and the issue open. M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. M26 (issue #20) is Complete. M39 (issue #24) is Complete. M12 (issue #4) is Complete: on 2026-10-05 the owner selected the Redis persistence layer for removal and kept the other backends. M10 (issue #3) is Complete: the Ant build is removed and the site build contract of D33 is in force; the environment configuration session adopts it on its own schedule. M7 (issue #2) is Complete: its first and only item, the client-side data extraction and statistics sample scripts, landed in 26882333, and on 2026-10-05 the owner stated that the item list is finished for now; a further site-required item becomes a new row with its own issue. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the revised focused checks and soak criteria have execution evidence; prior observations remain separate. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
@@ -72,6 +72,9 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M49 | Engine shutdown polls the CA command queue at its own cadence | Milestone | Complete | No | | `JCACommandThread.shutdown()` checks the queue before sleeping and polls every 100 ms under the 30 s cap (9a0c9677); `shutdownNow()` 1.3 s instead of 10.4 s, the default unit set 12 min 47 s instead of 34 min 52 s; issue #32 closed as completed on 2026-10-11; [detail](#m49---engine-shutdown-polls-the-ca-command-queue-at-its-own-cadence) |
 | Phase 2 | M50 | Fixed waits removed from the PV Access and zip store tests | Milestone | Complete | No | M49 | The PV Access tests flush the engine's buffers instead of sleeping a write period and the zip store tests simulate a year at one sample per 10 s (0097bc2d); 963 default tests in 9 min 54 s locally and a 16 min 29 s CI job; issue #33 closed as completed on 2026-10-11; [detail](#m50---fixed-waits-removed-from-the-pv-access-and-zip-store-tests) |
 | Phase 2 | M51 | Removal of what the old interface left behind | Milestone | Complete | No | M47, D34 | 833ddd6a removes the unreferenced interface files, the dead servlet paths, the Sphinx-era licence records, seven unreferenced classes and three replaced PB tools; the WARs ship only referenced files besides entry pages and licence records, LICENCES/ matches the 43 jars, kept candidates are CD-11 to CD-13; 963 tests and the CI run at 992d8ac4 pass; issue #34 closed as completed on 2026-10-12; [detail](#m51---removal-of-what-the-old-interface-left-behind) |
+| Phase 2 | M52 | Visible default header logo in a current design | Milestone | In progress | No | M47, D36 | The default markup takes the 44 px and narrow-screen 30 px header image rules; the new default `archiverheader.svg` (sampled sine, wordmark with a maven tag, official EPICS logo with its clear space) has an intrinsic size; LICENCES/NOTICE names the EPICS logo source; checks pass; landing, CI and issue #35 outstanding; [detail](#m52---visible-default-header-logo-in-a-current-design) |
+| Phase 2 | M53 | Book pages for the replaced web interface | Milestone | In progress | No | M47, M52, M54 | Operating, interface, retrieval, installing, index, redundancy and FAQ pages describe the replaced interface with ten screenshots of the default-site build; no placeholder remains; the book builds with no broken link; landing, Pages and issue #36 outstanding; [detail](#m53---book-pages-for-the-replaced-web-interface) |
+| Phase 2 | M54 | Version text from the build commit and day | Milestone | In progress | No | D37 | `ui/comm/version.txt` of the four WARs reads `Archiver Appliance Version <commit>, built <UTC day>`, the commit and day of the WAR names; the System page finds one version; landing, CI and issue #37 outstanding; [detail](#m54---version-text-from-the-build-commit-and-day) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -118,6 +121,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | D32 | Tomcat internal logging and java.util.logging go through log4j2 (log4j-appserver and log4j-jul at the Tomcat level, as aa-env D25 decides, because no Tomcat 9 formatter emits a priority prefix). aa-maven's build emits the four jars at the WARs' log4j version into target/tomcat-log4j and the release tarball, so the Tomcat-level and WAR-level log4j always come from one build. aa-env installs and configures them. | 2026-09-24 |
 | D34 | The site folder's `css/` holds `main.css` only. The management pages of M47 link no `mgmt.css`, so the default `mgmt/staticcontent/css/mgmt.css`, the four images only it names and the `css/mgmt.css` copy of `SiteOverlay` are removed; D33's site layout is `img/`, `css/main.css`, `template_changes.html` and `classpathfiles/`. | 2026-10-11 |
 | D35 | M51 item decisions: the zip-serving path of `StaticContentServlet` is removed (no zip ships and the site contract is single files); of the PB tools without a script, the three the shipped scripts replace (`CountEventsInPBFile` by `validate.sh`, `PrintExtraFields` and `SeekandPrintTimes` by `printTimes.sh`) are removed and the others stay, run from the mgmt class path and listed in the developer guide, with their usage texts corrected; the four mgmt endpoints only the old pages called stay as API; the empty `mgmt/pva/package-info.java` is filled with the package description; the etl and engine WARs, which serve no page, carry only `ui/comm/version.txt` of the common static content, while the retrieval WAR keeps the whole common folder. | 2026-10-12 |
+| D36 | The default header logo is candidate 3 of five drafts (a sine sampled into six dots, the wordmark "archiver appliance" set as Inter Display outlines) with a "maven" tag, followed by the official EPICS logo of epics-controls.org (on-screen RGB v03, green, paths unchanged, its safety_zone clear space kept). | 2026-10-12 |
+| D37 | The version every web application reports is the commit of the build and its UTC build day, the same commit and day that name the WARs; the `<version>` of `pom.xml` stays and is not shown. | 2026-10-12 |
 
 ### Conceptual-integrity findings
 
@@ -4709,6 +4714,213 @@ Observed State: CLOSED
 Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-12T09:20Z; `gh issue view 34` shows state CLOSED, closed at 2026-10-12T09:20:22Z, one comment, six checked and no unchecked criterion; the body matches `work/issue-ui-leftovers-body.md` and the comment `work/issue-ui-leftovers-close.md`
+
+#### M52 - Visible default header logo in a current design
+
+Origin: daff1b7 / M52
+Identity History: none
+GitHub Issue: #35 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/35)
+Status: In progress
+
+##### Summary
+
+The default header image `staticcontent/img/archiverheader.svg` rendered 0 by 0 on every management page: the SVG had only a `viewBox`, and `main.css` sized only `#siteimages img`, the markup of a site template, not the default `.pageheader > span > img`. The image itself was a generic 2024 banner. The default markup takes the site template's rules, and a new default image carries its own size.
+
+##### Scope
+
+`main.css` (44 px rule and the narrow-screen 30 px rule for the default markup), a new `archiverheader.svg` (D36), and the `LICENCES/NOTICE` entry for the EPICS logo.
+
+Out of scope: logos a site supplies through its site folder; the data viewer bar, which carries no image.
+
+##### Completion Criteria
+
+- Every management page shows the default logo, 44 px high, and 30 px high on a narrow screen.
+- The SVG keeps its size without the stylesheet rule.
+- `LICENCES/NOTICE` names the source and the terms page of the EPICS logo.
+- `scripts/ui-static-checks.bash`, `SiteOverlayTest`, the default unit set and the CI pass.
+
+##### Dependencies And Decisions
+
+- M47 Complete: the default markup and skin come from the replaced interface.
+- D36: the design of the new default logo.
+- Decision Date: 2026-10-12. The EPICS logo is used as epics-controls.org publishes it. Its terms are on https://epics.anl.gov/docs/epics-logo.php, which refused a direct read on that day; search summaries of the page state that the logo may be used freely in association with support for EPICS users.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-12; owner chose candidate 3 with the official EPICS logo and a maven tag after five drafts were rendered in the header
+Implementation Authorization: 2026-10-12; owner directed the change on `modernize`
+Superseded Plan Artifacts: none
+
+1. Extend the 44 px and 30 px rules to `.pageheader > span > img`. Closes with T1.
+2. Generate the logo with text as Inter Display outlines, `width` and `height` attributes, and the EPICS artwork copied verbatim inside its own `viewBox`; record the source in NOTICE. Closes with T1 and T2.
+3. Run the interface checks, the overlay test, the default suite and the CI. Closes with T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser | Measure the header image on a local appliance of the default-site build at desktop and at the narrowest window | Firefox 153 ESR headless | 340 by 44, and 30 high on a narrow window, with no sideways scroll |
+| T2 | Records | Compare the image in the WARs with the source and NOTICE with `LICENCES/` | Build | Identical image; NOTICE names the logo source |
+| T3 | Checks and suite | `scripts/ui-static-checks.bash`, `SiteOverlayTest`, `./mvnw -o -B -ntp clean verify`; Maven workflow | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-12 12:22 local | Local appliance of the working tree over 84ae8a83 | Pass | Desktop 340 by 44 on every page shot; a 500 px window shows 232 by 30 and a page width of 488 px. Before the change the image box measured 0 by 0 |
+| T2 | 2026-10-12 | Build of the working tree | Pass | The mgmt WAR image equals the source byte for byte; every licence file is named in NOTICE |
+| T3 | 2026-10-12 | JDK 21; GitHub Actions | Pending | Interface checks 251 pass and `SiteOverlayTest` 8 pass; default suite and CI pending |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Redesign the invisible header logo
+Labels: bug, enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: bug, enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12; `gh issue view 35` shows the drafted body, open, assignee jeonghanlee
+
+#### M53 - Book pages for the replaced web interface
+
+Origin: daff1b7 / M53
+Identity History: none
+GitHub Issue: #36 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/36)
+Status: In progress
+
+##### Summary
+
+The book described the management interface that M47 replaced and held four screenshot placeholders. The operating, interface, retrieval and installing pages are rewritten from the shipped pages and code, three more pages are corrected, and ten screenshots of the default-site build replace the placeholders.
+
+##### Scope
+
+`docs/book/src/operating.md`, `interface.md`, `retrieval.md`, `installing.md`, `index.md`, `redundancy.md`, `faq.md` and `docs/book/src/images/` (ten PNG files, about 480 KB).
+
+Out of scope: a Phoebus Data Browser screenshot; book pages that do not describe the interface.
+
+##### Completion Criteria
+
+- No book page names a page or control of the replaced interface, and no placeholder remains.
+- Every figure shows the default-site build of the working tree that the landing commit carries.
+- The book builds with no broken link, image or anchor, and the Pages workflow publishes it.
+
+##### Dependencies And Decisions
+
+- M47 Complete; M52 and M54 land first, because the figures show the new logo and the new version line.
+- Decision Date: 2026-10-12. The figures come from a local appliance (`scripts/run-local-appliance.bash`) archiving 20 PVs of a soft IOC of EPICS 7.0.10; the disconnected report is the same appliance with the IOC stopped.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-12; owner directed a full review of the book with new screenshots
+Implementation Authorization: 2026-10-12; owner directed the update on `modernize`
+Superseded Plan Artifacts: none
+
+1. Review every page against the shipped pages; rewrite and correct the pages above. Closes with T1.
+2. Capture the ten figures from the running appliance. Closes with T2.
+3. Build the book and check every link, image and anchor; land and watch the Pages workflow. Closes with T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Content | Search the book for the names of the replaced pages and controls; read each action and state against the page code and the running page | Repository and local appliance | None remains; every named action exists |
+| T2 | Figures | Inspect each figure | Local appliance of the final working tree | Shows the shipped pages, the new logo and the new version line |
+| T3 | Book build | mdBook build with a link, image and anchor check; Pages workflow | mdBook 0.4.48 local without the admonish preprocessor; GitHub Actions | No broken reference; the site publishes |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-12 | Repository and local appliance | Pass | No page names Home, Reports, Metrics, Storage or Appliances pages, Check Status, the Details column or the PV Details page; the actions per state match the Detail section of the running Work page |
+| T2 | 2026-10-12 12:22 local | Local appliance of the final working tree | Pass | Ten figures with the new logo; the System overview shows `Archiver Appliance Version 84ae8a83, built 2026-10-12` and archiving normally |
+| T3 | 2026-10-12 | mdBook 0.4.48 local | Pass (local); Pages pending | 0 broken links, images or anchors |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Book pages for the new web interface
+Labels: documentation
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: documentation
+Observed Milestone: none
+Last Compared: 2026-10-12; `gh issue view 36` shows the drafted body, open, assignee jeonghanlee
+
+#### M54 - Version text from the build commit and day
+
+Origin: daff1b7 / M54
+Identity History: none
+GitHub Issue: #37 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/37)
+Status: In progress
+
+##### Summary
+
+Every web application reported `Archiver Appliance Version 2025-6`, the `<version>` of `pom.xml` and the number of the upstream release tagged NewHope (2025-06-17), so the version did not identify the WAR that runs and the System page could not tell two builds apart. The build writes the commit and the UTC build day that also name the WARs.
+
+##### Scope
+
+`pom.xml` (`git.build.time` from the git-commit-id plugin, the version argument of the `site-overlay` execution), the wording of `SiteOverlay`, and the version paragraph of `docs/book/src/building.md`.
+
+Out of scope: a release numbering scheme; marking a build of a working tree with uncommitted changes.
+
+##### Completion Criteria
+
+- The version file of each WAR holds the commit and the build day of the WAR name.
+- `getApplianceInfo` and the System page report it, and the System page finds the four web applications at one version.
+- `SiteOverlayTest`, the default unit set and the CI pass.
+
+##### Dependencies And Decisions
+
+- D37: the version text.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-12; owner chose the commit hash with the build day
+Implementation Authorization: 2026-10-12; owner directed the change on `modernize`
+Superseded Plan Artifacts: none
+
+1. Add `git.build.time` (`yyyy-MM-dd`, UTC) and pass `${git.commit.id.abbrev}, built ${git.build.time}` to `SiteOverlay`; update its wording and the building page. Closes with T1.
+2. Run a local appliance and the System page; run the overlay test, the default suite and the CI. Closes with T2 and T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Build | Read `ui/comm/version.txt` of the four WARs | Default-site build | `Archiver Appliance Version <commit>, built <day>` matching the WAR name |
+| T2 | Runtime | `getApplianceInfo` and the System page of a local appliance | Local appliance | Same text; Components at one version |
+| T3 | Suite | `SiteOverlayTest`, `./mvnw -o -B -ntp clean verify`; Maven workflow | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-12 | Build of the working tree over 84ae8a83 | Pass | All four WARs read `Archiver Appliance Version 84ae8a83, built 2026-10-12`; the WAR names are `aa-20261012-84ae8a83-*` |
+| T2 | 2026-10-12 12:08 local | Local appliance | Pass | `getApplianceInfo` returns the same text; the System overview shows it and Components all running, Normal |
+| T3 | 2026-10-12 | JDK 21; GitHub Actions | Pending | `SiteOverlayTest` 8 pass; default suite and CI pending |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Version from the build commit and day
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12; `gh issue view 37` shows the drafted body, open, assignee jeonghanlee
 
 #### G6 - Multi-hour appliance run at or after 6c6b973a with zero sample-buffer-full losses
 
