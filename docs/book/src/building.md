@@ -81,9 +81,14 @@ order:
 | `classpathfiles/` | Copied into `WEB-INF/classes` of all four WARs, so the web applications find `policies.py`, `archappl.properties` and, if present, `appliances.xml` there. |
 
 The build writes the version file `ui/comm/version.txt` of all four WARs
-from the project version; the etl and engine WARs, which serve no page,
-carry no other interface file. A file the site does not provide keeps the
-default of this repository.
+with the commit of the build and the day it was built, in UTC, such as
+`Archiver Appliance Version 84ae8a83, built 2026-10-12`; the WAR names
+carry the same commit and day (`aa-20261012-84ae8a83-mgmt.war`). The
+System page and the `getVersion` and `getApplianceInfo` calls report this
+text, and the System page compares it across the four web applications.
+The etl and engine WARs, which serve no page, carry no other interface
+file. A file the site does not provide keeps the default of this
+repository.
 
 The build prints a warning for each file under `css/` other than
 `main.css`, and for each folder of the site other than

@@ -384,8 +384,12 @@
           <abbrevLength>8</abbrevLength>
           <failOnNoGitDirectory>false</failOnNoGitDirectory>
           <runOnlyOnce>true</runOnlyOnce>
+          <!-- git.build.time is the date of the build in UTC, the same day maven.build.timestamp puts in finalName. -->
+          <dateFormat>yyyy-MM-dd</dateFormat>
+          <dateFormatTimeZone>UTC</dateFormatTimeZone>
           <includeOnlyProperties>
             <property>git.commit.id.abbrev</property>
+            <property>git.build.time</property>
           </includeOnlyProperties>
         </configuration>
       </plugin>
@@ -555,7 +559,8 @@
               <arguments>
                 <argument>${sitespecific.path}</argument>
                 <argument>${stage.dir}</argument>
-                <argument>${project.version}</argument>
+                <!-- The version every web application reports: the commit of the build and the day it was built. -->
+                <argument>${git.commit.id.abbrev}, built ${git.build.time}</argument>
               </arguments>
               <classpathScope>compile</classpathScope>
             </configuration>

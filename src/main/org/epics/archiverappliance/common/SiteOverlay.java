@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 /**
  * Applies a site folder to the staged static content of the build, in this order:
  * <ol>
- * <li>writes the version file with the project version;</li>
+ * <li>writes the version file with the version text the build passes, the commit and the date of the build;</li>
  * <li>when the site folder has <code>template_changes.html</code>, merges it into the staged management pages with
  * {@link SyncStaticContentHeadersFooters};</li>
  * <li>copies <code>img/</code> (with its subfolders) over the staged <code>staticcontent/img</code> and
@@ -26,7 +26,7 @@ import java.util.stream.Stream;
  * is staged. Files of the site folder that the overlay does not apply, which are other files under <code>css/</code> and
  * folders other than <code>img</code>, <code>css</code> and <code>classpathfiles</code>, are reported as warnings.
  *
- * <pre><code>Usage: java SiteOverlay &lt;site folder&gt; &lt;stage folder&gt; &lt;project version&gt;</code></pre>
+ * <pre><code>Usage: java SiteOverlay &lt;site folder&gt; &lt;stage folder&gt; &lt;version&gt;</code></pre>
  */
 public final class SiteOverlay {
     private static final String COMMON_STATIC = "org/epics/archiverappliance/staticcontent";
@@ -42,7 +42,7 @@ public final class SiteOverlay {
 
     public static void main(String[] args) throws IOException {
         if (args.length != 3) {
-            throw new IllegalArgumentException("Usage: java SiteOverlay <site folder> <stage folder> <project version>");
+            throw new IllegalArgumentException("Usage: java SiteOverlay <site folder> <stage folder> <version>");
         }
         for (String warning : apply(Path.of(args[0]), Path.of(args[1]), args[2])) {
             System.out.println("WARNING: " + warning);
@@ -54,7 +54,7 @@ public final class SiteOverlay {
      *
      * @param site    the site folder
      * @param stage   the stage folder that already holds the default static content
-     * @param version the project version written to the version file
+     * @param version the version text written to the version file after its prefix
      * @return the warnings about files of the site folder that the overlay does not apply
      * @throws IOException           when a file cannot be read, written or merged
      * @throws IllegalStateException when the site folder does not exist or still holds a build.xml
