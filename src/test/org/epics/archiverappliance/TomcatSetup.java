@@ -248,11 +248,17 @@ public class TomcatSetup {
 
 	/**
 	 * The built WAR for a component, resolved from the build-supplied output directory and final name.
-	 * archappl.war.dir defaults to target and archappl.final.name to the Maven project final name.
+	 * archappl.war.dir defaults to target. archappl.final.name has no default, because the final name carries the
+	 * build day and commit; the Maven test configuration sets it, and a run outside Maven must set it to the name of
+	 * the built WARs without the component suffix.
 	 */
-	private static File warFile(String component) {
+	private static File warFile(String component) throws IOException {
 		String warDir = System.getProperty("archappl.war.dir", "target");
-		String finalName = System.getProperty("archappl.final.name", "archappl-2025-6");
+		String finalName = System.getProperty("archappl.final.name");
+		if(finalName == null || finalName.isBlank()) {
+			throw new IOException("The system property archappl.final.name is not set; Maven sets it to the final name of the "
+					+ "built WARs, such as aa-20261012-fcf01d9c. Set it when running the integration tests outside Maven.");
+		}
 		return new File(warDir, finalName + "-" + component + ".war");
 	}
 
