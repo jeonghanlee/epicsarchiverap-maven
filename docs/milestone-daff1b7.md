@@ -8,9 +8,9 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: Land M52, M54 and M53 of `docs/milestone-daff1b7.md` (issues #35, #37, #36) in that order, watch the Maven and Pages workflows, then reconcile and close the three issues and record the landing in each detail; M46 and M48 wait on G6 and G7, which other sessions report.
+Next session entry point: M52, M53 and M54 of `docs/milestone-daff1b7.md` landed in fcf01d9c with the Maven and Pages workflows green; sync and close issues #35, #36 and #37 and record the landing in each detail, then review the M56 plan (issue #38) with the owner, the first of the interface items M56 to M60 (issues #38 and #39); M46 and M48 wait on G6 and G7, which other sessions report.
 
-Previous entry point (ETL work, unchanged): Finish repository landing and issue #28 body reconciliation/closure for the accepted M45 full-cadence deadline correction in `docs/milestone-daff1b7.md`; local T1-T5 passed, including 43 focused tests, 956 default tests and four WARs; owner acceptance and implementation authorization were given on 2026-10-07; G5 is Complete; issue #28 is created and its exact body and metadata are verified; after landing and issue closure, resume M28 in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07. Both startup transfers and the shortened STS repeat preserved the expected old interval; a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. Issue #12 holds the accepted plan, 33-test evidence and new development-appliance automatic/HTTP results, startup overrun observation and local stop measurement; exact body readback on 2026-10-07 confirmed three criteria checked, six unchecked and the issue open. M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. M26 (issue #20) is Complete. M39 (issue #24) is Complete. M12 (issue #4) is Complete: on 2026-10-05 the owner selected the Redis persistence layer for removal and kept the other backends. M10 (issue #3) is Complete: the Ant build is removed and the site build contract of D33 is in force; the environment configuration session adopts it on its own schedule. M7 (issue #2) is Complete: its first and only item, the client-side data extraction and statistics sample scripts, landed in 26882333, and on 2026-10-05 the owner stated that the item list is finished for now; a further site-required item becomes a new row with its own issue. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the revised focused checks and soak criteria have execution evidence; prior observations remain separate. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
+Other open work: M28 (issue #12) resumes in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07, both startup transfers and the shortened STS repeat preserved the expected old interval, and a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. M28 stays In progress until the revised focused checks and soak criteria have execution evidence. M36's reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02; do not resend it. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) owns full VM revalidation.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -41,7 +41,6 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M10 | Ant removal: final Maven-only consolidation | Milestone | Complete | No | D7, D33 | No maven-antrun-plugin execution and no build.xml remain (af2e7348); the four WARs of the default and tests sites match the previous build except the new SiteOverlay class and the embedded pom.xml; a leftover site build.xml or a missing site folder stops the build with a message; 920 tests and the Maven workflow pass; issue #3 closed as completed on 2026-10-05; [detail](#m10---ant-removal-final-maven-only-consolidation) |
 | Phase 2 | M18 | Appliance logging model: journald-first log4j2 layout and lifecycle | Milestone | Complete | No | D31, G3 | The shipped log4j2.xml emits the <N> priority prefix with a ${env:ARCHAPPL_ROOT_LOGGER_LEVEL:-INFO} root level and a capped, commented RollingFile fallback; the operating-model page and the faq/install-guide fixes land; [detail](#m18---appliance-logging-model-journald-first-log4j2-layout-and-lifecycle) |
 | Phase 2 | M19 | Tomcat log4j jar set from the build | Milestone | Complete | No | D32 | The build writes log4j-api, log4j-core, log4j-appserver and log4j-jul at ${log4j.version} to target/tomcat-log4j and the release tarball carries them; the logging page describes Tomcat and java.util.logging lines through log4j2; [detail](#m19---tomcat-log4j-jar-set-from-the-build) |
-| D33 | M10 returns to Not started. A site folder keeps `img/`, `css/main.css`, `css/mgmt.css`, `template_changes.html` and `classpathfiles/` in today's layout; Maven copies the first three over the staged static content with overwrite, runs `SyncStaticContentHeadersFooters` with `template_changes.html` over the staged management pages before those copies when the file exists, and fails the build with the message `A site build.xml is no longer run. Remove <site folder>/build.xml and use img/, css/ and template_changes.html as described in the Building chapter.` when the site folder still contains a `build.xml`, with `<site folder>` replaced by the folder path. Alternative considered: ship merged pages as static site files (rejected: the site pages would no longer follow changes of the project pages). | 2026-10-05 |
 | Phase 2 | M20 | Runtime log-level control per component | Milestone | Complete | No | D31 | mgmt BPL getLogLevel and setLogLevel change a named logger or the root level in one running component without a restart, forwarded to that component's own BPL; [detail](#m20---runtime-log-level-control-per-component) |
 | Phase 2 | M21 | Reject consolidateDataForPV for an unknown PV | Milestone | Complete | No | | consolidateDataForPV for a PV with no PVTypeInfo returns HTTP 400 with one ERROR line instead of HTTP 500 and a NullPointerException; issue #1 closed manually citing the fix commit; [detail](#m21---reject-consolidatedataforpv-for-an-unknown-pv) |
 | Phase 2 | M22 | Local appliance launcher in one folder | Milestone | Complete | No | M13 | One bash script starts the four WARs of a local build as four Tomcat instances on SQLite, with every file under one temporary folder and no systemd; BPL and a PV archive round trip answer; [detail](#m22---local-appliance-launcher-in-one-folder) |
@@ -64,8 +63,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M39 | Per-request INFO logging without requester or outcome | Milestone | Complete | No | | Each remaining per-request INFO statement (BasicDispatcher Servicing, engine BPLServlet Beginning request, GetEngineDataAction Found a total) is kept with requester and outcome fields, replaced by one record per request, or moved below INFO, with the decision recorded; output at the default level under load contains only the kept lines; the default suite passes; [detail](#m39---per-request-info-logging-without-requester-or-outcome) |
 | Phase 2 | M42 | Human-readable storage rates in storageSizeCheck.bash | Milestone | Complete | No | | storageSizeCheck.bash prints rates and its threshold in B to TB per year with three significant digits (af1e67ac); the client boundary tests fail before and pass after, the local appliance comparison and 900 default tests pass, and the Maven workflow passes; issue #25 closed as completed on 2026-10-04; [detail](#m42---human-readable-storage-rates-in-storagesizecheckbash) |
 | Phase 2 | M43 | One engine CA context never receives search replies | Milestone | Complete | No | | The shared UDP search port is reproduced with real CAJ contexts on Rocky 8.10 and Debian 13; the engine compares its command threads' search ports and recreates the earlier-bound context of a sharing pair (7adc7d5a); the new test fails without the check and passes with it, 901 default tests, 26 engine CA tests and the Maven workflow pass, and 30 restarts on a Rocky 8.10 guest were clean; issue #26 closed as completed on 2026-10-05; why the field rate exceeds the probe rate stays open; [detail](#m43---one-engine-ca-context-never-receives-search-replies) |
-| Phase 2 | M44 | Preserve ETL source data when append fails | Milestone | In progress | No | | A failed append retains its source partition, is excluded from moved totals and is reported as a failed job; recovery and ordinary transfers preserve the required samples; [detail](#m44---preserve-etl-source-data-when-append-fails) |
-| Phase 2 | M45 | Use a full-cadence deadline for ETL startup and scheduled passes | Milestone | In progress | No | G5 | Overrun means endedAt is strictly later than plannedAt plus cadence; real-job regressions cover startup wait, scheduled delay and deadline boundaries, with scheduling and physical transfer preserved; [detail](#m45---use-a-full-cadence-deadline-for-etl-startup-and-scheduled-passes) |
+| Phase 2 | M44 | Preserve ETL source data when append fails | Milestone | Complete | No | | A failed append retains its source partition, is excluded from moved totals and is reported as a failed job; recovery and ordinary transfers preserve the required samples; landed in f8fa719d, Maven run 37551730326 succeeded, issue #27 closed on 2026-10-07; [detail](#m44---preserve-etl-source-data-when-append-fails) |
+| Phase 2 | M45 | Use a full-cadence deadline for ETL startup and scheduled passes | Milestone | Complete | No | G5 | Overrun means endedAt is strictly later than plannedAt plus cadence; real-job regressions cover startup wait, scheduled delay and deadline boundaries, with scheduling and physical transfer preserved; landed in 120d53fe, Maven run 37698987276 succeeded, issue #28 closed on 2026-10-07; [detail](#m45---use-a-full-cadence-deadline-for-etl-startup-and-scheduled-passes) |
 | Phase 2 | M46 | Sample buffers sized with a time margin | Milestone | Blocked | No | G6 | Every PV's sample buffer holds one write period of samples plus `sampleBufferMarginSeconds` (default and minimum 1.0 s) instead of one extra sample (6c6b973a); capacity, property and real-IOC tests pass, and a 500 ms write-pass delay loses nothing; the multi-hour appliance run is G6; [detail](#m46---sample-buffers-sized-with-a-time-margin) |
 | Phase 2 | M47 | Management interface and data viewer replacement | Milestone | Complete | No | | The 35 interface files of jeonghanlee/epicsarchiverap-env@3353b74 land in d0932d1b with the jQuery, flot and viewer archive assets removed; 254 static checks run in the CI as scripts/ui-static-checks.bash and the book describes the pages (696117bc); issue #30 closed as completed on 2026-10-11; [detail](#m47---management-interface-and-data-viewer-replacement) |
 | Phase 2 | M48 | MariaDB JDBC driver 3.5.10 | Milestone | Blocked | No | G7 | `mariadb-java-client` 3.5.10 in every WAR (61e1b4c5), LICENCES/NOTICE lists the 43 runtime jars, the CI run passes; the socket and TCP installation checks of aa-env at a pin at or after 61e1b4c5 are G7; [detail](#m48---mariadb-jdbc-driver-3510) |
@@ -75,6 +74,11 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M52 | Visible default header logo in a current design | Milestone | In progress | No | M47, D36 | The default markup takes the 44 px and narrow-screen 30 px header image rules; the new default `archiverheader.svg` (sampled sine, wordmark with a maven tag, official EPICS logo with its clear space) has an intrinsic size; LICENCES/NOTICE names the EPICS logo source; checks pass; landing, CI and issue #35 outstanding; [detail](#m52---visible-default-header-logo-in-a-current-design) |
 | Phase 2 | M53 | Book pages for the replaced web interface | Milestone | In progress | No | M47, M52, M54 | Operating, interface, retrieval, installing, index, redundancy and FAQ pages describe the replaced interface with ten screenshots of the default-site build; no placeholder remains; the book builds with no broken link; landing, Pages and issue #36 outstanding; [detail](#m53---book-pages-for-the-replaced-web-interface) |
 | Phase 2 | M54 | Version text from the build commit and day | Milestone | In progress | No | D37 | `ui/comm/version.txt` of the four WARs reads `Archiver Appliance Version <commit>, built <UTC day>`, the commit and day of the WAR names; the System page finds one version; landing, CI and issue #37 outstanding; [detail](#m54---version-text-from-the-build-commit-and-day) |
+| Interface console | M56 | Menu by task and console pages | Milestone | Not started | Yes | D38, D39 | The menu reads Archive PVs, Browse PVs, System, Help and Analyzer, each entry opens its page and marks the page in view, and the old addresses forward outside it; the external Archiver Appliance servers sit under System without the Channel Archiver parts; System explanations open on demand; text sizes follow the browser; Help opens the book; [detail](#m56---menu-by-task-and-console-pages) |
+| Interface console | M57 | Archive PVs page | Milestone | Not started | No | M56, D38 | Adding PVs has a visible entry apart from Find, takes a pasted list with a result per name and offers nothing for a half-typed name; each Scan row and the bulk actions carry the actions of the PV's state, including the cancel of a pending request; [detail](#m57---archive-pvs-page) |
+| Interface analyzer | M58 | Browse PVs page and the analyzer | Milestone | Not started | No | M56, D38, D40 | Find explains its search modes on demand and Browse PVs gives a simple summary; the analyzer replaces the viewer, opens from the menu and from Browse PVs, inside the console and in its own window, has the site header and logo and a way back; [detail](#m58---browse-pvs-page-and-the-analyzer) |
+| Interface analyzer | M59 | One chart component with drawing options and pointer controls | Milestone | Not started | No | M56, D40 | The analyzer carries the drawing options, the analysis plots and tools, and the D3 pointer behaviors through one chart component, which the other pages use in a simple form with a control into the analyzer; [detail](#m59---one-chart-component-with-drawing-options-and-pointer-controls) |
+| Interface console | M60 | Name check on the network and hold of a pending request | Milestone | Not started | No | M57 | The appliance reports whether a complete PV name answers on the network before it is archived, and a pending archive request can be paused and held as well as cancelled; [detail](#m60---name-check-on-the-network-and-hold-of-a-pending-request) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -119,10 +123,14 @@ This register covers the minimal modernization of the existing Java appliance on
 | D30 | M9 covers the docs publishing migration (mdBook on GitHub Pages) and build/test/deploy command accuracy, not modernizing the narrative content itself. The migrated pages are largely upstream-era (clustering, multi-appliance, CS-Studio, MySQL-first) and conflict with the single-instance scope (D23, D26) and the EPICS-Arche boundary (D12); content modernization is deferred to backlog item M17 pending an owner keep/cut list. | 2026-09-19 |
 | D31 | Appliance logging model, agreed with aa-env: journald collects; one service whose launcher runs the four Tomcats in the foreground with systemd-cat --identifier=archappl-<component> --level-prefix=true; no catalina.out, no JULI FileHandlers, no logrotate; journald retention 8 weeks with the size cap winning; the access log kept as a file with maxDays=90; aa-maven owns the log4j2 layout, root level, fallback and operating-model docs, aa-env owns the unit, launcher, JULI configuration and the access-log bound. | 2026-09-23 |
 | D32 | Tomcat internal logging and java.util.logging go through log4j2 (log4j-appserver and log4j-jul at the Tomcat level, as aa-env D25 decides, because no Tomcat 9 formatter emits a priority prefix). aa-maven's build emits the four jars at the WARs' log4j version into target/tomcat-log4j and the release tarball, so the Tomcat-level and WAR-level log4j always come from one build. aa-env installs and configures them. | 2026-09-24 |
+| D33 | M10 returns to Not started. A site folder keeps `img/`, `css/main.css`, `css/mgmt.css`, `template_changes.html` and `classpathfiles/` in today's layout; Maven copies the first three over the staged static content with overwrite, runs `SyncStaticContentHeadersFooters` with `template_changes.html` over the staged management pages before those copies when the file exists, and fails the build with the message `A site build.xml is no longer run. Remove <site folder>/build.xml and use img/, css/ and template_changes.html as described in the Building chapter.` when the site folder still contains a `build.xml`, with `<site folder>` replaced by the folder path. Alternative considered: ship merged pages as static site files (rejected: the site pages would no longer follow changes of the project pages). | 2026-10-05 |
 | D34 | The site folder's `css/` holds `main.css` only. The management pages of M47 link no `mgmt.css`, so the default `mgmt/staticcontent/css/mgmt.css`, the four images only it names and the `css/mgmt.css` copy of `SiteOverlay` are removed; D33's site layout is `img/`, `css/main.css`, `template_changes.html` and `classpathfiles/`. | 2026-10-11 |
 | D35 | M51 item decisions: the zip-serving path of `StaticContentServlet` is removed (no zip ships and the site contract is single files); of the PB tools without a script, the three the shipped scripts replace (`CountEventsInPBFile` by `validate.sh`, `PrintExtraFields` and `SeekandPrintTimes` by `printTimes.sh`) are removed and the others stay, run from the mgmt class path and listed in the developer guide, with their usage texts corrected; the four mgmt endpoints only the old pages called stay as API; the empty `mgmt/pva/package-info.java` is filled with the package description; the etl and engine WARs, which serve no page, carry only `ui/comm/version.txt` of the common static content, while the retrieval WAR keeps the whole common folder. | 2026-10-12 |
 | D36 | The default header logo is candidate 3 of five drafts (a sine sampled into six dots, the wordmark "archiver appliance" set as Inter Display outlines) with a "maven" tag, followed by the official EPICS logo of epics-controls.org (on-screen RGB v03, green, paths unchanged, its safety_zone clear space kept). | 2026-10-12 |
 | D37 | The version every web application reports is the commit of the build and its UTC build day, the same commit and day that name the WARs; the `<version>` of `pom.xml` stays and is not shown. | 2026-10-12 |
+| D38 | The management interface is a console, not a set of documents: each page shows state and offers actions at a glance, and an explanation opens on demand (a `?` control or Help), not as standing text. The System pages provide status monitoring. The menu is organized by task, five entries: Archive PVs (adding PVs and controlling their archiving, with a control into the analyzer), Browse PVs (finding archived PVs with a simple summary and a control into the analyzer), System (status monitoring), Help, and Analyzer (the data analyzer opened directly); each entry opens its own page and marks the page in view. The old addresses (`reports.html`, `metrics.html`, `storage.html`, `appliance.html`) forward outside the menu. | 2026-10-12 |
+| D39 | The Channel Archiver parts leave the interface: the upload of Channel Archiver configuration files, the comparison with a Channel Archiver, and the Channel Archiver XML-RPC external server type (`CA_XMLRPC`); their calls stay available to scripts. The external data server of type EPICS Archiver Appliance (`ARCHAPPL_PBRAW`) stays and moves under System; the Integration menu entry goes. | 2026-10-12 |
+| D40 | The analyzer, which replaces the data viewer of M47, is a data analysis tool in the browser: an operator analyzes archived data in it without exporting to an external tool. It is built with every applicable tool of the bundled D3 package (7.9.0, `staticcontent/js/vendor/d3.min.js`); D3 is the only library: the bundled package first, then, where it lacks a tool, a module of the official D3 repositories outside the default bundle (such as `d3-hexbin`), vendored with its version, source and licence recorded as for `d3.min.js`; no third-party package is added. The tools of the bundled package are built first. A simple computation that D3 does not provide, such as the correlation and the linear regression, is implemented in the page's own code. | 2026-10-12 |
 
 ### Conceptual-integrity findings
 
@@ -4048,7 +4056,7 @@ Last Compared: 2026-10-05 01:52 UTC; `gh api repos/jeonghanlee/epicsarchiverap-m
 Origin: daff1b7 / M44
 Identity History: none
 GitHub Issue: [#27](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/27)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -4145,7 +4153,7 @@ T4 used `JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64`, `MAVEN_OPTS=-Xmx1g`, `-D
 
 - Local source correction and regression tests are implemented; T1 through T4 pass. On 2026-10-06, the first read-only peer implementation review accepted the source and test design with no blocking findings. The second review checked the final M44 record against its requested hash and the preserved baseline, focused, storage and default-suite evidence; the 17, 70 and 926 passing-test counts and stated verification limits matched, with no blocking findings. The peer did not rerun tests or change files.
 - On 2026-10-06, issue #27 was created and closed under explicit issue delegation after all six acceptance criteria were checked and the verification result and limits were recorded in its body and closing comment. Live readback confirmed CLOSED, the bug label, assignee jeonghanlee, no GitHub milestone, an exact match with the prepared body and comment, and a closure time of 2026-10-07 00:11:04 UTC. Recheck with gh issue view 27 --repo jeonghanlee/epicsarchiverap-maven. This closes the issue lifecycle, not the unpublished code change.
-- Repository changes still have no commit or upstream landing evidence. M44 stays In progress until landing evidence is recorded; issue delegation does not authorize commit, push or M28 deployment/soak work.
+- Landed in f8fa719d (2026-10-06; `ETLJob.java`, `ETLRunReport.java`, `ETLPassDriverTest.java` and this register), which is on origin/modernize; the Maven workflow run 37551730326 on f8fa719d succeeded at 2026-10-07 01:00 UTC. With the issue closed above, M44 is Complete (recorded 2026-10-12 from `git branch -r --contains f8fa719d` and `gh run view 37551730326`).
 
 ##### GitHub Projection
 
@@ -4157,14 +4165,14 @@ Observed Labels: bug
 Observed Milestone: none
 Observed Assignee: jeonghanlee
 Observed Closed At: 2026-10-07 00:11:04 UTC
-Last Compared: 2026-10-06; live issue readback matched `work/issue-etl-append-failure.md` and `work/issue-etl-append-failure-close.md`
+Last Compared: 2026-10-12; `gh issue view 27` shows CLOSED at 2026-10-07T00:11:04Z, six criteria checked, one closure comment
 
 #### M45 - Use a full-cadence deadline for ETL startup and scheduled passes
 
 Origin: daff1b7 / M45
 Identity History: none
 GitHub Issue: #28 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/28)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -4229,7 +4237,7 @@ Superseded Plan Artifacts: none
 
 ##### Closure Evidence
 
-- Current working-tree correction changes only the completion-deadline operand in ETLPassDriver.runPass(); ETLPassRecord changes are documentation only. Before-correction product source SHA-256 is 359194ecd4b886068cd42e26db35072b7eb5333002d1067ee298e375899a91e5. Corrected driver source SHA-256 is 298019672186c962fdc5b9838d0dcb9a9a78ddc22dea6efd3f665129a5516c2f; test source SHA-256 is 809d22e34bee93471352efb18f67d7fc0872c29f26cf426bbbbefb2743431579. The observed regression failure and corrected focused/default results are retained separately under work/m45-validation. Local T1 through T5 are Pass; repository landing and issue closure remain outstanding, so M45 stays In progress.
+- Current working-tree correction changes only the completion-deadline operand in ETLPassDriver.runPass(); ETLPassRecord changes are documentation only. Before-correction product source SHA-256 is 359194ecd4b886068cd42e26db35072b7eb5333002d1067ee298e375899a91e5. Corrected driver source SHA-256 is 298019672186c962fdc5b9838d0dcb9a9a78ddc22dea6efd3f665129a5516c2f; test source SHA-256 is 809d22e34bee93471352efb18f67d7fc0872c29f26cf426bbbbefb2743431579. The observed regression failure and corrected focused/default results are retained separately under work/m45-validation. Local T1 through T5 are Pass.
 - At 2026-10-07T21:33:19Z, the evidence parser checked all 64 actual completed deadline records from each corrected run, compared their full-precision timestamp arithmetic and actual metrics flags, and verified that all four WARs contain exactly the driver class produced in target/classes by the clean build. That class SHA-256 is 6f8150055bfce84063193b1b82ee825e6013069bc624affcf56d3d6bfbe8b710. The WAR basename retains the prior HEAD abbreviation f8fa719d; these are corrected working-tree artifacts, not artifacts of the unchanged f8fa719d commit or new deployment/soak evidence. The current source/document artifacts were rechecked against the accepted deadline, schedule, data and reporting criteria; no plan deviation is recorded.
 
 | Corrected Local Artifact | Bytes | SHA-256 |
@@ -4240,6 +4248,7 @@ Superseded Plan Artifacts: none
 | target/aa-20261007-f8fa719d-retrieval.war | 112266465 | 02b30eff55ca41364379442ddbd8a0213c5090992a931ece5abb4533149b0653 |
 
 - On 2026-10-07T20:10:14Z, issue #28 was created under Issue delegation and live readback exactly matched the prepared body: OPEN, bug label, assignee jeonghanlee, no GitHub milestone, six criteria unchecked. Its remote updatedAt was 2026-10-07T20:08:25Z. At that observation time no product correction or new verification had executed, and the plan had no acceptance or implementation authority. Owner acceptance and explicit implementation authorization were subsequently given on 2026-10-07; no correction commit, landing or issue closure is claimed.
+- Landed in 120d53fe (2026-10-07), which is on origin/modernize; its `ETLPassDriver.java` has the corrected SHA-256 298019672186c962fdc5b9838d0dcb9a9a78ddc22dea6efd3f665129a5516c2f recorded above. The Maven workflow run 37698987276 on 120d53fe succeeded at 2026-10-07 23:37 UTC. Issue #28 was closed at 2026-10-07T23:02:14Z with all six criteria checked and a [closure comment](https://github.com/jeonghanlee/epicsarchiverap-maven/issues/28#issuecomment-6048602195). M45 is Complete (recorded 2026-10-12).
 
 ##### GitHub Projection
 
@@ -4247,13 +4256,12 @@ Title: Use one cadence from the planned time as the ETL pass deadline
 Labels: bug
 GitHub Milestone: none
 Assignee: jeonghanlee
-Observed State: OPEN
+Observed State: CLOSED
 Observed Labels: bug
 Observed Milestone: none
 Observed Assignee: jeonghanlee
-Observed Updated At: 2026-10-07T20:08:25Z
-Last Compared: 2026-10-07T21:33:00Z; gh issue view 28 --repo jeonghanlee/epicsarchiverap-maven --json number,url,title,state,labels,milestone,assignees,updatedAt,body confirmed the original remote body and metadata
-ProjectionStatus: local updated body prepared from the accepted plan and executed T1-T5 results in work/issue-etl-pass-deadline-body.md; all six verification criteria are satisfied locally, while the remote body still has six unchecked criteria. Applying that body, repository landing and linked-issue closure remain separate operations.
+Observed Closed At: 2026-10-07T23:02:14Z
+Last Compared: 2026-10-12; `gh issue view 28` shows CLOSED, six criteria checked, one closure comment
 
 #### G5 - ETL pass deadline plan authorization and issue creation
 
@@ -4922,6 +4930,388 @@ Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-12; `gh issue view 37` shows the drafted body, open, assignee jeonghanlee
 
+#### M56 - Menu by task and console pages
+
+Origin: daff1b7 / M56
+Identity History: none
+GitHub Issue: #38 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/38)
+Status: Not started
+
+##### Summary
+
+A first use of the management interface of M47 at fcf01d9c, on a local appliance with the soft IOC of the book figures, found the menu out of step with the pages. Home and Reports open the same Work page in the same state: `reports.html` forwards to `index.html` (`js/forward.js`), and the reports are the **Show** list of the Find panel, which the entry neither selects nor opens. Metrics, Storage and Appliances all open the System tabs (`metrics.html` to `operations.html`, `storage.html` to `operations.html#stores`, `appliance.html` to `system.html`). No entry shows where the user is: `main.css` styles `ul.mainmenu li a.active`, no code sets it, and the entries point at forwarding pages that never match the page in view; only the System tabs mark the current tab. The System pages read as a report: headings phrased as questions, a paragraph under each, and a "What it means" column with one or two sentences on each of the nine Overview rows (`meaning` in `js/system.js`), which widens the table and makes it scroll sideways on a phone. The page stylesheets set most text in fixed pixels below the 15 px body: 12 to 13 px in `workspace.css`, `system.css`, `integration.css` and `viewer.css`, 11 to 12 px for the chart axes and tooltip in `chart.css`; fixed pixels also ignore the browser's font size. Help opens `api/index.html`, the generated mgmt API reference (92 calls), and no console page links to the operator pages of the book. The Integration page has two Channel Archiver sections and an external data server section with the types `CA_XMLRPC` and `ARCHAPPL_PBRAW`. A full integration run on 2026-10-12 (110 tests, 2 h 36 min, Tomcat 9.0.121, softIocPVX 7.0.10) failed four: `MgmtPageLinksTest`, since the forwarding pages of M47 carry no Help link; `IPApplianceXMLTest`, whose assert looks for the text `archstatpVNames` of the pre-M47 home page; and `LocalhostApplianceXMLTest` and `FQDNApplianceXMLTest`, which could not start their Tomcat because the Tomcat of the failed `IPApplianceXMLTest` was left running on ports 17665 and 16670: when a test fails after `TomcatSetup` has started Tomcat, nothing stops it.
+
+##### Scope
+
+The menu and page frame of D38, the Integration change of D39, and the console rule of D38 on the System pages, with the book pages and tests that describe them.
+
+- Menu entries Archive PVs, Browse PVs, System, Help and Analyzer, each opening its page and marking the page in view; Archive PVs and Browse PVs open the Work page and Analyzer opens the viewer of M47 until M57 and M58 give them their own pages.
+- The old addresses forward outside the menu, the Reports address with the Show list open.
+- System: the explanations behind a `?` control opened by a click (also on touch screens), state first; the external Archiver Appliance servers under System; the Channel Archiver sections and the `CA_XMLRPC` type removed from the interface.
+- System views drawn with D3: stacked areas (`d3-shape` `stack`) of the event rate and the stored data by component or store, and a treemap (`d3-hierarchy`) of the stored data and the PV count by name prefix.
+- Text sizes in rem at or above the body size across the page stylesheets and `chart.css`.
+- Help opens the operator pages of the book, with the API reference as a separate entry.
+- `MgmtPageLinksTest` checks the pages of the new menu and the forwarding of the old addresses; `IPApplianceXMLTest` checks the home page by a marker of the shipped page; `TomcatSetup` stops the Tomcats it started when a test fails, so one failure does not take down the tests after it; `operating.md` and `interface.md` describe the new menu.
+
+Out of scope: the Archive PVs and Browse PVs pages and the analyzer themselves (M57, M58); the chart component (M59); the server calls of the Channel Archiver parts, which stay.
+
+##### Completion Criteria
+
+- Each menu entry opens its page and is marked while that page is in view; each old address forwards to its place.
+- The System pages show each measure's state without standing explanation text, and each explanation opens from its `?` control by a click.
+- The external Archiver Appliance servers can be listed, added and removed under System; no page offers a Channel Archiver section or the `CA_XMLRPC` type.
+- No text of the console or the analyzer is set in fixed pixels below the body size.
+- Help opens the book's operator pages and reaches the API reference.
+- `MgmtPageLinksTest`, the three `appxml` tests and the default suite pass; a test that fails after Tomcat started leaves no Tomcat running; the book describes the menu as shipped.
+
+##### Dependencies And Decisions
+
+- D38: console pages and the menu by task.
+- D39: the Channel Archiver parts and the external Archiver Appliance servers.
+- Origin: the owner's review of the interface on 2026-10-12, which ordered this item first because it frames M57 to M59.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settle with the owner the page each entry opens and the form of the `?` control.
+2. Implement the menu, the forwards, the System and Integration changes, the text sizes and Help; update the book and `MgmtPageLinksTest`. Closes with T1 to T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser | Open each entry and each old address on a local appliance in a browser; check the marked entry, the `?` controls, the System external servers and the text sizes at desktop and phone width | Local appliance, shipped soft IOC fixture | The completion criteria are observed on the shipped pages |
+| T2 | Integration | Run `MgmtPageLinksTest` and the three `appxml` tests with the integration profile, then a test made to fail after Tomcat started | JDK 21, Tomcat 9 | Pass; no Tomcat process or port left after the failing test |
+| T3 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T2 | Not run | JDK 21, Tomcat 9 | Pending | none |
+| T3 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Management console by task
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12; `gh issue view 38` shows the drafted body, open, assignee jeonghanlee
+
+#### M57 - Archive PVs page
+
+Origin: daff1b7 / M57
+Identity History: none
+GitHub Issue: #38 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/38)
+Status: Not started
+
+##### Summary
+
+The Work page joins adding PVs with finding archived PVs in one input. Find searches the names the appliance holds; adding registers a name on the control system network. The **Archive** offer appears in the result area only when Find matches no archived PV and the whole text is a valid PV name (`renderArchiveOffer` in `js/work.js`), so no visible entry names the task, and the offer follows a half-typed name: typing `SR:BEAM` on the way to `SR:BEAM:CURRENT` offers `Archive SR:BEAM…`, and selecting it files a request for a name that does not exist, which stays in Initial sampling. Its trailing `…` reads as a cut-off name. A list of names pasted into Find (`<input id="q" type="search">`) is joined into one line, and the dialog takes one name (`openArchiveDialog([text])`) although the dialog code, `api.archivePVs` and the `archivePV` POST take a list; the dialog does not read the answer ("Archive request submitted", "Already submitted") and shows only a failed request. Stopping a PV in Initial sampling through the bulk actions pauses and then calls `deletePV`, whose `deleteSinglePV` answers HTTP 400 for a PV without a `PVTypeInfo`, and the page shows only "the server could not complete the request (HTTP 400)" (from reading the code). The only cancel of a pending request, **Abort the request** (`abortArchivingPV`), is in the Detail area at the bottom of the page for the first selected PV; the bulk actions under Scan have none.
+
+##### Scope
+
+The Archive PVs page of D38.
+
+- An entry for adding PVs, apart from Find, that takes one name or a pasted list of a few to a few tens of names, one per line, and shows the answer for each name; larger requests use the `archivePV` call.
+- No archive offer for text the user is still typing.
+- A label for the dialog control that does not read as a truncated name.
+- Actions on each row of the PV list, for the PV's state: cancel for a pending request; pause or resume and stop for an archived PV.
+- In the bulk actions, the cancel of pending requests offered last, and a stop that handles a pending PV by cancelling it or names the reason it cannot proceed.
+- The book pages for adding and controlling PVs.
+
+Out of scope: the check of a name on the network and the pause and hold of a pending request (M60); finding and plotting (M58).
+
+##### Completion Criteria
+
+- A pasted list of names is archived from the page and the page shows each name's answer.
+- Typing a name shows no archive offer until the user asks for one.
+- One PV is paused, resumed, stopped or cancelled from its row; a pending request is cancelled from the bulk actions; stopping a pending PV does not end in a bare HTTP status.
+- The default suite passes and the book describes the page as shipped.
+
+##### Dependencies And Decisions
+
+- M56: the menu entry and page frame.
+- D38: console pages.
+- Decision Date 2026-10-12: the page takes lists of a few to a few tens of names; larger requests use the `archivePV` call.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settle the page layout with the owner.
+2. Implement, run on a local appliance with the shipped soft IOC fixture, and update the book. Closes with T1 and T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser | On a local appliance, paste the fixture's names, then pause, resume, stop and cancel from rows and the bulk actions, including a request for a name the IOC does not serve | Local appliance, shipped soft IOC fixture | The completion criteria are observed, with each state read back from `getPVStatus` |
+| T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Management console by task
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12; `gh issue view 38` shows the drafted body, open, assignee jeonghanlee
+
+#### M58 - Browse PVs page and the analyzer
+
+Origin: daff1b7 / M58
+Identity History: none
+GitHub Issue: #39 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/39)
+Status: Not started
+
+##### Summary
+
+The hint above Find reads "Words in any order, case ignored" in every mode; Glob (the whole name, `*` and `?`) and Regex (any part of the name, `^` and `$` to anchor) have no explanation on the page. The data viewer of M47 (`retrieval/staticcontent/viewer/archViewer.html`, served by the retrieval web application on another port) has no menu entry; it opens only from the Work page's links, in the same browser tab, and has no link back to the console. It is the earlier viewer restyled: no site header, logo or menu, one bar with the title "Archived data", the PV input, the time range buttons and the From/To form, then one chart per unit with Copy link and Download CSV, while the Work page shows more for the same data (distribution, scatter plot, statistics). Its "Add a PV" input and **Add** button plot an archived PV; with the word used for archiving a PV, they can be taken for starting archiving.
+
+##### Scope
+
+The Browse PVs page and the analyzer of D38 and D40; the analyzer replaces the viewer, and the viewer's address forwards to it.
+
+- The Browse PVs page: Find with an on-demand explanation of the search modes, opened by a click, a simple summary of the selected PVs (the simple form of the chart component of M59), and a control into the analyzer.
+- The analyzer under its own menu entry, inside the console and in its own window; a control on the console that opens it with the selected PVs, and one on the analyzer that returns to the console.
+- The site header and logo on the analyzer, and the plots and tools of M59 in it.
+- The analyzer's control for plotting an archived PV named for what it does, not with the word used for archiving a PV.
+- The book pages for finding and analyzing data.
+
+Out of scope: the chart component (M59); adding PVs (M57).
+
+##### Completion Criteria
+
+- Each search mode's explanation opens from the page.
+- The analyzer opens from its menu entry and from the Browse PVs page, inside the console and in its own window, carries the site header and logo, and returns to the console; the viewer's address forwards to it.
+- No analyzer control uses the wording of archiving a PV.
+- The default suite passes and the book describes the pages as shipped.
+
+##### Dependencies And Decisions
+
+- M56: the menu entry and page frame.
+- D38: console pages.
+- D40: the analyzer as a self-contained analysis tool built with the bundled D3; M59 provides its plots and tools.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settle with the owner how the analyzer sits inside the console across the two origins, and what the Browse PVs summary holds.
+2. Implement, run on a local appliance, and update the book. Closes with T1 and T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser | On a local appliance with archived fixture PVs, open the mode explanations and the analyzer from the menu and from Browse PVs, inside the console, in its own window, and back | Local appliance, shipped soft IOC fixture | The completion criteria are observed |
+| T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Analyzer for archived data
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
+
+#### M59 - One chart component with drawing options and pointer controls
+
+Origin: daff1b7 / M59
+Identity History: none
+GitHub Issue: #39 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/39)
+Status: Not started
+
+##### Summary
+
+The Work page and the viewer share the drawing function `drawTimeSeries` (`staticcontent/js/aa/chart.js`) but not its behavior. Its drawing choices are fixed: a step line (`d3.curveStepAfter`), a circle on each sample only while every PV has at most 200 samples in view (`MARKER_LIMIT`), a linear Y axis (`d3.scaleLinear`) with an automatic range, and, on the Work page, a bin of the span divided by 600 seconds, so a window of 10 minutes or less shows the stored samples. Pointer handling is written on pointer events: hover shows a crosshair and a tooltip, and dragging selects a window only where the page passes `onZoom`, which only `work.js` does. The bundled D3 7.9.0 (`d3.min.js`) carries `d3-zoom`, `d3-brush` and `d3-drag`, which are not used.
+
+##### Scope
+
+One chart component. The analyzer carries every option and analysis tool below. The other pages that plot (Archive PVs, Browse PVs, System) use the same component in a simple form: today's crosshair and tooltip on hover and drag to view a window, the Y projection as its one option, and a control that opens their PVs in the analyzer; no other option or analysis tool. In the analyzer:
+
+- drawing options beside the plot: data points on, off or automatic; line as step, straight or points only; Y axis linear or log, automatic or fixed range; the averaging interval chosen, or raw samples forced;
+- a Y projection: when its option is on, a one-dimensional histogram of the values in view appears beside the plot and shares the plot's width, with its bins along the plot's Y scale, one per PV, following every zoom, pan and brush; the Distribution panel (`drawHistogram` in `staticcontent/js/aa/plots.js`) stays as an option of its own, apart from the Y projection;
+- a scatter plot of any two PVs, one on each axis, of the same or different units, with both axes labelled and its own size. Today's panel ("Two PVs against each other", `drawScatter`, Work page only) pairs only samples at exactly equal times, so raw samples of two records rarely pair, and it offers only a PV of the same unit at a fixed 150 px height with the X range alone on its axis. Samples pair by the value each PV holds at the other's sample times. The plot computes and shows the number of pairs, the correlation, and the linear regression (slope, intercept, R²) with its line drawn. Its options, beside it as for the time series: each axis linear or log, automatic or fixed range; the regression line shown or hidden; an X and a Y projection, one-dimensional histograms beside the axes; point size and transparency for dense data; points coloured by time, so a drift shows;
+- `d3-zoom`: wheel zoom, including trackpad pinch; drag to pan; double-click to zoom in and Shift+double-click to zoom out; pinch and pan on touch screens; limits on the zoom factor and the pannable range; a filter for the buttons and keys that start a gesture; zoom of the time axis, the Y axis (for example by dragging on the axis) or both;
+- `d3-brush`: a time window (`brushX`), a value range (`brushY`) and a rectangle on the scatter plot, with move, resize, Alt to centre, Shift to keep one axis, clear by a click outside, and a range set programmatically;
+- `d3-drag`: the direct labels at the line ends, two reference cursors with the difference of time and value between them, a legend;
+- pointer events: the crosshair and tooltip, a click on a series to bring it to the front or hide it, and a click on a sample to pin its values;
+- a double-click back to the original range and a step back to the previous range; a change of range reads the data again after the gesture ends, because the averaging interval follows the span;
+- a min-max band (`d3-shape` `area`) around the line when the data is averaged, read through the retrieval `min` and `max` post-processors with the mean, so a spike the mean hides shows;
+- the nearest sample to the pointer found with `d3-delaunay` or `d3-quadtree`, for the tooltip on plots with many points;
+- median and percentiles (`d3-array` `quantile`, `median`) in the statistics, and a box plot;
+- a heatmap of time against value (`d3-array` `bin` with `scaleSequential`) for long spans of fast PVs;
+- a density contour (`d3.contourDensity`) on the scatter plot for dense data;
+- time axis ticks on minute, hour and day boundaries (`d3-time`, `scaleTime`);
+- transitions on zoom and range changes (`d3-transition`);
+- CSV export through `d3-dsv`, replacing the viewer's own Download CSV code;
+- values in SI prefixes with matched significant digits (`d3-format`).
+
+Out of scope: the page layouts (M57, M58); the retrieval server.
+
+##### Completion Criteria
+
+- The analyzer draws through the component with every option, analysis tool and pointer behavior of the Scope; the other pages that plot draw through it in the simple form and open their PVs in the analyzer.
+- Each option and behavior of the Scope is observed on archived fixture data, and a range change reads the data once after the gesture.
+- The default suite passes and the book describes the controls.
+
+##### Dependencies And Decisions
+
+- M56: the page frame the component sits in.
+- D40: the analyzer as a self-contained analysis tool built with the bundled D3.
+- Decision Date 2026-10-12: the Y projection is shown by an option beside the plot, sharing its width; the Distribution panel stays as a separate option.
+- Decision Date 2026-10-12: the analyzer is the one place for the detailed options and the analysis tools, including the Distribution panel, the scatter plot and the statistics that the Work page shows today; the other pages use the component in a simple form with the Y projection only and a control into the viewer.
+- Decision Date 2026-10-12: the correlation and the linear regression are computed by the page, as the correlation is today in `plots.js`; the bundled D3 has neither, and no regression package is added.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settle with the owner the default of each option and the gestures that conflict on one plot (drag to pan against drag to select).
+2. Build the component, first with the tools the bundled D3 provides, then the computations the page implements (D40); build the analyzer on it in full and move the other pages onto the simple form, and update the book. Closes with T1 and T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser | On a local appliance with archived fixture PVs, exercise each option, analysis tool and pointer behavior in the analyzer with mouse and touch, and the simple form and its control into the analyzer on the other pages | Local appliance, shipped soft IOC fixture | Each behavior is observed; a range change issues one data request after the gesture |
+| T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Analyzer for archived data
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
+
+#### M60 - Name check on the network and hold of a pending request
+
+Origin: daff1b7 / M60
+Identity History: none
+GitHub Issue: #38 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/38)
+Status: Not started
+
+##### Summary
+
+No call tells whether a PV name answers on the control system network before it is archived: the mgmt and engine calls cover only archived or requested PVs (`GetLatestMetaDataAction`, for one, reads only the engine's own channels). CA and PVA search complete names only, so suggestions while typing would need a name service such as ChannelFinder, but a short search for one complete name from the appliance can report its type and server address or that it was not found. A pending archive request can only be cancelled (`abortArchivingPV`): pause and resume act on a PV with a `PVTypeInfo`, which a pending request does not have yet (from reading the code).
+
+##### Scope
+
+- A call that searches one complete PV name over CA or PVA from the appliance, with a short timeout, and answers its type and server address or not found; the Archive PVs page uses it before archiving.
+- The pause and hold of a pending archive request, with the calls and the page controls.
+
+Out of scope: suggestions while typing; a name service.
+
+##### Completion Criteria
+
+- For a name the soft IOC serves, the call answers its type and address; for a name no server answers, it answers not found within its timeout; the page shows the answer before archiving.
+- A pending request can be paused, held and resumed, and its state is read back.
+- Integration tests on the real engine and soft IOC cover both, and the default suite passes.
+
+##### Dependencies And Decisions
+
+- M57: the Archive PVs page that uses both.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settle with the owner the meaning of hold against pause for a pending request, and which component runs the name search.
+2. Implement the calls and the page controls with their tests. Closes with T1 and T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | Run the new tests with the integration profile against the real engine and the shipped soft IOC fixture | JDK 21, Tomcat 9, softIocPVX | Found and not-found answers within the timeout; a pending request paused, held and resumed with its state read back |
+| T2 | Suite | ./mvnw -B -ntp clean verify; Maven workflow | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21, Tomcat 9, softIocPVX | Pending | none |
+| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Management console by task
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12; `gh issue view 38` shows the drafted body, open, assignee jeonghanlee
+
 #### G6 - Multi-hour appliance run at or after 6c6b973a with zero sample-buffer-full losses
 
 Origin: daff1b7 / G6
@@ -4978,6 +5368,8 @@ epicsarchiverap-env runs its installation checks of a MariaDB-backed appliance o
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Phase 2 | M40 | Modernize the retained state-changing sample scripts | Milestone | Not started | No | M37 | Each of the seven retained scripts that change appliance state has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m40---modernize-the-retained-state-changing-sample-scripts) |
 | Phase 2 | M41 | Mail delivery for the alert checks | Milestone | Not started | No | M37 | emailHandler.py's mail delivery is available to the on-demand alert checks of M37 with a defined configuration, timeout and failure contract and is verified against a real SMTP endpoint; [detail](#m41---mail-delivery-for-the-alert-checks) |
+| Phase 2 | M55 | Verify the proxy to an external Archiver Appliance | Milestone | Not started | Yes |  | An integration test on two appliances registers the second as an external `ARCHAPPL_PBRAW` server of the first and observes, through the first, the data, the name match and the value at a time of a PV archived only on the second; [detail](#m55---verify-the-proxy-to-an-external-archiver-appliance) |
+| Interface console | M61 | Appliance status as PVA PVs | Milestone | Not started | Yes |  | The appliance publishes its status measures as PVA PVs through its own PVA server and archives them, so the analyzer plots them like any archived PV; [detail](#m61---appliance-status-as-pva-pvs) |
 
 ### Backlog Details
 
@@ -5102,6 +5494,136 @@ Superseded Plan Artifacts: none
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | Not run | Selected shell tools; loopback SMTP | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: none
+Labels: none
+GitHub Milestone: none
+Observed State: none
+Observed Labels: none
+Observed Milestone: none
+Last Compared: not created
+
+#### M55 - Verify the proxy to an external Archiver Appliance
+
+Origin: daff1b7 / M55
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+An appliance can register another EPICS Archiver Appliance as an external data server (`addExternalArchiverServer` and `addExternalArchiverServerArchives` with the archive `pbraw`, server type `ARCHAPPL_PBRAW` on the Integration page). For a PV it does not archive, retrieval asks each registered appliance `areWeArchivingPV` and, on a positive answer, reads the data from that appliance's `getData.raw` through the `pbraw://` plugin and returns it (`DataRetrievalServlet.checkIfPVisServedByExternalServer`); `GetMatchingPVs` and `GetDataAtTime` also consult the registered servers. No test calls the registration calls or exercises this decision path. The failover tests (`common/Failover*Test.java`) read another appliance through the same `pbraw://` plugin, but through a `merge://` data store set on one PV, not through a registered external server.
+
+##### Scope
+
+Establish by a real run whether the proxy to an external Archiver Appliance works on this platform, and keep the run as an integration test.
+
+Out of scope: the Channel Archiver XML-RPC data server (`CA_XMLRPC`); the interface for registering servers; corrections, which take their own scope when the run exposes a defect.
+
+##### Completion Criteria
+
+- An integration test starts two appliances, archives a PV from the shipped IOC fixture on the second only, registers the second as an external server of the first through the mgmt calls, and observes through the first appliance: the PV's data from `getData`, the PV in the name match, and its value from the value-at-time call, each matching the second appliance's own answer.
+- The test also observes that removing the server (`removeExternalArchiverServer`) ends the proxy, and that a PV neither appliance archives returns no data.
+- The outcome is recorded: the proxy works as described, or the defect found is recorded as separate work for owner direction.
+
+##### Dependencies And Decisions
+
+- Origin: recorded on 2026-10-12 at the owner's direction during the review of the management interface, where the Integration page keeps only the external Archiver Appliance servers.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Build the two-appliance setup from the existing test support (`TomcatSetup.setUpFailoverWithWebApps`) and the shipped IOC fixture.
+2. Write the test against the real calls and run it. Closes with T1 and T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | Run the new test with the integration profile: two appliances, the shipped IOC fixture, registration and removal through the mgmt calls, reads through the first appliance's retrieval | JDK 21, Tomcat 9, softIocPVX | Data, name match and value at a time through the first appliance match the second's; removal ends the proxy |
+| T2 | Integration | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Build and the default suite pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21, Tomcat 9, softIocPVX | Pending | none |
+| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: none
+Labels: none
+GitHub Milestone: none
+Observed State: none
+Observed Labels: none
+Observed Milestone: none
+Last Compared: not created
+
+#### M61 - Appliance status as PVA PVs
+
+Origin: daff1b7 / M61
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The System pages show the appliance's own measures (event rate, dropped samples, write load, stored data and free space, process heap, host load). They are not archived PVs: the appliance keeps a few hours of the process measures in memory and serves them through mgmt calls, and the Operations tab draws them itself, so the viewer, which reads archived PVs from retrieval, cannot show them. The appliance already runs PVA servers: retrieval and mgmt create PVs on the `PVAServer` of `core-pva` (`retrieval/pva/PvaDataRetrievalServlet.java`, `mgmt/pva/`).
+
+##### Scope
+
+Publish the status measures as PVA PVs on the appliance's own PVA server, updated periodically, and archive them through `pva://` on the same appliance, so the analyzer plots them over any span.
+
+Out of scope: a separate soft IOC fed from the mgmt calls; Channel Access names for the measures; monitoring whether the appliance runs, which stays outside it because a self-archived measure records nothing while the appliance is down.
+
+##### Completion Criteria
+
+- Each status measure the System pages show is a PVA PV with a defined name, type and update period, readable with a PVA client.
+- The appliance archives them and the analyzer plots them from retrieval.
+- An integration test reads the PVs and their archived data on a running appliance; the default suite passes.
+
+##### Dependencies And Decisions
+
+- Origin: recorded on 2026-10-12 at the owner's direction, who chose publication by the appliance's own PVA server over a separate soft IOC.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settle with the owner the measures, their PV names and the update period.
+2. Publish, archive and test them, and document the names. Closes with T1 and T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | On a running appliance, read each status PV with a PVA client and its archived data through retrieval | JDK 21, Tomcat 9 | Values match the System pages; archived data covers the run |
+| T2 | Suite | ./mvnw -B -ntp clean verify | JDK 21, wrapper Maven | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21, Tomcat 9 | Pending | none |
+| T2 | Not run | JDK 21, wrapper Maven | Pending | none |
 
 ##### Closure Evidence
 
