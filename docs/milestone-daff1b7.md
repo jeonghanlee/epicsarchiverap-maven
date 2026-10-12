@@ -8,7 +8,9 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: Finish repository landing and issue #28 body reconciliation/closure for the accepted M45 full-cadence deadline correction in `docs/milestone-daff1b7.md`; local T1-T5 passed, including 43 focused tests, 956 default tests and four WARs; owner acceptance and implementation authorization were given on 2026-10-07; G5 is Complete; issue #28 is created and its exact body and metadata are verified; after landing and issue closure, resume M28 in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07. Both startup transfers and the shortened STS repeat preserved the expected old interval; a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. Issue #12 holds the accepted plan, 33-test evidence and new development-appliance automatic/HTTP results, startup overrun observation and local stop measurement; exact body readback on 2026-10-07 confirmed three criteria checked, six unchecked and the issue open. M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. M26 (issue #20) is Complete. M39 (issue #24) is Complete. M12 (issue #4) is Complete: on 2026-10-05 the owner selected the Redis persistence layer for removal and kept the other backends. M10 (issue #3) is Complete: the Ant build is removed and the site build contract of D33 is in force; the environment configuration session adopts it on its own schedule. M7 (issue #2) is Complete: its first and only item, the client-side data extraction and statistics sample scripts, landed in 26882333, and on 2026-10-05 the owner stated that the item list is finished for now; a further site-required item becomes a new row with its own issue. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the revised focused checks and soak criteria have execution evidence; prior observations remain separate. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
+Next session entry point: Land the M51 working-tree change (issue #34): commit and push, watch the Maven workflow run, then apply `work/issue-ui-leftovers-body.md` with the CI result to #34 and close it, and record the landing in M51's Closure Evidence; M46 and M48 wait on G6 and G7, which other sessions report.
+
+Previous entry point (ETL work, unchanged): Finish repository landing and issue #28 body reconciliation/closure for the accepted M45 full-cadence deadline correction in `docs/milestone-daff1b7.md`; local T1-T5 passed, including 43 focused tests, 956 default tests and four WARs; owner acceptance and implementation authorization were given on 2026-10-07; G5 is Complete; issue #28 is created and its exact body and metadata are verified; after landing and issue closure, resume M28 in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07. Both startup transfers and the shortened STS repeat preserved the expected old interval; a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. Issue #12 holds the accepted plan, 33-test evidence and new development-appliance automatic/HTTP results, startup overrun observation and local stop measurement; exact body readback on 2026-10-07 confirmed three criteria checked, six unchecked and the issue open. M17 (issue #6), M29 (issue #13), M30 (issue #14), M31 (issue #15), M32 (issue #16), M33 (issue #19), M37 (issue #22) and M38 (issue #23) are Complete. On 2026-10-02 the owner directed that the simpler Ready rows go first. M37 (issue #22) is Complete; its state-changing scripts and mail delivery continue as Backlog rows M40 and M41. M42 (storage rate units, issue #25) and M43 (CAJ search port, issue #26) are Complete; M43's open question, why the field rate exceeds the probe rate, becomes a new issue only if the shared port recurs after 7adc7d5a. M26 (issue #20) is Complete. M39 (issue #24) is Complete. M12 (issue #4) is Complete: on 2026-10-05 the owner selected the Redis persistence layer for removal and kept the other backends. M10 (issue #3) is Complete: the Ant build is removed and the site build contract of D33 is in force; the environment configuration session adopts it on its own schedule. M7 (issue #2) is Complete: its first and only item, the client-side data extraction and statistics sample scripts, landed in 26882333, and on 2026-10-05 the owner stated that the item list is finished for now; a further site-required item becomes a new row with its own issue. Read the chosen row's detail in this register and settle its plan before any implementation. M28 stays In progress until the revised focused checks and soak criteria have execution evidence; prior observations remain separate. M36 remains Complete in dca485fd28d14cf91e988fae9ade13729a55c7ee with issue #21 closed; its reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02 (M36 Closure Evidence). Do not resend it; wait for that session's report. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) continues to own full VM revalidation under its unchanged criteria.
 
 M8 completion checkpoint (2026-09-15): the corrections landed in origin/modernize as eb047c576948ad2ee770cd1e0a3b74808b64bb2e. A new clone from that remote compiled all 176 test sources into 220 class files and passed all 749 default tests; its tracked and untracked status was clean before and after verification. T1-T4 record the complete-set evidence, and T9-T17 retain the focused checks and original failure evidence. The original assertions remain intact, including DbdArchiveTest's three events and FailoverScoreAPITest's 480 hourly values.
 
@@ -64,11 +66,19 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M43 | One engine CA context never receives search replies | Milestone | Complete | No | | The shared UDP search port is reproduced with real CAJ contexts on Rocky 8.10 and Debian 13; the engine compares its command threads' search ports and recreates the earlier-bound context of a sharing pair (7adc7d5a); the new test fails without the check and passes with it, 901 default tests, 26 engine CA tests and the Maven workflow pass, and 30 restarts on a Rocky 8.10 guest were clean; issue #26 closed as completed on 2026-10-05; why the field rate exceeds the probe rate stays open; [detail](#m43---one-engine-ca-context-never-receives-search-replies) |
 | Phase 2 | M44 | Preserve ETL source data when append fails | Milestone | In progress | No | | A failed append retains its source partition, is excluded from moved totals and is reported as a failed job; recovery and ordinary transfers preserve the required samples; [detail](#m44---preserve-etl-source-data-when-append-fails) |
 | Phase 2 | M45 | Use a full-cadence deadline for ETL startup and scheduled passes | Milestone | In progress | No | G5 | Overrun means endedAt is strictly later than plannedAt plus cadence; real-job regressions cover startup wait, scheduled delay and deadline boundaries, with scheduling and physical transfer preserved; [detail](#m45---use-a-full-cadence-deadline-for-etl-startup-and-scheduled-passes) |
+| Phase 2 | M46 | Sample buffers sized with a time margin | Milestone | Blocked | No | G6 | Every PV's sample buffer holds one write period of samples plus `sampleBufferMarginSeconds` (default and minimum 1.0 s) instead of one extra sample (6c6b973a); capacity, property and real-IOC tests pass, and a 500 ms write-pass delay loses nothing; the multi-hour appliance run is G6; [detail](#m46---sample-buffers-sized-with-a-time-margin) |
+| Phase 2 | M47 | Management interface and data viewer replacement | Milestone | Complete | No | | The 35 interface files of jeonghanlee/epicsarchiverap-env@3353b74 land in d0932d1b with the jQuery, flot and viewer archive assets removed; 254 static checks run in the CI as scripts/ui-static-checks.bash and the book describes the pages (696117bc); issue #30 closed as completed on 2026-10-11; [detail](#m47---management-interface-and-data-viewer-replacement) |
+| Phase 2 | M48 | MariaDB JDBC driver 3.5.10 | Milestone | Blocked | No | G7 | `mariadb-java-client` 3.5.10 in every WAR (61e1b4c5), LICENCES/NOTICE lists the 43 runtime jars, the CI run passes; the socket and TCP installation checks of aa-env at a pin at or after 61e1b4c5 are G7; [detail](#m48---mariadb-jdbc-driver-3510) |
+| Phase 2 | M49 | Engine shutdown polls the CA command queue at its own cadence | Milestone | Complete | No | | `JCACommandThread.shutdown()` checks the queue before sleeping and polls every 100 ms under the 30 s cap (9a0c9677); `shutdownNow()` 1.3 s instead of 10.4 s, the default unit set 12 min 47 s instead of 34 min 52 s; issue #32 closed as completed on 2026-10-11; [detail](#m49---engine-shutdown-polls-the-ca-command-queue-at-its-own-cadence) |
+| Phase 2 | M50 | Fixed waits removed from the PV Access and zip store tests | Milestone | Complete | No | M49 | The PV Access tests flush the engine's buffers instead of sleeping a write period and the zip store tests simulate a year at one sample per 10 s (0097bc2d); 963 default tests in 9 min 54 s locally and a 16 min 29 s CI job; issue #33 closed as completed on 2026-10-11; [detail](#m50---fixed-waits-removed-from-the-pv-access-and-zip-store-tests) |
+| Phase 2 | M51 | Removal of what the old interface left behind | Milestone | In progress | No | M47, D34 | The four WARs ship no file that nothing references, `SiteOverlay` applies exactly the site files the building page lists, LICENCES/ names only shipped software, and every unreferenced class is removed or recorded in docs/CLOSED_DOORS.md; [detail](#m51---removal-of-what-the-old-interface-left-behind) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
 | Tracking | G4 | ansible-provision deploy path for aa-env with SQLite | External gate | Complete | No | | ansible-provision deploys aa-env at or past bbe0968 with the MariaDB and the SQLite backend on a lab VM, and LAB-ansible-provision reports it; [detail](#g4---ansible-provision-deploy-path-for-aa-env-with-sqlite) |
 | Tracking | G5 | ETL pass deadline plan authorization and issue creation | External gate | Complete | No | | The current M45 plan is accepted and explicitly authorized, and its prepared bug issue exists on GitHub before implementation; [detail](#g5---etl-pass-deadline-plan-authorization-and-issue-creation) |
+| Tracking | G6 | Multi-hour appliance run at or after 6c6b973a with zero sample-buffer-full losses | External gate | Open | No | | ansible-provision reports a run of its 903-PV population on a build carrying 6c6b973a with zero "sample buffer full" lost events; [detail](#g6---multi-hour-appliance-run-at-or-after-6c6b973a-with-zero-sample-buffer-full-losses) |
+| Tracking | G7 | aa-env installation checks of the MariaDB socket and TCP paths at 61e1b4c5 or later | External gate | Open | No | | epicsarchiverap-env reports both MariaDB installation checks passing at a pin at or after 61e1b4c5; [detail](#g7---aa-env-installation-checks-of-the-mariadb-socket-and-tcp-paths-at-61e1b4c5-or-later) |
 
 ### Decisions
 
@@ -106,6 +116,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | D30 | M9 covers the docs publishing migration (mdBook on GitHub Pages) and build/test/deploy command accuracy, not modernizing the narrative content itself. The migrated pages are largely upstream-era (clustering, multi-appliance, CS-Studio, MySQL-first) and conflict with the single-instance scope (D23, D26) and the EPICS-Arche boundary (D12); content modernization is deferred to backlog item M17 pending an owner keep/cut list. | 2026-09-19 |
 | D31 | Appliance logging model, agreed with aa-env: journald collects; one service whose launcher runs the four Tomcats in the foreground with systemd-cat --identifier=archappl-<component> --level-prefix=true; no catalina.out, no JULI FileHandlers, no logrotate; journald retention 8 weeks with the size cap winning; the access log kept as a file with maxDays=90; aa-maven owns the log4j2 layout, root level, fallback and operating-model docs, aa-env owns the unit, launcher, JULI configuration and the access-log bound. | 2026-09-23 |
 | D32 | Tomcat internal logging and java.util.logging go through log4j2 (log4j-appserver and log4j-jul at the Tomcat level, as aa-env D25 decides, because no Tomcat 9 formatter emits a priority prefix). aa-maven's build emits the four jars at the WARs' log4j version into target/tomcat-log4j and the release tarball, so the Tomcat-level and WAR-level log4j always come from one build. aa-env installs and configures them. | 2026-09-24 |
+| D34 | The site folder's `css/` holds `main.css` only. The management pages of M47 link no `mgmt.css`, so the default `mgmt/staticcontent/css/mgmt.css`, the four images only it names and the `css/mgmt.css` copy of `SiteOverlay` are removed; D33's site layout is `img/`, `css/main.css`, `template_changes.html` and `classpathfiles/`. | 2026-10-11 |
+| D35 | M51 item decisions: the zip-serving path of `StaticContentServlet` is removed (no zip ships and the site contract is single files); of the PB tools without a script, the three the shipped scripts replace (`CountEventsInPBFile` by `validate.sh`, `PrintExtraFields` and `SeekandPrintTimes` by `printTimes.sh`) are removed and the others stay, run from the mgmt class path and listed in the developer guide, with their usage texts corrected; the four mgmt endpoints only the old pages called stay as API; the empty `mgmt/pva/package-info.java` is filled with the package description; the etl and engine WARs, which serve no page, carry only `ui/comm/version.txt` of the common static content, while the retrieval WAR keeps the whole common folder. | 2026-10-12 |
 
 ### Conceptual-integrity findings
 
@@ -4262,6 +4274,488 @@ The repository owner accepts and explicitly authorizes the current M45 implement
 ##### Closure Evidence
 
 - G5 completed on 2026-10-07. Issue creation is verified at 2026-10-07T20:10:14Z, and the owner subsequently accepted and explicitly authorized the current implementation/test plan after its readiness explanation. This later execution direction supplies implementation authority; Issue and Push delegation remain separate operations.
+
+#### M46 - Sample buffers sized with a time margin
+
+Origin: daff1b7 / M46
+Identity History: none
+GitHub Issue: #29 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/29)
+Status: Blocked
+
+##### Summary
+
+A PV's engine sample buffer held the samples expected within one write period plus one extra sample, so the margin in time equalled the sampling period: with the default 10 s write period a 0.1 s PV had 101 slots and a write-pass delay of a little over 0.1 s overflowed it, while a 1 s PV tolerated 1 s. Two Rocky Linux 8.10 appliances with 903 PVs lost single samples of 10 or 11 of their 110 fast PVs at once, each loss matched one to one by the "sample buffer full" counter. The margin is now a time, `org.epics.archiverappliance.config.PVTypeInfo.sampleBufferMarginSeconds` (default and minimum 1.0 s), and `sampleBufferCapacityAdjustment` is removed.
+
+##### Scope
+
+`ArchiveEngine.computeBufferCapacity(writePeriod, samplingPeriod, margin)` = round(max(writePeriod / samplingPeriod, 1)) + max(ceil(margin / samplingPeriod), 1); `EngineContext` reads the property with INFO on a missing key, WARN and the default on a non-finite value, WARN and 1.0 on a value below 1.0; the property removed from the code, the site properties files, faq and configuration pages; tests for the capacity, the property handling and a real-IOC loss measurement.
+
+Out of scope: finding the source of the write-pass delay; the write scheduler and writer threading; the environment repository's template, configure variable and interface texts.
+
+##### Completion Criteria
+
+- A 0.1 s PV no longer loses samples to a write-pass delay that a 1 s PV tolerates.
+- A unit test asserts the capacity for 0.1 s, 1 s and 10 s PVs (110, 11, 2 with the defaults).
+- A multi-hour run with the 903-PV population shows zero "sample buffer full" lost events (G6).
+
+##### Dependencies And Decisions
+
+- G6 is Open: the multi-hour run belongs to ansible-provision, whose ETL verification stays pinned to 162269e7 until its own plan review adopts 6c6b973a; resume as In progress when G6 completes.
+- Decision Date: 2026-10-11. The margin is a time with a floor of 1.0 s, not a multiplier of the expected sample count; the old multiplier key is dropped rather than kept as an alias.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-11; owner accepted the time margin and the removal of the multiplier in discussion
+Implementation Authorization: 2026-10-11; owner directed the change on `modernize` without a branch
+Superseded Plan Artifacts: none
+
+1. Compute the capacity from a time margin in `ArchiveEngine` and read the property in `EngineContext`; remove `sampleBufferCapacityAdjustment` from code, properties files and the book. Closes with T1 and T2.
+2. Measure the loss with the real engine and a real soft IOC at the old and the new sizing. Closes with T3.
+3. Run the default unit set and the CI. Closes with T4.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit | `SampleBufferCapacityTest`: capacity for 0.1 s, 1 s, 10 s and a sub-period margin | JDK 21, wrapper Maven | 110, 11, 2 and the floor of one sample |
+| T2 | Unit | `SampleBufferMarginPropertyTest`: missing key, value below 1.0, non-finite value | JDK 21, wrapper Maven | default 1.0, raised to 1.0, default with a warning |
+| T3 | Real engine and IOC | `SampleBufferMarginTest` (`localEpics`): 40 PVs at 0.1 s, 20 at 1 s, 5 at 10 s, write period 10 s, one append delayed once | Local soft IOC | 500 ms delay: zero lost events on every class; 1.5 s delay: losses on the 0.1 s PVs only |
+| T4 | Default suite and CI | `./mvnw -B -ntp clean verify`; Maven workflow | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-11 | JDK 21, wrapper Maven, tree 6c6b973a | Pass | 4 tests pass; capacities 110, 11, 2 |
+| T2 | 2026-10-11 | JDK 21, wrapper Maven, tree 6c6b973a | Pass | 3 tests pass |
+| T3 | 2026-10-11 | Local soft IOC, tree 6c6b973a | Pass | 500 ms delay: 0 lost events on 0.1 s, 1 s and 10 s PVs; 1.5 s delay: losses on the 0.1 s PVs only. At 162269e7 the same harness lost one sample on 17 of 39 fast PVs at 130 ms and on all 39 at 200 ms |
+| T4 | 2026-10-11T09:16:02Z | GitHub Actions, run 38125132721 on 1f099b2f (the next commit, which changes only the CI timeout) | Pass | The run on 6c6b973a itself was cancelled by the push of 1f099b2f under the workflow's cancel-in-progress rule |
+
+##### Closure Evidence
+
+- 6c6b973a is on origin/modernize. Issue #29 body carries the measurements, the change and two checked criteria; its third criterion waits on G6, so M46 stays Blocked.
+
+##### GitHub Projection
+
+Title: Sample buffer overflow loses samples of 0.1 s PVs
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-12T03:36Z; `gh issue view 29` shows two criteria checked and the multi-hour run unchecked
+
+#### M47 - Management interface and data viewer replacement
+
+Origin: daff1b7 / M47
+Identity History: none
+GitHub Issue: #30 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/30)
+Status: Complete
+
+##### Summary
+
+The management pages of the mgmt WAR and the data viewer of the retrieval WAR are replaced by 35 files prepared and tested in jeonghanlee/epicsarchiverap-env (commit 3353b74): no jQuery, a content security policy on every full page, D3 7.9.0 for charts, and pages that cover finding PVs, charting them, acting on them and judging the appliance. The jQuery, flot, `mgmt.js`, `reporttable.js`, `viewer.zip` and 19 unused images are removed, the default `main.css` is the environment's site skin without its jQuery UI rules, and LICENCES/NOTICE lists D3 and none of the removed assets.
+
+##### Scope
+
+The 35 files at their source-tree paths; the deletions above; `LICENCES/NOTICE`, `d3_license.txt`; the static checks ported to `scripts/ui-static-checks.bash` and run as the CI step "Check the interface files"; `docs/book/src/interface.md`.
+
+Out of scope: server code changes; the environment repository's removal of its copy step.
+
+##### Completion Criteria
+
+- `StaticContentBPLCallsTest` finds 45 distinct names and `SiteOverlayTest` passes with the files unchanged.
+- The four WARs build with the new files and none of the deleted ones; the mgmt WAR serves `ui/index.html` and the retrieval WAR `ui/viewer/archViewer.html`.
+- The static checks run in this repository's CI.
+- `LICENCES/NOTICE` lists D3 and none of the deleted assets.
+
+##### Dependencies And Decisions
+
+- Decision Date: 2026-10-11. The interface files are copied from jeonghanlee/epicsarchiverap-env@3353b74, the commit that names `sampleBufferMarginSeconds` (M46) in the Operations page; the environment adopted the build's `site_footer` indentation in c610b42 so the files are identical in both repositories.
+- Cross-reference: the environment repository's follow-up (removal of its `site-template/ui` copy step) is that session's work.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-11; owner accepted the issue plan as written
+Implementation Authorization: 2026-10-11; owner directed the work on `modernize`
+Superseded Plan Artifacts: none
+
+1. Copy the 35 files, delete the replaced assets, rewrite `main.css` and the licence records. Closes with T1 and T2.
+2. Port the environment's static checks as a Bash script with a CI step and add the interface page to the book. Closes with T3.
+3. Build the four WARs with `ARCHAPPL_SITEID=default` and compare the interface files with the source. Closes with T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit | `StaticContentBPLCallsTest`, `SiteOverlayTest` | JDK 21, wrapper Maven | 45 distinct names; 8 overlay tests pass |
+| T2 | Build | `ARCHAPPL_SITEID=default ./mvnw -o clean package -DskipTests`; list the WARs | JDK 21 | No deleted file in any WAR; interface files equal the source |
+| T3 | Static checks | `scripts/ui-static-checks.bash` in the CI | GitHub Actions | 254 checks pass and 15 broken copies are refused |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-11 | JDK 21, wrapper Maven, tree 696117bc | Pass | 45 distinct `../bpl/` names; `SiteOverlayTest` passes |
+| T2 | 2026-10-11 | JDK 21, `ARCHAPPL_SITEID=default` | Pass | Four WARs; `ui/index.html` and `ui/viewer/archViewer.html` present; no removed file; interface files in the WARs equal the source |
+| T3 | 2026-10-11T10:21:38Z | GitHub Actions, run 38128971435 on 61e1b4c5 (the run on 696117bc was cancelled by the next push) | Pass | Step "Check the interface files" passes; also in the runs on 9a0c9677 and 0097bc2d |
+
+##### Closure Evidence
+
+- d0932d1b (82 files) and 696117bc are on origin/modernize. Issue #30: four criteria checked with results and closed as completed on 2026-10-11T17:51:40Z with a closure comment. M47 is Complete.
+
+##### GitHub Projection
+
+Title: Replace the management interface and data viewer
+Labels: enhancement
+GitHub Milestone: none
+Observed State: CLOSED
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12T03:36Z; `gh issue view 30` shows closed at 2026-10-11T17:51:40Z
+
+#### M48 - MariaDB JDBC driver 3.5.10
+
+Origin: daff1b7 / M48
+Identity History: none
+GitHub Issue: #31 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/31)
+Status: Blocked
+
+##### Summary
+
+The WARs carried `mariadb-java-client` 3.3.3, inside the range of four advisories (CVE-2026-55856, CVE-2026-55857, CVE-2026-55858, CVE-2026-61700) fixed in 3.3.5. The version is 3.5.10; it declares `waffle-jna` as provided, so the WARs carry 43 runtime jars instead of 46 and `LICENCES/NOTICE` follows; `jna` and `jna-platform` 5.13.0 stay declared for the Unix domain socket path.
+
+##### Scope
+
+`pom.xml` version; `LICENCES/NOTICE` jar list and the two licence files only the dropped jars used.
+
+Out of scope: the SQLite driver and path; connection settings of an appliance.
+
+##### Completion Criteria
+
+- `pom.xml` names no `mariadb-java-client` version below 3.3.5.
+- The four WARs contain the new driver jar only.
+- A MariaDB-backed appliance over a Unix domain socket and one over TCP both start, create their tables and archive a PV, through the installation checks of jeonghanlee/epicsarchiverap-env (G7).
+- The default unit test set passes.
+
+##### Dependencies And Decisions
+
+- G7 is Open: the installation checks belong to epicsarchiverap-env at a pin at or after 61e1b4c5; resume as In progress when G7 completes.
+- Decision Date: 2026-10-11. The current release 3.5.10 is taken rather than the minimum 3.3.5.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-11; owner accepted the issue plan
+Implementation Authorization: 2026-10-11; owner directed the change on `modernize`
+Superseded Plan Artifacts: none
+
+1. Set the version, rebuild, list the jars of the WARs and update `LICENCES/NOTICE`. Closes with T1 and T2.
+2. Run the default suite and the CI. Closes with T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Build | List `WEB-INF/lib` of the four WARs | JDK 21, `ARCHAPPL_SITEID=default` | `mariadb-java-client-3.5.10.jar` only; 43 runtime jars matching NOTICE |
+| T2 | Licence record | Compare the licence text at tag 3.5.10 with `mariadb_license.txt` | Repository | Equal |
+| T3 | Default suite and CI | Maven workflow | GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-11 | JDK 21, tree 61e1b4c5 | Pass | Each WAR carries `mariadb-java-client-3.5.10.jar` and no other driver jar; `waffle-jna`, `caffeine` and `checker-qual` gone |
+| T2 | 2026-10-11 | Repository | Pass | Licence text equal |
+| T3 | 2026-10-11T10:21:38Z | GitHub Actions, run 38128971435 on 61e1b4c5 | Pass | 963 tests |
+
+##### Closure Evidence
+
+- 61e1b4c5 is on origin/modernize. Issue #31 body carries three checked criteria; the installation checks wait on G7, so M48 stays Blocked.
+
+##### GitHub Projection
+
+Title: Raise the MariaDB JDBC driver to a version that fixes four advisories
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12T03:36Z; `gh issue view 31` shows three criteria checked and the installation checks unchecked
+
+#### M49 - Engine shutdown polls the CA command queue at its own cadence
+
+Origin: daff1b7 / M49
+Identity History: none
+GitHub Issue: #32 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/32)
+Status: Complete
+
+##### Summary
+
+`JCACommandThread.shutdown()` slept a full second before its first look at the command queue, so an engine with the default ten command threads took at least 10 s to stop although the destroy command drains within one 100 ms cycle; every unit test that shuts a `ConfigServiceForTests` down paid it. The loop now checks the queue first and polls every 100 ms (`DELAY_MILLIS`) up to `SHUTDOWN_POLLS` = 300, keeping the 30 s cap.
+
+##### Scope
+
+The shutdown loop of `JCACommandThread`.
+
+Out of scope: the remaining long tests (M50); shutting the command threads down in parallel.
+
+##### Completion Criteria
+
+- `shutdown()` returns within a few polling intervals per thread when the queue is empty and still waits up to 30 s for one that is not.
+- The default unit test set passes locally in under 15 min on the host that took 35 min.
+- The CI run of the change passes.
+
+##### Dependencies And Decisions
+
+- Decision Date: 2026-10-11. Keep the sequential shutdown and the condition; change only the first-check order and the polling interval.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-11; owner accepted the issue plan
+Implementation Authorization: 2026-10-11; owner directed the change on `modernize`
+Superseded Plan Artifacts: none
+
+1. Change the loop to check-then-sleep at `DELAY_MILLIS` with a 300-poll cap. Closes with T1.
+2. Run the default unit set locally and in the CI. Closes with T2 and T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Real classes | Time `new ConfigServiceForTests(-1)` and `shutdownNow()` with ten command threads | JDK 21 | Shutdown about one poll per thread |
+| T2 | Default suite | `./mvnw -B -ntp clean verify` | JDK 21, wrapper Maven | Pass in under 15 min |
+| T3 | CI | Maven workflow | GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-11 | JDK 21, tree 9a0c9677 | Pass | `shutdownNow()` 1.3 s (10.4 s at 61e1b4c5) |
+| T2 | 2026-10-11 | JDK 21, wrapper Maven, tree 9a0c9677 | Pass | 963 tests in 12 min 47 s (34 min 52 s before); `ETLPassDriverTest` 53 s, `DeletePVAcknowledgementTest` 30 s, `CurrentlyDisconnectedPVsResponseTest` 36 s |
+| T3 | 2026-10-11T16:52:00Z | GitHub Actions, run 38155671899 on 9a0c9677 | Pass | Job 22 min 33 s (44 to 45 min before) |
+
+##### Closure Evidence
+
+- 9a0c9677 is on origin/modernize. Issue #32: three criteria checked with results and closed as completed on 2026-10-11T17:51:46Z with a closure comment. M49 is Complete.
+
+##### GitHub Projection
+
+Title: Engine shutdown waits a full second per Channel Access command thread
+Labels: bug
+GitHub Milestone: none
+Observed State: CLOSED
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-12T03:36Z; `gh issue view 32` shows closed at 2026-10-11T17:51:46Z
+
+#### M50 - Fixed waits removed from the PV Access and zip store tests
+
+Origin: daff1b7 / M50
+Identity History: none
+GitHub Issue: #33 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/33)
+Status: Complete
+
+##### Summary
+
+After M49 five test classes took 6 min of the 12 min 47 s default set without exercising the code under test: `PVAccessUtil.getReceivedEvents()` slept a write period before reading, and `ZipRetrievalTest` and `ZipCachedFetchTest` generated a year of samples at 1 Hz. The PV Access tests flush the engine's buffers through `WriterRunnable.flushBuffer()`, the two structure tests wait on the channel's archived-event count before reading, the zip tests simulate the year at one sample every 10 s, and `ZipCachedFetchTest` asserts the event counts it only logged.
+
+##### Scope
+
+`PVAccessUtil`, `GenericStructureTest`, `GenericAnyStructureTest`, `ZipRetrievalTest`, `ZipCachedFetchTest`.
+
+Out of scope: the disconnect and settle waits of `FlakyPVTest`; the 100 ms sampling cadence of the PV Access tests.
+
+##### Completion Criteria
+
+- The PV Access tests read the written samples after the engine's flush and still pass.
+- The zip store tests still cover a full year of partitions and still pass.
+- The default unit test set passes locally in about 10 min on the host that took 12 min 47 s.
+- The CI run of the change passes.
+
+##### Dependencies And Decisions
+
+- M49 Complete: the measurements of this row start from the 12 min 47 s set that M49 left.
+- Decision Date: 2026-10-11. The test harness uses the engine's own flush rather than a shorter sleep.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-11; owner accepted the issue plan
+Implementation Authorization: 2026-10-11; owner directed the change on `modernize`
+Superseded Plan Artifacts: none
+
+1. Replace the sleep with the flush, add `waitForEventCount()` for the structure tests, set `SIMULATION_PERIOD_SECONDS` = 10 in the zip tests and assert the cached-fetch counts. Closes with T1 and T2.
+2. Run the default unit set locally and in the CI. Closes with T3 and T4.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | PV Access tests | `PVAccessTypesTest`, `MultiPVTest`, `FlakyPVTest`, `GenericStructureTest`, `GenericAnyStructureTest` | JDK 21, wrapper Maven | Pass; faster than at 9a0c9677 |
+| T2 | Zip store tests | `ZipRetrievalTest`, `ZipCachedFetchTest` | JDK 21, wrapper Maven | Pass with every partition filled and the counts asserted |
+| T3 | Default suite | `./mvnw -B -ntp clean verify` | JDK 21, wrapper Maven | Pass in about 10 min |
+| T4 | CI | Maven workflow | GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-11 | JDK 21, wrapper Maven | Pass | `PVAccessTypesTest` 83 s (107), `FlakyPVTest` 75 s (82), `MultiPVTest` 39 s (81) |
+| T2 | 2026-10-11 | JDK 21, wrapper Maven | Pass | `ZipRetrievalTest` 7 s (55), `ZipCachedFetchTest` 6 s (40) with the count assertions |
+| T3 | 2026-10-11 | JDK 21, wrapper Maven, tree before the cached-fetch assertions; that class passed alone afterwards | Pass | 963 tests in 9 min 54 s |
+| T4 | 2026-10-11T19:09:10Z | GitHub Actions, run 38165647369 on 0097bc2d | Pass | Job 16 min 29 s (22 min 33 s at 9a0c9677) |
+
+##### Closure Evidence
+
+- 0097bc2d is on origin/modernize. Issue #33: four criteria checked with results and closed as completed on 2026-10-11T22:41:32Z with a closure comment. M50 is Complete.
+
+##### GitHub Projection
+
+Title: Unit tests sleep for the write period and simulate a year at 1 Hz
+Labels: enhancement
+GitHub Milestone: none
+Observed State: CLOSED
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12T03:36Z; `gh issue view 33` shows closed at 2026-10-11T22:41:32Z
+
+#### M51 - Removal of what the old interface left behind
+
+Origin: daff1b7 / M51
+Identity History: none
+GitHub Issue: #34 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/34)
+Status: In progress
+
+##### Summary
+
+A survey of the tree at 0097bc2d and the WARs of the build at 696117bc, after the interface replacement of M47, found: seven static files no page, stylesheet, script or `web.xml` references (`archclient.js`, `testjson.css`, `mgmt.css` and the four images only it names), the `mgmt.css` copy of `SiteOverlay` with its test and book row, the dead template replacement and the input-less zip-serving path of `StaticContentServlet`, a stale resource comment in `pom.xml`, a LICENCES section and seven licence files for Sphinx documentation assets the mgmt WAR no longer ships, a Python template `docs/.gitignore` and a `docs/api/` ignore rule for a folder the build no longer generates, two stale sentences, four mgmt API endpoints only the old pages called, and 22 classes whose simple name appears nowhere else in the sources or the pom (14 standalone tools with a `main()` and 8 others).
+
+##### Scope
+
+Remove every item verified unused on the built WARs and the sources; record each kept candidate (endpoints, tools, any class the owner keeps) with its reason in `docs/CLOSED_DOORS.md`; update `SiteOverlay`, `SiteOverlayTest`, the building page, `pom.xml`, `LICENCES/`, the two `.gitignore` files and the two sentences.
+
+Out of scope: changing the management pages or the viewer; removing or changing mgmt API endpoints beyond recording the decision on the four; the untracked `docs/api/` folder of a developer's checkout.
+
+##### Completion Criteria
+
+- The four WARs of the default site contain no file that no page, stylesheet, script or `web.xml` of the same WAR references, except the generated `ui/api` and `version.txt`.
+- `SiteOverlay` applies exactly the site files the building page lists, and `SiteOverlayTest` covers that list.
+- `StaticContentServlet` holds no path registration for a file the WARs do not ship.
+- `LICENCES/NOTICE` and the files under `LICENCES/` name only software the WARs or the tarball contain.
+- Every removed class is absent from the sources and every kept candidate has a row in `docs/CLOSED_DOORS.md`.
+- `./mvnw -B -ntp clean verify` passes, the interface checks of the CI pass, and the mgmt and retrieval pages load from a local Tomcat with no missing resource in the browser console.
+
+##### Dependencies And Decisions
+
+- M47 Complete: the survey is relative to the replaced interface.
+- D34: the site folder's `css/` holds `main.css` only.
+- Decision Date: 2026-10-11. The survey's B items (the four endpoints and the zip-serving path) and C items (the 22 classes) are in scope: each is verified and then removed or recorded, rather than left unexamined.
+- Decision Date: 2026-10-12. Two defects found by T3 and T4 join this row instead of a new issue: the dead `StoragePluginURLParser` javadoc link in the `plugin_url` description of `ModifyStoreURLForPV` (a leftover of the Sphinx-era documentation) and the `compile` scope of `tomcat-servlet-api`, which put the jar into the exploded build folders while a `packagingExcludes` rule kept it out of the WARs; the description is plain text and the scope is `provided`.
+- The item-level decisions of D35 were taken during the plan review on 2026-10-11 and 2026-10-12.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-11; owner accepted the plan after the survey, with the B and C items included and each verified before removal
+Implementation Authorization: 2026-10-11; owner directed the work on `modernize` once the issue and this row existed; the three item-level decisions are asked before steps 2 and 4
+Superseded Plan Artifacts: none
+
+1. Remove `archclient.js`, `testjson.css`, `mgmt.css` and the four images; remove the `mgmt.css` copy, the `APPLIED_STYLESHEETS` entry and the warning text from `SiteOverlay`; adjust `SiteOverlayTest` and the building page table (D34). Closes with T1 and T2.
+2. Remove the template replacement from `StaticContentServlet`; apply the owner's decision on the zip-serving path. Closes with T2 and T3.
+3. Rewrite the `pom.xml` resource comment; remove the generated-documentation section of `LICENCES/NOTICE` and the seven licence files; replace `docs/.gitignore`; drop the `docs/api/` rule; correct the sentence in `docs/design-etl-pass-scheduler.md` and the comment in `ProcessMetricsChartData`. Closes with T4.
+4. For each of the 22 classes, verify on the tree that nothing loads it (sources, resources, `web.xml`, `policies.py`, scripts, the book), then remove it or record the Keep verdict in `docs/CLOSED_DOORS.md`; record the endpoint decision there too. Closes with T5.
+5. Build the WARs, list their contents against the reference set, run the default suite, the CI and a local Tomcat with the browser console open. Closes with T1, T6 and T7.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Build | List every file under `ui/` of the four WARs and check each against the references in the same WAR | JDK 21, `ARCHAPPL_SITEID=default` and `tests` | No unreferenced file besides `ui/api` and `version.txt` |
+| T2 | Unit | `SiteOverlayTest` | JDK 21, wrapper Maven | Pass with the reduced site file set, including the warning for a site `css/mgmt.css` |
+| T3 | Servlet | Request every interface page and asset of the mgmt and retrieval WARs from a local Tomcat | Local appliance | 200 for every referenced path; no template marker left in a served file |
+| T4 | Records | Compare `LICENCES/NOTICE` entries and the files under `LICENCES/` with the jars of the WARs and the tarball | Repository and build | One to one |
+| T5 | Sources | For each removed class, `grep -rw` of its simple name over `src`, `pom.xml` and `docs/book`; `./mvnw -o -B -ntp compile test-compile` | JDK 21 | No match; compiles |
+| T6 | Default suite and CI | `./mvnw -B -ntp clean verify`; Maven workflow with the interface checks | JDK 21; GitHub Actions | Pass |
+| T7 | Browser | Open the six management pages and the viewer from the local Tomcat | Firefox | No failed resource request in the console |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-12 08:40 UTC | JDK 21, wrapper Maven, `ARCHAPPL_SITEID=default`, WARs of `clean verify` on the working tree over 0097bc2d | Pass | mgmt `ui/` 38 files, retrieval 13, etl 1, engine 1 (`comm/version.txt`). Flagged as unreferenced inside their WAR: the entry pages `cacompare.html`, `pvdetails.html`, `archViewer.html`; the licence records `d3.LICENSE.txt`, `d3.SOURCE.txt`; and in the retrieval WAR `archiverheader.svg`, `plots.js`, `spark.js` of the common folder the viewer does not use (kept with the whole common folder by D35). Evidence work/exp/m51-package.log and the listing of this row |
+| T2 | 2026-10-12 08:05 UTC | JDK 21, wrapper Maven, final tree | Pass | `SiteOverlayTest` 8 tests, 0 failures, including a site `css/mgmt.css` reported as "Not applied" and not copied; `StaticContentBPLCallsTest` 1 test passes |
+| T3 | 2026-10-12 09:05 UTC | Local appliance of the rebuilt WARs (scripts/run-local-appliance.bash, Tomcat 9.0.121, ports 27665 to 27668) | Pass | Every shipped `ui/` file of the mgmt (38), retrieval (13) and etl (1) WARs answered 200, and the engine's `getVersion` reads its `version.txt`. A crawl from the 13 management pages and the viewer over the `href`, `src`, `url()` and worker references (35 requests) returned 200 for every path except two crawler artifacts (the worker path resolved against the script instead of the page, and `redirect.html` opened outside its welcome-file location; both answer 200 at their real addresses) and one pre-existing dangling link of the generated API reference to a `StoragePluginURLParser` page the WAR does not ship, which is outside this row. Evidence work/exp/m51-crawl/requests.sorted.txt |
+| T4 | 2026-10-12 08:45 UTC | Repository and the tarball of the build | Pass | Every file under `LICENCES/` is named in NOTICE and every licence file NOTICE names exists (13 files); the tarball's `LICENCES/` holds the same 13 files; NOTICE has no Sphinx, jQuery, html5shiv or Font Awesome entry. Each packaged WAR holds the 43 jars NOTICE lists; `tomcat-servlet-api-9.0.122.jar` appears only in the exploded build folder, which the WAR plugin's `packagingExcludes` leaves out of the WAR, and the dependency is now `provided` so it leaves the exploded folder too |
+| T5 | 2026-10-12 08:10 UTC | JDK 21 | Pass | The ten removed classes' names appear nowhere under the tree outside the register and the carry document; `./mvnw -o -B -ntp clean test-compile` passes |
+| T6 | 2026-10-12 09:50 UTC (local, final tree) | JDK 21.0.12, wrapper Maven, offline | Pass (local); CI pending | `./mvnw -o -B -ntp clean verify` on the final tree: BUILD SUCCESS in 10:11 min, 963 tests, 0 failures, 0 errors, 0 skipped; each packaged WAR holds 43 jars and no servlet API jar (work/exp/m51-verify2.log; an earlier run before the last two edits passed the same 963 in 10:14). The CI run follows the push |
+| T7 | 2026-10-12 08:20 UTC | Firefox 153.4 ESR headless with `devtools.console.stdout.content` | Not usable | The setting printed no console message, not even a `console.error` probe, so the browser console could not be read this way; the served-file and referenced-path checks of T3 stand in for it |
+
+##### Closure Evidence
+
+- The change is complete in the working tree over 0097bc2d and verified by T1 to T6 (local); landing, the CI run and the closure of #34 are outstanding, so M51 stays In progress.
+
+##### GitHub Projection
+
+Title: Remove the files, code and records the old interface left behind
+Labels: enhancement
+GitHub Milestone: none
+Assignee: jeonghanlee
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12T03:34:53Z; `gh issue create` returned #34 and `gh issue list` shows it open with the enhancement label
+
+#### G6 - Multi-hour appliance run at or after 6c6b973a with zero sample-buffer-full losses
+
+Origin: daff1b7 / G6
+GitHub Issue: #29 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/29)
+Status: Open
+
+##### Summary
+
+ansible-provision runs its 903-PV population (110 at 0.1 s, 783 at 1 s, 10 at 10 s) for several hours on a build carrying 6c6b973a and reports the "sample buffer full" lost-event counters. Its ETL verification is pinned to 162269e7 until its own plan review adopts the newer commit. Affects M46.
+
+##### Completion Criteria
+
+- A run of at least several hours on a build at or after 6c6b973a reports zero "sample buffer full" lost events on every PV, and the result is recorded in issue #29.
+
+##### Verification Results
+
+| Observed At | Result | Evidence |
+| --- | --- | --- |
+| Not run | Pending | The ansible-provision session was told of 6c6b973a on 2026-10-11; no run reported |
+
+##### Closure Evidence
+
+- none
+
+#### G7 - aa-env installation checks of the MariaDB socket and TCP paths at 61e1b4c5 or later
+
+Origin: daff1b7 / G7
+GitHub Issue: #31 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/31)
+Status: Open
+
+##### Summary
+
+epicsarchiverap-env runs its installation checks of a MariaDB-backed appliance over a Unix domain socket and over TCP (start, table creation, archiving a PV) at a pin at or after 61e1b4c5 and reports both. Affects M48.
+
+##### Completion Criteria
+
+- Both installation checks pass at a pin at or after 61e1b4c5 and the result is recorded in issue #31.
+
+##### Verification Results
+
+| Observed At | Result | Evidence |
+| --- | --- | --- |
+| Not run | Pending | The epicsarchiverap-env session was told of 61e1b4c5 on 2026-10-11; its pin was 1f099b2f at that time |
+
+##### Closure Evidence
+
+- none
 
 ## Backlog
 
