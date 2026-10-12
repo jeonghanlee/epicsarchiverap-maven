@@ -114,7 +114,8 @@ a:hover {
   min-height: 44px;
 }
 
-#siteimages img {
+#siteimages img,
+.pageheader > span > img {
   display: block;
   height: 44px;
   width: auto;
@@ -313,7 +314,8 @@ html {
     font-size: 1.1rem;
   }
 
-  #siteimages img {
+  #siteimages img,
+  .pageheader > span > img {
     height: 30px;
   }
 
