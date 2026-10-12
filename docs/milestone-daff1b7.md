@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M52, M53 and M54 of `docs/milestone-daff1b7.md` landed in fcf01d9c with the Maven and Pages workflows green; sync and close issues #35, #36 and #37 and record the landing in each detail, then review the M56 plan (issue #38) with the owner, the first of the interface items M56 to M60 (issues #38 and #39); M46 and M48 wait on G6 and G7, which other sessions report.
+Next session entry point: Review the M56 plan of `docs/milestone-daff1b7.md` (issue #38) with the owner, starting with the menu display method for narrow screens (the env session's findings and its hamburger patch of 2026-10-12), the first of the interface items M56 to M60 (issues #38 and #39); M46 and M48 wait on G6 and G7, which other sessions report.
 
 Other open work: M28 (issue #12) resumes in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07, both startup transfers and the shortened STS repeat preserved the expected old interval, and a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. M28 stays In progress until the revised focused checks and soak criteria have execution evidence. M36's reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02; do not resend it. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) owns full VM revalidation.
 
@@ -71,9 +71,9 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M49 | Engine shutdown polls the CA command queue at its own cadence | Milestone | Complete | No | | `JCACommandThread.shutdown()` checks the queue before sleeping and polls every 100 ms under the 30 s cap (9a0c9677); `shutdownNow()` 1.3 s instead of 10.4 s, the default unit set 12 min 47 s instead of 34 min 52 s; issue #32 closed as completed on 2026-10-11; [detail](#m49---engine-shutdown-polls-the-ca-command-queue-at-its-own-cadence) |
 | Phase 2 | M50 | Fixed waits removed from the PV Access and zip store tests | Milestone | Complete | No | M49 | The PV Access tests flush the engine's buffers instead of sleeping a write period and the zip store tests simulate a year at one sample per 10 s (0097bc2d); 963 default tests in 9 min 54 s locally and a 16 min 29 s CI job; issue #33 closed as completed on 2026-10-11; [detail](#m50---fixed-waits-removed-from-the-pv-access-and-zip-store-tests) |
 | Phase 2 | M51 | Removal of what the old interface left behind | Milestone | Complete | No | M47, D34 | 833ddd6a removes the unreferenced interface files, the dead servlet paths, the Sphinx-era licence records, seven unreferenced classes and three replaced PB tools; the WARs ship only referenced files besides entry pages and licence records, LICENCES/ matches the 43 jars, kept candidates are CD-11 to CD-13; 963 tests and the CI run at 992d8ac4 pass; issue #34 closed as completed on 2026-10-12; [detail](#m51---removal-of-what-the-old-interface-left-behind) |
-| Phase 2 | M52 | Visible default header logo in a current design | Milestone | In progress | No | M47, D36 | The default markup takes the 44 px and narrow-screen 30 px header image rules; the new default `archiverheader.svg` (sampled sine, wordmark with a maven tag, official EPICS logo with its clear space) has an intrinsic size; LICENCES/NOTICE names the EPICS logo source; checks pass; landing, CI and issue #35 outstanding; [detail](#m52---visible-default-header-logo-in-a-current-design) |
-| Phase 2 | M53 | Book pages for the replaced web interface | Milestone | In progress | No | M47, M52, M54 | Operating, interface, retrieval, installing, index, redundancy and FAQ pages describe the replaced interface with ten screenshots of the default-site build; no placeholder remains; the book builds with no broken link; landing, Pages and issue #36 outstanding; [detail](#m53---book-pages-for-the-replaced-web-interface) |
-| Phase 2 | M54 | Version text from the build commit and day | Milestone | In progress | No | D37 | `ui/comm/version.txt` of the four WARs reads `Archiver Appliance Version <commit>, built <UTC day>`, the commit and day of the WAR names; the System page finds one version; landing, CI and issue #37 outstanding; [detail](#m54---version-text-from-the-build-commit-and-day) |
+| Phase 2 | M52 | Visible default header logo in a current design | Milestone | Complete | No | M47, D36 | The default markup takes the 44 px and narrow-screen 30 px header image rules; the new default `archiverheader.svg` (sampled sine, wordmark with a maven tag, official EPICS logo with its clear space) has an intrinsic size; LICENCES/NOTICE names the EPICS logo source; checks pass; landed in 28daf6da, Maven run 38300321889 of fcf01d9c passed, #35 closed 2026-10-12T23:44:22Z; [detail](#m52---visible-default-header-logo-in-a-current-design) |
+| Phase 2 | M53 | Book pages for the replaced web interface | Milestone | Complete | No | M47, M52, M54 | Operating, interface, retrieval, installing, index, redundancy and FAQ pages describe the replaced interface with ten screenshots of the default-site build; no placeholder remains; the book builds with no broken link; landed in 75fc3088, Pages run 38300321856 of fcf01d9c passed, #36 closed 2026-10-12T23:44:25Z; [detail](#m53---book-pages-for-the-replaced-web-interface) |
+| Phase 2 | M54 | Version text from the build commit and day | Milestone | Complete | No | D37 | `ui/comm/version.txt` of the four WARs reads `Archiver Appliance Version <commit>, built <UTC day>`, the commit and day of the WAR names; the System page finds one version; landed in f4ded662, Maven run 38300321889 of fcf01d9c passed, #37 closed 2026-10-12T23:44:28Z; [detail](#m54---version-text-from-the-build-commit-and-day) |
 | Interface console | M56 | Menu by task and console pages | Milestone | Not started | Yes | D38, D39 | The menu reads Archive PVs, Browse PVs, System, Help and Analyzer, each entry opens its page and marks the page in view, and the old addresses forward outside it; the external Archiver Appliance servers sit under System without the Channel Archiver parts; System explanations open on demand; text sizes follow the browser; Help opens the book; [detail](#m56---menu-by-task-and-console-pages) |
 | Interface console | M57 | Archive PVs page | Milestone | Not started | No | M56, D38 | Adding PVs has a visible entry apart from Find, takes a pasted list with a result per name and offers nothing for a half-typed name; each Scan row and the bulk actions carry the actions of the PV's state, including the cancel of a pending request; [detail](#m57---archive-pvs-page) |
 | Interface analyzer | M58 | Browse PVs page and the analyzer | Milestone | Not started | No | M56, D38, D40 | Find explains its search modes on demand and Browse PVs gives a simple summary; the analyzer replaces the viewer, opens from the menu and from Browse PVs, inside the console and in its own window, has the site header and logo and a way back; [detail](#m58---browse-pvs-page-and-the-analyzer) |
@@ -4728,7 +4728,7 @@ Last Compared: 2026-10-12T09:20Z; `gh issue view 34` shows state CLOSED, closed 
 Origin: daff1b7 / M52
 Identity History: none
 GitHub Issue: #35 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/35)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -4778,28 +4778,29 @@ Superseded Plan Artifacts: none
 | --- | --- | --- | --- | --- |
 | T1 | 2026-10-12 12:22 local | Local appliance of the working tree over 84ae8a83 | Pass | Desktop 340 by 44 on every page shot; a 500 px window shows 232 by 30 and a page width of 488 px. Before the change the image box measured 0 by 0 |
 | T2 | 2026-10-12 | Build of the working tree | Pass | The mgmt WAR image equals the source byte for byte; every licence file is named in NOTICE |
-| T3 | 2026-10-12 | JDK 21; GitHub Actions | Pending | Interface checks 251 pass and `SiteOverlayTest` 8 pass; default suite and CI pending |
+| T3 | 2026-10-12 | JDK 21; GitHub Actions | Pass | Interface checks 251 pass and `SiteOverlayTest` 8 pass; Maven run 38300321889 of fcf01d9c (which carries 28daf6da) passed |
 
 ##### Closure Evidence
 
-- none
+- Landed in 28daf6da on `modernize`, carried by fcf01d9c with Maven run 38300321889 passed (2026-10-12T20:09:08Z).
+- Issue #35 body synced with the four acceptance items checked and closed as completed on 2026-10-12T23:44:22Z.
 
 ##### GitHub Projection
 
 Title: Redesign the invisible header logo
 Labels: bug, enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: CLOSED
 Observed Labels: bug, enhancement
 Observed Milestone: none
-Last Compared: 2026-10-12; `gh issue view 35` shows the drafted body, open, assignee jeonghanlee
+Last Compared: 2026-10-12; `gh issue view 35` shows the synced body with every acceptance item checked, closed as completed, assignee jeonghanlee
 
 #### M53 - Book pages for the replaced web interface
 
 Origin: daff1b7 / M53
 Identity History: none
 GitHub Issue: #36 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/36)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -4847,28 +4848,29 @@ Superseded Plan Artifacts: none
 | --- | --- | --- | --- | --- |
 | T1 | 2026-10-12 | Repository and local appliance | Pass | No page names Home, Reports, Metrics, Storage or Appliances pages, Check Status, the Details column or the PV Details page; the actions per state match the Detail section of the running Work page |
 | T2 | 2026-10-12 12:22 local | Local appliance of the final working tree | Pass | Ten figures with the new logo; the System overview shows `Archiver Appliance Version 84ae8a83, built 2026-10-12` and archiving normally |
-| T3 | 2026-10-12 | mdBook 0.4.48 local | Pass (local); Pages pending | 0 broken links, images or anchors |
+| T3 | 2026-10-12 | mdBook 0.4.48 local; GitHub Actions | Pass | 0 broken links, images or anchors; Pages run 38300321856 of fcf01d9c (which carries 75fc3088) published the book |
 
 ##### Closure Evidence
 
-- none
+- Landed in 75fc3088 on `modernize`, carried by fcf01d9c with Pages run 38300321856 passed (2026-10-12T19:51:21Z).
+- Issue #36 body synced with the three acceptance items checked and closed as completed on 2026-10-12T23:44:25Z.
 
 ##### GitHub Projection
 
 Title: Book pages for the new web interface
 Labels: documentation
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: CLOSED
 Observed Labels: documentation
 Observed Milestone: none
-Last Compared: 2026-10-12; `gh issue view 36` shows the drafted body, open, assignee jeonghanlee
+Last Compared: 2026-10-12; `gh issue view 36` shows the synced body with every acceptance item checked, closed as completed, assignee jeonghanlee
 
 #### M54 - Version text from the build commit and day
 
 Origin: daff1b7 / M54
 Identity History: none
 GitHub Issue: #37 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/37)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -4914,21 +4916,22 @@ Superseded Plan Artifacts: none
 | --- | --- | --- | --- | --- |
 | T1 | 2026-10-12 | Build of the working tree over 84ae8a83 | Pass | All four WARs read `Archiver Appliance Version 84ae8a83, built 2026-10-12`; the WAR names are `aa-20261012-84ae8a83-*` |
 | T2 | 2026-10-12 12:08 local | Local appliance | Pass | `getApplianceInfo` returns the same text; the System overview shows it and Components all running, Normal |
-| T3 | 2026-10-12 | JDK 21; GitHub Actions | Pending | `SiteOverlayTest` 8 pass; default suite and CI pending |
+| T3 | 2026-10-12 | JDK 21; GitHub Actions | Pass | `SiteOverlayTest` 8 pass; Maven run 38300321889 of fcf01d9c (which carries f4ded662) passed |
 
 ##### Closure Evidence
 
-- none
+- Landed in f4ded662 on `modernize`, carried by fcf01d9c with Maven run 38300321889 passed (2026-10-12T20:09:08Z).
+- Issue #37 body synced with the three acceptance items checked and closed as completed on 2026-10-12T23:44:28Z.
 
 ##### GitHub Projection
 
 Title: Version from the build commit and day
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: CLOSED
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-12; `gh issue view 37` shows the drafted body, open, assignee jeonghanlee
+Last Compared: 2026-10-12; `gh issue view 37` shows the synced body with every acceptance item checked, closed as completed, assignee jeonghanlee
 
 #### M56 - Menu by task and console pages
 
