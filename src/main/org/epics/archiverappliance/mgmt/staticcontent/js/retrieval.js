@@ -2,7 +2,7 @@
 import { drawTimeSeries } from "../comm/js/aa/chart.js";
 import { appliances, get, node, number, settled } from "./system/api.js";
 import { etlTiers, heapFloor, measureMap } from "./system/judge.js";
-import { chooseAppliance, statusNode } from "./system/view.js";
+import { chooseAppliance, infoButton, statusNode } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_MS = 30000;
@@ -10,6 +10,44 @@ let list = [];
 let current = null;
 let info = null;
 const measurements = [];
+
+// ---- the cards of the sections ---------------------------------------------------------------------
+
+const HELP = "help.html#system";
+const CARDS = [
+    [
+        "measureHeading",
+        "Measure: how long does a request take?",
+        [
+            ["Slow is", "More than about a second for the last hour of one PV, or a time that grows with the length of the range."],
+            ["Then", "Compare with the server side below. A slow request while the retrieval heap floor is high or the ETL is running points to the server; a slow request with a quiet server points to the network or to the size of the request."],
+            ["What it does", "The measurement is one ordinary data request made by this page; nothing on the server changes. The results of this visit are kept on the page only."],
+            ["Size", "The whole answer is read into this page, at about 100 bytes per sample. For a PV that changes once a second, a day is about 9 MB, a week about 60 MB and 30 days about 250 MB; a faster PV needs proportionally more. Start with the last hour or the last day."],
+        ],
+    ],
+    [
+        "serverHeading",
+        "What the server says: is reading healthy?",
+        [
+            ["A problem is", "A retrieval process that is down."],
+            ["Attention when", "The heap floor climbs from day to day; the note under the heap chart says so."],
+            ["Not a problem", "An ETL pass that is running now. It is normal work and can make a request slower while it runs."],
+            ["Not recorded", "The server counts requests and users but does not record how long a request took. That is why the measurement is made in the browser."],
+        ],
+    ],
+    [
+        "dataHeading",
+        "Data available for a PV",
+        [
+            ["Where data lives", "Data moves from the short term store through the medium term store to the long term store as it ages, at the cadence of the ETL. Recent data is read from the short term store; a long range reads files of several stores, and a policy may keep only reduced values in the long term store. This is why old data and long ranges are slower than recent data. The table shows the stores of the PV."],
+        ],
+    ],
+];
+
+for (const [heading, title, rows] of CARDS) {
+    // The section is named by the heading text alone; the button sits beside it in the heading element.
+    $(heading).parentElement.append(" ", infoButton(title, rows, null, HELP));
+}
 
 function row(label, value) {
     return node("tr", null, node("td", null, label), node("td", { class: "r num" }, value instanceof Node ? value : String(value)));

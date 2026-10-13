@@ -149,7 +149,9 @@ end. **What the server says** shows the retrieval process, the requests
 and users counted so far, the retrieval heap, the load average and
 whether an ETL pass is running; the heap trend appears when the appliance
 has two hours of values. **Data available for a PV** looks a PV up in the
-stores.
+stores. The **i** button beside each of the three headings opens a card
+with when a request is slow, what to do and, for the measurement, how
+much data a range reads.
 
 ![The Retrieval performance page after one measurement](images/system-retrieval.png)
 
