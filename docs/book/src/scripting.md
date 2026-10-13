@@ -27,8 +27,9 @@ and parameters, from the code into the mgmt web application:
 - `http://<host>:17665/mgmt/ui/api/index.html`, the readable reference;
 - `http://<host>:17665/mgmt/ui/api/api.json`, the same content for tools.
 
-The **Help** link of the web interface opens it. Because it is generated
-from the deployed code, it is the authority on names and parameters.
+The **Help** page of the web interface links to it under **More**, and
+it links back. Because it is generated from the deployed code, it is the
+authority on names and parameters.
 
 ## Common calls
 

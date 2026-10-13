@@ -20,7 +20,7 @@ can archive the same small set of critical PVs:
   shorter retention, for example an LTS that is a `blackhole` store.
 
 On the secondary, add the primary as an external data server, on the
-Integration page (the kind **EPICS Archiver Appliance**) or with the
+External servers tab of System or with the
 `addExternalArchiverServer` call, giving the type `ARCHAPPL_PBRAW` and
 the primary's `data_retrieval_url` with the `mergeDuringRetrieval`
 parameter:

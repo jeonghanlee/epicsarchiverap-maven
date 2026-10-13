@@ -1,0 +1,75 @@
+/* The External servers tab. The tabs, the table and the dialog come from system.css; tokens from main.css. */
+
+.external .message {
+    min-height: 1.4em;
+    margin: 0 0 8px;
+    font-size: 0.9375rem;
+}
+
+.external .message.error {
+    color: var(--alarm);
+}
+
+.external .grid .empty {
+    padding: 12px 0;
+    color: var(--ink-2);
+}
+
+.external .pv {
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+}
+
+button.plain {
+    margin: 0;
+    padding: 0;
+    color: var(--accent);
+    background: none;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+}
+
+button.plain.danger {
+    color: var(--alarm);
+}
+
+dialog label {
+    display: block;
+    margin: 12px 0 4px;
+    font-size: 0.9375rem;
+    color: var(--ink-2);
+}
+
+dialog input[type="url"] {
+    width: 100%;
+    padding: 6px 8px;
+    font: inherit;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--ink-3);
+    border-radius: 4px;
+}
+
+dialog .hint {
+    margin: 6px 0 0;
+    font-size: 0.875rem;
+    color: var(--ink-2);
+}
+
+dialog button.danger {
+    padding: 6px 14px;
+    font: inherit;
+    color: var(--bg);
+    background: var(--alarm);
+    border: 1px solid var(--alarm);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .external button,
+    dialog input {
+        min-height: 44px;
+    }
+}

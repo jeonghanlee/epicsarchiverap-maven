@@ -23,14 +23,15 @@ bar, named by task; the entry of the page in view is marked:
 | Archive PVs | the Work page | archive a PV and pause, resume or stop it |
 | Browse PVs | the Work page | find PVs, scan them, inspect their data; the reports are the **Show** list of the Find panel |
 | System | System: Overview | status monitoring: the verdict on the appliance, then Operations and Retrieval performance |
-| Help | the API reference | the generated management API reference ([Scripting](scripting.md)) |
+| Help | the help page | how to use each page, the PV states, the management API reference ([Scripting](scripting.md)) and a link to this manual |
 | Analyzer | the data viewer | the data viewer of the retrieval web application ([Retrieving data](retrieval.md#the-data-viewer)) |
 
 On a screen 720 px wide or narrower the entries fold behind a **Menu**
-button and open as one column. The Integration page
-(`integration.html`) has no menu entry and is reached by its address.
-The addresses of the earlier pages (`reports.html`, `metrics.html`,
-`storage.html`, `appliance.html`) forward to their place.
+button and open as one column. The **External servers** tab of System
+lists the other archiver clusters this appliance serves data for. The
+addresses of the earlier pages (`reports.html`, `metrics.html`,
+`storage.html`, `appliance.html`, `integration.html`) forward to their
+place.
 
 The Work page is the page of daily use. The next figure shows it with
 three PVs selected: the Find panel on the left, the scan list with a
@@ -119,8 +120,9 @@ reports are:
 
 The System pages answer the questions of the person who looks after the
 appliance. **Overview** gives three verdicts, storing samples, reading
-data and room left, and one row per measure with its meaning and a link
-to the detail.
+data and room left, and one row per measure with its value, its status
+and a link to the detail. The **i** button beside a measure opens a card
+with what the measure means and where to act.
 
 ![The System overview](images/system-overview.png)
 

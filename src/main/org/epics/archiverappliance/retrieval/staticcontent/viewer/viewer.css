@@ -19,12 +19,12 @@
 
 .viewer-bar h1 {
     margin: 0;
-    font-size: 16px;
+    font-size: 1.0625rem;
     font-weight: 600;
 }
 
 .viewer-bar label {
-    font-size: 12.5px;
+    font-size: 0.875rem;
     color: var(--c-border);
 }
 
@@ -33,7 +33,7 @@
     min-width: 0;
     padding: 5px 8px;
     font: inherit;
-    font-size: 13px;
+    font-size: 0.9375rem;
     color: #ffffff;
     background: transparent;
     border: 0;
@@ -50,7 +50,7 @@
 .viewer-bar button {
     padding: 4px 10px;
     font: inherit;
-    font-size: 13px;
+    font-size: 0.9375rem;
     color: var(--accent-ink);
     background: none;
     border: 1px solid var(--c-border-strong);
@@ -95,19 +95,19 @@
 
 .chips-list .pv {
     font-family: var(--mono);
-    font-size: 12.5px;
+    font-size: 0.875rem;
 }
 
 .chips-list .warn {
     color: var(--warn);
-    font-size: 12.5px;
+    font-size: 0.875rem;
 }
 
 button.plain {
     margin-left: 6px;
     padding: 0;
     font: inherit;
-    font-size: 12.5px;
+    font-size: 0.875rem;
     color: var(--accent);
     background: none;
     border: 0;
@@ -123,7 +123,7 @@ button.plain:hover {
     min-height: 1.4em;
     margin: 0 0 8px;
     color: var(--ink-2);
-    font-size: 13px;
+    font-size: 0.9375rem;
 }
 
 .unit {
@@ -135,7 +135,7 @@ button.plain:hover {
 /* The unit is data: it is shown exactly as the archive holds it. mA is not MA. */
 .unit h2 {
     margin: 0 0 4px;
-    font-size: 13px;
+    font-size: 0.9375rem;
     font-weight: 600;
     text-transform: none;
     color: var(--ink-2);
@@ -143,7 +143,7 @@ button.plain:hover {
 
 .unit .sub {
     margin: 0 0 6px;
-    font-size: 12.5px;
+    font-size: 0.875rem;
     color: var(--ink-2);
 }
 

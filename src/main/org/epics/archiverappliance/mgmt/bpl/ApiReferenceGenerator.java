@@ -132,6 +132,7 @@ public class ApiReferenceGenerator {
         sb.append("th,td{border:1px solid #ccc;padding:.3em .6em;text-align:left;vertical-align:top}\n");
         sb.append(".methods{color:#555;font-size:.9em}\n");
         sb.append("</style>\n</head>\n<body>\n");
+        sb.append("<p><a href=\"../help.html\">Back to Help</a> &middot; <a href=\"../index.html\">Console</a></p>\n");
         sb.append("<h1>EPICS Archiver Appliance mgmt API</h1>\n");
         sb.append("<p>Business process layer actions served under <code>/mgmt/bpl</code>, ");
         sb.append("generated from the BPLServlet registry at build time.</p>\n");

@@ -29,7 +29,8 @@ public class MgmtPageLinksTest {
             "system.html",
             "operations.html",
             "retrieval.html",
-            "integration.html");
+            "external.html",
+            "help.html");
     private static final List<String> FORWARDING_PAGES = List.of(
             "reports.html",
             "metrics.html",
@@ -37,6 +38,7 @@ public class MgmtPageLinksTest {
             "appliance.html",
             "pvdetails.html",
             "cacompare.html",
+            "integration.html",
             "analyzer.html");
     private static final Pattern MENU = Pattern.compile("<ul class=\"mainmenu\"[^>]*>(.*?)</ul>", Pattern.DOTALL);
     private static final Pattern MENU_LINK = Pattern.compile("<a href=\"([^\"]+)\"");

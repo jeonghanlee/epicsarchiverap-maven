@@ -13,7 +13,7 @@ import {
     measureMap,
     worst,
 } from "./system/judge.js";
-import { chooseAppliance, clock, pageHref, statusNode } from "./system/view.js";
+import { chooseAppliance, clock, infoButton, pageHref, statusNode } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_MS = 20000;
@@ -151,6 +151,15 @@ function rowsFor(appliance, data) {
     return { rows, connection, dropped, write, etl, storage, retrievalDown, stopped };
 }
 
+/** The item name with its information button; the last word and the button never part, so the button is not alone. */
+function itemCell(row) {
+    const cut = row.item.lastIndexOf(" ");
+    const head = cut < 0 ? "" : `${row.item.slice(0, cut)} `;
+    const last = cut < 0 ? row.item : row.item.slice(cut + 1);
+    const button = infoButton(row.item, row.meaning, `Detail: ${row.link}, in the last column.`, "help.html#system");
+    return node("td", null, head, node("span", { class: "nobreak" }, last, button));
+}
+
 function render(appliance, data) {
     const result = rowsFor(appliance, data);
     const { rows } = result;
@@ -199,10 +208,9 @@ function render(appliance, data) {
             node(
                 "tr",
                 null,
-                node("td", null, row.item),
+                itemCell(row),
                 node("td", { class: "num" }, row.now),
                 node("td", null, statusNode(row.kind, row.text)),
-                node("td", { class: "why" }, row.meaning),
                 node("td", null, node("a", { href: pageHref(row.href) }, row.link)),
             ),
         );

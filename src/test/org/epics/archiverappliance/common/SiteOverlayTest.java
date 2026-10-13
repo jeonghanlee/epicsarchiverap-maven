@@ -138,7 +138,7 @@ public class SiteOverlayTest {
 
     /** The pages that carry the page header. */
     private static final java.util.List<String> HEADER_PAGES =
-            java.util.List.of("index.html", "system.html", "operations.html", "retrieval.html", "integration.html");
+            java.util.List.of("index.html", "system.html", "operations.html", "retrieval.html", "external.html", "help.html");
 
     /**
      * The page header of a staged page: from its one header frame to the end of the frame, which the menu block follows.

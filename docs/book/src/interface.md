@@ -14,16 +14,17 @@ carries a content security policy, and the charts are drawn with D3.
 | Page | Address | For | Content |
 | :--- | :--- | :--- | :--- |
 | Work | `index.html` | Everyone | Find PVs, scan the selected ones, inspect them, act on them |
-| System: Overview | `system.html` | Everyone | Three verdict lines and one row per measure with its meaning and a link to the detail |
+| System: Overview | `system.html` | Everyone | Three verdict lines and one row per measure with its value, its status and a link to the detail; the **i** button of a measure opens its meaning |
 | System: Operations | `operations.html` | The person who looks after the appliance | Samples, dropped samples, write path, stores and ETL, processes, configuration |
 | System: Retrieval performance | `retrieval.html` | A person whose data requests are slow | What the server reports and a request measured in the browser |
-| Integration | `integration.html` | Administrators | Channel Archiver configuration, external archiver servers, a comparison; no menu entry |
+| System: External servers | `external.html` | Administrators | The other EPICS Archiver Appliance clusters whose data this appliance serves: add or remove one |
 | Analyzer | `analyzer.html` | Everyone | The Analyzer menu entry; forwards to the data viewer of the retrieval web application |
+| Help | `help.html` | Everyone | How to use each page, the PV states, the API reference and a link to this manual; it needs no network beyond the appliance |
 | Data viewer | `/retrieval/ui/viewer/archViewer.html` | Everyone | Charts per unit for the PVs of the address |
 
 The addresses `metrics.html`, `storage.html`, `appliance.html`,
-`reports.html`, `pvdetails.html` and `cacompare.html` forward to the page
-that replaced them; `pvdetails.html?pv=<name>` opens that PV on the Work
+`reports.html`, `pvdetails.html`, `integration.html` and `cacompare.html`
+forward to the page that replaced them; `pvdetails.html?pv=<name>` opens that PV on the Work
 page.
 
 ## Work page
@@ -99,8 +100,9 @@ once with the time it is current to, and then keeps it current:
 
 ## What the System pages judge
 
-The Overview gives three verdicts and one row per measure, with its meaning
-and a link to the detail:
+The Overview gives three verdicts and one row per measure, with its value,
+its status and a link to the detail; the **i** button beside a measure opens
+a card with its meaning:
 
 ![The System overview](images/system-overview.png)
 
@@ -149,18 +151,15 @@ stores.
 
 ![The Retrieval performance page after one measurement](images/system-retrieval.png)
 
-## Integration page
+## External servers
 
-The page has three parts. **Channel Archiver configuration** uploads
-Channel Archiver configuration files in XML; the archiver imports the PVs
-they describe. **External archiver data servers** lists the servers whose
-data this appliance serves, and adds one of the kind Channel Archiver
-XMLRPC data server or EPICS Archiver Appliance, or removes one.
-**Compare with a Channel Archiver** reads one PV from a Channel Archiver
-data server and from this archiver so that the samples can be checked
-side by side.
-
-![The Integration page](images/integration.png)
+The tab lists the servers whose data this appliance serves, each with its
+URL and its indexes. **Add a server…** takes the `data_retrieval_url` of
+another EPICS Archiver Appliance cluster and connects it; **Remove…**
+stops serving one. The upload of Channel Archiver configuration files, the
+comparison with a Channel Archiver and the Channel Archiver data server
+type are not in the interface; their calls remain
+([Scripting](scripting.md)).
 
 ## Limits and refresh
 

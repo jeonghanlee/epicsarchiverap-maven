@@ -25,7 +25,7 @@
 
 .work h2 {
     margin: 0 0 8px;
-    font-size: 12px;
+    font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -34,7 +34,7 @@
 
 .work h3 {
     margin: 12px 0 2px;
-    font-size: 13px;
+    font-size: 0.9375rem;
     font-weight: 600;
 }
 
@@ -48,7 +48,7 @@
 .work .hint,
 .work .muted {
     color: var(--ink-2);
-    font-size: 12.5px;
+    font-size: 0.875rem;
     margin: 0 0 6px;
 }
 
@@ -60,7 +60,7 @@
     color: var(--alarm);
     margin: 4px 0;
     min-height: 1em;
-    font-size: 12.5px;
+    font-size: 0.875rem;
 }
 
 .num,
@@ -81,7 +81,7 @@
 }
 
 .pv {
-    font-size: 12.5px;
+    font-size: 0.875rem;
     overflow-wrap: anywhere;
 }
 
@@ -90,7 +90,7 @@
 .search {
     width: 100%;
     padding: 8px 10px;
-    font-size: 15px;
+    font-size: 1rem;
     background: transparent;
     border: 0;
     border-bottom: 2px solid var(--ink-3);
@@ -124,7 +124,7 @@
     margin: 0;
     color: var(--ink-2);
     font: inherit;
-    font-size: 13px;
+    font-size: 0.9375rem;
     cursor: pointer;
 }
 
@@ -137,13 +137,13 @@
 
 .ranges button {
     font-family: var(--mono);
-    font-size: 12.5px;
+    font-size: 0.875rem;
 }
 
 .chips .n {
     margin-left: 4px;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 0.875rem;
     color: var(--ink-3);
 }
 
@@ -159,19 +159,19 @@
 }
 
 .report-value {
-    font-size: 12px;
+    font-size: 0.875rem;
     color: var(--ink-2);
 }
 
 .count {
     margin: 8px 0 4px;
-    font-size: 12.5px;
+    font-size: 0.875rem;
     color: var(--ink-2);
 }
 
 .offer {
     min-height: 1.4em;
-    font-size: 13px;
+    font-size: 0.9375rem;
 }
 
 .offer button {
@@ -255,7 +255,7 @@ li[aria-selected="true"] .tick {
 }
 
 .state-word {
-    font-size: 12px;
+    font-size: 0.875rem;
 }
 
 .state-word.warn,
@@ -281,7 +281,7 @@ li[aria-selected="true"] .tick {
 
 .limits {
     margin-left: auto;
-    font-size: 12.5px;
+    font-size: 0.875rem;
     color: var(--ink-2);
 }
 
@@ -299,7 +299,7 @@ li[aria-selected="true"] .tick {
 .stats th {
     padding: 4px 8px 4px 0;
     text-align: left;
-    font-size: 12px;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--ink-2);
     border-bottom: 1px solid var(--rule);
@@ -332,7 +332,7 @@ li[aria-selected="true"] .tick {
 }
 
 .stats td {
-    font-size: 12.5px;
+    font-size: 0.875rem;
 }
 
 /* distribution and scatter side by side */
@@ -365,7 +365,7 @@ li[aria-selected="true"] .tick {
 
 .status-big {
     margin: 0 0 2px;
-    font-size: 20px;
+    font-size: 1.375rem;
     font-weight: 600;
 }
 
@@ -386,7 +386,7 @@ li[aria-selected="true"] .tick {
 
 .facts dd {
     margin: 0;
-    font-size: 12.5px;
+    font-size: 0.875rem;
 }
 
 .actions {
@@ -398,7 +398,7 @@ li[aria-selected="true"] .tick {
 
 .actions button {
     color: var(--accent);
-    font-size: 14px;
+    font-size: 1rem;
     padding: 4px 0;
 }
 
@@ -412,7 +412,7 @@ button.danger {
 }
 
 .glossary {
-    font-size: 13px;
+    font-size: 0.9375rem;
     color: var(--ink-2);
     margin: 0;
 }
@@ -449,7 +449,7 @@ dialog h2 {
 dialog label {
     display: block;
     margin: 12px 0 4px;
-    font-size: 13px;
+    font-size: 0.9375rem;
     color: var(--ink-2);
 }
 
@@ -503,7 +503,7 @@ dialog input[type="number"] {
 .maintenance summary {
     cursor: pointer;
     color: var(--ink-2);
-    font-size: 13px;
+    font-size: 0.9375rem;
 }
 
 .facts.all {
@@ -537,7 +537,7 @@ dialog input[type="number"] {
     margin: 0;
     color: var(--accent);
     font: inherit;
-    font-size: 14px;
+    font-size: 1rem;
     cursor: pointer;
 }
 
@@ -561,7 +561,7 @@ dialog input[type="number"] {
 #maintainFields label {
     display: block;
     margin: 10px 0 3px;
-    font-size: 13px;
+    font-size: 0.9375rem;
     color: var(--ink-2);
 }
 
@@ -649,7 +649,7 @@ dialog input[type="number"] {
 
     .scan td.now {
         grid-area: now;
-        font-size: 18px;
+        font-size: 1.25rem;
         text-align: right;
     }
 
@@ -689,7 +689,7 @@ a.plain-link {
     display: inline-block;
     margin: 8px 0 0;
     color: var(--accent);
-    font-size: 13px;
+    font-size: 0.9375rem;
 }
 
 @media (max-width: 600px) {

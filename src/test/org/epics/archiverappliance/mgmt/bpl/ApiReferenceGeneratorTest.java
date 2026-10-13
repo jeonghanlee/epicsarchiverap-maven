@@ -49,6 +49,9 @@ public class ApiReferenceGeneratorTest {
             jsonPaths.add((String) ((JSONObject) o).get("path"));
         }
 
+        assertTrue(html.contains("<a href=\"../help.html\">"), "index.html must lead back to the help page");
+        assertTrue(html.contains("<a href=\"../index.html\">"), "index.html must lead back to the console");
+
         for (String path : registered) {
             assertTrue(jsonPaths.contains(path), "api.json must list " + path);
             assertTrue(html.contains("<code>" + path + "</code>"), "index.html must list " + path);

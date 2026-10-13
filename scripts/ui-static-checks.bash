@@ -142,8 +142,10 @@ while IFS= read -r file; do
     assert_eq "${jquery}" "" "${name} does not refer to jQuery"
     markup=$(grep -n -E 'innerHTML|outerHTML|insertAdjacentHTML|document\.write|[^a-zA-Z]eval\(|new Function' "${file}" || true)
     assert_eq "${markup}" "" "${name} does not turn text into markup or run text as code"
-    # The SVG namespace is an identifier, not an address that is requested.
-    hosts=$(sed 's|http://www\.w3\.org/2000/svg||g' "${file}" | grep -n -E 'https?://' || true)
+    # The SVG namespace is an identifier, not an address that is requested. The help page links to the manual, a page
+    # the reader opens on purpose, not a resource the page loads.
+    hosts=$(sed -e 's|http://www\.w3\.org/2000/svg||g' -e 's|href="https://jeonghanlee\.github\.io/epicsarchiverap-maven/"||g' "${file}" \
+        | grep -n -E 'https?://' || true)
     assert_eq "${hosts}" "" "${name} does not refer to an outside host"
 done < <(interface_files)
 
@@ -163,7 +165,7 @@ PAIRS=(
     "mgmt/staticcontent/system.html:mgmt/staticcontent/js/system.js"
     "mgmt/staticcontent/operations.html:mgmt/staticcontent/js/operations.js"
     "mgmt/staticcontent/retrieval.html:mgmt/staticcontent/js/retrieval.js"
-    "mgmt/staticcontent/integration.html:mgmt/staticcontent/js/integration.js"
+    "mgmt/staticcontent/external.html:mgmt/staticcontent/js/external.js"
     "retrieval/staticcontent/viewer/archViewer.html:retrieval/staticcontent/viewer/viewer.js"
 )
 for pair in "${PAIRS[@]}"; do
@@ -298,13 +300,15 @@ if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
     expect_rejected "an inline script" "has no inline script" \
         "${A}/mgmt/staticcontent/system.html" "printf '<script>alert(1)</script>\\n' >> \"\$F\""
     expect_rejected "an event handler" "has no event-handler attribute" \
-        "${A}/mgmt/staticcontent/integration.html" "sed -i '0,/<button/s//<button onclick=\"go()\"/' \"\$F\""
+        "${A}/mgmt/staticcontent/external.html" "sed -i '0,/<button/s//<button onclick=\"go()\"/' \"\$F\""
     expect_rejected "a jQuery reference" "does not refer to jQuery" \
         "${A}/mgmt/staticcontent/js/work.js" "printf '// jQuery\\n' >> \"\$F\""
     expect_rejected "an unknown element id" "no element for: noSuchElement" \
         "${A}/mgmt/staticcontent/js/work.js" "printf 'document.getElementById(\"noSuchElement\");\\n' >> \"\$F\""
     expect_rejected "an outside host" "does not refer to an outside host" \
         "${A}/retrieval/staticcontent/viewer/viewer.js" "printf '// https://example.invalid/x.js\\n' >> \"\$F\""
+    expect_rejected "an outside link on the help page" "help.html does not refer to an outside host" \
+        "${A}/mgmt/staticcontent/help.html" "sed -i 's|jeonghanlee.github.io/epicsarchiverap-maven/|example.invalid/|' \"\$F\""
     expect_rejected "no content security policy" "carries a content security policy" \
         "${A}/mgmt/staticcontent/index.html" "sed -i '/Content-Security-Policy/d' \"\$F\""
     expect_rejected "a script that is not there" "finds js/missing.js" \
