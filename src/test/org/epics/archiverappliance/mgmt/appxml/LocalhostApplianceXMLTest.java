@@ -42,6 +42,7 @@ public class LocalhostApplianceXMLTest {
 
     @AfterEach
     public void tearDown() throws Exception {
+        tomcatSetup.tearDown();
         FileUtils.deleteDirectory(testFolder);
     }
 
@@ -63,8 +64,8 @@ public class LocalhostApplianceXMLTest {
 
         tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 
-        // The Selenium version opened the mgmt home page and looked for the archstatpVNames element.
-        // The same check without a browser: GET the page and confirm it is served with that marker.
+        // GET the home page and confirm it is the Work page of the console: the page is served only when the
+        // management application booted from the appliances.xml of this test.
         // Poll for readiness rather than assume the page is deployed the instant Tomcat starts.
         HttpClient http = HttpClient.newHttpClient();
         HttpRequest homePage = HttpRequest.newBuilder(URI.create("http://localhost:17665/mgmt/ui/index.html")).GET().build();
@@ -75,9 +76,7 @@ public class LocalhostApplianceXMLTest {
                 .until(() -> http.send(homePage, HttpResponse.BodyHandlers.ofString()).statusCode() == 200);
         HttpResponse<String> response = http.send(homePage, HttpResponse.BodyHandlers.ofString());
         Assertions.assertEquals(200, response.statusCode(), "The mgmt home page was not served after booting from " + appliancesFilename);
-        Assertions.assertTrue(response.body().contains("archstatpVNames"),
+        Assertions.assertTrue(response.body().contains("<main class=\"work\">"),
                 "The mgmt home page did not contain the expected content");
-
-        tomcatSetup.tearDown();
     }
 }
