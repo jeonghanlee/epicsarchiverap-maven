@@ -47,8 +47,10 @@ import org.json.simple.JSONValue;
         })
 public class AddExternalArchiverServer implements BPLAction {
 	private static Logger logger = LogManager.getLogger(AddExternalArchiverServer.class.getName());
-	
-	enum ExternalServerType { 
+	/** The form of an address the ping accepts, appended to the reasons a server is refused. */
+	private static final String ADDRESS_FORM = "The address is the data_retrieval_url of the other cluster: its host and port, then /retrieval.";
+
+	enum ExternalServerType {
 		CA_XMLRPC,
 		ARCHAPPL_PBRAW
 	}
@@ -129,7 +131,7 @@ public class AddExternalArchiverServer implements BPLAction {
 						}			
 					} else { 
 						resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
-						infoValues.put("validation", "Unexpected response " + pingresponse + " from the EPICS Archiver Appliance at " + serverUrl);
+						infoValues.put("validation", "Unexpected response " + pingresponse + " from the EPICS Archiver Appliance at " + serverUrl + ". " + ADDRESS_FORM);
 						try(PrintWriter out = resp.getWriter()) {
 							out.println(JSONValue.toJSONString(infoValues));
 						}			
@@ -138,7 +140,7 @@ public class AddExternalArchiverServer implements BPLAction {
 			} catch(IOException ex) { 
 				logger.error("Exception pinging the external EPICS Archiver Appliance", ex);
 				resp.setContentType(MimeTypeConstants.APPLICATION_JSON);
-				infoValues.put("validation", "Exception pinging the external EPICS Archiver Appliance at " + serverUrl + " " + ex.getMessage());
+				infoValues.put("validation", "Exception pinging the external EPICS Archiver Appliance at " + serverUrl + " " + ex.getMessage() + ". " + ADDRESS_FORM);
 				try(PrintWriter out = resp.getWriter()) {
 					out.println(JSONValue.toJSONString(infoValues));
 				}
