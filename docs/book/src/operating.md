@@ -16,17 +16,21 @@ from scripts ([Scripting](scripting.md)) and the logs
 
 The web interface is served by the mgmt web application at
 `http://<host>:17665/mgmt/ui/index.html`. Every page carries one menu
-bar:
+bar, named by task; the entry of the page in view is marked:
 
 | Menu entry | Opens | Purpose |
 | --- | --- | --- |
-| Home | the Work page | find PVs, scan them, inspect their data, archive a PV and act on it |
-| Reports | the Work page | the reports are the **Show** list of the Find panel |
-| Metrics | System: Operations | samples, dropped samples, write path, stores, processes |
-| Storage | System: Operations, Stores | free space and ETL of each store |
-| Appliances | System: Overview | the verdict on the appliance and one row per measure |
-| Integration | the Integration page | external data servers and Channel Archiver configuration |
+| Archive PVs | the Work page | archive a PV and pause, resume or stop it |
+| Browse PVs | the Work page | find PVs, scan them, inspect their data; the reports are the **Show** list of the Find panel |
+| System | System: Overview | status monitoring: the verdict on the appliance, then Operations and Retrieval performance |
 | Help | the API reference | the generated management API reference ([Scripting](scripting.md)) |
+| Analyzer | the data viewer | the data viewer of the retrieval web application ([Retrieving data](retrieval.md#the-data-viewer)) |
+
+On a screen 720 px wide or narrower the entries fold behind a **Menu**
+button and open as one column. The Integration page
+(`integration.html`) has no menu entry and is reached by its address.
+The addresses of the earlier pages (`reports.html`, `metrics.html`,
+`storage.html`, `appliance.html`) forward to their place.
 
 The Work page is the page of daily use. The next figure shows it with
 three PVs selected: the Find panel on the left, the scan list with a
@@ -137,7 +141,7 @@ When a store runs full, ETL follows the `OutOfSpaceHandling` key
   or ETL needs attention; one in retrieval or mgmt may come from a bad
   request.
 - **Free space** of each store, from **Stores** on the System Operations
-  page (the Storage menu entry) or the host.
+  page or the host.
 - **Disconnected PVs**, from the **Disconnected now** selection of the
   Show list or the `getCurrentlyDisconnectedPVs` call. Pausing PVs that
   stay disconnected, and resuming paused PVs that are alive again,

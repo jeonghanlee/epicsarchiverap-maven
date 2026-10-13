@@ -17,7 +17,8 @@ carries a content security policy, and the charts are drawn with D3.
 | System: Overview | `system.html` | Everyone | Three verdict lines and one row per measure with its meaning and a link to the detail |
 | System: Operations | `operations.html` | The person who looks after the appliance | Samples, dropped samples, write path, stores and ETL, processes, configuration |
 | System: Retrieval performance | `retrieval.html` | A person whose data requests are slow | What the server reports and a request measured in the browser |
-| Integration | `integration.html` | Administrators | Channel Archiver configuration, external archiver servers, a comparison |
+| Integration | `integration.html` | Administrators | Channel Archiver configuration, external archiver servers, a comparison; no menu entry |
+| Analyzer | `analyzer.html` | Everyone | The Analyzer menu entry; forwards to the data viewer of the retrieval web application |
 | Data viewer | `/retrieval/ui/viewer/archViewer.html` | Everyone | Charts per unit for the PVs of the address |
 
 The addresses `metrics.html`, `storage.html`, `appliance.html`,
@@ -216,10 +217,10 @@ The pages take their colors, fonts and spacing from the tokens of
 | `--c-danger`, `--alarm`, `--warn` | The alert color and the attention color, used only for judgements and disconnections |
 | `--font-sans`, `--font-mono` | Fonts |
 
-The build replaces the marker blocks `site_header`, `site_navbar` and
-`site_footer` of every management page with those of `index.html`, and a
-site's `template_changes.html` replaces them in turn, so every page keeps
-the three blocks.
+The build replaces the marker blocks `site_header`, `site_logo`,
+`site_navbar` and `site_footer` of every management page with those of
+`index.html`, and a site's `template_changes.html` replaces them in turn,
+so every page keeps the four blocks.
 
 ## Checks
 

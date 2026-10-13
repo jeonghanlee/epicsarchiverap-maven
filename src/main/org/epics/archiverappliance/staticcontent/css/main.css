@@ -115,7 +115,8 @@ a:hover {
 }
 
 #siteimages img,
-.pageheader > span > img {
+.pageheader > span > img,
+.pageheader > span > picture > img {
   display: block;
   height: 44px;
   width: auto;
@@ -136,6 +137,20 @@ a:hover {
   padding: 0 1rem;
 }
 
+/* The menu toggle of a narrow screen: a checkbox that stays focusable and a label that draws the button. */
+.menu-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.menu-button {
+  display: none;
+}
+
 ul.mainmenu {
   display: flex;
   flex-wrap: wrap;
@@ -147,10 +162,6 @@ ul.mainmenu {
 
 ul.mainmenu li {
   display: block;
-}
-
-ul.mainmenu li:last-child {
-  margin-left: auto;
 }
 
 ul.mainmenu li a {
@@ -315,34 +326,47 @@ html {
   }
 
   #siteimages img,
-  .pageheader > span > img {
+  .pageheader > span > img,
+  .pageheader > span > picture > img {
     height: 30px;
   }
 
-  /* One scrollable row keeps the bar a constant height on a phone. */
+  /* The menu folds behind a button on a phone and opens as one column. */
   .nav {
     padding: 0;
   }
 
+  .menu-button {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 44px;
+    padding: 0 0.9rem;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .menu-button::before {
+    content: "";
+    width: 20px;
+    height: 2px;
+    background: #ffffff;
+    box-shadow: 0 -6px 0 #ffffff, 0 6px 0 #ffffff;
+  }
+
+  .menu-toggle:focus-visible + .menu-button {
+    outline: 2px solid #ffffff;
+    outline-offset: -2px;
+  }
+
   ul.mainmenu {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  ul.mainmenu::-webkit-scrollbar {
     display: none;
+    flex-direction: column;
   }
 
-  ul.mainmenu li {
-    flex: none;
-    scroll-snap-align: start;
-  }
-
-  ul.mainmenu li:last-child {
-    margin-left: 0;
+  .menu-toggle:checked ~ ul.mainmenu {
+    display: flex;
   }
 
   ul.mainmenu li a {
@@ -351,6 +375,13 @@ html {
     min-height: 44px;
     padding: 0 0.9rem;
     white-space: nowrap;
+    border-bottom: 0;
+    border-left: 3px solid transparent;
+    margin-bottom: 0;
+  }
+
+  ul.mainmenu li a.active {
+    border-left-color: #ffffff;
   }
 
   .page {
@@ -383,8 +414,10 @@ html {
     font-size: 1rem;
   }
 
-  #siteimages {
-    display: none;
+  /* The site logo shrinks so it stays beside the header logo, which turns into the wordmark below 360 px; a linked
+     site logo keeps its 44 px tap height. */
+  #siteimages img {
+    height: 24px;
   }
 }
 

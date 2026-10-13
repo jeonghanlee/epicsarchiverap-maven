@@ -107,8 +107,49 @@ public class SiteOverlayTest {
         SiteOverlay.apply(site, stage, VERSION);
 
         Assertions.assertEquals(digests(expected), digests(stage.resolve(MGMT_STATIC)));
-        Assertions.assertTrue(
-                Files.readString(stage.resolve(MGMT_STATIC + "/index.html")).contains("archiverheadertest.svg"));
+        for (String page : HEADER_PAGES) {
+            String header = headerOf(stage.resolve(MGMT_STATIC + "/" + page));
+            int left = header.indexOf("comm/img/archiverheadertest.svg");
+            int right = header.indexOf("https://github.com/archiver-appliance/");
+            Assertions.assertTrue(left >= 0, page + ": the template's site_header fills the left slot");
+            Assertions.assertTrue(right > left, page + ": the template's site_logo fills the right slot");
+            Assertions.assertFalse(header.contains("comm/img/sitelogo.svg"), page + ": the default site logo is replaced");
+            Assertions.assertFalse(header.contains("comm/img/archiverheader.svg"), page + ": the default header logo is replaced");
+        }
+    }
+
+    @Test
+    public void aSiteThatFillsOnlyTheSiteLogoKeepsTheDefaultHeaderLogo() throws Exception {
+        writeSite("template_changes.html", "<!-- @begin(site_logo) -->\n"
+                + "<span id=\"siteimages\"><a href=\"https://example.org/\"><img src=\"comm/img/site.png\" alt=\"Site\" /></a></span>\n"
+                + "<!-- @end(site_logo) -->\n");
+
+        SiteOverlay.apply(site, stage, VERSION);
+
+        for (String page : HEADER_PAGES) {
+            String header = headerOf(stage.resolve(MGMT_STATIC + "/" + page));
+            int left = header.indexOf("comm/img/archiverheader.svg");
+            int right = header.indexOf("comm/img/site.png");
+            Assertions.assertTrue(header.contains("srcset=\"comm/img/wordmark.svg\""), page + ": the default header logo stays");
+            Assertions.assertTrue(left >= 0 && right > left, page + ": the site logo follows the header logo in the header");
+            Assertions.assertFalse(header.contains("comm/img/sitelogo.svg"), page + ": the default site logo is replaced");
+        }
+    }
+
+    /** The pages that carry the page header. */
+    private static final java.util.List<String> HEADER_PAGES =
+            java.util.List.of("index.html", "system.html", "operations.html", "retrieval.html", "integration.html");
+
+    /**
+     * The page header of a staged page: from its one header frame to the end of the frame, which the menu block follows.
+     */
+    private static String headerOf(Path page) throws IOException {
+        String text = Files.readString(page);
+        int start = text.indexOf("<div class=\"pageheader\">");
+        int end = text.indexOf("<!-- @begin(site_navbar) -->");
+        Assertions.assertTrue(start >= 0 && end > start, page + " has a page header before its menu");
+        Assertions.assertEquals(start, text.lastIndexOf("<div class=\"pageheader\">"), page + " has one page header");
+        return text.substring(start, end);
     }
 
     @Test

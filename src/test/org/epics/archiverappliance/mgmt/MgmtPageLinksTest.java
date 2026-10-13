@@ -1,13 +1,5 @@
 package org.epics.archiverappliance.mgmt;
 
-import org.epics.archiverappliance.TomcatSetup;
-import org.epics.archiverappliance.config.ConfigServiceForTests;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,23 +9,40 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.epics.archiverappliance.TomcatSetup;
+import org.epics.archiverappliance.config.ConfigServiceForTests;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
 /**
- * The help targets of the deployed mgmt pages resolve to files the mgmt WAR serves.
- * Each page is fetched from the running appliance; its Help link and every window.open target are then fetched too.
+ * The links of the deployed mgmt pages resolve to files the mgmt WAR serves.
+ * Each page with a menu bar is fetched from the running appliance; its menu entries, Help link and every window.open
+ * target are then fetched too. Each forwarding page is fetched, and the address it forwards to is fetched as well.
  */
 @Tag("integration")
 public class MgmtPageLinksTest {
-    private static final List<String> PAGES = List.of(
+    private static final List<String> MENU_PAGES = List.of(
             "index.html",
+            "system.html",
+            "operations.html",
+            "retrieval.html",
+            "integration.html");
+    private static final List<String> FORWARDING_PAGES = List.of(
             "reports.html",
             "metrics.html",
             "storage.html",
             "appliance.html",
-            "integration.html",
             "pvdetails.html",
-            "cacompare.html");
+            "cacompare.html",
+            "analyzer.html");
+    private static final Pattern MENU = Pattern.compile("<ul class=\"mainmenu\"[^>]*>(.*?)</ul>", Pattern.DOTALL);
+    private static final Pattern MENU_LINK = Pattern.compile("<a href=\"([^\"]+)\"");
     private static final Pattern HELP_LINK = Pattern.compile("<a href=\"([^\"]+)\" id=\"help\">");
     private static final Pattern WINDOW_OPEN = Pattern.compile("window\\.open\\(\"([^\"]+)\"");
+    private static final Pattern FORWARD_TARGET = Pattern.compile("url=([^\"]+)\"|<a href=\"([^\"]+)\"");
 
     TomcatSetup tomcatSetup = new TomcatSetup();
 
@@ -48,12 +57,21 @@ public class MgmtPageLinksTest {
     }
 
     @Test
-    public void testHelpTargetsResolve() throws Exception {
+    public void testPageTargetsResolve() throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         TreeSet<String> targets = new TreeSet<String>();
-        for (String page : PAGES) {
+        for (String page : MENU_PAGES) {
             HttpResponse<String> pageResponse = get(client, page);
             Assertions.assertEquals(200, pageResponse.statusCode(), "Page " + page);
+            Matcher menu = MENU.matcher(pageResponse.body());
+            Assertions.assertTrue(menu.find(), "Page " + page + " has a menu bar");
+            Matcher menuLink = MENU_LINK.matcher(menu.group(1));
+            int entries = 0;
+            while (menuLink.find()) {
+                targets.add(menuLink.group(1));
+                entries++;
+            }
+            Assertions.assertEquals(5, entries, "Page " + page + " has the five menu entries");
             Matcher helpLink = HELP_LINK.matcher(pageResponse.body());
             Assertions.assertTrue(helpLink.find(), "Page " + page + " has a Help link");
             targets.add(helpLink.group(1));
@@ -62,10 +80,19 @@ public class MgmtPageLinksTest {
                 targets.add(windowOpen.group(1));
             }
         }
+        for (String page : FORWARDING_PAGES) {
+            HttpResponse<String> pageResponse = get(client, page);
+            Assertions.assertEquals(200, pageResponse.statusCode(), "Forwarding page " + page);
+            Matcher forward = FORWARD_TARGET.matcher(pageResponse.body());
+            Assertions.assertTrue(forward.find(), "Forwarding page " + page + " names where it forwards to");
+            do {
+                targets.add(forward.group(1) != null ? forward.group(1) : forward.group(2));
+            } while (forward.find());
+        }
 
         TreeSet<String> missing = new TreeSet<String>();
         for (String target : targets) {
-            String path = target.replaceFirst("#.*$", "");
+            String path = target.replaceFirst("[#?].*$", "");
             if (get(client, path).statusCode() != 200) {
                 missing.add(target);
             }

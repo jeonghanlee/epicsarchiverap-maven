@@ -115,7 +115,7 @@ WAR location: ui/comm/js/vendor):
     file records the tarball integrity and the SHA-256 of the file, and
     d3.LICENSE.txt beside it carries the same license text.
 
-Default header image (source: src/main/org/epics/archiverappliance/staticcontent/img;
+Default header images (source: src/main/org/epics/archiverappliance/staticcontent/img;
 WAR location: ui/comm/img):
 
   archiverheader.svg holds the EPICS logo, on-screen RGB v03 in green,
@@ -123,6 +123,10 @@ WAR location: ui/comm/img):
     https://epics-controls.org/download/documents/EPICS_logo_on_screen_(RGB).zip
     (vector/green_logo/EPICS_green_logo_rgb_v03.svg). The terms of use of the
     EPICS logo are at https://epics.anl.gov/docs/epics-logo.php.
+  wordmark.svg and sitelogo.svg carry no third-party artwork. The text of all
+    three images is set as outlines of Inter Display (SIL Open Font License 1.1).
+  scripts/logo/ regenerates the three images; it carries the EPICS logo file
+    above, unchanged, as epics-logo-green-rgb-v03.svg.
 
 License text sources
 --------------------

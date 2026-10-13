@@ -122,7 +122,7 @@ while IFS= read -r page; do
 
     case "${name}" in
         mgmt/staticcontent/*)
-            for block in site_header site_navbar site_footer; do
+            for block in site_header site_logo site_navbar site_footer; do
                 begins=$(grep -c -F "@begin(${block})" "${page}" || true)
                 ends=$(grep -c -F "@end(${block})" "${page}" || true)
                 if [[ "${begins}" == 1 && "${ends}" == 1 ]]; then
@@ -218,7 +218,7 @@ d3_recorded=$(grep -o -E '[0-9a-f]{64}' "${UI}/staticcontent/js/vendor/d3.SOURCE
 d3_actual=$(sha256sum "${UI}/staticcontent/js/vendor/d3.min.js" | cut -d' ' -f1)
 assert_eq "${d3_actual}" "${d3_recorded}" "d3.min.js matches the SHA-256 recorded in d3.SOURCE.txt"
 
-# ---- scripts and styles named by a page exist ------------------------------------------------------
+# ---- scripts, styles and images named by a page exist ----------------------------------------------
 # comm/ is the shared folder staticcontent/, which the build serves as ui/comm of every web application.
 while IFS= read -r page; do
     name="${page#"${UI}/"}"
@@ -237,7 +237,7 @@ while IFS= read -r page; do
         else
             _record_fail "${name} finds ${reference}" "no such file under src/main/org/epics/archiverappliance"
         fi
-    done < <(grep -o -E '(src|href)="[^"]+\.(js|css|svg)"' "${page}" | sed -E 's/^(src|href)="//; s/"$//')
+    done < <(grep -o -E '(src|href|srcset)="[^"]+\.(js|css|svg)"' "${page}" | sed -E 's/^(src|href|srcset)="//; s/"$//')
 done < <(interface_pages)
 
 # ---- text colors keep a contrast of at least 4.5:1 -------------------------------------------------
@@ -309,6 +309,8 @@ if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
         "${A}/mgmt/staticcontent/index.html" "sed -i '/Content-Security-Policy/d' \"\$F\""
     expect_rejected "a script that is not there" "finds js/missing.js" \
         "${A}/mgmt/staticcontent/index.html" "sed -i 's|js/work.js|js/missing.js|' \"\$F\""
+    expect_rejected "a picture source that is not there" "finds comm/img/missing.svg" \
+        "${A}/mgmt/staticcontent/index.html" "sed -i 's|srcset=\"comm/img/wordmark.svg\"|srcset=\"comm/img/missing.svg\"|' \"\$F\""
     expect_rejected "data inserted as markup" "does not turn text into markup" \
         "${A}/mgmt/staticcontent/js/work.js" "printf 'document.body.innerHTML = \"\";\\n' >> \"\$F\""
     expect_rejected "a server call built from parts" "name their server calls with the literal" \
