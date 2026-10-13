@@ -26,7 +26,7 @@
 
     <!-- @begin(site_navbar) -->
     <div class="navbar">
-      <div class="nav">
+      <nav class="nav" aria-label="Main menu">
         <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Menu" />
         <label class="menu-button" for="menu-toggle">Menu</label>
         <ul class="mainmenu" id="mainmenu">
@@ -36,7 +36,7 @@
           <li><a href="help.html" id="help">Help</a></li>
           <li><a href="analyzer.html">Analyzer</a></li>
         </ul>
-      </div>
+      </nav>
     </div>
     <!-- @end(site_navbar) -->
 
@@ -66,9 +66,9 @@
       <p><button type="button" id="addServer">Add a server…</button></p>
     </main>
 
-    <dialog id="addDialog">
+    <dialog id="addDialog" aria-labelledby="addTitle">
       <form id="addForm">
-        <h2>Add an external archiver server</h2>
+        <h2 id="addTitle">Add an external archiver server</h2>
         <label for="serverUrl">Server URL</label>
         <input id="serverUrl" type="url" spellcheck="false" required />
         <p class="hint">The <code>data_retrieval_url</code> of the other archiver cluster, as defined in its <code>appliances.xml</code>: its host and port, then <code>/retrieval</code>.</p>
@@ -80,9 +80,9 @@
       </form>
     </dialog>
 
-    <dialog id="removeDialog">
+    <dialog id="removeDialog" aria-labelledby="removeTitle">
       <form id="removeForm">
-        <h2>Remove the server</h2>
+        <h2 id="removeTitle">Remove the server</h2>
         <p id="removeName" class="pv"></p>
         <p class="hint">The archiver stops proxying this server. The cluster may have to be restarted before the change takes effect.</p>
         <div class="dialog-actions">

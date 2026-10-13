@@ -131,6 +131,17 @@ while IFS= read -r page; do
                     _record_fail "${name} keeps the marker block ${block}" "marker block missing or repeated (begin ${begins}, end ${ends})"
                 fi
             done
+            # A screen reader announces the menu as a navigation region by its name and each dialog by its heading.
+            menu=$(grep -c -F '<nav class="nav" aria-label="Main menu">' "${page}" || true)
+            assert_eq "${menu}" "1" "${name} names its main menu navigation"
+            unnamed=''
+            while IFS= read -r dialog; do
+                label=$(printf '%s' "${dialog}" | sed -n -E 's/.*aria-labelledby="([^"]+)".*/\1/p')
+                if [[ -z "${label}" ]] || ! grep -q -F "id=\"${label}\"" "${page}"; then
+                    unnamed+=" ${dialog}"
+                fi
+            done < <(grep -o -E '<dialog[^>]*>' "${page}" || true)
+            assert_eq "${unnamed}" "" "${name} names every dialog by a heading (unnamed:${unnamed})"
             ;;
     esac
 done < <(interface_pages)
@@ -297,6 +308,10 @@ A="main/org/epics/archiverappliance"
 if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
     expect_rejected "a page without its navigation block" "marker block site_navbar" \
         "${A}/mgmt/staticcontent/system.html" "sed -i '/@begin(site_navbar)/d' \"\$F\""
+    expect_rejected "a main menu without its navigation name" "names its main menu navigation" \
+        "${A}/mgmt/staticcontent/system.html" "sed -i 's| aria-label=\"Main menu\"||' \"\$F\""
+    expect_rejected "a dialog without its name" "names every dialog by a heading" \
+        "${A}/mgmt/staticcontent/external.html" "sed -i 's| aria-labelledby=\"addTitle\"||' \"\$F\""
     expect_rejected "an inline script" "has no inline script" \
         "${A}/mgmt/staticcontent/system.html" "printf '<script>alert(1)</script>\\n' >> \"\$F\""
     expect_rejected "an event handler" "has no event-handler attribute" \
