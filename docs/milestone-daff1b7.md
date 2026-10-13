@@ -74,7 +74,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M52 | Visible default header logo in a current design | Milestone | Complete | No | M47, D36 | The default markup takes the 44 px and narrow-screen 30 px header image rules; the new default `archiverheader.svg` (sampled sine, wordmark with a maven tag, official EPICS logo with its clear space) has an intrinsic size; LICENCES/NOTICE names the EPICS logo source; checks pass; landed in 28daf6da, Maven run 38300321889 of fcf01d9c passed, #35 closed 2026-10-12T23:44:22Z; [detail](#m52---visible-default-header-logo-in-a-current-design) |
 | Phase 2 | M53 | Book pages for the replaced web interface | Milestone | Complete | No | M47, M52, M54 | Operating, interface, retrieval, installing, index, redundancy and FAQ pages describe the replaced interface with ten screenshots of the default-site build; no placeholder remains; the book builds with no broken link; landed in 75fc3088, Pages run 38300321856 of fcf01d9c passed, #36 closed 2026-10-12T23:44:25Z; [detail](#m53---book-pages-for-the-replaced-web-interface) |
 | Phase 2 | M54 | Version text from the build commit and day | Milestone | Complete | No | D37 | `ui/comm/version.txt` of the four WARs reads `Archiver Appliance Version <commit>, built <UTC day>`, the commit and day of the WAR names; the System page finds one version; landed in f4ded662, Maven run 38300321889 of fcf01d9c passed, #37 closed 2026-10-12T23:44:28Z; [detail](#m54---version-text-from-the-build-commit-and-day) |
-| Interface console | M56 | Menu by task and console pages | Milestone | Not started | Yes | D38, D39 | The menu reads Archive PVs, Browse PVs, System, Help and Analyzer, each entry opens its page and marks the page in view, and the old addresses forward outside it; the external Archiver Appliance servers sit under System without the Channel Archiver parts; System explanations open on demand; text sizes follow the browser; Help opens the book; [detail](#m56---menu-by-task-and-console-pages) |
+| Interface console | M56 | Menu by task and console pages | Milestone | In progress | No | D38, D39, D41 | The menu reads Archive PVs, Browse PVs, System, Help and Analyzer, each entry opens its page and marks the page in view, and the old addresses forward outside it; the external Archiver Appliance servers sit under System without the Channel Archiver parts; System explanations open on demand; text sizes follow the browser; Help opens the book; [detail](#m56---menu-by-task-and-console-pages) |
 | Interface console | M57 | Archive PVs page | Milestone | Not started | No | M56, D38 | Adding PVs has a visible entry apart from Find, takes a pasted list with a result per name and offers nothing for a half-typed name; each Scan row and the bulk actions carry the actions of the PV's state, including the cancel of a pending request; [detail](#m57---archive-pvs-page) |
 | Interface analyzer | M58 | Browse PVs page and the analyzer | Milestone | Not started | No | M56, D38, D40 | Find explains its search modes on demand and Browse PVs gives a simple summary; the analyzer replaces the viewer, opens from the menu and from Browse PVs, inside the console and in its own window, has the site header and logo and a way back; [detail](#m58---browse-pvs-page-and-the-analyzer) |
 | Interface analyzer | M59 | One chart component with drawing options and pointer controls | Milestone | Not started | No | M56, D40 | The analyzer carries the drawing options, the analysis plots and tools, and the D3 pointer behaviors through one chart component, which the other pages use in a simple form with a control into the analyzer; [detail](#m59---one-chart-component-with-drawing-options-and-pointer-controls) |
@@ -131,6 +131,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | D38 | The management interface is a console, not a set of documents: each page shows state and offers actions at a glance, and an explanation opens on demand (a `?` control or Help), not as standing text. The System pages provide status monitoring. The menu is organized by task, five entries: Archive PVs (adding PVs and controlling their archiving, with a control into the analyzer), Browse PVs (finding archived PVs with a simple summary and a control into the analyzer), System (status monitoring), Help, and Analyzer (the data analyzer opened directly); each entry opens its own page and marks the page in view. The old addresses (`reports.html`, `metrics.html`, `storage.html`, `appliance.html`) forward outside the menu. | 2026-10-12 |
 | D39 | The Channel Archiver parts leave the interface: the upload of Channel Archiver configuration files, the comparison with a Channel Archiver, and the Channel Archiver XML-RPC external server type (`CA_XMLRPC`); their calls stay available to scripts. The external data server of type EPICS Archiver Appliance (`ARCHAPPL_PBRAW`) stays and moves under System; the Integration menu entry goes. | 2026-10-12 |
 | D40 | The analyzer, which replaces the data viewer of M47, is a data analysis tool in the browser: an operator analyzes archived data in it without exporting to an external tool. It is built with every applicable tool of the bundled D3 package (7.9.0, `staticcontent/js/vendor/d3.min.js`); D3 is the only library: the bundled package first, then, where it lacks a tool, a module of the official D3 repositories outside the default bundle (such as `d3-hexbin`), vendored with its version, source and licence recorded as for `d3.min.js`; no third-party package is added. The tools of the bundled package are built first. A simple computation that D3 does not provide, such as the correlation and the linear regression, is implemented in the page's own code. | 2026-10-12 |
+| D41 | The page header has a fixed frame with two marker blocks: `site_header` holds the header logo on the left and `site_logo` the site logo on the right; blocks do not nest, so `site_header` no longer holds the whole header. The header logo is `archiverheader.svg`, switching to `wordmark.svg` below 360 px through a `<picture>` source. The default site logo is `sitelogo.svg`: a filled jar with a labelled wave and its lid ajar beside the words "store signals" and "analyze in place", text as outlines of Inter Display, 142 by 44 px. Both logos are sized by height (44 px, 30 px at 720 px and below, the site logo 24 px at 380 px and below). A site fills `site_logo` with its own logo and keeps the rest of the header. | 2026-10-12 |
 
 ### Conceptual-integrity findings
 
@@ -4938,7 +4939,7 @@ Last Compared: 2026-10-12; `gh issue view 37` shows the synced body with every a
 Origin: daff1b7 / M56
 Identity History: none
 GitHub Issue: #38 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/38)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -4971,17 +4972,18 @@ Out of scope: the Archive PVs and Browse PVs pages and the analyzer themselves (
 
 - D38: console pages and the menu by task.
 - D39: the Channel Archiver parts and the external Archiver Appliance servers.
+- D41: the header frame, its two blocks and the default site logo.
 - Origin: the owner's review of the interface on 2026-10-12, which ordered this item first because it frames M57 to M59.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted for step 1; draft for the rest
+Plan Acceptance: 2026-10-12, step 1 (the menu): the owner chose the narrow-screen hamburger of the env session's tested patch with a script for the current-entry mark and `aria-expanded`; and the header slot of D41 with the default site logo the owner chose from the mockups
+Implementation Authorization: 2026-10-12, step 1
 Superseded Plan Artifacts: none
 
-1. Settle with the owner the page each entry opens and the form of the `?` control.
-2. Implement the menu, the forwards, the System and Integration changes, the text sizes and Help; update the book and `MgmtPageLinksTest`. Closes with T1 to T3.
+1. The menu: the five entries in the order Archive PVs, Browse PVs, System, Help, Analyzer in every page's `site_navbar` block; the env patch of `main.css` (no right-aligned last entry, no scrolling row; a hidden checkbox and a Menu button fold the list at 720 px and below, the current entry marked by a left bar there and by the underline above); `js/menu.js` marks the current entry (`active`, `aria-current`; the System entry lists its tabs in `data-pages`) and mirrors the checkbox to `aria-expanded` and `aria-controls`; `analyzer.html` forwards to the viewer through `getApplianceInfo`; the `#siteimages` rule at 380 px removed; `MgmtPageLinksTest` checks the menu pages and the forwarding pages; `operating.md` and `interface.md`. The header of D41 in the same step: the frame with the `site_header` and `site_logo` blocks in every page, `wordmark.svg` and `sitelogo.svg`, with their generators in `scripts/logo/` (`make_header_logo.py`, `make_site_logo.py`, `glyphs.py` and the unchanged EPICS logo file), which reproduce the three header images byte for byte, the picture and site-logo size rules, `site_logo` in the static check's block list, the `tests` site template filling both blocks, `LICENCES/NOTICE` and `building.md`. Closes with T1 (menu part) and T2.
+2. Settle with the owner the form of the `?` control, then the System and Integration changes, the text sizes and Help; the figures of the book are retaken once at the end. Closes with T1 (rest) and T3.
 
 ##### Test Plan
 
@@ -4995,8 +4997,8 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T2 | Not run | JDK 21, Tomcat 9 | Pending | none |
+| T1 | 2026-10-12 (menu part) | Local appliance of the working tree over b4466411, Firefox headless through Marionette | Pass (menu part) | At 1100, 720, 360 and 320 px on the five menu pages: no sideways scroll; the current entry marked (Archive PVs on the Work page, System on its three tabs, none on Integration) with `aria-current`, the mark inside its box; at 720 px and below the list folds behind the Menu button, a touch tap opens and closes it with `aria-expanded` following, the five entries show in one column at 44 px, choosing one folds it; Tab reaches the toggle first with a focus outline on the button and Space opens and closes; the toggle has role checkbox named Menu; `analyzer.html` reaches the retrieval viewer. The widths below 500 px were measured inside frames of the exact width, since the headless window stops at 500 px: at 720, 360 and 320 px on the five pages the header shows `archiverheader.svg` (and `wordmark.svg` at 320 px) beside `sitelogo.svg` on one line, at 30 and 30 px, then 30 and 24 px, inside the frame with no sideways scroll, and the menu folded (120 checks). The `tests` site build merges its `site_header` into the left slot and its `site_logo` into the right slot of the frame. The `?` controls, external servers and text sizes are not yet checked |
+| T2 | 2026-10-13 00:05 UTC | JDK 21, Tomcat 9.0.121 | Pass | `MgmtPageLinksTest` 1 pass on the WARs packaged on the same UTC day (the setup names the WARs by the build day, so a run after midnight UTC needs a fresh package); the `appxml` tests and the cleanup on failure are not yet changed |
 | T3 | Not run | JDK 21; GitHub Actions | Pending | none |
 
 ##### Closure Evidence
