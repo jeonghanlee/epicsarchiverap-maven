@@ -37,4 +37,23 @@ public class TomcatSetupTest {
             fixture.tearDown();
         }
     }
+
+    @Test
+    public void nextSetupStopsATomcatAnEarlierTestLeftRunning() throws Exception {
+        TomcatSetup failedTest = new TomcatSetup();
+        TomcatSetup nextTest = new TomcatSetup();
+        try {
+            failedTest.setUpWebApps("TomcatSetupTestLeftBehind");
+            Process left = failedTest.watchedProcesses.getLast();
+            Assertions.assertTrue(left.isAlive(), "Successful startup must leave Tomcat running");
+
+            // The test that owned failedTest ended here without its tearDown; the next test starts on the same ports.
+            nextTest.setUpWebApps("TomcatSetupTestAfterFailure");
+            Assertions.assertFalse(left.isAlive(), "The next setup must stop the Tomcat an earlier test left running");
+            Assertions.assertTrue(nextTest.watchedProcesses.getLast().isAlive(), "The next setup must leave its own Tomcat running");
+        } finally {
+            nextTest.tearDown();
+            failedTest.tearDown();
+        }
+    }
 }

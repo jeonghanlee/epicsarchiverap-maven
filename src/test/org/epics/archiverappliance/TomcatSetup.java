@@ -28,7 +28,9 @@ import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -50,6 +52,21 @@ public class TomcatSetup {
 	// Set once tearDown starts, so the log-reader threads treat the resulting closed streams as
 	// an expected shutdown rather than a read error.
 	private volatile boolean stopping = false;
+	// The setups that have started a Tomcat and not stopped it. A test that fails before its own tearDown leaves its
+	// setup here; the next setup stops it, and the end of the JVM stops whatever is left.
+	private static final Set<TomcatSetup> RUNNING = ConcurrentHashMap.newKeySet();
+
+	static {
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			for (TomcatSetup left : RUNNING) {
+				try {
+					left.tearDown();
+				} catch (Exception ex) {
+					System.err.println("Could not stop a Tomcat left running: " + ex);
+				}
+			}
+		}, "TomcatSetup-shutdown"));
+	}
 
 	private static void overrideEnvWithSystemProperty(Map<String, String> environment, String key) {
 		if (System.getProperties().containsKey(key)) {
@@ -112,6 +129,7 @@ public class TomcatSetup {
 	}
 
 	private void initialSetup(String testName) throws IOException {
+		stopLeftovers();
 		stopping = false;
 		File testFolder = testFolder(testName);
 		if (testFolder.exists()) {
@@ -121,6 +139,21 @@ public class TomcatSetup {
 		cleanupFolders.add(testFolder);
 
 	}
+	/**
+	 * Stops the Tomcats that earlier setups left running, so a failed test does not hold the ports of the tests after it.
+	 */
+	private void stopLeftovers() {
+		for (TomcatSetup left : RUNNING) {
+			if (left == this) continue;
+			logger.warn("Stopping the Tomcat that an earlier test left running");
+			try {
+				left.tearDown();
+			} catch (Exception ex) {
+				logger.error("Could not stop the Tomcat that an earlier test left running", ex);
+			}
+		}
+	}
+
 	public void tearDown() throws Exception {
 		stopping = true;
 		boolean interrupted = Thread.interrupted();
@@ -146,6 +179,7 @@ public class TomcatSetup {
 		}
 		if (interrupted) Thread.currentThread().interrupt();
 		if (failure != null) throw failure;
+		RUNNING.remove(this);
 	}
 
 	private void catchApplianceLog(String applianceName, Process p, CompletableFuture<Void> startup, BufferedReader li) {
@@ -192,6 +226,7 @@ public class TomcatSetup {
 			pb.redirectOutput(ProcessBuilder.Redirect.PIPE);
 			Process p = pb.start();
 			watchedProcesses.add(p);
+			RUNNING.add(this);
 
 			final CompletableFuture<Void> startup = new CompletableFuture<>();
 			p.onExit().thenAccept(process -> startup.completeExceptionally(
