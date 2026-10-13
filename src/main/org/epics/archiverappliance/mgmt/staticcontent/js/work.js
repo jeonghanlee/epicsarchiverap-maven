@@ -48,13 +48,59 @@ const REPORTS = {
     droppedtype: { endpoint: "../bpl/getPVsByDroppedEventsTypeChange", params: TOP, value: "eventsDropped", ranked: true, note: "Highest first. Beside each PV: events dropped by a type change." },
 };
 
-/** A number is shown with four significant digits; a text stays as the server gave it. */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const HUMAN_TIME = /^([A-Z][a-z]{2})\/(\d{2})\/(\d{4}) (\d{2}:\d{2}:\d{2})(?: [A-Z]{2,5})?$/;
+const pad = (value) => String(value).padStart(2, "0");
+
+/**
+ * A date-time of a report in the short form the list has room for: the time of day for today, the day and the minute
+ * for this year, the day and the year for an earlier year. Text that is not a date-time gives null.
+ */
+function shortTime(raw) {
+    let month;
+    let day;
+    let year;
+    let time;
+    const human = HUMAN_TIME.exec(raw);
+    if (human) {
+        [, month, day, year, time] = human;
+    } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(raw)) {
+        const date = new Date(raw);
+        if (Number.isNaN(date.getTime())) {
+            return null;
+        }
+        month = MONTHS[date.getMonth()];
+        day = pad(date.getDate());
+        year = String(date.getFullYear());
+        time = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    } else {
+        return null;
+    }
+    const now = new Date();
+    if (Number(year) !== now.getFullYear()) {
+        return `${month}/${day}/${year}`;
+    }
+    if (month === MONTHS[now.getMonth()] && Number(day) === now.getDate()) {
+        return time;
+    }
+    return `${month}/${day} ${time.slice(0, 5)}`;
+}
+
+/**
+ * The value beside a PV in a report: a number with four significant digits, a date-time in its short form, any other
+ * text as the server gave it. The title is the full text, shown when the pointer rests on the value.
+ */
 function reportValue(raw) {
     if (raw === undefined || raw === null || raw === "") {
-        return "";
+        return { text: "", title: "" };
     }
+    const full = String(raw);
     const number = Number(raw);
-    return Number.isFinite(number) && /^-?[\d.]+(e[+-]?\d+)?$/i.test(String(raw)) ? String(Number(number.toPrecision(4))) : String(raw);
+    if (Number.isFinite(number) && /^-?[\d.]+(e[+-]?\d+)?$/i.test(full)) {
+        return { text: String(Number(number.toPrecision(4))), title: "" };
+    }
+    const short = shortTime(full);
+    return { text: short ?? full, title: short ? full : "" };
 }
 
 const state = {
@@ -267,7 +313,8 @@ function renderResults() {
         row.append(node("span", { class: "tick" }), node("span", { class: "pv" }, name));
         const word = stateOf(name);
         if (state.report && state.reportValues.has(name)) {
-            row.append(node("span", { class: "num report-value" }, state.reportValues.get(name)));
+            const value = state.reportValues.get(name);
+            row.append(node("span", { class: "num report-value", title: value.title || null }, value.text));
         } else if (word && word !== "Being archived") {
             row.append(node("span", { class: `state-word ${word === "Disconnected" ? "warn" : ""}` }, word));
         }
