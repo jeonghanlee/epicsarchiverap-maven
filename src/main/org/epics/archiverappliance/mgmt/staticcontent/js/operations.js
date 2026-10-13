@@ -1,5 +1,6 @@
-// The Operations page: for the person who looks after the appliance. Each section answers one question; the
-// judgements are made in system/judge.js and the thresholds are listed at the end of the page.
+// The Operations page: for the person who looks after the appliance. Each section has a card that says when its
+// numbers are an attention or a problem and what to do; the judgements are made in system/judge.js and the thresholds
+// are listed at the end of the page.
 import { drawTimeSeries } from "../comm/js/aa/chart.js";
 import { appliances, get, node, number, pauseResume, settled } from "./system/api.js";
 import {
@@ -16,7 +17,7 @@ import {
     prefixOf,
     groupByHost,
 } from "./system/judge.js";
-import { chooseAppliance, statusNode, timeText } from "./system/view.js";
+import { chooseAppliance, infoButton, statusNode, timeText } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_MS = 30000;
@@ -26,6 +27,69 @@ let list = [];
 let current = null;
 let latest = null;
 let timer = 0;
+
+// ---- the cards of the sections ---------------------------------------------------------------------
+
+const HELP = "help.html#system";
+const CARDS = [
+    [
+        "samplesHeading",
+        "Samples: are they coming in?",
+        [
+            ["Attention when", "A PV has been disconnected for more than an hour. A shorter loss is often a restart."],
+            ["A problem when", "No PV is connected. PVs that were never connected, and PVs that lose their connection again and again, are listed below but not judged."],
+            ["Then", "Find the host in the list below and check its IOC, or pause PVs that no longer exist."],
+        ],
+    ],
+    [
+        "hostsHeading",
+        "Disconnected PVs by host",
+        [
+            ["Groups", "PVs of one host that lost their connection within 30 seconds of each other are one group."],
+            ["The host", "The host is the one the Channel Access connection came from; the appliance reports no IOC name, and a PV Access PV has no host."],
+            ["Partly listed", "A host that is listed with only some of its PVs may still be running: its other PVs are connected."],
+        ],
+    ],
+    [
+        "droppedHeading",
+        "Samples lost: is data missing?",
+        [["A problem is", "Any PV in these reports. Each report is a different cause and has its own remedy."]],
+    ],
+    [
+        "writeHeading",
+        "Write path: does the engine keep up?",
+        [
+            ["Attention when", "The writer needs more than half of its write period."],
+            ["A problem when", "The writer needs all of its write period (100 %): samples are lost. The benchmark is what this disk sustained when the engine started; the incoming rate should stay far below it."],
+            ["Then", "Check the disk of the short term store, slow the fastest PVs, raise the seconds of write delay a buffer absorbs (PVTypeInfo.sampleBufferMarginSeconds in archappl.properties, at least 1.0), or add an appliance."],
+        ],
+    ],
+    [
+        "storesHeading",
+        "Stores: is there room, and does data move on?",
+        [
+            ["Attention when", "Fewer than 30 days are left at the current data rate, a device has less than 5 % free, an ETL pass overran its interval or was late, or a job failed."],
+            ["A problem when", "Fewer than 7 days are left, a device has less than 3 % free, or an ETL pass was busy for twice its interval."],
+            ["Then", "Free or add disk space; if a pass overran, look at the slowest PV of that pass."],
+        ],
+    ],
+    [
+        "processesHeading",
+        "Processes: is each part healthy?",
+        [
+            ["Attention when", "A version differs, or the heap floor is above 70 % of the maximum or has risen by 5 points in a day. The heap line goes up and down all the time; that is normal garbage collection. What matters is the lowest point after a collection, the floor, drawn as the strong line."],
+            ["A problem when", "A process is down, or the heap floor is above 90 % of the maximum."],
+            ["Then", "A climbing floor means the heap is too small or something leaks: raise the heap size of that process (see the heap size setting of your installation) and watch whether the floor settles."],
+        ],
+    ],
+];
+
+for (const [heading, title, rows] of CARDS) {
+    // The section is named by the heading text alone; the button sits beside it in the heading element.
+    const text = $(heading);
+    const host = text.tagName === "SPAN" ? text.parentElement : text;
+    host.append(" ", infoButton(title, rows, null, HELP));
+}
 
 function fill(tableId, rows) {
     const body = $(tableId).querySelector("tbody");

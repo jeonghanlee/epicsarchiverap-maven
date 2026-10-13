@@ -52,21 +52,8 @@
       <p id="problem" class="error" role="status"></p>
 
       <h1>Operations</h1>
-      <p class="sub">
-        For the person who looks after the appliance. Each section names the question it answers, when the numbers are a
-        problem and what to do.
-      </p>
-
       <section aria-labelledby="samplesHeading" id="samples">
-        <h2 id="samplesHeading">Samples: are they coming in?</h2>
-        <dl class="qa">
-          <dt>Attention when</dt>
-          <dd>A PV has been disconnected for more than an hour. A shorter loss is often a restart.</dd>
-          <dt>A problem when</dt>
-          <dd>No PV is connected. PVs that were never connected, and PVs that lose their connection again and again, are listed below but not judged.</dd>
-          <dt>Then</dt>
-          <dd>Find the host in the list below and check its IOC, or pause PVs that no longer exist.</dd>
-        </dl>
+        <h2><span id="samplesHeading">Samples</span></h2>
         <div class="columns">
           <div>
             <h3>Counts</h3>
@@ -80,7 +67,7 @@
             </table>
           </div>
         </div>
-        <h3>Disconnected PVs by host</h3>
+        <h3 id="hostsHeading">Disconnected PVs by host</h3>
         <p id="hostsNote" class="sub"></p>
         <p id="hostsResult" class="sub" role="status"></p>
         <div class="scroll">
@@ -91,19 +78,10 @@
             <tbody></tbody>
           </table>
         </div>
-        <p class="sub">
-          PVs of one host that lost their connection within 30 seconds of each other are one group. The host is the one
-          the Channel Access connection came from; the appliance reports no IOC name, and a PV Access PV has no host. A
-          host that is listed with only some of its PVs may still be running: its other PVs are connected.
-        </p>
       </section>
 
       <section aria-labelledby="droppedHeading" id="dropped">
-        <h2 id="droppedHeading">Samples lost: is data missing?</h2>
-        <dl class="qa">
-          <dt>A problem is</dt>
-          <dd>Any PV in these reports. Each report is a different cause and has its own remedy.</dd>
-        </dl>
+        <h2><span id="droppedHeading">Samples lost</span></h2>
         <div class="scroll">
           <table class="grid plain" id="droppedTable">
             <thead><tr><th>Cause</th><th class="r">PVs</th><th>Worst PV</th><th class="r">Dropped</th><th>Then</th></tr></thead>
@@ -113,21 +91,7 @@
       </section>
 
       <section aria-labelledby="writeHeading" id="write">
-        <h2 id="writeHeading">Write path: does the engine keep up?</h2>
-        <dl class="qa">
-          <dt>Attention when</dt>
-          <dd>The writer needs more than half of its write period.</dd>
-          <dt>A problem when</dt>
-          <dd>
-            The writer needs all of its write period (100 %): samples are lost. The benchmark is what this disk sustained
-            when the engine started; the incoming rate should stay far below it.
-          </dd>
-          <dt>Then</dt>
-          <dd>
-            Check the disk of the short term store, slow the fastest PVs, raise the seconds of write delay a buffer absorbs
-            (<code>PVTypeInfo.sampleBufferMarginSeconds</code> in <code>archappl.properties</code>, at least 1.0), or add an appliance.
-          </dd>
-        </dl>
+        <h2><span id="writeHeading">Write path</span></h2>
         <div class="columns">
           <div>
             <table class="grid plain" id="writeTable"><tbody></tbody></table>
@@ -143,15 +107,7 @@
       </section>
 
       <section aria-labelledby="storesHeading" id="stores">
-        <h2 id="storesHeading">Stores: is there room, and does data move on?</h2>
-        <dl class="qa">
-          <dt>Attention when</dt>
-          <dd>Fewer than 30 days are left at the current data rate, a device has less than 5 % free, an ETL pass overran its interval or was late, or a job failed.</dd>
-          <dt>A problem when</dt>
-          <dd>Fewer than 7 days are left, a device has less than 3 % free, or an ETL pass was busy for twice its interval.</dd>
-          <dt>Then</dt>
-          <dd>Free or add disk space; if a pass overran, look at the slowest PV of that pass.</dd>
-        </dl>
+        <h2><span id="storesHeading">Stores</span></h2>
         <p id="daysLeft" class="sub"></p>
         <div id="storage" class="bars"></div>
         <h3>ETL passes</h3>
@@ -174,19 +130,7 @@
       </section>
 
       <section aria-labelledby="processesHeading" id="processes">
-        <h2 id="processesHeading">Processes: is each part healthy?</h2>
-        <dl class="qa">
-          <dt>Attention when</dt>
-          <dd>
-            A version differs, or the heap floor is above 70 % of the maximum or has risen by 5 points in a day. The heap
-            line goes up and down all the time; that is normal garbage collection. What matters is the lowest point
-            after a collection, the floor, drawn as the strong line.
-          </dd>
-          <dt>A problem when</dt>
-          <dd>A process is down, or the heap floor is above 90 % of the maximum.</dd>
-          <dt>Then</dt>
-          <dd>A climbing floor means the heap is too small or something leaks: raise the heap size of that process (see the heap size setting of your installation) and watch whether the floor settles.</dd>
-        </dl>
+        <h2><span id="processesHeading">Processes</span></h2>
         <div class="scroll">
           <table class="grid plain" id="processTable">
             <thead>

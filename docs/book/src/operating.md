@@ -127,10 +127,11 @@ with what the measure means and where to act.
 ![The System overview](images/system-overview.png)
 
 **Operations** shows the samples, the dropped samples, the write path,
-the stores and ETL, the processes and the configuration in effect, and
-names the setting to change for each remedy. **Retrieval performance**
-measures a data request from the browser and shows what the server
-reports. [Management interface](interface.md#what-the-system-pages-judge)
+the stores and ETL, the processes and the configuration in effect; the
+**i** button beside each section names the setting to change for each
+remedy. **Retrieval performance** measures a data request from the
+browser and shows what the server reports.
+[Management interface](interface.md#what-the-system-pages-judge)
 lists the judgements and their starting values.
 
 When a store runs full, ETL follows the `OutOfSpaceHandling` key

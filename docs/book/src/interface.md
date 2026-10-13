@@ -108,7 +108,9 @@ a card with its meaning:
 
 The Operations page gives the reading behind each verdict, in the sections
 Samples, Samples lost, Write path, Stores, Processes and Configuration in
-effect; the next figure shows its first sections:
+effect. The **i** button beside a section heading opens a card with
+when the section needs attention, when it is a problem and what to do;
+the next figure shows its first sections:
 
 ![The first sections of the System operations page](images/system-operations.png)
 
@@ -127,7 +129,7 @@ reported and is never shown as Normal.
 | Dropped samples | None | Any PV in the four dropped-event reports | A dropped sample is lost data |
 | Components | Different versions | A component is not running | The appliance status and version reports |
 
-The remedies on the Operations page name the setting to change. The
+The remedies in those cards name the setting to change. The
 seconds of write delay a sample buffer absorbs are
 `org.epics.archiverappliance.config.PVTypeInfo.sampleBufferMarginSeconds`
 in `archappl.properties`, at least 1.0 ([Configuration](configuration.md)).

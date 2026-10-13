@@ -27,7 +27,7 @@ function closeCard() {
 function placeCard(button, card) {
     const box = button.getBoundingClientRect();
     // The card is as wide as the text wants, up to 340 px, and never wider than the page without its scrollbar.
-    const width = Math.min(340, document.documentElement.clientWidth - 16);
+    const width = Math.min(card.classList.contains("wide") ? 420 : 340, document.documentElement.clientWidth - 16);
     card.style.width = `${width}px`;
     const left = Math.min(Math.max(8, box.left + window.scrollX + box.width / 2 - 24), window.scrollX + document.documentElement.clientWidth - width - 8);
     card.style.left = `${left}px`;
@@ -37,9 +37,13 @@ function placeCard(button, card) {
 
 function showCard(button, title, text, action, helpHref) {
     closeCard();
-    const card = node("div", { class: "card", role: "dialog", "aria-label": title, id: "infoCard" },
+    const rows = Array.isArray(text);
+    const body = rows
+        ? node("dl", { class: "rows" }, ...text.flatMap(([term, detail]) => [node("dt", null, term), node("dd", null, detail)]))
+        : node("p", null, text);
+    const card = node("div", { class: rows ? "card wide" : "card", role: "dialog", "aria-label": title, id: "infoCard" },
         node("h4", null, title),
-        node("p", null, text),
+        body,
         action ? node("p", { class: "act" }, action) : null,
         node("div", { class: "foot" }, node("a", { href: helpHref }, "More in Help"), node("button", { type: "button", class: "plain close" }, "Close")),
     );
@@ -89,8 +93,9 @@ window.addEventListener("resize", () => {
 });
 
 /**
- * An information control: a small "i" button that opens a card with the text, what to do about it and a link into
- * the help page. The card stays open across a refresh of the page that rebuilds its button.
+ * An information control: a small "i" button that opens a card with the text (one paragraph, or rows of a term and
+ * its text), what to do about it and a link into the help page. The card stays open across a refresh of the page
+ * that rebuilds its button.
  */
 export function infoButton(title, text, action, helpHref) {
     const button = node("button", { type: "button", class: "info", "aria-expanded": "false", "aria-label": `About ${title}` }, "i");
