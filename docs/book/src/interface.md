@@ -109,8 +109,11 @@ a card with its meaning:
 The Operations page gives the reading behind each verdict, in the sections
 Samples, Samples lost, Write path, Stores, Processes and Configuration in
 effect. The **i** button beside a section heading opens a card with
-when the section needs attention, when it is a problem and what to do;
-the next figure shows its first sections:
+when the section needs attention, when it is a problem and what to do.
+The Stores section ends with a treemap of the stored data or the event
+rate by PV name prefix, so the prefixes that use the space show at once;
+a prefix opens its PVs in the Work page. The next figure shows the first
+sections:
 
 ![The first sections of the System operations page](images/system-operations.png)
 

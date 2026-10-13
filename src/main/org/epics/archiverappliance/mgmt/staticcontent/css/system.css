@@ -618,3 +618,45 @@ button.info {
 .card dl.rows dd {
     margin: 2px 0 0;
 }
+
+.segmented {
+    display: inline-flex;
+    margin: 4px 0 8px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.segmented button {
+    min-height: 36px;
+    margin: 0;
+    padding: 4px 14px;
+    border: 0;
+    border-radius: 0;
+    background: var(--c-surface);
+    color: var(--c-text);
+    font: inherit;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.segmented button[aria-pressed="true"] {
+    background: var(--c-accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.segmented button:focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: -2px;
+}
+
+.treemap svg {
+    display: block;
+    max-width: 100%;
+}
+
+.treemap a:focus-visible {
+    outline: 3px solid var(--c-accent);
+    outline-offset: 1px;
+}

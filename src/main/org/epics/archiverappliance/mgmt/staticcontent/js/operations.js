@@ -17,10 +17,14 @@ import {
     prefixOf,
     groupByHost,
 } from "./system/judge.js";
+import { drawUsage, usageGroups } from "./system/treemap.js";
 import { chooseAppliance, infoButton, statusNode, timeText } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_MS = 30000;
+const USAGE_REFRESH_MS = 300000;
+// The reports list at most this many PVs of each appliance; without a limit they list 100.
+const USAGE_PV_LIMIT = "100000";
 const LIST_LIMIT = 200;
 const openGroups = new Set();
 let list = [];
@@ -71,6 +75,16 @@ const CARDS = [
             ["Attention when", "Fewer than 30 days are left at the current data rate, a device has less than 5 % free, an ETL pass overran its interval or was late, or a job failed."],
             ["A problem when", "Fewer than 7 days are left, a device has less than 3 % free, or an ETL pass was busy for twice its interval."],
             ["Then", "Free or add disk space; if a pass overran, look at the slowest PV of that pass."],
+        ],
+    ],
+    [
+        "usageHeading",
+        "Largest users of storage: where does the space go?",
+        [
+            ["Block", "A block is a PV name prefix, the part of the name up to its second colon. The blocks inside it are its PVs."],
+            ["Size", "Stored data is what a PV occupies in all stores; event rate is its events per second. The buttons switch between them."],
+            ["Scope", "Every appliance of the cluster. The 24 largest prefixes and the 300 largest PVs are drawn; the rest of a prefix is one block."],
+            ["Then", "Click a prefix to find its PVs in Work, and archive less of a prefix that holds most of the space."],
         ],
     ],
     [
@@ -373,10 +387,86 @@ function renderEtl(data) {
         ["PV count, whole cluster", plan("Aggregated appliance PV count")],
         ["PV count, this appliance", plan("Incremental appliance PV count")],
     ]);
-    if (!data.largest) {
-        emptyRow("largest", 2, "The report could not be read.");
-    } else {
-        fill("largest", data.largest.map((row) => [row.pvName, `${row.storageConsumedInMB} MB`]));
+}
+
+// ---- usage by name prefix --------------------------------------------------------------------------
+
+const usage = { stored: undefined, rate: undefined, metric: "stored", loadedAt: 0, loading: false };
+
+function usageText(value) {
+    if (usage.metric === "stored") {
+        // The value is in MB; a small PV shows in KB or bytes so it never reads as zero.
+        if (value >= 1024) {
+            return `${(value / 1024).toFixed(1)} GB`;
+        }
+        if (value >= 1) {
+            return `${value.toFixed(value >= 10 ? 0 : 1)} MB`;
+        }
+        const kilobytes = value * 1024;
+        return kilobytes >= 1 ? `${kilobytes.toFixed(kilobytes >= 10 ? 0 : 1)} KB` : `${Math.round(value * 1048576)} B`;
+    }
+    return `${value.toFixed(value >= 10 ? 0 : 1)} per s`;
+}
+
+function renderUsage() {
+    const host = $("usageChart");
+    const note = $("usageNote");
+    const stored = usage.metric === "stored";
+    $("usageStored").setAttribute("aria-pressed", String(stored));
+    $("usageRate").setAttribute("aria-pressed", String(!stored));
+    const rows = stored ? usage.stored : usage.rate;
+    if (rows === undefined) {
+        host.replaceChildren(node("p", { class: "sub" }, "Reading the report."));
+        note.textContent = "";
+        return;
+    }
+    if (!rows) {
+        host.replaceChildren(node("p", { class: "sub" }, "The report could not be read."));
+        note.textContent = "";
+        return;
+    }
+    const model = usageGroups(rows, (row) => row.pvName, stored ? (row) => Number(row.storageConsumed) / 1048576 : (row) => Number(row.eventRate));
+    if (!model.groups.length) {
+        host.replaceChildren(node("p", { class: "sub" }, stored ? "No PV has stored data yet." : "No PV reported an event rate."));
+        note.textContent = "";
+        return;
+    }
+    const total = usageText(model.total);
+    const partial = model.listedPVs < model.pvs || model.foldedPrefixes > 0;
+    note.textContent = `${model.pvs} PVs, ${total} in all${partial ? `; the ${model.listedPVs} largest are drawn one by one` : ""}.`;
+    drawUsage(host, model, {
+        width: host.clientWidth || host.parentElement.clientWidth,
+        format: usageText,
+        href: (prefix) => `index.html#${new URLSearchParams({ q: prefix })}`,
+    });
+}
+
+/** Reads both reports of the cluster; they are large for a big cluster, so they are read at most every five minutes. */
+async function loadUsage() {
+    if (usage.loading || (usage.stored !== undefined && Date.now() - usage.loadedAt < USAGE_REFRESH_MS)) {
+        return;
+    }
+    usage.loading = true;
+    try {
+        const [stored, rate] = await settled([
+            get("../bpl/getPVsByStorageConsumed", { limit: USAGE_PV_LIMIT }),
+            get("../bpl/getEventRateReport", { limit: USAGE_PV_LIMIT }),
+        ]);
+        usage.stored = stored;
+        usage.rate = rate;
+        usage.loadedAt = Date.now();
+        renderUsage();
+    } finally {
+        usage.loading = false;
+    }
+}
+
+function wireUsage() {
+    for (const [id, metric] of [["usageStored", "stored"], ["usageRate", "rate"]]) {
+        $(id).addEventListener("click", () => {
+            usage.metric = metric;
+            renderUsage();
+        });
     }
 }
 
@@ -518,7 +608,7 @@ function renderConfiguration(data) {
 async function gather(appliance) {
     const name = appliance.instance;
     const mine = (rows) => (rows ? rows.filter((row) => !row.instance || row.instance === name) : rows);
-    const [load, storage, series, processInfo, disconnected, never, lost, fastest, largest, properties, policies, cluster, serving, ...dropped] = await settled([
+    const [load, storage, series, processInfo, disconnected, never, lost, fastest, properties, policies, cluster, serving, ...dropped] = await settled([
         get("../bpl/getApplianceMetricsForAppliance", { appliance: name }),
         get("../bpl/getStorageMetricsForAppliance", { appliance: name }),
         get("../bpl/getProcessMetricsDataForAppliance", { appliance: name }),
@@ -527,7 +617,6 @@ async function gather(appliance) {
         get("../bpl/getNeverConnectedPVs"),
         get("../bpl/getLostConnectionsReport", { limit: "5" }),
         get("../bpl/getEventRateReport", { limit: "5" }),
-        get("../bpl/getPVsByStorageConsumed", { limit: "5" }),
         get("../bpl/getApplianceProperties"),
         get("../bpl/getPolicyList"),
         get("../bpl/getAppliancesInCluster"),
@@ -544,7 +633,6 @@ async function gather(appliance) {
         never: mine(never),
         lost: mine(lost),
         fastest: mine(fastest),
-        largest: mine(largest),
         properties,
         policies,
         cluster,
@@ -580,12 +668,15 @@ async function refresh() {
     try {
         latest = await gather(current);
         renderAll(latest);
+        loadUsage();
     } catch (error) {
         $("problem").textContent = `The page could not be drawn: ${error.message}`;
     }
 }
 
 $("confirmCancel").addEventListener("click", () => $("confirmDialog").close());
+wireUsage();
+renderUsage();
 refresh();
 timer = window.setInterval(() => {
     if (!document.hidden) {
@@ -594,5 +685,10 @@ timer = window.setInterval(() => {
 }, REFRESH_MS);
 window.addEventListener("resize", () => {
     window.clearTimeout(window.resizeTimer);
-    window.resizeTimer = window.setTimeout(() => latest && renderProcesses(latest), 200);
+    window.resizeTimer = window.setTimeout(() => {
+        if (latest) {
+            renderProcesses(latest);
+        }
+        renderUsage();
+    }, 200);
 });

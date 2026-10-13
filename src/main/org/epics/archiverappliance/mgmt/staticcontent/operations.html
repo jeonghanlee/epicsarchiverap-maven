@@ -114,19 +114,15 @@
         <div class="scroll">
           <table class="grid plain" id="etl"><thead></thead><tbody></tbody></table>
         </div>
-        <div class="columns">
-          <div>
-            <h3>Capacity plan</h3>
-            <table class="grid plain" id="plan"><tbody></tbody></table>
-          </div>
-          <div>
-            <h3>Largest users of storage</h3>
-            <table class="grid plain" id="largest">
-              <thead><tr><th>PV</th><th class="r">Stored</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
+        <h3>Capacity plan</h3>
+        <table class="grid plain" id="plan"><tbody></tbody></table>
+        <h3 id="usageHeading">Largest users of storage, by name prefix</h3>
+        <div class="segmented" role="group" aria-label="Size of a block">
+          <button type="button" id="usageStored" aria-pressed="true">Stored data</button>
+          <button type="button" id="usageRate" aria-pressed="false">Event rate</button>
         </div>
+        <p id="usageNote" class="sub"></p>
+        <div id="usageChart" class="treemap"></div>
       </section>
 
       <section aria-labelledby="processesHeading" id="processes">
