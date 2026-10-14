@@ -170,18 +170,12 @@
 }
 
 .offer {
-    min-height: 1.4em;
+    margin: 4px 0 8px;
     font-size: 0.9375rem;
 }
 
-.offer button {
-    background: none;
-    border: 0;
-    padding: 0;
+.offer a {
     color: var(--accent);
-    border-bottom: 1px solid var(--accent);
-    cursor: pointer;
-    font: inherit;
 }
 
 .results {

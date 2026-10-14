@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 public class MgmtPageLinksTest {
     private static final List<String> MENU_PAGES = List.of(
             "index.html",
+            "archive.html",
             "system.html",
             "operations.html",
             "retrieval.html",
@@ -82,6 +83,8 @@ public class MgmtPageLinksTest {
                 targets.add(windowOpen.group(1));
             }
         }
+        Assertions.assertTrue(targets.contains("archive.html") && targets.contains("index.html"),
+                "The menu opens the Archive PVs page and the Work page as two entries " + targets);
         for (String page : FORWARDING_PAGES) {
             HttpResponse<String> pageResponse = get(client, page);
             Assertions.assertEquals(200, pageResponse.statusCode(), "Forwarding page " + page);

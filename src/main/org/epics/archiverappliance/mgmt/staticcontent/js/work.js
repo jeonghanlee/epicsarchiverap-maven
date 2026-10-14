@@ -367,15 +367,11 @@ function readVisibleStatus(first, last) {
     }, 250);
 }
 
+// The link to the Archive PVs page is always there and always reads the same; it carries the typed text only when
+// the text is one complete PV name, so a name still being typed is never offered as a request.
 function renderArchiveOffer() {
-    const offer = $("archiveOffer");
-    offer.textContent = "";
     const text = state.query.trim();
-    if (state.mode === "contains" && state.total === 0 && PV_NAME.test(text)) {
-        const button = node("button", { type: "button" }, `Archive ${text}…`);
-        button.addEventListener("click", () => openArchiveDialog([text]));
-        offer.append(node("span", { class: "muted" }, "No archived PV has this name. "), button);
-    }
+    $("archiveLink").href = state.mode === "contains" && PV_NAME.test(text) ? `archive.html#pv=${encodeURIComponent(text)}` : "archive.html";
 }
 
 // Keyboard use of the list: the arrow keys move, Space or Enter selects or clears the active row.

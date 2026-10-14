@@ -28,7 +28,7 @@
         <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Menu" />
         <label class="menu-button" for="menu-toggle">Menu</label>
         <ul class="mainmenu" id="mainmenu">
-          <li><a href="index.html">Archive PVs</a></li>
+          <li><a href="archive.html">Archive PVs</a></li>
           <li><a href="index.html">Browse PVs</a></li>
           <li><a href="system.html" data-pages="system.html operations.html retrieval.html external.html">System</a></li>
           <li><a href="help.html" id="help">Help</a></li>
@@ -43,7 +43,8 @@
       <p class="lead">What each button and list of the page in front of you does. The full manual is under <a href="#more">More</a>.</p>
       <nav class="toc" aria-label="Help contents">
         <a href="#move-around">Moving around</a>
-        <a href="#work">Archive PVs and Browse PVs</a>
+        <a href="#archive">Archive PVs</a>
+        <a href="#work">Browse PVs</a>
         <a href="#system">System</a>
         <a href="#analyzer">Analyzer</a>
         <a href="#more">More</a>
@@ -57,13 +58,33 @@
           <dt><b>Menu</b> button</dt>
           <dd>On a narrow screen the entries fold behind it. Tap it to open the list, tap an entry to go there.</dd>
           <dt>The address</dt>
-          <dd>The Work page keeps what you selected and the window in its address. Copy the address or bookmark it to come back to the same view.</dd>
+          <dd>The Browse PVs page keeps what you selected and the window in its address. Copy the address or bookmark it to come back to the same view.</dd>
         </dl>
       </section>
 
+      <section id="archive" aria-labelledby="archive-heading">
+        <h2 id="archive-heading">Archive PVs</h2>
+        <p>Add PVs to the archiver and follow them until they are archived.</p>
+
+        <h3 id="archive-add">Add one PV or a list</h3>
+        <ol>
+          <li>Type one name, or paste a list with one name per line, into <b>Add PVs</b>. The note under the box counts the names and points at any that are not valid PV names.</li>
+          <li>Leave <b>Sampling</b> as it is to let the policy of the site choose the method and the period of each PV. Open it to choose <b>Monitor</b> or <b>Scan</b>, a period, a policy or a controlling PV for every name.</li>
+          <li>Click <b>Archive</b>. Each name appears under <b>Requested in this visit</b> with the answer of the request and its state.</li>
+        </ol>
+
+        <h3 id="archive-follow">Follow the requests</h3>
+        <ol>
+          <li>The state goes from <i>Appliance assigned</i> and <i>Initial sampling</i> to <i>Being archived</i>, which takes a few minutes. The row then shows how the PV is sampled and by which policy.</li>
+          <li>A name that no server answers stays in <i>Initial sampling</i>. Click <b>Cancel request</b> in its row.</li>
+          <li>A PV that is being archived has <b>Pause</b> and <b>Stop archiving…</b>; a paused one has <b>Resume</b>. Select several rows to act on them together; <b>Cancel requests</b> acts on the ones that are waiting.</li>
+        </ol>
+        <p>To look at the data of an archived PV, open it in <a href="#work">Browse PVs</a>.</p>
+      </section>
+
       <section id="work" aria-labelledby="work-heading">
-        <h2 id="work-heading">Archive PVs and Browse PVs</h2>
-        <p>Both entries open the Work page: <b>Find</b> on the left, the PVs you selected on the right, their detail at the bottom.</p>
+        <h2 id="work-heading">Browse PVs</h2>
+        <p>This entry opens the Work page: <b>Find</b> on the left, the PVs you selected on the right, their detail at the bottom. To add PVs, use <a href="#archive">Archive PVs</a>; the link under <b>Find</b> opens it with the name you typed.</p>
 
         <h3 id="work-find">Find a PV</h3>
         <ol>
@@ -77,13 +98,6 @@
           <li>Click a name in the list to select it; click again to clear it. With the keyboard: arrow keys to move, <kbd>Space</kbd> or <kbd>Enter</kbd> to select.</li>
           <li>Selected PVs appear in <b>Scan</b> (up to 100) and in the chart (up to 5).</li>
           <li>Click a row of <b>Scan</b> to bring that PV to the front: the chart highlights it and <b>Detail</b> shows it.</li>
-        </ol>
-
-        <h3 id="work-archive">Archive a new PV</h3>
-        <ol>
-          <li>Type the full name in <b>Find</b>. When no archived PV has it, a button <b>Archive</b> <i>name</i> appears under the count.</li>
-          <li>Click it, choose <b>Monitor</b> or <b>Scan</b> and the period, and click <b>Archive</b>.</li>
-          <li>The PV joins <b>Scan</b>; its <b>State</b> turns to <i>Being archived</i> when the engine reaches it. If it stays in <i>Initial sampling</i>, the name may be wrong: open its <b>Detail</b> and click <b>Abort the request</b>.</li>
         </ol>
 
         <h3 id="work-time">Look at another time window</h3>
