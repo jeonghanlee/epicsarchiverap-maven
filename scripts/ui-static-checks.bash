@@ -177,6 +177,7 @@ PAIRS=(
     "mgmt/staticcontent/operations.html:mgmt/staticcontent/js/operations.js"
     "mgmt/staticcontent/retrieval.html:mgmt/staticcontent/js/retrieval.js"
     "mgmt/staticcontent/external.html:mgmt/staticcontent/js/external.js"
+    "mgmt/staticcontent/archive.html:mgmt/staticcontent/js/archive.js"
     "retrieval/staticcontent/viewer/archViewer.html:retrieval/staticcontent/viewer/viewer.js"
 )
 for pair in "${PAIRS[@]}"; do
@@ -201,7 +202,7 @@ done < <(find "${SITES}" -mindepth 2 -maxdepth 2 -name template_changes.html | L
 
 # ---- a PV name is a base name with an optional field --------------------------------------------
 # The server archives X:Y.RBV as a PV of its own, so the name patterns of the pages must accept it.
-for script in mgmt/staticcontent/js/work.js retrieval/staticcontent/viewer/viewer.js; do
+for script in mgmt/staticcontent/js/work.js mgmt/staticcontent/js/archive.js retrieval/staticcontent/viewer/viewer.js; do
     refused=$(python3 -I - "${UI}/${script}" <<'PY'
 import re, sys
 text = open(sys.argv[1], encoding="utf-8").read()

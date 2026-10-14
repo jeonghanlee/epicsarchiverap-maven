@@ -1,0 +1,201 @@
+/* The Archive PVs page. The page frame, the table, the dialog and the information control come from system.css;
+   the tokens from main.css. */
+
+.archive h2 {
+    text-transform: uppercase;
+}
+
+.archive section {
+    padding: 0 0 16px;
+}
+
+.archive label.field {
+    display: block;
+    margin: 0 0 4px;
+    color: var(--ink-3);
+    font-size: 0.9375rem;
+}
+
+.archive textarea {
+    width: 100%;
+    min-height: 8.5rem;
+    padding: 8px 10px;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius);
+    background: var(--c-surface);
+    color: var(--ink);
+    font: 0.9375rem/1.5 var(--mono);
+    resize: vertical;
+}
+
+.archive textarea:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
+}
+
+.archive .sub .bad {
+    color: var(--alarm);
+    font-family: var(--mono);
+}
+
+.archive details.choice {
+    margin: 10px 0;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--c-surface);
+}
+
+.archive details.choice summary {
+    padding: 8px 12px;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.archive .choice-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px 16px;
+    padding: 4px 12px 12px;
+}
+
+.archive .choice-body label {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--ink-3);
+    font-size: 0.875rem;
+}
+
+.archive .choice-body select,
+.archive .choice-body input {
+    width: 100%;
+    min-height: 36px;
+    padding: 4px 8px;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius);
+    background: var(--c-surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.9375rem;
+}
+
+.archive .choice-body .hint {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--ink-3);
+    font-size: 0.875rem;
+}
+
+.archive .choice-body .hint.error {
+    color: var(--alarm);
+}
+
+.archive .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.archive button.quiet,
+.archive button.link {
+    padding: 6px 8px;
+    border: 0;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.archive button.link {
+    padding: 2px 6px;
+}
+
+.archive button.danger {
+    color: var(--alarm);
+}
+
+.archive button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.archive .message {
+    min-height: 1.4em;
+    margin: 0 0 8px;
+    font-size: 0.9375rem;
+}
+
+.archive .message.error {
+    color: var(--alarm);
+}
+
+.archive .bulk {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    align-items: center;
+    margin: 4px 0 8px;
+    font-size: 0.9375rem;
+}
+
+.archive .bulk .count {
+    margin-right: 8px;
+    color: var(--ink-3);
+}
+
+.archive td.pv {
+    min-width: 14rem;
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+}
+
+.archive td:last-child {
+    white-space: nowrap;
+}
+
+.archive .st {
+    font-weight: 600;
+}
+
+.archive .st::before {
+    margin-right: 6px;
+}
+
+.archive .st.ok::before {
+    content: "\25CF";
+    color: var(--accent);
+}
+
+.archive .st.wait::before {
+    content: "\25CB";
+    color: var(--warn);
+}
+
+.archive .st.stop::before {
+    content: "\25A0";
+    color: var(--ink-3);
+}
+
+.archive .st.bad::before {
+    content: "\25B2";
+    color: var(--alarm);
+}
+
+.archive .detail {
+    display: block;
+    margin-top: 2px;
+    color: var(--ink-3);
+    font-size: 0.875rem;
+    font-weight: 400;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}

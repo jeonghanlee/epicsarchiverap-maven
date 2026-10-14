@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>appliance archiver - Archive PVs</title>
+    <link rel="stylesheet" href="comm/css/main.css" />
+    <link rel="stylesheet" href="css/system.css" />
+    <link rel="stylesheet" href="css/archive.css" />
+    <script type="module" src="js/archive.js"></script>
+    <script src="js/menu.js" defer></script>
+  </head>
+  <body>
+    <div class="pageheader">
+      <!-- @begin(site_header) -->
+      <span><picture><source media="(max-width: 359px)" srcset="comm/img/wordmark.svg" /><img src="comm/img/archiverheader.svg" alt="Archiver Appliance" /></picture></span>
+      <!-- @end(site_header) -->
+      <!-- @begin(site_logo) -->
+      <span id="siteimages"><img src="comm/img/sitelogo.svg" alt="Store signals, analyze in place" /></span>
+      <!-- @end(site_logo) -->
+    </div>
+
+    <!-- @begin(site_navbar) -->
+    <div class="navbar">
+      <nav class="nav" aria-label="Main menu">
+        <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Menu" />
+        <label class="menu-button" for="menu-toggle">Menu</label>
+        <ul class="mainmenu" id="mainmenu">
+          <li><a href="archive.html">Archive PVs</a></li>
+          <li><a href="index.html">Browse PVs</a></li>
+          <li><a href="system.html" data-pages="system.html operations.html retrieval.html external.html">System</a></li>
+          <li><a href="help.html" id="help">Help</a></li>
+          <li><a href="analyzer.html">Analyzer</a></li>
+        </ul>
+      </nav>
+    </div>
+    <!-- @end(site_navbar) -->
+
+    <main class="system archive">
+      <h1><span id="pageHeading">Archive PVs</span></h1>
+
+      <section aria-labelledby="addHeading" id="add">
+        <h2 id="addHeading">Add PVs</h2>
+        <label class="field" for="names">One PV name per line, or paste a list</label>
+        <textarea id="names" spellcheck="false" autocomplete="off" placeholder="SR:BPM:01:X&#10;SR:BPM:02:X"></textarea>
+        <p class="sub" id="parseNote" role="status"></p>
+        <details class="choice" id="choice">
+          <summary><b>Sampling:</b> <span id="choiceSummary">the site policy decides</span></summary>
+          <div class="choice-body">
+            <div>
+              <label for="method">Method</label>
+              <select id="method">
+                <option value="">The policy decides</option>
+                <option value="MONITOR">Monitor</option>
+                <option value="SCAN">Scan</option>
+              </select>
+            </div>
+            <div>
+              <label for="period">Period in seconds</label>
+              <input id="period" type="number" min="0.1" step="any" placeholder="the policy decides" />
+            </div>
+            <div>
+              <label for="policy">Policy</label>
+              <select id="policy"><option value="">The normal selection</option></select>
+            </div>
+            <div>
+              <label for="controlling">Controlling PV</label>
+              <input id="controlling" type="text" placeholder="none" spellcheck="false" autocomplete="off" />
+            </div>
+            <p class="hint" id="choiceError" role="status"></p>
+            <p class="hint">What you leave empty is decided by the policy of the site. The choice applies to every name above.</p>
+          </div>
+        </details>
+        <div class="actions">
+          <button type="button" id="archive" disabled>Archive</button>
+          <button type="button" id="clearNames" class="quiet">Clear</button>
+        </div>
+      </section>
+
+      <section aria-labelledby="requestedHeading" id="requested" hidden>
+        <h2 id="requestedHeading">Requested in this visit</h2>
+        <p class="message" id="summaryLine"></p>
+        <div class="bulk">
+          <span class="count" id="selectedCount">0 selected</span>
+          <button type="button" id="bulkPause" class="link">Pause</button>
+          <button type="button" id="bulkResume" class="link">Resume</button>
+          <button type="button" id="bulkStop" class="link danger">Stop archiving…</button>
+          <button type="button" id="bulkCancel" class="link danger">Cancel requests</button>
+        </div>
+        <p class="message" id="outcome" role="status"></p>
+        <div class="scroll">
+          <table class="grid" id="requests">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="selectAll" aria-label="Select all" /></th>
+                <th>PV</th>
+                <th>Request</th>
+                <th>State</th>
+                <th><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody id="requestRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="stopDialog" aria-labelledby="stopTitle">
+      <form id="stopForm">
+        <h2 id="stopTitle">Stop archiving</h2>
+        <p id="stopName" class="pv"></p>
+        <p class="hint">The PV is paused and then removed from the archiver. Stored data stays unless you also delete it.</p>
+        <label class="check"><input id="stopData" type="checkbox" /> Delete the stored data of this PV</label>
+        <p id="stopError" class="error" role="status"></p>
+        <div class="dialog-actions">
+          <button type="submit" id="stopSubmit" class="danger">Stop archiving</button>
+          <button type="button" id="stopCancel" class="quiet">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+
+      <!-- @begin(site_footer) -->
+      <div class="pagefooter"></div>
+      <!-- @end(site_footer) -->
+  </body>
+</html>
