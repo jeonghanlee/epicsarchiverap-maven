@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The plans of M58 (Browse PVs page and the analyzer) and M59 (chart component) were revised on 2026-10-14 from the Browse PVs mockup the owner approved and wait for plan acceptance and implementation authorization; M61 follows (issue #39). The body of #38 still has to be refreshed for M57. M46 and M48 wait on G6 and G7, which other sessions report.
+Next session entry point: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; plan accepted and implementation authorized on 2026-10-14, in progress), then M58 (the Browse PVs page), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The body of #38 still has to be refreshed for M57. M46 and M48 wait on G6 and G7, which other sessions report.
 
 Other open work: M28 (issue #12) resumes in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07, both startup transfers and the shortened STS repeat preserved the expected old interval, and a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. M28 stays In progress until the revised focused checks and soak criteria have execution evidence. M36's reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02; do not resend it. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) owns full VM revalidation.
 
@@ -76,8 +76,11 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M54 | Version text from the build commit and day | Milestone | Complete | No | D37 | `ui/comm/version.txt` of the four WARs reads `Archiver Appliance Version <commit>, built <UTC day>`, the commit and day of the WAR names; the System page finds one version; landed in f4ded662, Maven run 38300321889 of fcf01d9c passed, #37 closed 2026-10-12T23:44:28Z; [detail](#m54---version-text-from-the-build-commit-and-day) |
 | Interface console | M56 | Menu by task and console pages | Milestone | Complete | No | D38, D39, D41, D42 | The menu reads Archive PVs, Browse PVs, System, Help and Analyzer, each entry opens its page and marks the page in view, and the old addresses forward outside it; the external Archiver Appliance servers sit under System without the Channel Archiver parts; System explanations open on demand; text sizes follow the browser, 14 px at the least; Help opens the console help page with a link to the book; [detail](#m56---menu-by-task-and-console-pages) |
 | Interface console | M57 | Archive PVs page | Milestone | Complete | No | M56, D38 | Adding PVs has a visible entry apart from Find, takes a pasted list with a result per name and offers nothing for a half-typed name; each Scan row and the bulk actions carry the actions of the PV's state, including the cancel of a pending request; [detail](#m57---archive-pvs-page) |
-| Interface analyzer | M58 | Browse PVs page and the analyzer | Milestone | Not started | Yes | M56, D38, D40 | Find explains its search modes on demand and Browse PVs shows a table of the chosen PVs, one chart of up to five of them and a Details window for each; the analyzer is the viewer shown in a frame of a console page under the site header and menu, opens from the menu and from Browse PVs, and has its own window; [detail](#m58---browse-pvs-page-and-the-analyzer) |
-| Interface analyzer | M59 | One chart component with drawing options and pointer controls | Milestone | Not started | Yes | M56, D40 | The analyzer carries the drawing options, the analysis plots and tools, and the D3 pointer behaviors through one chart component, which the other pages use in a simple form (Y projection with its statistics, line and scale options, one axis per unit) with a control into the analyzer; [detail](#m59---one-chart-component-with-drawing-options-and-pointer-controls) |
+| Interface analyzer | M58 | Browse PVs page | Milestone | Not started | No | M56, D38, D40, M59 | Find explains its search modes on demand and Browse PVs shows a table of the chosen PVs with the actions of each in its row, one chart of up to five of them and a Details window for each, and a control that opens the analyzer; [detail](#m58---browse-pvs-page) |
+| Interface analyzer | M59 | One chart component and its simple form | Milestone | In progress | No | M56, D40 | The pages that plot draw through one chart component in a simple form (one axis per unit split between the sides, a legend, a tooltip with the date and time, ranges chosen with the mouse, the Y projection with its statistics, Chart options, an enlarged window) with a control into the analyzer; [detail](#m59---one-chart-component-and-its-simple-form) |
+| Interface analyzer | M62 | Analyzer page, drawing options and address | Milestone | Not started | No | M59, M58, D38, D40 | The analyzer is the viewer inside a console page under the site header and menu, carries every drawing option and gesture of the component, and reads from its address the PVs, the time window and the options of the page that opened it; [detail](#m62---analyzer-page-drawing-options-and-address) |
+| Interface analyzer | M63 | Analysis of numeric signals in the analyzer | Milestone | Not started | No | M62, D40 | The analyzer summarises, fits, correlates, compares and tests one or several numeric signals (statistics, distribution, trend, fit, correlation, dependency, FFT), computed by the page where the D3 bundle has no function; [detail](#m63---analysis-of-numeric-signals-in-the-analyzer) |
+| Interface analyzer | M64 | Waveform and image analysis in the analyzer | Milestone | Not started | No | M63, M62, D40 | The analyzer draws an array at a time, over time and as a heatmap, computes its summary values and spectrum, and analyses an image by region, projections, centroid and size; [detail](#m64---waveform-and-image-analysis-in-the-analyzer) |
 | Interface console | M60 | Name check on the network and hold of a pending request | Milestone | Not started | Yes | M57 | The appliance reports whether a complete PV name answers on the network before it is archived, and a pending archive request can be paused and held as well as cancelled; [detail](#m60---name-check-on-the-network-and-hold-of-a-pending-request) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
@@ -4848,7 +4851,7 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | 2026-10-12 | Repository and local appliance | Pass | No page names Home, Reports, Metrics, Storage or Appliances pages, Check Status, the Details column or the PV Details page; the actions per state match the Detail section of the running Work page |
+| T1 | 2026-10-12 | Repository and local appliance | Pass | No page names Home, Reports, Metrics, Storage or Appliances pages, Check Status, the Details column or the PV Details page; the actions per state match the Detail section of the running Browse PVs page |
 | T2 | 2026-10-12 12:22 local | Local appliance of the final working tree | Pass | Ten figures with the new logo; the System overview shows `Archiver Appliance Version 84ae8a83, built 2026-10-12` and archiving normally |
 | T3 | 2026-10-12 | mdBook 0.4.48 local; GitHub Actions | Pass | 0 broken links, images or anchors; Pages run 38300321856 of fcf01d9c (which carries 75fc3088) published the book |
 
@@ -4944,13 +4947,13 @@ Status: Complete
 
 ##### Summary
 
-A first use of the management interface of M47 at fcf01d9c, on a local appliance with the soft IOC of the book figures, found the menu out of step with the pages. Home and Reports open the same Work page in the same state: `reports.html` forwards to `index.html` (`js/forward.js`), and the reports are the **Show** list of the Find panel, which the entry neither selects nor opens. Metrics, Storage and Appliances all open the System tabs (`metrics.html` to `operations.html`, `storage.html` to `operations.html#stores`, `appliance.html` to `system.html`). No entry shows where the user is: `main.css` styles `ul.mainmenu li a.active`, no code sets it, and the entries point at forwarding pages that never match the page in view; only the System tabs mark the current tab. The System pages read as a report: headings phrased as questions, a paragraph under each, and a "What it means" column with one or two sentences on each of the nine Overview rows (`meaning` in `js/system.js`), which widens the table and makes it scroll sideways on a phone. The page stylesheets set most text in fixed pixels below the 15 px body: 12 to 13 px in `workspace.css`, `system.css`, `integration.css` and `viewer.css`, 11 to 12 px for the chart axes and tooltip in `chart.css`; fixed pixels also ignore the browser's font size. Help opens `api/index.html`, the generated mgmt API reference (92 calls), and no console page links to the operator pages of the book. The Integration page has two Channel Archiver sections and an external data server section with the types `CA_XMLRPC` and `ARCHAPPL_PBRAW`. A full integration run on 2026-10-12 (110 tests, 2 h 36 min, Tomcat 9.0.121, softIocPVX 7.0.10) failed four: `MgmtPageLinksTest`, since the forwarding pages of M47 carry no Help link; `IPApplianceXMLTest`, whose assert looks for the text `archstatpVNames` of the pre-M47 home page; and `LocalhostApplianceXMLTest` and `FQDNApplianceXMLTest`, which could not start their Tomcat because the Tomcat of the failed `IPApplianceXMLTest` was left running on ports 17665 and 16670: when a test fails after `TomcatSetup` has started Tomcat, nothing stops it.
+A first use of the management interface of M47 at fcf01d9c, on a local appliance with the soft IOC of the book figures, found the menu out of step with the pages. Home and Reports open the same Browse PVs page in the same state: `reports.html` forwards to `index.html` (`js/forward.js`), and the reports are the **Show** list of the Find panel, which the entry neither selects nor opens. Metrics, Storage and Appliances all open the System tabs (`metrics.html` to `operations.html`, `storage.html` to `operations.html#stores`, `appliance.html` to `system.html`). No entry shows where the user is: `main.css` styles `ul.mainmenu li a.active`, no code sets it, and the entries point at forwarding pages that never match the page in view; only the System tabs mark the current tab. The System pages read as a report: headings phrased as questions, a paragraph under each, and a "What it means" column with one or two sentences on each of the nine Overview rows (`meaning` in `js/system.js`), which widens the table and makes it scroll sideways on a phone. The page stylesheets set most text in fixed pixels below the 15 px body: 12 to 13 px in `browse.css`, `system.css`, `integration.css` and `viewer.css`, 11 to 12 px for the chart axes and tooltip in `chart.css`; fixed pixels also ignore the browser's font size. Help opens `api/index.html`, the generated mgmt API reference (92 calls), and no console page links to the operator pages of the book. The Integration page has two Channel Archiver sections and an external data server section with the types `CA_XMLRPC` and `ARCHAPPL_PBRAW`. A full integration run on 2026-10-12 (110 tests, 2 h 36 min, Tomcat 9.0.121, softIocPVX 7.0.10) failed four: `MgmtPageLinksTest`, since the forwarding pages of M47 carry no Help link; `IPApplianceXMLTest`, whose assert looks for the text `archstatpVNames` of the pre-M47 home page; and `LocalhostApplianceXMLTest` and `FQDNApplianceXMLTest`, which could not start their Tomcat because the Tomcat of the failed `IPApplianceXMLTest` was left running on ports 17665 and 16670: when a test fails after `TomcatSetup` has started Tomcat, nothing stops it.
 
 ##### Scope
 
 The menu and page frame of D38, the Integration change of D39, and the console rule of D38 on the System pages, with the book pages and tests that describe them.
 
-- Menu entries Archive PVs, Browse PVs, System, Help and Analyzer, each opening its page and marking the page in view; Archive PVs and Browse PVs open the Work page and Analyzer opens the viewer of M47 until M57 and M58 give them their own pages.
+- Menu entries Archive PVs, Browse PVs, System, Help and Analyzer, each opening its page and marking the page in view; Archive PVs and Browse PVs open `index.html` and Analyzer opens the viewer of M47 until M57 and M58 give them their own pages.
 - The old addresses forward outside the menu, the Reports address with the Show list open.
 - System: the explanations behind an information control (an `i` button) opened by a click (also on touch screens), state first; the external Archiver Appliance servers under System; the Channel Archiver sections and the `CA_XMLRPC` type removed from the interface.
 - A System view drawn with D3: a treemap (`d3-hierarchy`) of the stored data and the event rate by PV name prefix in the Stores section of Operations. The stacked areas of the event rate and the stored data over time are in M61.
@@ -5002,8 +5005,8 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | 2026-10-12 (menu part) | Local appliance of the working tree over b4466411, Firefox headless through Marionette | Pass | At 1100, 720, 360 and 320 px on the five menu pages: no sideways scroll; the current entry marked (Archive PVs on the Work page, System on its three tabs, none on Integration) with `aria-current`, the mark inside its box; at 720 px and below the list folds behind the Menu button, a touch tap opens and closes it with `aria-expanded` following, the five entries show in one column at 44 px, choosing one folds it; Tab reaches the toggle first with a focus outline on the button and Space opens and closes; the toggle has role checkbox named Menu; `analyzer.html` reaches the retrieval viewer. The widths below 500 px were measured inside frames of the exact width, since the headless window stops at 500 px: at 720, 360 and 320 px on the five pages the header shows `archiverheader.svg` (and `wordmark.svg` at 320 px) beside `sitelogo.svg` on one line, at 30 and 30 px, then 30 and 24 px, inside the frame with no sideways scroll, and the menu folded (120 checks). The `tests` site build merges its `site_header` into the left slot and its `site_logo` into the right slot of the frame. On 2026-10-13 at the appliance of the working tree: the Overview has no meaning column or standing sentence, a button for each of the nine measures opens a card (meaning, where to act, help link) by click and by Enter, Escape and a click outside close it and return focus, the card survives the 20 s refresh, and it stays inside the page at 1280, 720 and 320 px with a 32 px tap area; no rendered text is below 14 px on the five pages, the help page and the viewer; the help page keeps the five-entry menu with Help marked. The External servers tab of System (`external.html`, `js/external.js`) replaces the Integration page: the tab is linked from the other System pages and the menu marks System; `integration.html` and `cacompare.html` forward to it; on a running appliance a refused address shows its reason and adds nothing, this appliance's own retrieval address is added with the index `pbraw`, listed, and removed through its confirmation (the shipped `addExternalArchiverServer`, `addExternalArchiverServerArchives` and `removeExternalArchiverServer` calls); the page fits at 320 px. The Channel Archiver upload, the comparison and the `CA_XMLRPC` type are out of the interface and the calls are untouched; `UploadChannelArchiverConfigAction` still redirects to `integration.html?message=...`, which now forwards without the message. On Operations the introduction and the question-and-answer lists are gone; six `i` buttons (Samples, Disconnected PVs by host, Samples lost, Write path, Stores, Processes) open cards that hold the former text as rows (when to take notice, when it is a problem, what to do), each with a help link, regular-weight text and a width inside the page at 1280, 720 and 320 px with no sideways scroll (`ops_test.py`, 53 checks); the section names and anchors the Overview links use are unchanged. On Retrieval performance the introduction, the question-and-answer lists and the explanation paragraphs are gone; three `i` buttons (Measure from this browser, What the server says, Data available for a PV) open cards with the former text as rows, the measurement and the look-up still answer, and the page and its cards fit at 1280, 720 and 320 px (`retrieval_test.py`); the unused `.qa` styles are removed. On a narrow screen Escape folds the open menu and leaves the focus on its toggle (`menu_test.py` at 720, 360 and 320 px); a refused external server address ends with the form of a valid one (the `data_retrieval_url` of the other cluster: its host and port, then `/retrieval`), observed for a data endpoint address and an unreachable address on the shipped `addExternalArchiverServer` call. On Operations the table of largest users of storage is a D3 treemap of the stored data or the event rate by name prefix (`js/system/treemap.js`, d3-hierarchy of the bundled D3 7.9.0): on a local appliance with 19 archived PVs the prefixes, the PV count and the total equal those of `getPVsByStorageConsumed` and `getEventRateReport` read with `limit=100000`, the basis switches, a prefix link opens Work with the prefix in its search by click and by keyboard, and the chart fits at 1280, 720 and 320 px (`treemap_test.py`). The reports list 100 PVs per appliance without a limit, and the storage report fills five minutes after a PV is first archived (the ETL syncs its PV list every five minutes). The stacked areas have no data on the appliance (it keeps no history of the event rate or the stored data by store) and moved to M61 by the decision of 2026-10-13; the main menu is a `nav` region named Main menu and each of the six dialogs is named by its heading (`aria-labelledby`), after the review of the interface with Orca 48.1 by the environment session; Firefox's accessibility tree reports role navigation named Main menu on the six pages and role dialog named by its heading for the add dialog (`a11y_test.py`), and the static checks refuse a page without either (333 checks). Orca does not speak aria-current for the current entry; that is the reader's behavior and is left as it is. The book figures were retaken from a local appliance with the fixture soft IOC (20 archived PVs, the working tree over cce58b42): work page, maintenance actions, archive dialog, System overview, Operations, Retrieval performance, viewer and the disconnected report; the unreferenced `integration.png` and `work-detail.png` are removed. The first retake of the disconnected report showed the PV names of the Find list cut to six characters, because the last event time in a row took about 200 px at the 14 px size; a date-time of a report now shows as the time of day (today), the day and minute (this year) or the day and year, with the full time as its title, and the names of up to 20 characters show whole in the Recent and Disconnected reports (`report_time_test.py`). The end-of-line labels of the time series chart were cut at the edge of the drawing when a name and its value were wider than the fixed 170 px (`SR:BEAM:CURRENT  452.3` on the viewer; at 360 px the name itself): the chart now measures its labels and sizes the right margin from the widest one, within 45 % of its width, and the viewer gives its charts the largest room so their time axes line up. `chart_labels_test.py` reads the right edge of every label on the viewer and the Work page at 1280 px and the viewer at 360 px; it fails on the earlier `chart.js` (1260 of 1248, and 380 of 324 at 360 px) and passes on the new one |
-| T2 | 2026-10-13 00:05 UTC | JDK 21, Tomcat 9.0.121 | Pass | `MgmtPageLinksTest` 1 pass on the WARs packaged on the same UTC day (the setup names the WARs by the build day, so a run after midnight UTC needs a fresh package); on 2026-10-13 after the cleanup change: `IPApplianceXMLTest`, `LocalhostApplianceXMLTest` and `FQDNApplianceXMLTest` pass, each checking the Work page of the shipped console (`<main class="work">`) in place of the removed `archstatpVNames` and stopping its Tomcat in `@AfterEach`; `TomcatSetupTest` passes with a new case in which the next setup stops a Tomcat that an earlier test left running (the two start on the same ports); a throwaway test that failed after Tomcat started, run through the integration profile, left no Tomcat process and port 17665 free after the JVM ended (a shutdown hook of `TomcatSetup` stops what is still running) |
+| T1 | 2026-10-12 (menu part) | Local appliance of the working tree over b4466411, Firefox headless through Marionette | Pass | At 1100, 720, 360 and 320 px on the five menu pages: no sideways scroll; the current entry marked (Archive PVs on `index.html`, System on its three tabs, none on Integration) with `aria-current`, the mark inside its box; at 720 px and below the list folds behind the Menu button, a touch tap opens and closes it with `aria-expanded` following, the five entries show in one column at 44 px, choosing one folds it; Tab reaches the toggle first with a focus outline on the button and Space opens and closes; the toggle has role checkbox named Menu; `analyzer.html` reaches the retrieval viewer. The widths below 500 px were measured inside frames of the exact width, since the headless window stops at 500 px: at 720, 360 and 320 px on the five pages the header shows `archiverheader.svg` (and `wordmark.svg` at 320 px) beside `sitelogo.svg` on one line, at 30 and 30 px, then 30 and 24 px, inside the frame with no sideways scroll, and the menu folded (120 checks). The `tests` site build merges its `site_header` into the left slot and its `site_logo` into the right slot of the frame. On 2026-10-13 at the appliance of the working tree: the Overview has no meaning column or standing sentence, a button for each of the nine measures opens a card (meaning, where to act, help link) by click and by Enter, Escape and a click outside close it and return focus, the card survives the 20 s refresh, and it stays inside the page at 1280, 720 and 320 px with a 32 px tap area; no rendered text is below 14 px on the five pages, the help page and the viewer; the help page keeps the five-entry menu with Help marked. The External servers tab of System (`external.html`, `js/external.js`) replaces the Integration page: the tab is linked from the other System pages and the menu marks System; `integration.html` and `cacompare.html` forward to it; on a running appliance a refused address shows its reason and adds nothing, this appliance's own retrieval address is added with the index `pbraw`, listed, and removed through its confirmation (the shipped `addExternalArchiverServer`, `addExternalArchiverServerArchives` and `removeExternalArchiverServer` calls); the page fits at 320 px. The Channel Archiver upload, the comparison and the `CA_XMLRPC` type are out of the interface and the calls are untouched; `UploadChannelArchiverConfigAction` still redirects to `integration.html?message=...`, which now forwards without the message. On Operations the introduction and the question-and-answer lists are gone; six `i` buttons (Samples, Disconnected PVs by host, Samples lost, Write path, Stores, Processes) open cards that hold the former text as rows (when to take notice, when it is a problem, what to do), each with a help link, regular-weight text and a width inside the page at 1280, 720 and 320 px with no sideways scroll (`ops_test.py`, 53 checks); the section names and anchors the Overview links use are unchanged. On Retrieval performance the introduction, the question-and-answer lists and the explanation paragraphs are gone; three `i` buttons (Measure from this browser, What the server says, Data available for a PV) open cards with the former text as rows, the measurement and the look-up still answer, and the page and its cards fit at 1280, 720 and 320 px (`retrieval_test.py`); the unused `.qa` styles are removed. On a narrow screen Escape folds the open menu and leaves the focus on its toggle (`menu_test.py` at 720, 360 and 320 px); a refused external server address ends with the form of a valid one (the `data_retrieval_url` of the other cluster: its host and port, then `/retrieval`), observed for a data endpoint address and an unreachable address on the shipped `addExternalArchiverServer` call. On Operations the table of largest users of storage is a D3 treemap of the stored data or the event rate by name prefix (`js/system/treemap.js`, d3-hierarchy of the bundled D3 7.9.0): on a local appliance with 19 archived PVs the prefixes, the PV count and the total equal those of `getPVsByStorageConsumed` and `getEventRateReport` read with `limit=100000`, the basis switches, a prefix link opens Browse PVs with the prefix in its search by click and by keyboard, and the chart fits at 1280, 720 and 320 px (`treemap_test.py`). The reports list 100 PVs per appliance without a limit, and the storage report fills five minutes after a PV is first archived (the ETL syncs its PV list every five minutes). The stacked areas have no data on the appliance (it keeps no history of the event rate or the stored data by store) and moved to M61 by the decision of 2026-10-13; the main menu is a `nav` region named Main menu and each of the six dialogs is named by its heading (`aria-labelledby`), after the review of the interface with Orca 48.1 by the environment session; Firefox's accessibility tree reports role navigation named Main menu on the six pages and role dialog named by its heading for the add dialog (`a11y_test.py`), and the static checks refuse a page without either (333 checks). Orca does not speak aria-current for the current entry; that is the reader's behavior and is left as it is. The book figures were retaken from a local appliance with the fixture soft IOC (20 archived PVs, the working tree over cce58b42): Browse PVs page, maintenance actions, archive dialog, System overview, Operations, Retrieval performance, viewer and the disconnected report; the unreferenced `integration.png` and `work-detail.png` are removed. The first retake of the disconnected report showed the PV names of the Find list cut to six characters, because the last event time in a row took about 200 px at the 14 px size; a date-time of a report now shows as the time of day (today), the day and minute (this year) or the day and year, with the full time as its title, and the names of up to 20 characters show whole in the Recent and Disconnected reports (`report_time_test.py`). The end-of-line labels of the time series chart were cut at the edge of the drawing when a name and its value were wider than the fixed 170 px (`SR:BEAM:CURRENT  452.3` on the viewer; at 360 px the name itself): the chart now measures its labels and sizes the right margin from the widest one, within 45 % of its width, and the viewer gives its charts the largest room so their time axes line up. `chart_labels_test.py` reads the right edge of every label on the viewer and the Browse PVs page at 1280 px and the viewer at 360 px; it fails on the earlier `chart.js` (1260 of 1248, and 380 of 324 at 360 px) and passes on the new one |
+| T2 | 2026-10-13 00:05 UTC | JDK 21, Tomcat 9.0.121 | Pass | `MgmtPageLinksTest` 1 pass on the WARs packaged on the same UTC day (the setup names the WARs by the build day, so a run after midnight UTC needs a fresh package); on 2026-10-13 after the cleanup change: `IPApplianceXMLTest`, `LocalhostApplianceXMLTest` and `FQDNApplianceXMLTest` pass, each checking the Browse PVs page of the shipped console (`<main class="browse">`) in place of the removed `archstatpVNames` and stopping its Tomcat in `@AfterEach`; `TomcatSetupTest` passes with a new case in which the next setup stops a Tomcat that an earlier test left running (the two start on the same ports); a throwaway test that failed after Tomcat started, run through the integration profile, left no Tomcat process and port 17665 free after the JVM ended (a shutdown hook of `TomcatSetup` stops what is still running) |
 | T3 | 2026-10-13 08:41-08:53 PDT | JDK 21, wrapper Maven, working tree over cce58b42 | Pass | `./mvnw -o -B -ntp clean verify`: 964 tests, 0 failures, 0 errors, BUILD SUCCESS in 10 min 37 s. The Maven and Pages workflows of 807e95b4 (the commit that closes the item) passed |
 
 ##### Closure Evidence
@@ -5031,7 +5034,7 @@ Status: Complete
 
 ##### Summary
 
-The Work page joins adding PVs with finding archived PVs in one input. Find searches the names the appliance holds; adding registers a name on the control system network. The **Archive** offer appears in the result area only when Find matches no archived PV and the whole text is a valid PV name (`renderArchiveOffer` in `js/work.js`), so no visible entry names the task, and the offer follows a half-typed name: typing `SR:BEAM` on the way to `SR:BEAM:CURRENT` offers `Archive SR:BEAM…`, and selecting it files a request for a name that does not exist, which stays in Initial sampling. Its trailing `…` reads as a cut-off name. A list of names pasted into Find (`<input id="q" type="search">`) is joined into one line, and the dialog takes one name (`openArchiveDialog([text])`) although the dialog code, `api.archivePVs` and the `archivePV` POST take a list; the dialog does not read the answer ("Archive request submitted", "Already submitted") and shows only a failed request. Stopping a PV in Initial sampling through the bulk actions pauses and then calls `deletePV`, whose `deleteSinglePV` answers HTTP 400 for a PV without a `PVTypeInfo`, and the page shows only "the server could not complete the request (HTTP 400)" (from reading the code). The only cancel of a pending request, **Abort the request** (`abortArchivingPV`), is in the Detail area at the bottom of the page for the first selected PV; the bulk actions under Scan have none.
+The Browse PVs page joins adding PVs with finding archived PVs in one input. Find searches the names the appliance holds; adding registers a name on the control system network. The **Archive** offer appears in the result area only when Find matches no archived PV and the whole text is a valid PV name (`renderArchiveOffer` in `js/browse.js`), so no visible entry names the task, and the offer follows a half-typed name: typing `SR:BEAM` on the way to `SR:BEAM:CURRENT` offers `Archive SR:BEAM…`, and selecting it files a request for a name that does not exist, which stays in Initial sampling. Its trailing `…` reads as a cut-off name. A list of names pasted into Find (`<input id="q" type="search">`) is joined into one line, and the dialog takes one name (`openArchiveDialog([text])`) although the dialog code, `api.archivePVs` and the `archivePV` POST take a list; the dialog does not read the answer ("Archive request submitted", "Already submitted") and shows only a failed request. Stopping a PV in Initial sampling through the bulk actions pauses and then calls `deletePV`, whose `deleteSinglePV` answers HTTP 400 for a PV without a `PVTypeInfo`, and the page shows only "the server could not complete the request (HTTP 400)" (from reading the code). The only cancel of a pending request, **Abort the request** (`abortArchivingPV`), is in the Detail area at the bottom of the page for the first selected PV; the bulk actions under Scan have none.
 
 ##### Scope
 
@@ -5069,7 +5072,7 @@ Implementation Authorization: 2026-10-13, the owner directed the implementation 
 Superseded Plan Artifacts: none
 
 1. Settled with the owner on 2026-10-13 (the Decision Date lines above).
-2. The page: `archive.html` with `js/archive.js` and its styles in the page frame of M56; the menu entry Archive PVs opens it and marks it, Browse PVs keeps the Work page, and the old Work page offer "Archive <name>…" becomes a link to the new page that carries the typed name. The page posts the names to `archivePV` as a list with the choice, shows the answer of each name, and reads the state of each requested PV with `getPVStatus`; a pending request is cancelled with `abortArchivingPV`; a pause, resume or stop uses the calls of the Work page, and a stop on a pending PV cancels it and says so.
+2. The page: `archive.html` with `js/archive.js` and its styles in the page frame of M56; the menu entry Archive PVs opens it and marks it, Browse PVs keeps `index.html`, and its old offer "Archive <name>…" becomes a link to the new page that carries the typed name. The page posts the names to `archivePV` as a list with the choice, shows the answer of each name, and reads the state of each requested PV with `getPVStatus`; a pending request is cancelled with `abortArchivingPV`; a pause, resume or stop uses the calls of the Browse PVs page, and a stop on a pending PV cancels it and says so.
 3. Tests and documents: the element ids of the page in the static checks; a browser test on a local appliance with the soft IOC fixture for the criteria; `MgmtPageLinksTest` for the new page and entry; `operating.md`, `interface.md`, `help.html` and the book figure of the page. Closes with T1 and T2.
 
 ##### Test Plan
@@ -5083,7 +5086,7 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | 2026-10-13 23:18-23:25 PDT | Local appliance of the working tree over f939e2da with the soft IOC fixture, Firefox headless through Marionette | Pass | On `archive.html`: a name carried in the address fills the input; a pasted list of six names (one already requested, one nobody serves, one not a valid name) is requested in one `archivePV` call and each name answers ("Archive request submitted", "Already submitted", "Not a valid PV name" without a request); the states follow to Being archived and the row shows the policy the appliance chose (read from `getPVTypeInfo`); the name nobody serves stays in Initial sampling and `Cancel request` leaves it Not being archived, read back from `getPVStatus`; Pause, Resume and Stop archiving… from a row are read back as Paused, Being archived and Not being archived; a chosen Scan at 0.5 s reaches the settings of the PV (`getPVTypeInfo`: SCAN, 0.5) and a period below the minimum disables Archive; the bulk Pause and Resume act on two PVs; a bulk stop that includes a pending request stops the archived PV and cancels the pending one and says so; `Cancel requests` is last of the bulk actions and cancels a selected pending request; no sideways scroll at 720 and 320 px; text at least 14 px. The link of the Find panel of the Work page reads the same whatever is typed and carries one complete name or nothing; the menu marks Archive PVs on the new page and Browse PVs on the Work page (`archive_test.py`, `work_link_test.py`) |
+| T1 | 2026-10-13 23:18-23:25 PDT | Local appliance of the working tree over f939e2da with the soft IOC fixture, Firefox headless through Marionette | Pass | On `archive.html`: a name carried in the address fills the input; a pasted list of six names (one already requested, one nobody serves, one not a valid name) is requested in one `archivePV` call and each name answers ("Archive request submitted", "Already submitted", "Not a valid PV name" without a request); the states follow to Being archived and the row shows the policy the appliance chose (read from `getPVTypeInfo`); the name nobody serves stays in Initial sampling and `Cancel request` leaves it Not being archived, read back from `getPVStatus`; Pause, Resume and Stop archiving… from a row are read back as Paused, Being archived and Not being archived; a chosen Scan at 0.5 s reaches the settings of the PV (`getPVTypeInfo`: SCAN, 0.5) and a period below the minimum disables Archive; the bulk Pause and Resume act on two PVs; a bulk stop that includes a pending request stops the archived PV and cancels the pending one and says so; `Cancel requests` is last of the bulk actions and cancels a selected pending request; no sideways scroll at 720 and 320 px; text at least 14 px. The link of the Find panel of the Browse PVs page reads the same whatever is typed and carries one complete name or nothing; the menu marks Archive PVs on the new page and Browse PVs on its own page (`archive_test.py`, `work_link_test.py`) |
 | T2 | 2026-10-13 23:35-23:46 PDT; workflows read 2026-10-14 01:41 PDT | JDK 21, wrapper Maven, working tree over f939e2da; GitHub Actions | Pass | `./mvnw -o -B -ntp clean verify`: 964 tests, 0 failures, 0 errors, BUILD SUCCESS in 10 min 15 s; the static checks (365) and `MgmtPageLinksTest`, which now lists `archive.html` as a menu page and requires the two entries Archive PVs and Browse PVs to open different pages, pass. The Maven workflow (18 min 23 s) and the Pages workflow of 8ad888b4 on `modernize` both completed with success (`gh run list`) |
 
 ##### Closure Evidence
@@ -5102,7 +5105,7 @@ Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-12; `gh issue view 38` shows the drafted body, open, assignee jeonghanlee
 
-#### M58 - Browse PVs page and the analyzer
+#### M58 - Browse PVs page
 
 Origin: daff1b7 / M58
 Identity History: none
@@ -5111,27 +5114,24 @@ Status: Not started
 
 ##### Summary
 
-The hint above Find reads "Words in any order, case ignored" in every mode; Glob (the whole name, `*` and `?`) and Regex (any part of the name, `^` and `$` to anchor) have no explanation on the page. The data viewer of M47 (`retrieval/staticcontent/viewer/archViewer.html`, served by the retrieval web application on another port) has no menu entry; it opens only from the Work page's links, in the same browser tab, and has no link back to the console. It is the earlier viewer restyled: no site header, logo or menu, one bar with the title "Archived data", the PV input, the time range buttons and the From/To form, then one chart per unit with Copy link and Download CSV, while the Work page shows more for the same data (distribution, scatter plot, statistics). Its "Add a PV" input and **Add** button plot an archived PV; with the word used for archiving a PV, they can be taken for starting archiving.
+The hint above Find reads "Words in any order, case ignored" in every mode; Glob (the whole name, `*` and `?`) and Regex (any part of the name, `^` and `$` to anchor) have no explanation on the page. The data viewer of M47 (`retrieval/staticcontent/viewer/archViewer.html`, served by the retrieval web application on another port) has no menu entry; it opens only from the Browse PVs page's links, in the same browser tab, and has no link back to the console. It is the earlier viewer restyled: no site header, logo or menu, one bar with the title "Archived data", the PV input, the time range buttons and the From/To form, then one chart per unit with Copy link and Download CSV, while the Browse PVs page shows more for the same data (distribution, scatter plot, statistics). Its "Add a PV" input and **Add** button plot an archived PV; with the word used for archiving a PV, they can be taken for starting archiving.
 
 ##### Scope
 
-The Browse PVs page and the analyzer of D38 and D40; the analyzer is the viewer shown inside a console page, and the viewer keeps its own address for its own window.
+The Browse PVs page of D38 and D40; the analyzer it opens is M62, and the chart it draws is the simple form of M59.
 
 - The Browse PVs page, from the mockup the owner approved on 2026-10-14:
   - Find with an explanation of the three search modes that opens from an information button and closes with Esc, its Close button or a click outside, the focus returning to the button.
   - A PV ticked in the list adds a row to the table of PVs; the Plot box of a row draws that PV in the chart above the table, at most 5 at a time, the other boxes disabled with the reason shown at 5.
   - Table columns: Plot, PV, Protocol (CA or PVA), State (a mark with the number of lost events when it is above zero), Value (aligned on the decimal point, with its unit), Last event (date and time), Actions and a Details button.
-  - Actions in the row, by the state of the PV: Pause (Resume when paused) and a More menu with Change sampling, Maintenance and Stop archiving for a PV that is archived or paused; Cancel request for a pending request; a link to the Archive PVs page for a PV that is not archived. Stop archiving and Maintenance open a window that states the consequence before they act (a stop pauses the PV, removes it from the archiver, and keeps the stored data unless the user also chooses to delete it; a change of type asks for a confirmation that a backup exists). The calls are those of the Work page today.
+  - Actions in the row, by the state of the PV: Pause (Resume when paused) and a More menu with Change sampling, Maintenance and Stop archiving for a PV that is archived or paused; Cancel request for a pending request; a link to the Archive PVs page for a PV that is not archived. Stop archiving and Maintenance open a window that states the consequence before they act (a stop pauses the PV, removes it from the archiver, and keeps the stored data unless the user also chooses to delete it; a change of type asks for a confirmation that a backup exists). The calls are those of the Browse PVs page today.
   - The Details window, in groups, from `getPVStatus`, `getPVTypeInfo` and `getPVDetails`: how it is stored (appliance, sampling, policy, event and storage rate, growth), amount, connection, lost events by cause, who reads it, the PV itself (data type, units, precision, display, control, warning and alarm limits, record type, archived fields, creation), and the moves between stores STS, MTS and LTS with the last and next run. A value a PVA PV does not provide reads "not provided" or "not set".
   - The chart in the simple form of M59: one Y axis per unit with its own automatic range, a drag along an axis choosing that axis's range, a drag over the plot choosing the time range, a double-click returning, the axes split between the left and the right of the plot (the first half on the left), a legend under the chart that names each PV with its line style and unit and whose items hide and show a line, a hover tooltip with the date and time and the value of each PV with its unit, a Y projection with its mean line and a table of basic statistics, and a Chart options panel for the line (step, straight, smooth, points only), the Y scale (linear, symmetric log, log, square root), sample marks, a running average and a standard deviation band over a window of samples; an Enlarge chart button opens the chart with its options in a large window.
   - The information card, the options panel, the Details window and the large chart window all close with Esc, their Close button and a click outside.
-  - Open in the analyzer: a link built from the plotted PVs (`pv`, repeated), the time window (`from`, `to` in ISO form, the parameters the viewer reads today) and the options chosen on the page (line, scale, per-axis ranges) as parameters the analyzer defines. The analyzer is served by the retrieval web application on another port, so the address is the only thing the two pages share.
-- The analyzer under its own menu entry: `analyzer.html` is a console page, with the site header, logo and menu, that holds the viewer of the retrieval web application in a frame as high as the window below the header; the viewer hides its own header bar when its address carries `embed=1`; a link on the page opens the same analyzer in its own window by the viewer's own address; a control on the console that opens it with the selected PVs. The content security policy of the console page gains `frame-src http: https:`, as `connect-src` already allows.
-- The site header and logo on the analyzer, and the plots and tools of M59 in it.
-- The analyzer's control for plotting an archived PV named for what it does, not with the word used for archiving a PV.
-- The book pages for finding and analyzing data.
+  - Open in the analyzer: a link to `analyzer.html` built from the plotted PVs (`pv`, repeated) and the time window (`from`, `to` in ISO form, the parameters the viewer reads today), and from the options chosen on the page (line, scale, per-axis ranges) as the parameters M62 gives the analyzer.
+- The book pages for finding PVs and the Browse PVs page.
 
-Out of scope: the chart component (M59); adding PVs (M57).
+Out of scope: the chart component (M59); the analyzer page, options and address (M62); adding PVs (M57).
 
 ##### Completion Criteria
 
@@ -5143,15 +5143,15 @@ Out of scope: the chart component (M59); adding PVs (M57).
 - A range chosen with the mouse on the plot and on an axis changes the view, the histogram and the statistics, and a double-click returns.
 - Esc, Close and a click outside close each window and card, and the focus returns to the control that opened it.
 - Open in the analyzer opens the analyzer with the plotted PVs and the time window of the chart.
-- The analyzer opens from its menu entry and from the Browse PVs page inside the console page, under the site header, logo and menu, and opens in its own window by the address of the viewer, which still works on its own.
-- No analyzer control uses the wording of archiving a PV.
 - The default suite passes and the book describes the pages as shipped.
 
 ##### Dependencies And Decisions
 
 - M56: the menu entry and page frame.
 - D38: console pages.
-- D40: the analyzer as a self-contained analysis tool built with the bundled D3; M59 provides its plots and tools.
+- D40: the analyzer as a self-contained analysis tool built with the bundled D3.
+- M59: the chart component and its simple form, which the page draws through.
+- M62: the analyzer the control opens; the page opens the analyzer as it is until M62 is done.
 - Decision Date 2026-10-14: the Browse PVs page is a table of the chosen PVs under one chart of at most 5, not a summary; a PV is chosen in the list, drawn by the Plot box of its row, and its less important facts are in the Details window; the owner approved the layout from a clickable mockup.
 - Decision Date 2026-10-14: the chart has one Y axis per unit with its own automatic range, the axes split between the left and the right of the plot, the first half on the left.
 - Decision Date 2026-10-14: a PV is named in a legend under the chart (line style, name, unit), not by labels at the line ends; a legend item hides and shows its line, the PV keeping its row and its Plot box.
@@ -5159,13 +5159,11 @@ Out of scope: the chart component (M59); adding PVs (M57).
 - Decision Date 2026-10-14: with five units the axes are split between the two sides of the plot, and the width left to the plot is not narrowed further; the large window of Enlarge chart is the way to a wider plot.
 - Decision Date 2026-10-14: the tooltip stays as it is, the time of the pointer and the value of each plotted PV with its unit, and does not name the time of the sample a held value comes from.
 - Decision Date 2026-10-14: Open in the analyzer passes the PVs, the time window and the options the user chose; an option left at its default is not passed and the analyzer applies its own default.
-- Decision Date 2026-10-14: the options pass as one named parameter per option in the query string of the analyzer's address (`?`, where the viewer reads `pv`, `from` and `to` today), so that an address can be read and edited by hand; M59 lists the names.
 - Decision Date 2026-10-14: a value of a PVA PV that the appliance does not hold is shown as not provided or not set, not as zero.
 - Decision Date 2026-10-14: the plotted PVs and the time window pass to the analyzer in its address, in the parameters the viewer reads today.
-- Decision Date 2026-10-14: the analyzer is shown inside a console page in a frame (the console's content security policy gains `frame-src`; the retrieval web application sets no frame-blocking header), so that the site header, logo and menu are not copied into the retrieval web application; the viewer keeps working on its own address for its own window. The frame is sized by CSS to the window below the header, without `postMessage`. The two origins share only the address.
 - Decision Date 2026-10-14: a PV ticked in the list gets its row with the Plot box off; the user turns it on.
-- Decision Date 2026-10-14: the actions on an archived PV (Pause, Resume, Change sampling, Stop archiving, Maintenance) and the cancel of a pending request are in the row of the PV, replacing the Scan list and the Detail area of the Work page; the owner approved the placement from the mockup.
-- Decision Date 2026-10-14: Open in the analyzer carries the options chosen on the page as well as the PVs and the time window, so that the analyzer shows the picture the user was looking at; M59 gives the analyzer the parameters to read them.
+- Decision Date 2026-10-14: the actions on an archived PV (Pause, Resume, Change sampling, Stop archiving, Maintenance) and the cancel of a pending request are in the row of the PV, replacing the Scan list and the Detail area of the Browse PVs page; the owner approved the placement from the mockup.
+- Decision Date 2026-10-14: Open in the analyzer carries the options chosen on the page as well as the PVs and the time window, so that the analyzer shows the picture the user was looking at; M62 gives the analyzer the parameters to read them.
 
 ##### Implementation Plan
 
@@ -5174,23 +5172,22 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Settled with the owner on 2026-10-14: the layout and content of the Browse PVs page and the form of the address (the Decision Date lines above). Still for the owner before acceptance: the order with M59: the chart of the page is the simple form of the M59 component, so M59 is built first and the page draws through it.
-2. Find and the table of PVs (`index.html`, `js/work.js`, `js/work/api.js`, `css/workspace.css`): the information button and card of the three search modes; a ticked PV adds a row, at most the 100 of today's scan list; the Plot box off by default and at most 5 on, the others disabled with the reason shown; the columns Plot, PV, Protocol, State, Value, Last event, Actions and Details; the actions of the row by the state of the PV with the calls of the Work page, the More menu closing with Esc and a click outside, and the window of Stop archiving and Maintenance; Value aligned on the decimal point with its unit; the lost-events mark in State, read with `getPVDetails` for each row; the element ids added to `scripts/ui-static-checks.bash`. Check: T1.
-3. The Details window (`js/work.js`): the groups of the Scope from `getPVStatus`, `getPVTypeInfo` and `getPVDetails`, with "not provided" or "not set" for what a PVA PV lacks; Esc, Close and a click outside close it and the focus returns to its button. Check: T2.
+1. Settled with the owner on 2026-10-14: the layout and content of the Browse PVs page and the form of the address (the Decision Date lines above). The order is settled: M59 is built first, because the chart of the page is the simple form of the M59 component, and then this page; M62 follows.
+2. Find and the table of PVs (`index.html`, `js/browse.js`, `js/browse/api.js`, `css/browse.css`): the information button and card of the three search modes; a ticked PV adds a row, at most the 100 of today's scan list; the Plot box off by default and at most 5 on, the others disabled with the reason shown; the columns Plot, PV, Protocol, State, Value, Last event, Actions and Details; the actions of the row by the state of the PV with the calls of the Browse PVs page, the More menu closing with Esc and a click outside, and the window of Stop archiving and Maintenance; Value aligned on the decimal point with its unit; the lost-events mark in State, read with `getPVDetails` for each row; the element ids added to `scripts/ui-static-checks.bash`. Check: T1.
+3. The Details window (`js/browse.js`): the groups of the Scope from `getPVStatus`, `getPVTypeInfo` and `getPVDetails`, with "not provided" or "not set" for what a PVA PV lacks; Esc, Close and a click outside close it and the focus returns to its button. Check: T2.
 4. The chart: the plotted PVs drawn through the simple form of the M59 component, with the legend, the tooltip, the axes by unit, the ranges chosen with the mouse and the Enlarge chart window; the Inspect panels (distribution, scatter plot, statistics) leave the page for the analyzer. Check: T3.
-5. The analyzer and the control into it (`analyzer.html`, `js/analyzer-forward.js`, `archViewer.html`, `viewer.js`, `index.html`): the menu entry opens `analyzer.html`, a console page that frames the viewer of the retrieval web application under the site header, logo and menu (the `frame-src` of its content security policy, the height of the frame by CSS, `embed=1` hiding the viewer's header bar, a link to its own window); Open in the analyzer builds the address of the frame from the plotted PVs, the time window and the chosen options (the names of M59); `js/analyzer-forward.js`, which forwards today, is removed. Check: T4.
-6. The book (`interface.md`, `operating.md`, the figures of the page and of the analyzer) and `MgmtPageLinksTest` for the pages and entries. Check: T5 and T6.
+5. The Open in the analyzer control (`index.html`, `js/browse.js`): the link built from the plotted PVs and the time window. Check: T1.
+6. The book (`interface.md`, `operating.md`, the figure of the page) and `MgmtPageLinksTest` for the page and entries. Check: T4 and T5.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Browser | On a local appliance, open the card of the search modes with its button and close it with Esc, Close and a click outside; tick eight PVs and see eight rows; turn Plot on for five and see the sixth refused with the reason; turn one off and another on; read Value for numbers of both signs; read the lost-events mark on a PV of the fixture that drops events, after `getPVDetails` has confirmed that its lost events are above zero; Pause, Resume, Change sampling and Stop archiving from a row and Cancel request of a pending name the IOC does not serve, each read back from `getPVStatus` and `getPVTypeInfo`; the More menu closes with Esc and a click outside | Local appliance, shipped soft IOC fixture | Each behavior of the Scope is observed with real clicks and keys, and every state change reads back from the appliance |
+| T1 | Browser | On a local appliance, open the card of the search modes with its button and close it with Esc, Close and a click outside; tick eight PVs and see eight rows; turn Plot on for five and see the sixth refused with the reason; turn one off and another on; read Value for numbers of both signs; press Open in the analyzer and read the address it opens (the plotted PVs and the time window); read the lost-events mark on a PV of the fixture that drops events, after `getPVDetails` has confirmed that its lost events are above zero; Pause, Resume, Change sampling and Stop archiving from a row and Cancel request of a pending name the IOC does not serve, each read back from `getPVStatus` and `getPVTypeInfo`; the More menu closes with Esc and a click outside | Local appliance, shipped soft IOC fixture | Each behavior of the Scope is observed with real clicks and keys, and every state change reads back from the appliance |
 | T2 | Browser | Open Details of a CA PV and of a PVA PV (a fixture record archived through `pva://`) and compare every value with `getPVStatus`, `getPVTypeInfo` and `getPVDetails` read for the same PV | Local appliance, soft IOC fixture served over CA and PVA (`softIocPVA`) | Every group is present for the CA PV; the PVA PV reads "not provided" for its units and "not set" for its limits; no value differs from the calls |
 | T3 | Browser | Plot five PVs of four units: read the axes and their sides, drag along an axis and over the plot, double-click, hide a line from the legend, hover for the tooltip, open Enlarge chart and return with Esc; look at the page at 720 and 320 px | Local appliance, shipped soft IOC fixture | One axis per unit with its own range; only the dragged axis or the time range changes; the legend hides and shows a line; the tooltip names the date and time and each value with its unit; no sideways scroll; text at least 14 px |
-| T4 | Browser | Choose a line shape, a scale and an axis range, press Open in the analyzer and read the frame; open the link to its own window; open the address of the viewer on its own; use the menu above the frame | Local appliance, shipped soft IOC fixture | The frame shows the same PVs, time window and options, under the console menu, with the viewer's header bar hidden; the own window and the viewer's address show the same picture; the menu above the frame reaches the other pages; no sideways scroll at 720 and 320 px |
-| T5 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids of the page, the menu, the forwards and the links pass |
-| T6 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+| T4 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids of the page, the menu, the forwards and the links pass |
+| T5 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
 
 ##### Verification Results
 
@@ -5199,9 +5196,8 @@ Superseded Plan Artifacts: none
 | T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
 | T2 | Not run | Local appliance, soft IOC fixture served over CA and PVA | Pending | none |
 | T3 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T4 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T5 | Not run | Local, JDK 21, Tomcat 9.0.121 | Pending | none |
-| T6 | Not run | JDK 21; GitHub Actions | Pending | none |
+| T4 | Not run | Local, JDK 21, Tomcat 9.0.121 | Pending | none |
+| T5 | Not run | JDK 21; GitHub Actions | Pending | none |
 
 ##### Closure Evidence
 
@@ -5217,70 +5213,38 @@ Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
 
-#### M59 - One chart component with drawing options and pointer controls
+#### M59 - One chart component and its simple form
 
 Origin: daff1b7 / M59
 Identity History: none
 GitHub Issue: #39 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/39)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
-The Work page and the viewer share the drawing function `drawTimeSeries` (`staticcontent/js/aa/chart.js`) but not its behavior. Its drawing choices are fixed: a step line (`d3.curveStepAfter`), a circle on each sample only while every PV has at most 200 samples in view (`MARKER_LIMIT`), a linear Y axis (`d3.scaleLinear`) with an automatic range, and, on the Work page, a bin of the span divided by 600 seconds, so a window of 10 minutes or less shows the stored samples. Pointer handling is written on pointer events: hover shows a crosshair and a tooltip, and dragging selects a window only where the page passes `onZoom`, which only `work.js` does. The bundled D3 7.9.0 (`d3.min.js`) carries `d3-zoom`, `d3-brush` and `d3-drag`, which are not used.
+The Browse PVs page and the viewer share the drawing function `drawTimeSeries` (`staticcontent/js/aa/chart.js`) but not its behavior. Its drawing choices are fixed: a step line (`d3.curveStepAfter`), a circle on each sample only while every PV has at most 200 samples in view (`MARKER_LIMIT`), a linear Y axis (`d3.scaleLinear`) with an automatic range, and, on the Browse PVs page, a bin of the span divided by 600 seconds, so a window of 10 minutes or less shows the stored samples. Pointer handling is written on pointer events: hover shows a crosshair and a tooltip, and dragging selects a window only where the page passes `onZoom`, which only `browse.js` does. The bundled D3 7.9.0 (`d3.min.js`) carries `d3-zoom`, `d3-brush` and `d3-drag`, which are not used.
 
 ##### Scope
 
-One chart component. The analyzer carries every option and analysis tool below. The other pages that plot (Archive PVs, Browse PVs, System) use the same component in a simple form (decision of 2026-10-14, from the Browse PVs mockup): the crosshair and tooltip on hover; a time range chosen by a drag over the plot and a value range by a drag along an axis, a double-click returning; one Y axis per unit, each with its own automatic range; the axes split between the two sides of the plot; a legend under the chart with the line style, name and unit of each PV, an item hiding and showing its line; a hover tooltip with the date and time and the value of each PV with its unit; the Y projection with its mean line and a table of basic statistics of the samples in view (samples, minimum, mean, median, maximum, standard deviation); a Chart options panel with the line (step, straight, smooth, points only), the Y scale (linear, symmetric log, log, square root, a scale that needs positive values falling back to symmetric log with the reason shown), sample marks, a running average and a standard deviation band over a window of samples; an Enlarge chart button that draws the chart again at the size of a large window; and a control that opens their PVs in the analyzer. No other option or analysis tool. In the analyzer, in addition:
+One chart component. The pages that plot (the Browse PVs page, which hosts the chart in its present form until M58 redesigns it, and the System pages Operations and Retrieval performance) use the same component in a simple form (decision of 2026-10-14, from the Browse PVs mockup): the crosshair and tooltip on hover; a time range chosen by a drag over the plot and a value range by a drag along an axis, a double-click returning; one Y axis per unit, each with its own automatic range; the axes split between the two sides of the plot; a legend under the chart with the line style, name and unit of each PV, an item hiding and showing its line; a hover tooltip with the date and time and the value of each PV with its unit; the Y projection with its mean line and a table of basic statistics of the samples in view (samples, minimum, mean, median, maximum, standard deviation); a Chart options panel with the line (step, straight, smooth, points only), the Y scale (linear, symmetric log, log, square root, a scale that needs positive values falling back to symmetric log with the reason shown), sample marks, a running average and a standard deviation band over a window of samples; an Enlarge chart button that draws the chart again at the size of a large window; and a control that opens their PVs in the analyzer. No other option or analysis tool; the options and gestures it omits are those of the analyzer (M62), which draws through the same component.
 
-- drawing options beside the plot: data points on, off or automatic; line as step, straight or points only; Y axis linear or log, automatic or fixed range; the averaging interval chosen, or raw samples forced;
-- a Y projection: when its option is on, a one-dimensional histogram of the values in view appears beside the plot and shares the plot's width, with its bins along the plot's Y scale, one per PV, following every zoom, pan and brush; the Distribution panel (`drawHistogram` in `staticcontent/js/aa/plots.js`) stays as an option of its own, apart from the Y projection;
-- a scatter plot of any two PVs, one on each axis, of the same or different units, with both axes labelled and its own size. Today's panel ("Two PVs against each other", `drawScatter`, Work page only) pairs only samples at exactly equal times, so raw samples of two records rarely pair, and it offers only a PV of the same unit at a fixed 150 px height with the X range alone on its axis. Samples pair by the value each PV holds at the other's sample times. The plot computes and shows the number of pairs, the correlation, and the linear regression (slope, intercept, R²) with its line drawn. Its options, beside it as for the time series: each axis linear or log, automatic or fixed range; the regression line shown or hidden; an X and a Y projection, one-dimensional histograms beside the axes; point size and transparency for dense data; points coloured by time, so a drift shows;
-- `d3-zoom`: wheel zoom, including trackpad pinch; drag to pan; double-click to zoom in and Shift+double-click to zoom out; pinch and pan on touch screens; limits on the zoom factor and the pannable range; a filter for the buttons and keys that start a gesture; zoom of the time axis, the Y axis (for example by dragging on the axis) or both;
-- `d3-brush`: a time window (`brushX`), a value range (`brushY`) and a rectangle on the scatter plot, with move, resize, Alt to centre, Shift to keep one axis, clear by a click outside, and a range set programmatically;
-- `d3-drag`: the direct labels at the line ends, two reference cursors with the difference of time and value between them, a legend;
-- pointer events: the crosshair and tooltip, a click on a series to bring it to the front or hide it, and a click on a sample to pin its values;
-- a double-click back to the original range and a step back to the previous range; a change of range reads the data again after the gesture ends, because the averaging interval follows the span;
-- a min-max band (`d3-shape` `area`) around the line when the data is averaged, read through the retrieval `min` and `max` post-processors with the mean, so a spike the mean hides shows;
-- the nearest sample to the pointer found with `d3-delaunay` or `d3-quadtree`, for the tooltip on plots with many points;
-- median and percentiles (`d3-array` `quantile`, `median`) in the statistics, and a box plot;
-- a heatmap of time against value (`d3-array` `bin` with `scaleSequential`) for long spans of fast PVs;
-- a density contour (`d3.contourDensity`) on the scatter plot for dense data;
-- time axis ticks on minute, hour and day boundaries (`d3-time`, `scaleTime`);
-- transitions on zoom and range changes (`d3-transition`);
-- CSV export through `d3-dsv`, replacing the viewer's own Download CSV code;
-- values in SI prefixes with matched significant digits (`d3-format`);
-- a split by unit: an option that draws one plot for each unit, one under another, sharing the time axis, the crosshair and the time range choice, each with its own value axis and range (the earlier viewer drew one chart per unit); the default is one plot with an axis per unit.
-
-Analysis by the kind of signal in the analyzer (decision of 2026-10-14: the tools are added by the kind of signal; the page decides the kind from `getPVTypeInfo`, the data type, the element count, the unit and the event rate, and the user chooses the purpose within it):
-
-- One numeric scalar: a summary (samples, minimum, maximum, mean, median, standard deviation, skewness, kurtosis, the errors of the mean and of the standard deviation, quantiles, lost events); the trend with zoom, two cursors and a min-max band; the distribution (histogram, box); the variation (running average, standard deviation band, rate of change); a slow trend (a linear fit against time); the limits (the display, warning and alarm limits of the PV as reference lines, and the time outside them); the pattern by hour and weekday (`rollup`) and a time-value heatmap for a long span; the periodicity (autocorrelation, spectrum by FFT); the values beyond k standard deviations.
-- Two numeric scalars: a scatter plot with each axis in its own unit; the correlation (Pearson, Spearman, and a cross-correlation over a time lag); a profile (the mean of Y with its error in each bin of X); a fit of Y against X with its parameters and their errors, the chi-square per degree of freedom, R², the covariance and correlation of the parameters, a confidence band and the residuals; pairs taken by the value each PV holds at the other's sample times, with the number of pairs and the number of samples of the slower PV shown; derived signals (difference, sum, ratio, one divided by the other); the two trends under one another sharing the time axis.
-- A comparison of two time ranges of one signal, or of two signals: the distributions drawn over one another and normalised, and the tests of whether they differ (chi-square, Kolmogorov-Smirnov, Anderson-Darling) with the difference of the means and of the spreads.
-- Several numeric scalars (three or more), the dependency among them: all the signals first averaged over one common interval so that the samples line up; the mutual information of each pair, which also shows a dependence that is not linear, and a ranking of the signals by how much each explains the chosen one; a correlation matrix drawn as a heatmap, ordered by clustering so that dependent signals sit together; a scatter plot matrix; the partial correlation of two signals with the others held fixed; a multiple linear regression of one chosen signal on the others, with each coefficient, its standardised size, R² and the residuals; a principal component analysis with the variance of each component and the loading of each signal on it; the lag at which each pair is most correlated, drawn as a graph of which signal leads which (`forceSimulation`, with the strength of a dependence as the thickness of the edge and a threshold chosen by the user).
-- One waveform (an array PV): the array at a time, X as the element number or from a companion axis PV; several times overlaid, and the time against the element number as a heatmap; summary values of each array (maximum and its position, minimum, mean, RMS, sum, centre, FWHM) and their time series; the difference from a reference time; the spectrum by FFT with the sampling frequency given by the user or a companion PV, a window function and the peak frequency; a peak search with the position, height and width of each peak, and a background estimated and subtracted.
-- An image (a waveform whose element count is width times height, the size given by the user or companion PVs): one frame as a heatmap on a canvas with a colour scale and iso-lines; a rectangle of interest chosen with the mouse; the X and Y projections; the centroid, the peak position, the total intensity and the size by a Gaussian fit in each direction; those values as time series; a background subtraction and the difference of two frames.
-- General functions of the analyzer, not tied to one kind of facility: a derived signal from an expression the user types (such as `(A-B)/C`; the content security policy forbids `eval`, so the page parses the expression itself); a threshold line with the time a signal spends beyond it; a change of unit; the export of a fit, a statistics table and a derived signal; and time scales from milliseconds to years in the axis ticks and the averaging interval. A fit may fix a parameter or bound it, and the Landau shape is among its models. The wording of the pages, the help and the book names a signal, its unit and a time range, and keeps an accelerator only as an example (a decay time constant, not a lifetime).
-- Fits (line, polynomial, exponential, power, logarithm, sine, Gaussian, Landau), correlations, the regression, the principal component analysis, the clustering and the FFT are computed by the page, with small matrix routines written for it; the bundled D3 has none of them. For a time series the FFT first resamples to an even interval, because the stored samples are not evenly spaced.
-- For the owner to confirm: the fit models; where the pair of a correlation is chosen (the two plotted PVs or X and Y chosen in the analyzer); the length, rate and X axis of the waveforms of the site; where the size of an image comes from; how many PVs the analyzer takes for the dependency analysis (the Browse PVs page plots five); whether a small library is vendored later for LOESS or a non-linear fit (D40 stays as it is until then); a typed formula as a user-defined fit function; the tools of the kinds that are not listed above (state or enumerated, string, fast, slowly changing).
-
-Out of scope: the page layouts (M57, M58); the retrieval server.
+Out of scope: the analyzer page, its drawing options, gestures and address (M62); the analysis tools (M63, M64); the page layouts (M57, M58); the retrieval server.
 
 ##### Completion Criteria
 
-- The analyzer draws through the component with every option, analysis tool and pointer behavior of the Scope; the other pages that plot draw through it in the simple form, with one axis per unit split between the two sides and a legend under the chart, and open their PVs in the analyzer.
-- Each option and behavior of the Scope is observed on archived fixture data, and a range change reads the data once after the gesture.
-- The control into the analyzer of a page with options set opens the analyzer with the same PVs, time window and options.
+- The Browse PVs page and the System pages Operations and Retrieval performance draw through the component in the simple form, with one axis per unit split between the two sides and a legend under the chart; the Browse PVs page no longer limits its chart to PVs of one unit and has a control that opens its PVs in the analyzer. The Browse PVs page of M58 draws through the component in the same way.
+- Each option and gesture of the simple form is observed on archived fixture data, and a range chosen by a drag issues one data request after the gesture.
 - The default suite passes and the book describes the controls.
 
 ##### Dependencies And Decisions
 
 - M56: the page frame the component sits in.
 - D40: the analyzer as a self-contained analysis tool built with the bundled D3.
+- The decisions below on the bundled D3, on the analyzer as a general signal analysis tool and on no external library bind M62, M63 and M64 as well.
 - Decision Date 2026-10-12: the Y projection is shown by an option beside the plot, sharing its width; the Distribution panel stays as a separate option.
-- Decision Date 2026-10-12: the analyzer is the one place for the detailed options and the analysis tools, including the Distribution panel, the scatter plot and the statistics that the Work page shows today; the other pages use the component in a simple form with the Y projection only and a control into the viewer. The simple form is widened by the decision of 2026-10-14 below.
+- Decision Date 2026-10-12: the analyzer is the one place for the detailed options and the analysis tools, including the Distribution panel, the scatter plot and the statistics that the Browse PVs page shows today; the other pages use the component in a simple form with the Y projection only and a control into the viewer. The simple form is widened by the decision of 2026-10-14 below.
 - Decision Date 2026-10-14: the simple form of the other pages carries the options listed in the Scope, from the Browse PVs mockup the owner approved; the Distribution panel, the scatter plot, the full statistics and the other analysis tools stay in the analyzer.
 - Decision Date 2026-10-14: a chart with PVs of several units draws one Y axis per unit, each with its own range; a PV with no unit shares one axis named no unit.
-- Decision Date 2026-10-14: the analyzer reads, from its address, the PVs, the time window and the options of the simple form (line, Y scale, sample marks, running average, standard deviation band and its window, the Y projection, and the range of each axis), so that the control into the analyzer of the other pages opens the same picture; an option the user did not set is not in the address and the analyzer applies its own default; each option is one named parameter in the query string, a name it does not know or a value it cannot read is ignored so that an address with `pv`, `from` and `to` alone opens as before, and the range of an axis is given by the unit of the axis (`none` for a PV with no unit); the names and form of the parameters are settled in this milestone.
 - Reference of 2026-10-14, read in the browser from the bundled D3 7.9.0 (`js/vendor/d3.min.js`, 578 public names); the component is built from these and the page computes the rest:
   - On a canvas: `d3.line`, `d3.area`, `d3.arc`, `d3.symbol` and `d3.geoPath` take `.context(ctx)`; `d3.contourDensity` gives density outlines, and `d3.Delaunay` and `d3.quadtree` find the point nearest the pointer. The axes (`d3.axis*`) draw SVG only, so a canvas plot draws its ticks from `d3.ticks` and `tickFormat`. Checked by drawing a line, finding a nearest point and drawing outlines on a canvas, and 20000 points drew in 8 ms.
   - Statistics (`d3-array`): `min`, `max`, `extent`, `sum`, `fsum`, `mean`, `median`, `mode`, `variance`, `deviation`, `quantile`, `rank`, `bin` with `thresholdFreedmanDiaconis`, `thresholdScott` and `thresholdSturges`, `bisect` and `bisector`, `group` and `rollup`, `cumsum`, and `blur` for smoothing.
@@ -5292,7 +5256,105 @@ Out of scope: the page layouts (M57, M58); the retrieval server.
 - Decision Date 2026-10-14: every tool of the component uses the implementation of the bundled D3 wherever the bundle has one, and the page writes only what the bundle lacks. The choices: `mean`, `median`, `variance`, `deviation`, `quantile`, `extent` and `fsum` for the statistics; `rank` for the Spearman correlation; `bin` with `thresholdFreedmanDiaconis` for histograms and the Y projection; `scaleDiverging` with `interpolateRdBu` and `scaleBand` for the correlation matrix; `hierarchy` and `cluster` to draw the dendrogram of the clustering; `forceSimulation`, `forceLink`, `forceManyBody` and `forceCenter` for the graph of dependence; `contourDensity` and `Delaunay` for dense scatter plots and the nearest point; `rollup`, `timeHour` and `timeDay` for the pattern by hour and weekday; `scaleTime`, `scaleUtc` and `timeTicks` for the time axis, `format` and `formatPrefix` for values; a canvas `ImageData` with `scaleSequential` and `interpolateViridis`, and `contours` for iso-lines, for an image; `zoom`, `brush`, `drag` and `transition` for the gestures. The page computes only the covariance, the regression and the fits, the principal component analysis (an eigen decomposition of a small matrix), the clustering, the FFT and the autocorrelation.
 - Decision Date 2026-10-14: the analyzer is a general signal analysis tool, not only a tool of accelerator operation; its analyses are those of a general analysis package, and the ROOT manual (histograms, fitting, mathematical libraries, TMVA; read on 2026-10-14) was the reference for the statistics, the profile, the comparison tests, the fit results, the peak search and the mutual information listed in the Scope.
 - Decision Date 2026-10-14: no external library is added (D40 stays); the least squares, the FFT, the eigen decomposition, the correlation and the tests are written for the page and checked on signals of known parameters.
-- Decision Date 2026-10-12: the correlation and the linear regression are computed by the page, as the correlation is today in `plots.js`; the bundled D3 has neither, and no regression package is added.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-14 (revised the same day, the owner directing the three corrections to be applied: the host of T1 is the Browse PVs page, the pages that move are the Browse PVs page and the two System pages, and the Browse PVs page lifts its limit of one unit): the owner accepted the plan of the chart component and its simple form, as split from the chart and analyzer work: the component in the simple form approved from the Browse PVs mockup (one axis per unit split between the sides, the legend, the tooltip with the date and time, ranges chosen with the mouse, the Y projection with its statistics, Chart options, the enlarged window), the build order and the tests T1 to T3
+Implementation Authorization: 2026-10-14, the owner directed the implementation of the accepted plan, in small steps that are tested on a local appliance and shown one by one; renewed the same day for the revised plan, which the owner approved and directed to be applied
+Superseded Plan Artifacts: none
+
+1. Settled with the owner on 2026-10-14 for the simple form: its options and gestures (a drag over the plot selects a time range, a drag along an axis selects that axis's range, a double-click returns).
+2. The component (`staticcontent/js/aa/chart.js`, `staticcontent/js/aa/plots.js`, `staticcontent/css/chart.css`), the simple form first because the Browse PVs page draws through it: one axis per unit with its own automatic range, split between the two sides with the first half on the left; the legend under the chart whose items hide and show a line; the tooltip with the date and time and each value with its unit; the ranges chosen with the mouse; the Y projection with its mean line and the table of basic statistics; the Chart options panel (line, Y scale, sample marks, running average, standard deviation band and its window); the Enlarge chart window that draws again at its size. Check: T1.
+3. The pages that draw today move onto the simple form: the Browse PVs page (`js/browse.js`) lifts its limit of one unit, passes the PVs of all units to the component and gets a control into the analyzer, and the System pages (`js/operations.js`, `js/retrieval.js`) use the new legend and tooltip; the Archive PVs page draws no chart and has nothing to move. The book describes the controls. Check: T2 and T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser | On a local appliance, exercise each option and gesture of the simple form on the Browse PVs page, which hosts the chart until M58 redesigns it, with PVs of different units and with the mouse, count the data requests of the browser after a drag that chooses a range, and repeat the options with a PV of no unit and with values that are not above zero for the log scale | Local appliance, shipped soft IOC fixture | Each option and gesture is observed; a chosen range issues one data request after the gesture; a scale that needs positive values falls back to symmetric log with the reason shown |
+| T2 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the pages that draw through the component pass |
+| T3 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T2 | Not run | Local, JDK 21, Tomcat 9.0.121 | Pending | none |
+| T3 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Analyzer for archived data
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
+
+#### M62 - Analyzer page, drawing options and address
+
+Origin: daff1b7 / M62
+Identity History: none
+GitHub Issue: #39 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/39)
+Status: Not started
+
+##### Summary
+
+The analyzer is the viewer of the retrieval web application (`archViewer.html`, `viewer.js`, `viewer.css`) with few drawing options and no analysis tool. Its menu entry `analyzer.html` forwards to it (`js/analyzer-forward.js`), it carries no site header, logo or menu, and it reads only `pv`, `from` and `to` from its address. The Browse PVs page of M58 opens it and the chart component of M59 draws the simple form; this work makes the analyzer a console page that holds the viewer, gives it every drawing option and gesture of the component, and lets it read the options of the page that opened it from its address. Its input for plotting an archived PV, **Add**, can be taken for starting archiving.
+
+##### Scope
+
+The analyzer of D38 and D40, as a page and with its drawing options, gestures and address; the analysis tools are M63 and M64.
+
+- The analyzer under its own menu entry: `analyzer.html` is a console page, with the site header, logo and menu, that holds the viewer of the retrieval web application in a frame as high as the window below the header; the viewer hides its own header bar when its address carries `embed=1`; a link on the page opens the same analyzer in its own window by the viewer's own address; a control on the console that opens it with the selected PVs. The content security policy of the console page gains `frame-src http: https:`, as `connect-src` already allows.
+- The analyzer's control for plotting an archived PV named for what it does, not with the word used for archiving a PV.
+- The drawing options and gestures of the component in the analyzer, in addition to its simple form:
+  - drawing options beside the plot: data points on, off or automatic; line as step, straight or points only; Y axis linear or log, automatic or fixed range; the averaging interval chosen, or raw samples forced;
+  - a Y projection: when its option is on, a one-dimensional histogram of the values in view appears beside the plot and shares the plot's width, with its bins along the plot's Y scale, one per PV, following every zoom, pan and brush; the Distribution panel (`drawHistogram` in `staticcontent/js/aa/plots.js`) stays as an option of its own, apart from the Y projection;
+  - `d3-zoom`: wheel zoom, including trackpad pinch; drag to pan; double-click to zoom in and Shift+double-click to zoom out; pinch and pan on touch screens; limits on the zoom factor and the pannable range; a filter for the buttons and keys that start a gesture; zoom of the time axis, the Y axis (for example by dragging on the axis) or both;
+  - `d3-brush`: a time window (`brushX`), a value range (`brushY`) and a rectangle on the scatter plot, with move, resize, Alt to centre, Shift to keep one axis, clear by a click outside, and a range set programmatically;
+  - `d3-drag`: the direct labels at the line ends, two reference cursors with the difference of time and value between them, a legend;
+  - pointer events: the crosshair and tooltip, a click on a series to bring it to the front or hide it, and a click on a sample to pin its values;
+  - a double-click back to the original range and a step back to the previous range; a change of range reads the data again after the gesture ends, because the averaging interval follows the span;
+  - a min-max band (`d3-shape` `area`) around the line when the data is averaged, read through the retrieval `min` and `max` post-processors with the mean, so a spike the mean hides shows;
+  - the nearest sample to the pointer found with `d3-delaunay` or `d3-quadtree`, for the tooltip on plots with many points;
+  - time axis ticks on minute, hour and day boundaries (`d3-time`, `scaleTime`);
+  - transitions on zoom and range changes (`d3-transition`);
+  - CSV export through `d3-dsv`, replacing the viewer's own Download CSV code;
+  - values in SI prefixes with matched significant digits (`d3-format`);
+  - a split by unit: an option that draws one plot for each unit, one under another, sharing the time axis, the crosshair and the time range choice, each with its own value axis and range (the earlier viewer drew one chart per unit); the default is one plot with an axis per unit.
+- The address: the analyzer reads the PVs, the time window and the options from the query string and writes them back as the page changes. The names are `pv` (repeated), `from` and `to` as today; `shape` (`step` by default, `line`, `smooth`, `points`); `yscale` (`linear` by default, `symlog`, `log`, `sqrt`); `marks` (`auto` by default, `on`, `off`); `avg` (the window in samples, the running average on when present); `band` (the window in samples, the standard deviation band on when present); `yproj` (`1`); `yrange` (repeated, `unit:low:high`, `none` for a PV with no unit); `interval` (`raw` or the averaging interval in seconds, automatic when absent); `split` (`none` by default, `unit`).
+- The book pages for analyzing data.
+
+Out of scope: the chart component and its simple form (M59); the Browse PVs page and its control (M58); the analysis tools (M63, M64); the retrieval server.
+
+##### Completion Criteria
+
+- The analyzer opens from its menu entry and from the Browse PVs page inside the console page, under the site header, logo and menu, and opens in its own window by the address of the viewer, which still works on its own.
+- No analyzer control uses the wording of archiving a PV.
+- Each option and gesture of the Scope is observed on archived fixture data, and a range change reads the data once after the gesture.
+- The Browse PVs page with options set opens the analyzer with the same PVs, time window and options; an address with `pv`, `from` and `to` alone opens as before, and a name it does not know or a value it cannot read is ignored.
+- The default suite passes and the book describes the analyzer as shipped.
+
+##### Dependencies And Decisions
+
+- M59: the chart component and its simple form, which the analyzer extends.
+- M58: the Browse PVs page and its control that opens the analyzer.
+- D38: console pages.
+- D40: the analyzer as a self-contained analysis tool built with the bundled D3.
+- The decisions of M59 on the bundled D3, on the analyzer as a general signal analysis tool and on no external library bind this work as well.
+- Decision Date 2026-10-14: the analyzer is shown inside a console page in a frame (the console's content security policy gains `frame-src`; the retrieval web application sets no frame-blocking header), so that the site header, logo and menu are not copied into the retrieval web application; the viewer keeps working on its own address for its own window. The frame is sized by CSS to the window below the header, without `postMessage`. The two origins share only the address.
+- Decision Date 2026-10-14: the options pass as one named parameter per option in the query string of the analyzer's address (`?`, where the viewer reads `pv`, `from` and `to` today), so that an address can be read and edited by hand; M62 lists the names.
+- Decision Date 2026-10-14: Open in the analyzer passes the PVs, the time window and the options the user chose; an option left at its default is not passed and the analyzer applies its own default.
+- Decision Date 2026-10-14: Open in the analyzer carries the options chosen on the page as well as the PVs and the time window, so that the analyzer shows the picture the user was looking at; M62 gives the analyzer the parameters to read them.
+- Decision Date 2026-10-14: the analyzer reads, from its address, the PVs, the time window and the options of the simple form (line, Y scale, sample marks, running average, standard deviation band and its window, the Y projection, and the range of each axis), so that the control into the analyzer of the other pages opens the same picture; an option the user did not set is not in the address and the analyzer applies its own default; each option is one named parameter in the query string, a name it does not know or a value it cannot read is ignored so that an address with `pv`, `from` and `to` alone opens as before, and the range of an axis is given by the unit of the axis (`none` for a PV with no unit); the names and form of the parameters are settled in this milestone.
 
 ##### Implementation Plan
 
@@ -5301,20 +5363,20 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Settled with the owner on 2026-10-14 for the simple form: its options and gestures (a drag over the plot selects a time range, a drag along an axis selects that axis's range, a double-click returns) and the names of the options in the address (step 4). Still for the owner before acceptance: the default of each option of the analyzer, and the gestures that conflict on one plot there (drag to pan against drag to select).
-2. The component (`staticcontent/js/aa/chart.js`, `staticcontent/js/aa/plots.js`, `staticcontent/css/chart.css`), the simple form first because the Browse PVs page draws through it: one axis per unit with its own automatic range, split between the two sides with the first half on the left; the legend under the chart whose items hide and show a line; the tooltip with the date and time and each value with its unit; the ranges chosen with the mouse; the Y projection with its mean line and the table of basic statistics; the Chart options panel (line, Y scale, sample marks, running average, standard deviation band and its window); the Enlarge chart window that draws again at its size. Check: T1.
-3. The analyzer on the component in full (`archViewer.html`, `viewer.js`, `viewer.css`): every option, analysis tool and gesture of the Scope with `d3-zoom`, `d3-brush` and `d3-drag`, and the computations the page implements (D40). Check: T2.
-4. The address: the analyzer reads the PVs, the time window and the options from the query string and writes them back as the page changes. The names are `pv` (repeated), `from` and `to` as today; `shape` (`step` by default, `line`, `smooth`, `points`); `yscale` (`linear` by default, `symlog`, `log`, `sqrt`); `marks` (`auto` by default, `on`, `off`); `avg` (the window in samples, the running average on when present); `band` (the window in samples, the standard deviation band on when present); `yproj` (`1`); `yrange` (repeated, `unit:low:high`, `none` for a PV with no unit); `interval` (`raw` or the averaging interval in seconds, automatic when absent); `split` (`none` by default, `unit`). Check: T3.
-5. The other pages move onto the simple form (Archive PVs, System) and the book describes the controls. Check: T4 and T5.
+1. Settled with the owner on 2026-10-14: the analyzer as a console page that frames the viewer, and the form of the address (the Decision Date lines above). Still for the owner before acceptance: the default of each option of the analyzer, and the gestures that conflict on one plot (drag to pan against drag to select).
+2. The page (`analyzer.html`, `js/analyzer-forward.js`, `archViewer.html`, `viewer.js`): the menu entry opens `analyzer.html`, a console page that frames the viewer of the retrieval web application under the site header, logo and menu (the `frame-src` of its content security policy, the height of the frame by CSS, `embed=1` hiding the viewer's header bar, a link to its own window); `js/analyzer-forward.js`, which forwards today, is removed; the control for plotting a PV is renamed. Check: T1.
+3. The analyzer on the component (`archViewer.html`, `viewer.js`, `viewer.css`, `staticcontent/js/aa/chart.js`): every drawing option and gesture of the Scope with `d3-zoom`, `d3-brush` and `d3-drag`. Check: T2.
+4. The address: the analyzer reads the PVs, the time window and the options and writes them back as the page changes. Check: T3.
+5. The book (`interface.md`, `operating.md`, the figure of the analyzer) and `MgmtPageLinksTest` for the page and entry. Check: T4 and T5.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Browser | On a local appliance, exercise each option and gesture of the simple form on the Browse PVs page with the mouse, count the data requests of the browser after a drag that chooses a range, and repeat the options with a PV of no unit and with values that are not above zero for the log scale | Local appliance, shipped soft IOC fixture | Each option and gesture is observed; a chosen range issues one data request after the gesture; a scale that needs positive values falls back to symmetric log with the reason shown |
-| T2 | Browser | In the analyzer, exercise each option, analysis tool and pointer behavior of the Scope with mouse and touch, with the fixture extended by records of the kinds it lacks (a state record, a string record, a waveform and an image of a known size and content) | Local appliance, shipped soft IOC fixture with those records | Each behavior is observed on archived fixture data; a fit, a correlation and an FFT of a signal of known parameters return those parameters within the stated tolerance |
+| T1 | Browser | Open the analyzer from the menu and from the Browse PVs page and read the frame; open the link to its own window; open the address of the viewer on its own; use the menu above the frame; look at the page at 720 and 320 px | Local appliance, shipped soft IOC fixture | The frame shows the viewer under the console menu with the viewer's header bar hidden; the own window and the viewer's address show the same picture; the menu above the frame reaches the other pages; no sideways scroll |
+| T2 | Browser | Exercise each drawing option and gesture of the Scope with mouse and touch, and count the data requests of the browser after a drag that chooses a range | Local appliance, shipped soft IOC fixture | Each behavior is observed on archived fixture data; a chosen range issues one data request after the gesture |
 | T3 | Browser | Set options on the Browse PVs page and press Open in the analyzer; edit the address by hand; add an unknown name and a value that cannot be read; open an address with `pv`, `from` and `to` alone | Local appliance, shipped soft IOC fixture | The analyzer shows the options of the address; the unknown name and the unreadable value are ignored; the old address opens as before |
-| T4 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the pages that draw through the component pass |
+| T4 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the pages pass |
 | T5 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
 
 ##### Verification Results
@@ -5324,6 +5386,185 @@ Superseded Plan Artifacts: none
 | T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
 | T2 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
 | T3 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T4 | Not run | Local, JDK 21, Tomcat 9.0.121 | Pending | none |
+| T5 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Analyzer for archived data
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
+
+#### M63 - Analysis of numeric signals in the analyzer
+
+Origin: daff1b7 / M63
+Identity History: none
+GitHub Issue: #39 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/39)
+Status: Not started
+
+##### Summary
+
+The Browse PVs page shows a distribution, a scatter plot of two PVs and a statistics table for the PVs of one chart (`plots.js`), and the viewer none. The scatter plot pairs only samples at exactly equal times, so raw samples of two records rarely pair, and it offers only a PV of the same unit at a fixed 150 px height. The bundled D3 has no correlation, regression, fit, FFT or principal component analysis. The analysis of one or several numeric signals is built in the analyzer of M62 from what the D3 bundle provides and from routines the page writes.
+
+##### Scope
+
+Analysis by the kind of signal in the analyzer (decision of 2026-10-14: the tools are added by the kind of signal; the page decides the kind from `getPVTypeInfo`, the data type, the element count, the unit and the event rate, and the user chooses the purpose within it):
+
+- a scatter plot of any two PVs, one on each axis, of the same or different units, with both axes labelled and its own size. Today's panel ("Two PVs against each other", `drawScatter`, Browse PVs page only) pairs only samples at exactly equal times, so raw samples of two records rarely pair, and it offers only a PV of the same unit at a fixed 150 px height with the X range alone on its axis. Samples pair by the value each PV holds at the other's sample times. The plot computes and shows the number of pairs, the correlation, and the linear regression (slope, intercept, R²) with its line drawn. Its options, beside it as for the time series: each axis linear or log, automatic or fixed range; the regression line shown or hidden; an X and a Y projection, one-dimensional histograms beside the axes; point size and transparency for dense data; points coloured by time, so a drift shows;
+- median and percentiles (`d3-array` `quantile`, `median`) in the statistics, and a box plot;
+- a heatmap of time against value (`d3-array` `bin` with `scaleSequential`) for long spans of fast PVs;
+- a density contour (`d3.contourDensity`) on the scatter plot for dense data;
+- One numeric scalar: a summary (samples, minimum, maximum, mean, median, standard deviation, skewness, kurtosis, the errors of the mean and of the standard deviation, quantiles, lost events); the trend with zoom, two cursors and a min-max band; the distribution (histogram, box); the variation (running average, standard deviation band, rate of change); a slow trend (a linear fit against time); the limits (the display, warning and alarm limits of the PV as reference lines, and the time outside them); the pattern by hour and weekday (`rollup`) and a time-value heatmap for a long span; the periodicity (autocorrelation, spectrum by FFT); the values beyond k standard deviations.
+- Two numeric scalars: a scatter plot with each axis in its own unit; the correlation (Pearson, Spearman, and a cross-correlation over a time lag); a profile (the mean of Y with its error in each bin of X); a fit of Y against X with its parameters and their errors, the chi-square per degree of freedom, R², the covariance and correlation of the parameters, a confidence band and the residuals; pairs taken by the value each PV holds at the other's sample times, with the number of pairs and the number of samples of the slower PV shown; derived signals (difference, sum, ratio, one divided by the other); the two trends under one another sharing the time axis.
+- A comparison of two time ranges of one signal, or of two signals: the distributions drawn over one another and normalised, and the tests of whether they differ (chi-square, Kolmogorov-Smirnov, Anderson-Darling) with the difference of the means and of the spreads.
+- Several numeric scalars (three or more), the dependency among them: all the signals first averaged over one common interval so that the samples line up; the mutual information of each pair, which also shows a dependence that is not linear, and a ranking of the signals by how much each explains the chosen one; a correlation matrix drawn as a heatmap, ordered by clustering so that dependent signals sit together; a scatter plot matrix; the partial correlation of two signals with the others held fixed; a multiple linear regression of one chosen signal on the others, with each coefficient, its standardised size, R² and the residuals; a principal component analysis with the variance of each component and the loading of each signal on it; the lag at which each pair is most correlated, drawn as a graph of which signal leads which (`forceSimulation`, with the strength of a dependence as the thickness of the edge and a threshold chosen by the user).
+- General functions of the analyzer, not tied to one kind of facility: a derived signal from an expression the user types (such as `(A-B)/C`; the content security policy forbids `eval`, so the page parses the expression itself); a threshold line with the time a signal spends beyond it; a change of unit; the export of a fit, a statistics table and a derived signal; and time scales from milliseconds to years in the axis ticks and the averaging interval. A fit may fix a parameter or bound it, and the Landau shape is among its models. The wording of the pages, the help and the book names a signal, its unit and a time range, and keeps an accelerator only as an example (a decay time constant, not a lifetime).
+- Fits (line, polynomial, exponential, power, logarithm, sine, Gaussian, Landau), correlations, the regression, the principal component analysis, the clustering and the FFT are computed by the page, with small matrix routines written for it; the bundled D3 has none of them. For a time series the FFT first resamples to an even interval, because the stored samples are not evenly spaced.
+- Settled on 2026-10-14 (the fit models by the owner, the others on the recommendation the owner accepted):
+  - The fit models are those listed above (line, polynomial, exponential, power, logarithm, sine, Gaussian, Landau).
+  - The pair of a correlation: the analyzer opens with the first two plotted PVs as X and Y, and X and Y can be changed there.
+  - The dependency analysis takes up to 20 PVs.
+  - The tools for state or enumerated and string signals (the step line, the time spent in each state, the number of transitions, a table of the changes) come after the numeric ones and are built when the site archives such signals.
+- Still for the owner: whether a small library is vendored later for LOESS or a non-linear fit (D40 stays as it is until then); a typed formula as a user-defined fit function.
+
+Out of scope: the page, drawing options and address of the analyzer (M62); the chart component (M59); waveforms and images (M64).
+
+##### Completion Criteria
+
+- Each tool of the Scope for one signal, two signals, a comparison and several signals is available in the analyzer and is observed on archived fixture data.
+- A fit, a correlation, a regression, a principal component analysis and a test return the known parameters of a signal made for the check, within the stated tolerance.
+- A time series is resampled to an even interval before an FFT, and the pairs of a correlation show their number and the number of samples of the slower PV.
+- The default suite passes and the book describes the tools.
+
+##### Dependencies And Decisions
+
+- M62: the analyzer page, its drawing options and its address, which the tools extend.
+- D40: the analyzer as a self-contained analysis tool built with the bundled D3.
+- The decisions of M59 on the bundled D3 (its functions are used wherever it has one), on the analyzer as a general signal analysis tool, and on no external library bind this work; the page writes only what the bundle lacks.
+- Decision Date 2026-10-12: the correlation and the linear regression are computed by the page, as the correlation is today in `plots.js`; the bundled D3 has neither, and no regression package is added.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settled with the owner on 2026-10-14: the signal kinds and the tools above, the fit models, the pair of a correlation and the limit of 20 PVs. Still for the owner: a small library for LOESS or a non-linear fit, and a typed formula as a fit function (listed under the Scope).
+2. The routines the page writes (new `staticcontent/js/aa/` files): least squares for the line, polynomial and the models that become linear in a logarithm; an iterative fit for the sine, Gaussian and Landau shapes; the correlation, partial correlation and mutual information; the covariance, regression and principal component analysis on a small matrix; the clustering; the FFT with a window and the resampling; the tests (chi-square, Kolmogorov-Smirnov, Anderson-Darling). Check: T2.
+3. The tools in the analyzer through the component and the D3 functions of the decision of M59: the summary, trend, distribution, variation, limits and pattern of one signal; the scatter, profile, fit and derived signals of two; the comparison; the matrix, ranking and graph of several; the general functions (expression, threshold, unit change, export). Check: T1 and T3.
+4. The fixture records of the kinds it lacks, for the checks (a state record and a string record), and the book. Check: T4 and T5.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser | In the analyzer, use each tool for one signal and for two signals on archived fixture PVs, with real mouse and keys | Local appliance, shipped soft IOC fixture | Each tool is observed and agrees with the numbers of the same data computed outside the page |
+| T2 | Browser | Feed the routines signals made for the check (a line, an exponential decay, a sine, a Gaussian, a known correlation, a known period) and read the returned parameters | Local appliance, shipped soft IOC fixture with archived signals of known parameters | Each parameter is returned within the stated tolerance |
+| T3 | Browser | Choose five to twenty PVs for the dependency analysis and read the matrix, the ranking and the graph; a pair of different rates is shown with the number of samples of the slower PV | Local appliance, shipped soft IOC fixture | The matrix is symmetric with ones on the diagonal; the numbers agree with the same data computed outside the page |
+| T4 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the pages pass |
+| T5 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T2 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T3 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T4 | Not run | Local, JDK 21, Tomcat 9.0.121 | Pending | none |
+| T5 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Analyzer for archived data
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
+
+#### M64 - Waveform and image analysis in the analyzer
+
+Origin: daff1b7 / M64
+Identity History: none
+GitHub Issue: #39 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/39)
+Status: Not started
+
+##### Summary
+
+The appliance stores an array PV as a waveform (`DBR_WAVEFORM_*`, or `DBR_V4_GENERIC_BYTES` for a PVA structure); it holds no image size, and the data viewer draws a waveform as a time series of its elements. The camera IOC of the site serves row and column profiles of 1920 and 1200 elements, time-series arrays of 2048 points, a histogram of 256 bins and the statistics of up to four regions of interest, and a frame of 1920 by 1200 sixteen-bit pixels at up to 50 Hz. The analysis of arrays and images is built in the analyzer of M62 on the tools of M63.
+
+##### Scope
+
+The analysis of waveforms and images in the analyzer.
+
+- One waveform (an array PV): the array at a time, X as the element number or from a companion axis PV; several times overlaid, and the time against the element number as a heatmap; summary values of each array (maximum and its position, minimum, mean, RMS, sum, centre, FWHM) and their time series; the difference from a reference time; the spectrum by FFT with the sampling frequency given by the user or a companion PV, a window function and the peak frequency; a peak search with the position, height and width of each peak, and a background estimated and subtracted.
+- An image (a waveform whose element count is width times height, the size given by the user or companion PVs): one frame as a heatmap on a canvas with a colour scale and iso-lines; a rectangle of interest chosen with the mouse; the X and Y projections; the centroid, the peak position, the total intensity and the size by a Gaussian fit in each direction; those values as time series; a background subtraction and the difference of two frames.
+- Settled on 2026-10-14 on the recommendation the owner accepted:
+  - A waveform: the X axis is the element number, or the array of a companion axis PV when the user names one; the length and the rate are read from `getPVTypeInfo` (the element count and the event rate). The camera IOC of the site, read for this plan, serves row and column profiles of 1920 and 1200 elements, time-series arrays of 2048 points, a histogram of 256 bins and the statistics of up to four regions of interest, so the analysis is built for arrays of that size first.
+  - An image: the width and the height come from the companion PVs of the same array plugin (`ArraySize0_RBV` and `ArraySize1_RBV`, with `NDimensions_RBV`, `DataType_RBV` and `ColorMode_RBV`), and the user types them when those are not archived. The camera IOC of the site serves a frame of 1920 by 1200 sixteen-bit pixels (2304000 elements) at up to 50 Hz, so the archived data is expected to be the regional statistics and profiles, and a whole frame is read one at a time.
+
+Out of scope: the page, drawing options and address of the analyzer (M62); the tools for numeric signals (M63); what the site archives of a camera, which the settings of the archiver decide.
+
+##### Completion Criteria
+
+- A waveform is drawn at a time, overlaid and as a heatmap over time; its summary values, their time series, its difference from a reference time and its spectrum are shown.
+- An image of a known size is drawn as a heatmap with a colour scale, its region of interest chosen with the mouse, its projections and its centroid, peak, total and Gaussian size computed, and a frame is read one at a time.
+- The values agree with the same arrays computed outside the page.
+- The default suite passes and the book describes the tools.
+
+##### Dependencies And Decisions
+
+- M63: the numeric tools (fits, FFT, statistics) that arrays and images use.
+- M62: the analyzer page, its drawing options and its address.
+- D40: the analyzer as a self-contained analysis tool built with the bundled D3.
+- The decisions of M59 on the bundled D3, on the analyzer as a general signal analysis tool and on no external library bind this work; a frame is drawn on a canvas with the D3 colour scales and `contours`, the axes and text staying SVG.
+- The retrieval response for an array PV and the size limit of one response are read on the fixture before the page is built.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settled with the owner on 2026-10-14: the X axis, the source of the image size and the sizes the analysis is built for (the Scope). Still for the owner: whether the site archives the frames, the profiles or only the regional statistics, which fixes how much of the image tools is used.
+2. Read the retrieval response of a waveform and of an image on the fixture extended by a waveform record and an image record of known size and content, and the size of one response. Check: T1.
+3. The array tools: the array at a time, overlay, heatmap over time, summary values and their series, the difference from a reference, the spectrum, the peak search with a background. Check: T2.
+4. The image tools on a canvas: the frame as a heatmap, iso-lines, the region of interest, the projections, the centroid, peak, total and Gaussian size, the background subtraction and the difference of two frames. Check: T3.
+5. The book and the static checks. Check: T4 and T5.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | Archive a waveform record and an image record of known size and content on a local appliance and read each through the retrieval call the page uses | Local appliance, soft IOC fixture extended by a waveform and an image record | The response is read, its size is known, and the elements equal those the record holds |
+| T2 | Browser | Use each array tool on the waveform of known content with real mouse and keys, and compare the summary values and the spectrum with the same array computed outside the page | Local appliance, soft IOC fixture with the waveform record | Each value agrees within the stated tolerance; the peak of a known sine is at its frequency |
+| T3 | Browser | Use each image tool on the image of known content: the region, the projections, the centroid, the peak, the total and the Gaussian size | Local appliance, soft IOC fixture with the image record | Each value agrees with the same image computed outside the page |
+| T4 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the pages pass |
+| T5 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Local appliance, soft IOC fixture extended by a waveform and an image record | Pending | none |
+| T2 | Not run | Local appliance, soft IOC fixture with the waveform record | Pending | none |
+| T3 | Not run | Local appliance, soft IOC fixture with the image record | Pending | none |
 | T4 | Not run | Local, JDK 21, Tomcat 9.0.121 | Pending | none |
 | T5 | Not run | JDK 21; GitHub Actions | Pending | none |
 
