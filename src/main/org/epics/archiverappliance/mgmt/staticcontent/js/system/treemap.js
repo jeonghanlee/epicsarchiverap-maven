@@ -1,6 +1,6 @@
 // The usage treemap of the Operations page: the stored data or the event rate of the archived PVs, grouped by the
 // prefix of the PV name, drawn with the d3-hierarchy treemap of the bundled D3. A prefix is a link that finds its PVs
-// in the Work page; the blocks inside it are its largest PVs.
+// in the Browse PVs page; the blocks inside it are its largest PVs.
 import { prefixOf } from "./judge.js";
 
 const d3 = globalThis.d3;
@@ -96,7 +96,7 @@ export function drawUsage(host, model, options) {
         const summary = `${data.name}: ${options.format(group.value)}, ${data.count} PV${data.count === 1 ? "" : "s"}`;
         const outer = svg.append(data.link ? "a" : "g").attr("transform", `translate(${group.x0},${group.y0})`);
         if (data.link) {
-            outer.attr("href", options.href(data.name)).attr("aria-label", `${summary}. Find its PVs in Work.`);
+            outer.attr("href", options.href(data.name)).attr("aria-label", `${summary}. Find its PVs in Browse PVs.`);
         }
         outer.append("title").text(summary);
         outer.append("rect").attr("width", boxWidth).attr("height", boxHeight).attr("fill", color).attr("fill-opacity", 0.16).attr("stroke", color).attr("stroke-width", 1.5);

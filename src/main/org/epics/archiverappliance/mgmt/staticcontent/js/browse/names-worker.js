@@ -14,7 +14,7 @@ const MARGIN = 20;
 const PROBE_EVERY = 4;
 const BULK_INSERT = 200;
 const FALLBACK_QUIET_MS = 3000;
-const DATABASE = "aa-work-names";
+const DATABASE = "aa-browse-names";
 const STORE = "snapshots";
 
 let base = "";

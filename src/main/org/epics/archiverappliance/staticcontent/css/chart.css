@@ -1,4 +1,4 @@
-/* Time series and sparklines, shared by the management Work page and the data viewer. */
+/* Time series and sparklines, shared by the management Browse PVs page and the data viewer. */
 
 svg .spark {
     fill: none;

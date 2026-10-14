@@ -84,7 +84,7 @@ const CARDS = [
             ["Block", "A block is a PV name prefix, the part of the name up to its second colon. The blocks inside it are its PVs."],
             ["Size", "Stored data is what a PV occupies in all stores; event rate is its events per second. The buttons switch between them."],
             ["Scope", "Every appliance of the cluster. The 24 largest prefixes and the 300 largest PVs are drawn; the rest of a prefix is one block."],
-            ["Then", "Click a prefix to find its PVs in Work, and archive less of a prefix that holds most of the space."],
+            ["Then", "Click a prefix to find its PVs in Browse PVs, and archive less of a prefix that holds most of the space."],
         ],
     ],
     [
@@ -175,7 +175,7 @@ function renderHosts(rows) {
             node("td", { class: "r num warn" }, String(group.items.length)),
             node("td", { class: "num" }, when),
             node("td", { class: "pv" }, prefixes.slice(0, 3).map(([name, count]) => `${name} (${count})`).join(", ")),
-            node("td", null, toggle, " ", node("a", { href: `index.html#${open}` }, "Open in Work"), " ", pauseThese),
+            node("td", null, toggle, " ", node("a", { href: `index.html#${open}` }, "Open in Browse PVs"), " ", pauseThese),
         );
         body.append(row);
         const showList = () => {
@@ -185,7 +185,7 @@ function renderHosts(rows) {
                 items.append(node("li", null, node("span", { class: "pv" }, item.pv), ` lost ${item.lostText}`));
             }
             if (names.length > LIST_LIMIT) {
-                items.append(node("li", { class: "sub" }, `and ${names.length - LIST_LIMIT} more; open the group in the Work page for the whole list.`));
+                items.append(node("li", { class: "sub" }, `and ${names.length - LIST_LIMIT} more; open the group in the Browse PVs page for the whole list.`));
             }
             return node("tr", { class: "detail" }, node("td", { colspan: "5" }, items));
         };
@@ -215,7 +215,7 @@ function confirmPause(group) {
     const names = group.items.map((item) => item.pv);
     const host = group.host || "an unknown host";
     $("confirmTitle").textContent = `Pause ${names.length} PV${names.length === 1 ? "" : "s"}`;
-    $("confirmText").textContent = `These PVs lost their connection to ${host}. The archiver stops asking for them and keeps their data. Resume them from the Work page when the IOC is back.`;
+    $("confirmText").textContent = `These PVs lost their connection to ${host}. The archiver stops asking for them and keeps their data. Resume them from the Browse PVs page when the IOC is back.`;
     $("confirmError").textContent = "";
     $("confirmForm").onsubmit = async (event) => {
         event.preventDefault();

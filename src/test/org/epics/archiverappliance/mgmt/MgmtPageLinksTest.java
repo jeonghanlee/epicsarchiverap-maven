@@ -84,7 +84,7 @@ public class MgmtPageLinksTest {
             }
         }
         Assertions.assertTrue(targets.contains("archive.html") && targets.contains("index.html"),
-                "The menu opens the Archive PVs page and the Work page as two entries " + targets);
+                "The menu opens the Archive PVs page and the Browse PVs page as two entries " + targets);
         for (String page : FORWARDING_PAGES) {
             HttpResponse<String> pageResponse = get(client, page);
             Assertions.assertEquals(200, pageResponse.statusCode(), "Forwarding page " + page);

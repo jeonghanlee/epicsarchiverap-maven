@@ -1,5 +1,5 @@
-// The Work page: find PVs, scan the selected ones, inspect a few in detail, and act on them.
-import * as api from "./work/api.js";
+// The Browse PVs page: find PVs, scan the selected ones, inspect a few in detail, and act on them.
+import * as api from "./browse/api.js";
 import { drawTimeSeries } from "../comm/js/aa/chart.js";
 import { sparkline } from "../comm/js/aa/spark.js";
 import { drawHistogram, drawScatter } from "../comm/js/aa/plots.js";
@@ -167,7 +167,7 @@ function formatValue(value, egu) {
 
 // ---- names and search ---------------------------------------------------------------------
 
-const worker = new Worker("js/work/names-worker.js");
+const worker = new Worker("js/browse/names-worker.js");
 let searchId = 0;
 let latestSearch = 0;
 

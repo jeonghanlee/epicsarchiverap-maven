@@ -1,10 +1,10 @@
 /*
- * Work page. The tokens (--ink, --rule, --accent, ...) come from the shared main.css.
+ * Browse PVs page. The tokens (--ink, --rule, --accent, ...) come from the shared main.css.
  * Ink goes to the data and to the one thing that needs attention. Regions are separated by
  * whitespace and thin rules, not by boxes, fills or shadows.
  */
 
-.work {
+.browse {
     display: grid;
     grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
     gap: 24px;
@@ -14,16 +14,16 @@
 }
 
 @media (max-width: 900px) {
-    .work {
+    .browse {
         grid-template-columns: minmax(0, 1fr);
     }
 }
 
-.work section {
+.browse section {
     min-width: 0;
 }
 
-.work h2 {
+.browse h2 {
     margin: 0 0 8px;
     font-size: 0.875rem;
     font-weight: 600;
@@ -32,31 +32,31 @@
     color: var(--ink-2);
 }
 
-.work h3 {
+.browse h3 {
     margin: 12px 0 2px;
     font-size: 0.9375rem;
     font-weight: 600;
 }
 
-.work .area {
+.browse .area {
     margin-top: 24px;
     padding-top: 12px;
     border-top: 1px solid var(--rule);
 }
 
-.work .sub,
-.work .hint,
-.work .muted {
+.browse .sub,
+.browse .hint,
+.browse .muted {
     color: var(--ink-2);
     font-size: 0.875rem;
     margin: 0 0 6px;
 }
 
-.work .faint {
+.browse .faint {
     color: var(--ink-3);
 }
 
-.work .error {
+.browse .error {
     color: var(--alarm);
     margin: 4px 0;
     min-height: 1em;
@@ -591,9 +591,9 @@ dialog input[type="number"] {
         min-height: 44px;
     }
 
-    .work button,
-    .work input,
-    .work select {
+    .browse button,
+    .browse input,
+    .browse select {
         min-height: 44px;
     }
 

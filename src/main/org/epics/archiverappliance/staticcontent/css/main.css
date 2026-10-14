@@ -27,7 +27,7 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas,
     "Liberation Mono", monospace;
 
-  /* Tokens of the Work page. They are defined from the tokens above so every page shares one palette. */
+  /* Tokens of the Browse PVs page. They are defined from the tokens above so every page shares one palette. */
   --bg: var(--c-bg);
   --ink: var(--c-text);
   --ink-2: #46585e;

@@ -65,7 +65,7 @@ public class FQDNApplianceXMLTest {
 
         tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
 
-        // GET the home page and confirm it is the Work page of the console: the page is served only when the
+        // GET the home page and confirm it is the Browse PVs page of the console: the page is served only when the
         // management application booted from the appliances.xml of this test.
         HttpClient http = HttpClient.newHttpClient();
         HttpRequest homePage = HttpRequest.newBuilder(URI.create("http://localhost:17665/mgmt/ui/index.html")).GET().build();
@@ -76,7 +76,7 @@ public class FQDNApplianceXMLTest {
                 .until(() -> http.send(homePage, HttpResponse.BodyHandlers.ofString()).statusCode() == 200);
         HttpResponse<String> response = http.send(homePage, HttpResponse.BodyHandlers.ofString());
         Assertions.assertEquals(200, response.statusCode(), "The mgmt home page was not served after booting from " + appliancesFilename);
-        Assertions.assertTrue(response.body().contains("<main class=\"work\">"),
+        Assertions.assertTrue(response.body().contains("<main class=\"browse\">"),
                 "The mgmt home page did not contain the expected content");
     }
 }

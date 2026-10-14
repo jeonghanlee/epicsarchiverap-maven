@@ -49,5 +49,5 @@ every client reads them the same way. Other PVData structures are stored
 in their PVAccess serialization and can be retrieved in the `raw` and
 `json` formats.
 
-The `archivePV` call and the Work page take the protocol from the PV
+The `archivePV` call and the Browse PVs page take the protocol from the PV
 name: a name that starts with `pva://` is archived over PVAccess.

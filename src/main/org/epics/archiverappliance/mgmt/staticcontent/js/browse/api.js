@@ -1,4 +1,4 @@
-// Server access for the Work page. Every call is a plain request to an endpoint that already exists.
+// Server access for the Browse PVs page. Every call is a plain request to an endpoint that already exists.
 let infoPromise = null;
 
 async function request(url, init) {

@@ -20,8 +20,8 @@ bar, named by task; the entry of the page in view is marked:
 
 | Menu entry | Opens | Purpose |
 | --- | --- | --- |
-| Archive PVs | the Work page | archive a PV and pause, resume or stop it |
-| Browse PVs | the Work page | find PVs, scan them, inspect their data; the reports are the **Show** list of the Find panel |
+| Archive PVs | the Archive PVs page | archive a PV and pause, resume or stop it |
+| Browse PVs | the Browse PVs page | find PVs, scan them, inspect their data; the reports are the **Show** list of the Find panel |
 | System | System: Overview | status monitoring: the verdict on the appliance, then Operations and Retrieval performance |
 | Help | the help page | how to use each page, the PV states, the management API reference ([Scripting](scripting.md)) and a link to this manual |
 | Analyzer | the data viewer | the data viewer of the retrieval web application ([Retrieving data](retrieval.md#the-data-viewer)) |
@@ -33,14 +33,14 @@ addresses of the earlier pages (`reports.html`, `metrics.html`,
 `storage.html`, `appliance.html`, `integration.html`) forward to their
 place.
 
-The Work page is the page of daily use. The next figure shows it with
+The Browse PVs page is the page of daily use. The next figure shows it with
 three PVs selected: the Find panel on the left, the scan list with a
 trend of each PV, the chart with its distribution, scatter plot and
 statistics, and the detail of the first PV.
 
-![The Work page with three PVs selected](images/work-page.png)
+![The Browse PVs page with three PVs selected](images/browse-page.png)
 
-The data viewer shows PVs as charts per unit. A link on the Work page
+The data viewer shows PVs as charts per unit. A link on the Browse PVs page
 opens the selected PVs in it, over the window of the chart
 ([Retrieving data](retrieval.md#the-data-viewer)).
 
@@ -91,10 +91,10 @@ A PV that never connects stays in Initial sampling. Its detail offers
 
 ## Managing a PV
 
-Select a PV in the list; its detail appears at the bottom of the Work
+Select a PV in the list; its detail appears at the bottom of the Browse PVs
 page with the actions that apply to its state.
 
-![The detail of an archived PV with its Maintenance actions opened](images/work-maintenance.png)
+![The detail of an archived PV with its Maintenance actions opened](images/browse-maintenance.png)
 
 | Action | Condition | Effect |
 | --- | --- | --- |
@@ -126,7 +126,7 @@ reports are:
 - PVs that dropped events because of a wrong time stamp, a buffer
   overflow or a type change.
 
-![The Work page with the PVs that are disconnected now](images/work-disconnected.png)
+![The Browse PVs page with the PVs that are disconnected now](images/browse-disconnected.png)
 
 The System pages answer the questions of the person who looks after the
 appliance. **Overview** gives three verdicts, storing samples, reading
@@ -175,7 +175,7 @@ When a store runs full, ETL follows the `OutOfSpaceHandling` key
 When a PV is added under an alias, the appliance reads the PV's `NAME`
 field, archives it under the real name, and records the alias in the
 `PVAliases` table. Retrieval and the management calls then work under
-both names; the Work page lists the real name.
+both names; the Browse PVs page lists the real name.
 
 ## Named flags
 
@@ -221,7 +221,7 @@ tcpdump -i <interface> 'host <ioc> and host <appliance>' -w capture.pcap
 ```
 
 The [cashark](https://github.com/mdavidsaver/cashark/) plugin decodes CA
-and PVA in Wireshark and `tshark`. **All details** of a PV on the Work
+and PVA in Wireshark and `tshark`. **All details** of a PV on the Browse PVs
 page lists the CA channel ID, the server channel ID and the subscription
 ID of its channel, and pausing and resuming the PV during the capture
 shows the channel's whole life cycle.

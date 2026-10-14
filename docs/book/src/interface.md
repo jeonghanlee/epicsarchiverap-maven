@@ -14,7 +14,7 @@ carries a content security policy, and the charts are drawn with D3.
 | Page | Address | For | Content |
 | :--- | :--- | :--- | :--- |
 | Archive PVs | `archive.html` | Everyone | Add one PV or a list of names, follow each request to the state Being archived, cancel, pause, resume or stop from its row |
-| Work (Browse PVs) | `index.html` | Everyone | Find PVs, scan the selected ones, inspect them, act on them |
+| Browse PVs | `index.html` | Everyone | Find PVs, scan the selected ones, inspect them, act on them |
 | System: Overview | `system.html` | Everyone | Three verdict lines and one row per measure with its value, its status and a link to the detail; the **i** button of a measure opens its meaning |
 | System: Operations | `operations.html` | The person who looks after the appliance | Samples, dropped samples, write path, stores and ETL, processes, configuration |
 | System: Retrieval performance | `retrieval.html` | A person whose data requests are slow | What the server reports and a request measured in the browser |
@@ -25,7 +25,7 @@ carries a content security policy, and the charts are drawn with D3.
 
 The addresses `metrics.html`, `storage.html`, `appliance.html`,
 `reports.html`, `pvdetails.html`, `integration.html` and `cacompare.html`
-forward to the page that replaced them; `pvdetails.html?pv=<name>` opens that PV on the Work
+forward to the page that replaced them; `pvdetails.html?pv=<name>` opens that PV on the Browse PVs
 page.
 
 ## Archive PVs page
@@ -38,11 +38,11 @@ and its state, and the actions of that state:
 
 ![The Archive PVs page after a request of six names](images/archive-page.png)
 
-## Work page
+## Browse PVs page
 
-The Work page, with three PVs selected:
+The Browse PVs page, with three PVs selected:
 
-![The Work page](images/work-page.png)
+![The Browse PVs page](images/browse-page.png)
 
 | Part | Behavior |
 | :--- | :--- |
@@ -53,13 +53,13 @@ The Work page, with three PVs selected:
 | Detail | State with its explanation, the actions that apply, a link that opens the PV in the data viewer, and the full details list |
 
 A PV name is a base name with an optional field (`X:Y` or `X:Y.RBV`); a
-name with a field is a PV of its own and the Work page and the viewer
+name with a field is a PV of its own and the Browse PVs page and the viewer
 accept it. A chart line is the held value of a monitored PV: it continues
 through a time without samples, so a PV that changes rarely is drawn as
 one line. It stops at the last sample and starts again at the next one
 only where the archiver recorded a lost connection or an engine start, so
 a lost connection is never drawn as a held value. A range of up to 10
-minutes on the Work page (11 minutes in the viewer) shows the stored
+minutes on the Browse PVs page (11 minutes in the viewer) shows the stored
 samples; a longer one shows means over equal intervals (`meanSample_N`),
 and the chart says so. An interval of such a range in which the archiver
 has no sample has no value, and the line is not extended through it. The
@@ -97,7 +97,7 @@ The state is kept in the fragment of the address, the part after `#`
 
 Archived names do not leave the list when their IOC stops, so a change of
 the list is almost always an addition. The page keeps a snapshot of the
-names in the browser (IndexedDB database `aa-work-names`), shows it at
+names in the browser (IndexedDB database `aa-browse-names`), shows it at
 once with the time it is current to, and then keeps it current:
 
 | Event | What the page does |
@@ -123,7 +123,7 @@ effect. The **i** button beside a section heading opens a card with
 when the section needs attention, when it is a problem and what to do.
 The Stores section ends with a treemap of the stored data or the event
 rate by PV name prefix, so the prefixes that use the space show at once;
-a prefix opens its PVs in the Work page. The next figure shows the first
+a prefix opens its PVs in the Browse PVs page. The next figure shows the first
 sections:
 
 ![The first sections of the System operations page](images/system-operations.png)
@@ -200,7 +200,7 @@ takes under 50 ms.
 | :--- | :--- |
 | Supported | The current releases of Firefox, Edge and Safari; no jQuery, no framework and no build tool. Checked in Firefox, Edge and the WebKitGTK engine of Safari, not in the Safari application |
 | Content security policy | `script-src 'self'` on every page: no inline script, event-handler attribute or style attribute, and no outside host |
-| `connect-src` | `'self'`, and `http:` and `https:` on the Work page and the Retrieval performance page, which read the data retrieval address the appliance reports |
+| `connect-src` | `'self'`, and `http:` and `https:` on the Browse PVs page and the Retrieval performance page, which read the data retrieval address the appliance reports |
 | Stored in the browser | The snapshot of the names; nothing else |
 | Data inserted into a page | Only as text, never as markup |
 

@@ -1,7 +1,7 @@
 // The Archive PVs page: names are typed or pasted, requested in one call, and followed until each one is archived.
 // The table lists the PVs requested in this visit, with the answer of the request, the state read back from the
 // appliance and the actions of that state.
-import * as api from "./work/api.js";
+import * as api from "./browse/api.js";
 import { infoButton } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);

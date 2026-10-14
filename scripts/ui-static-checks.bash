@@ -172,7 +172,7 @@ assert_eq "$([[ $(printf '%s\n' "${calls}" | wc -l) -ge 30 ]] && echo enough || 
 
 # ---- element ids read by a script exist in its page ------------------------------------------------
 PAIRS=(
-    "mgmt/staticcontent/index.html:mgmt/staticcontent/js/work.js"
+    "mgmt/staticcontent/index.html:mgmt/staticcontent/js/browse.js"
     "mgmt/staticcontent/system.html:mgmt/staticcontent/js/system.js"
     "mgmt/staticcontent/operations.html:mgmt/staticcontent/js/operations.js"
     "mgmt/staticcontent/retrieval.html:mgmt/staticcontent/js/retrieval.js"
@@ -202,7 +202,7 @@ done < <(find "${SITES}" -mindepth 2 -maxdepth 2 -name template_changes.html | L
 
 # ---- a PV name is a base name with an optional field --------------------------------------------
 # The server archives X:Y.RBV as a PV of its own, so the name patterns of the pages must accept it.
-for script in mgmt/staticcontent/js/work.js mgmt/staticcontent/js/archive.js retrieval/staticcontent/viewer/viewer.js; do
+for script in mgmt/staticcontent/js/browse.js mgmt/staticcontent/js/archive.js retrieval/staticcontent/viewer/viewer.js; do
     refused=$(python3 -I - "${UI}/${script}" <<'PY'
 import re, sys
 text = open(sys.argv[1], encoding="utf-8").read()
@@ -318,9 +318,9 @@ if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
     expect_rejected "an event handler" "has no event-handler attribute" \
         "${A}/mgmt/staticcontent/external.html" "sed -i '0,/<button/s//<button onclick=\"go()\"/' \"\$F\""
     expect_rejected "a jQuery reference" "does not refer to jQuery" \
-        "${A}/mgmt/staticcontent/js/work.js" "printf '// jQuery\\n' >> \"\$F\""
+        "${A}/mgmt/staticcontent/js/browse.js" "printf '// jQuery\\n' >> \"\$F\""
     expect_rejected "an unknown element id" "no element for: noSuchElement" \
-        "${A}/mgmt/staticcontent/js/work.js" "printf 'document.getElementById(\"noSuchElement\");\\n' >> \"\$F\""
+        "${A}/mgmt/staticcontent/js/browse.js" "printf 'document.getElementById(\"noSuchElement\");\\n' >> \"\$F\""
     expect_rejected "an outside host" "does not refer to an outside host" \
         "${A}/retrieval/staticcontent/viewer/viewer.js" "printf '// https://example.invalid/x.js\\n' >> \"\$F\""
     expect_rejected "an outside link on the help page" "help.html does not refer to an outside host" \
@@ -328,11 +328,11 @@ if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
     expect_rejected "no content security policy" "carries a content security policy" \
         "${A}/mgmt/staticcontent/index.html" "sed -i '/Content-Security-Policy/d' \"\$F\""
     expect_rejected "a script that is not there" "finds js/missing.js" \
-        "${A}/mgmt/staticcontent/index.html" "sed -i 's|js/work.js|js/missing.js|' \"\$F\""
+        "${A}/mgmt/staticcontent/index.html" "sed -i 's|js/browse.js|js/missing.js|' \"\$F\""
     expect_rejected "a picture source that is not there" "finds comm/img/missing.svg" \
         "${A}/mgmt/staticcontent/index.html" "sed -i 's|srcset=\"comm/img/wordmark.svg\"|srcset=\"comm/img/missing.svg\"|' \"\$F\""
     expect_rejected "data inserted as markup" "does not turn text into markup" \
-        "${A}/mgmt/staticcontent/js/work.js" "printf 'document.body.innerHTML = \"\";\\n' >> \"\$F\""
+        "${A}/mgmt/staticcontent/js/browse.js" "printf 'document.body.innerHTML = \"\";\\n' >> \"\$F\""
     expect_rejected "a server call built from parts" "name their server calls with the literal" \
         "${A}/mgmt/staticcontent/index.html" "grep -rl --include='*.js' --include='*.html' 'bpl/getPVStatus' \"\$(dirname \"\$F\")\" | xargs sed -i 's|bpl/getPVStatus|bpl/get\" + \"PVStatus|g'"
     expect_rejected "a site overlay that includes jQuery" "template_changes.html does not refer to jQuery" \
