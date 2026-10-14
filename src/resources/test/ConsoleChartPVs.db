@@ -1,0 +1,175 @@
+# Soft IOC database for browser checks of the chart of the Browse PVs page: a storage ring in top-up operation.
+# Run it with the softIoc of EPICS 7.0.10:  softIoc -S -d src/resources/test/ConsoleChartPVs.db
+# SR:TICK counts seconds; the other calc records are functions of it (RNDM is a uniform number, so noise is a sum of three).
+#   SR:BEAM:CURRENT    mA  500 mA, falls with an 8 h lifetime and is topped up every 90 s, 0.03 mA noise, alarms below 490 and 450
+#   SR:BEAM:LIFETIME   h   8 h with a slow drift and noise
+#   SR:VAC:01:PRESSURE Torr 1.0e-9 plus 1.2e-12 per mA of beam, 2 percent noise and a slow drift
+#   SR:RF:CAV1:POWER   kW  45 kW plus 0.15 kW per mA of beam, small noise
+#   SR:RF:CAV1:TEMP, SR:RF:CAV2:TEMP  C  water regulated near 35 C, rising a little with the power, 0.03 C noise
+#   SR:BPM:01..04:X, Y mm  micrometre noise, a slow drift of tens of micrometres and a kick at each injection
+# The other records (SR:RF:CAV2:POWER, BL:01:..., FAST:SIG:...) are signals of other shapes and rates, for lists and filters.
+
+record(calc, "SR:TICK") {
+    field(SCAN, "1 second")
+    field(CALC, "A+1")
+    field(INPA, "SR:TICK")
+    field(DESC, "seconds since IOC start")
+}
+record(calc, "SR:BPM:01:X") {
+    field(SCAN, "1 second")
+    field(CALC, "0.003*((RNDM+RNDM+RNDM-1.5)*2)+0.02*SIN(A/1800+0.7)+0.004*SIN(A/90)+0.05*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position X")
+}
+record(calc, "SR:BPM:01:Y") {
+    field(SCAN, "1 second")
+    field(CALC, "0.002*((RNDM+RNDM+RNDM-1.5)*2)+0.012*COS(A/2400+0.7)+0.003*SIN(A/70)+0.02*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position Y")
+}
+record(calc, "SR:BPM:02:X") {
+    field(SCAN, "1 second")
+    field(CALC, "0.003*((RNDM+RNDM+RNDM-1.5)*2)+0.02*SIN(A/1800+1.4)+0.004*SIN(A/90)+0.05*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position X")
+}
+record(calc, "SR:BPM:02:Y") {
+    field(SCAN, "1 second")
+    field(CALC, "0.002*((RNDM+RNDM+RNDM-1.5)*2)+0.012*COS(A/2400+1.4)+0.003*SIN(A/70)+0.02*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position Y")
+}
+record(calc, "SR:BPM:03:X") {
+    field(SCAN, "1 second")
+    field(CALC, "0.003*((RNDM+RNDM+RNDM-1.5)*2)+0.02*SIN(A/1800+2.1)+0.004*SIN(A/90)+0.05*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position X")
+}
+record(calc, "SR:BPM:03:Y") {
+    field(SCAN, "1 second")
+    field(CALC, "0.002*((RNDM+RNDM+RNDM-1.5)*2)+0.012*COS(A/2400+2.1)+0.003*SIN(A/70)+0.02*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position Y")
+}
+record(calc, "SR:BPM:04:X") {
+    field(SCAN, "1 second")
+    field(CALC, "0.003*((RNDM+RNDM+RNDM-1.5)*2)+0.02*SIN(A/1800+2.8)+0.004*SIN(A/90)+0.05*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position X")
+}
+record(calc, "SR:BPM:04:Y") {
+    field(SCAN, "1 second")
+    field(CALC, "0.002*((RNDM+RNDM+RNDM-1.5)*2)+0.012*COS(A/2400+2.8)+0.003*SIN(A/70)+0.02*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position Y")
+}
+record(calc, "SR:BEAM:CURRENT") {
+    field(SCAN, "1 second")
+    field(CALC, "500-(A%90)*0.01736+0.03*((RNDM+RNDM+RNDM-1.5)*2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mA")
+    field(PREC, "2")
+    field(LOW, "490")
+    field(LSV, "MINOR")
+    field(LOLO, "450")
+    field(LLSV, "MAJOR")
+    field(DESC, "stored beam current")
+}
+record(calc, "SR:BEAM:LIFETIME") {
+    field(SCAN, "2 second")
+    field(CALC, "8+0.4*SIN(A/1800)+0.12*((RNDM+RNDM+RNDM-1.5)*2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "h")
+    field(PREC, "2")
+    field(DESC, "beam lifetime")
+}
+record(calc, "SR:RF:CAV1:TEMP") {
+    field(SCAN, "5 second")
+    field(CALC, "34+0.008*B+0.15*SIN(A/3600)+0.03*((RNDM+RNDM+RNDM-1.5)*2)")
+    field(INPA, "SR:TICK")
+    field(INPB, "SR:RF:CAV1:POWER")
+    field(EGU, "C")
+    field(PREC, "2")
+    field(DESC, "cavity temperature")
+}
+record(calc, "SR:RF:CAV1:POWER") {
+    field(SCAN, "2 second")
+    field(CALC, "45+0.15*B+0.25*((RNDM+RNDM+RNDM-1.5)*2)")
+    field(INPA, "SR:TICK")
+    field(INPB, "SR:BEAM:CURRENT")
+    field(EGU, "kW")
+    field(PREC, "1")
+    field(DESC, "cavity forward power")
+}
+record(calc, "SR:RF:CAV2:TEMP") {
+    field(SCAN, "5 second")
+    field(CALC, "34.4+0.0075*B+0.12*SIN(A/3000)+0.03*((RNDM+RNDM+RNDM-1.5)*2)")
+    field(INPA, "SR:TICK")
+    field(INPB, "SR:RF:CAV1:POWER")
+    field(EGU, "C")
+    field(PREC, "2")
+    field(DESC, "cavity temperature")
+}
+record(calc, "SR:RF:CAV2:POWER") {
+    field(SCAN, "2 second")
+    field(CALC, "120-10+8*SIN(A/40)")
+    field(INPA, "SR:TICK")
+    field(EGU, "kW")
+    field(PREC, "1")
+    field(DESC, "cavity forward power")
+}
+record(calc, "SR:VAC:01:PRESSURE") {
+    field(SCAN, "2 second")
+    field(CALC, "(1.0E-9+1.2E-12*B)*(1+0.03*SIN(A/1800))*(1+0.02*((RNDM+RNDM+RNDM-1.5)*2))")
+    field(INPA, "SR:TICK")
+    field(INPB, "SR:BEAM:CURRENT")
+    field(EGU, "Torr")
+    field(PREC, "2")
+    field(DESC, "vacuum pressure")
+}
+record(calc, "BL:01:MOTOR:POS") {
+    field(SCAN, "10 second")
+    field(CALC, "FLOOR(A/300)*0.5")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "2")
+    field(DESC, "slow stepping motor position")
+}
+record(calc, "BL:01:SHUTTER:STATE") {
+    field(SCAN, "10 second")
+    field(CALC, "1")
+    field(INPA, "SR:TICK")
+    field(DESC, "constant state")
+}
+record(calc, "FAST:SIG:1") {
+    field(SCAN, ".1 second")
+    field(CALC, "SIN(A+1*0.1*B)")
+    field(INPA, "SR:TICK")
+    field(INPB, "SR:TICK")
+    field(PREC, "3")
+    field(DESC, "fast signal at 10 Hz")
+}
+record(calc, "FAST:SIG:2") {
+    field(SCAN, ".1 second")
+    field(CALC, "SIN(A+2*0.1*B)")
+    field(INPA, "SR:TICK")
+    field(INPB, "SR:TICK")
+    field(PREC, "3")
+    field(DESC, "fast signal at 10 Hz")
+}
