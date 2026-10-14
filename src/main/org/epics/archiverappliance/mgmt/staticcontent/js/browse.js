@@ -430,6 +430,8 @@ function afterSelection() {
     renderDetail();
     refreshStatus();
     refreshData();
+    // Data already read is not read again, so nothing else would draw the chart for a PV that was only unchecked.
+    scheduleRender();
     writeAddress();
 }
 
