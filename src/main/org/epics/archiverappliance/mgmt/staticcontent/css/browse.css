@@ -694,13 +694,95 @@ a.plain-link {
     }
 }
 
-.chartbar {
-    margin: 4px 0 8px;
+
+.inspect-head,
+.chart-dialog-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 16px;
 }
 
-.chartbar label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+.inspect-head h2,
+.chart-dialog-head h2 {
+    margin: 0;
+}
+
+.head-note {
+    color: var(--ink-3);
+    font-size: 0.875rem;
+}
+
+button.opt-toggle,
+button.opt-toggle:hover {
+    margin: 0 auto;
+    padding: 4px 8px;
+    background: none;
+    border: 0;
+    border-radius: var(--radius);
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     cursor: pointer;
+}
+
+button.opt-toggle:hover {
+    background: var(--c-accent-soft);
+}
+
+/* The mark of a collapsed and of an open panel is a small triangle drawn with borders. */
+.opt-toggle::after {
+    content: "";
+    display: inline-block;
+    margin-left: 8px;
+    border: 5px solid transparent;
+    border-left-color: currentColor;
+    vertical-align: middle;
+}
+
+.opt-toggle[aria-expanded="true"]::after {
+    margin-bottom: -5px;
+    border-left-color: transparent;
+    border-top-color: currentColor;
+}
+
+.chart-tools button.plain,
+.chart-dialog-head button.plain {
+    background: none;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    padding: 4px 0;
+    margin: 0;
+    color: var(--accent);
+    cursor: pointer;
+}
+
+.chart-tools button.plain:hover,
+.chart-dialog-head button.plain:hover {
+    border-bottom-color: currentColor;
+}
+
+#chartDialog {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    border: 0;
+    border-radius: 0;
+}
+
+
+.chart-dialog-box {
+    padding: 14px 20px 20px;
+}
+
+.chart-dialog-head {
+    margin-bottom: 8px;
 }

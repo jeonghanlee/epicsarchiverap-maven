@@ -2,8 +2,9 @@
 // range, lines are labelled directly, missing data is a gap, and a monitored value is held until the next sample.
 const d3 = globalThis.d3;
 
-// The width of one value axis, with its tick labels, when a chart draws more than one unit.
-const AXIS_WIDTH = 56;
+// The least width of one value axis with its tick labels, and the width one label character needs at the font of the axes.
+const AXIS_WIDTH_LEAST = 56;
+const AXIS_CHAR = 8.6;
 
 const DASHES = ["", "", "6 3", "2 3", "9 3 2 3"];
 
@@ -53,19 +54,15 @@ function lineLook(series, slot) {
  * The table of basic statistics of the samples in view, one row per drawn series: samples, minimum, mean, median,
  * maximum, standard deviation and the unit.
  */
-function buildStatistics(rows) {
+function buildStatistics(rows, info) {
     const wrap = document.createElement("div");
     wrap.className = "chart-stats-wrap";
     const title = document.createElement("h3");
     title.className = "chart-stats-title";
-    title.textContent = "Y projection statistics";
-    const help = document.createElement("p");
-    help.className = "chart-stats-help";
-    help.textContent = "Computed from the samples now inside the chart: the time window shown and any value range you dragged "
-        + "on an axis. The histogram at the right edge shows how they spread over the value axis; its line is the mean.";
+    title.textContent = "Statistics";
     const table = document.createElement("table");
     table.className = "chart-stats";
-    table.setAttribute("aria-label", "Y projection statistics");
+    table.setAttribute("aria-label", "Statistics");
     const head = document.createElement("tr");
     for (const title of ["PV", "Samples", "Min", "Mean", "Median", "Max", "Std dev", "Unit"]) {
         const cell = document.createElement("th");
@@ -101,7 +98,10 @@ function buildStatistics(rows) {
         body.append(tr);
     }
     table.append(thead, body);
-    wrap.append(title, help, table);
+    if (info) {
+        title.append(" ", info);
+    }
+    wrap.append(title, table);
     return wrap;
 }
 
@@ -203,7 +203,7 @@ const MARK_CAP = 1500;
  * above zero, square root values not below zero) falls back to symmetric log with the reason in the result.
  * chosen is a value range the viewer dragged out, or undefined.
  */
-function makeValueScale(kind, values, chosen, range, unit) {
+function makeValueScale(kind, values, chosen, range, unit, tickCount) {
     let applied = kind;
     let reason = "";
     const name = unit || "no unit";
@@ -242,7 +242,7 @@ function makeValueScale(kind, values, chosen, range, unit) {
     }
     scale.domain([low, high]).range(range);
     if (!fixed) {
-        scale.nice(4);
+        scale.nice(tickCount);
     }
     return { scale, kind: applied, reason };
 }
@@ -259,18 +259,21 @@ function movingStats(values, size) {
 }
 
 /**
- * The panel of the options of a chart: line shape, value scale, sample marks, running average, standard deviation band
- * and their window in samples. options is the object the page holds; onChange(next) is called with a new object after
- * each change, and the page draws the chart again with it.
+ * The controls of the options of a chart: line shape, value scale, sample marks, running average, standard deviation
+ * band and their window in samples. options is the object the page holds; onChange(next) is called with a new object
+ * after each change, and the page draws the chart again with it. The page puts the returned element in its panel.
+ * info is an element, an information control of the page, put at the end of the first row.
  */
-export function buildChartOptions(options, onChange) {
+export function buildChartOptions(options, onChange, info) {
     const current = { ...CHART_OPTIONS, ...options };
-    const details = document.createElement("details");
-    details.className = "chart-options";
-    const summary = document.createElement("summary");
-    summary.textContent = "Chart options";
     const body = document.createElement("div");
-    body.className = "optbody";
+    body.className = "opt-controls";
+    const row = () => {
+        const element = document.createElement("div");
+        element.className = "opt-row";
+        body.append(element);
+        return element;
+    };
     const apply = (name, value) => {
         current[name] = value;
         onChange({ ...current });
@@ -299,25 +302,18 @@ export function buildChartOptions(options, onChange) {
         wrap.append(element, ` ${label}`);
         return wrap;
     };
-    body.append(
-        select("Line", "shape", [["step", "Step (held value)"], ["line", "Straight"], ["smooth", "Smooth"], ["points", "Points only"]]),
+    row().append(
+        select("Line", "shape", [["step", "Step"], ["line", "Straight"], ["smooth", "Smooth"], ["points", "Points"]]),
         select("Y scale", "yscale", [["linear", "Linear"], ["symlog", "Symmetric log"], ["log", "Log"], ["sqrt", "Square root"]]),
-        select("Sample marks", "marks", [["auto", "Automatic"], ["on", "On every sample"], ["off", "Off"]]),
-        check("Running average", "average"),
-        check("Standard deviation band", "band"),
+        select("Marks", "marks", [["auto", "Auto"], ["on", "On"], ["off", "Off"]]),
         select("Window", "window", [[10, "10 samples"], [30, "30 samples"], [60, "60 samples"]], Number)
     );
-    const close = document.createElement("button");
-    close.type = "button";
-    close.className = "plain";
-    close.textContent = "Close";
-    close.addEventListener("click", () => {
-        details.open = false;
-        summary.focus();
-    });
-    body.append(close);
-    details.append(summary, body);
-    return details;
+    if (info) {
+        info.classList.add("opt-info");
+        body.firstElementChild.append(info);
+    }
+    row().append(check("Running average", "average"), check("Standard deviation band", "band"));
+    return body;
 }
 
 /**
@@ -361,7 +357,7 @@ export function labelRoom(host, input) {
 }
 
 /**
- * input: {series: [{name, egu, points: [{t, v, s, g?}], focus, quiet?}], from: Date, to: Date, gapMs: number (Infinity: none), labelNames?: boolean}
+ * input: {series: [{name, egu, points: [{t, v, s, g?}], focus, quiet?}], from: Date, to: Date, gapMs: number (Infinity: none), labelNames?: boolean, height?: number}
  * onZoom(from, to) turns a horizontal drag over the plot into a request for that window. Exact samples are marked
  * when the window holds few enough of them to be told apart.
  * quiet draws a series thin and pale, as the background of a series that carries the point (a floor over raw values).
@@ -369,19 +365,24 @@ export function labelRoom(host, input) {
  * labelRoom is the least room in pixels to leave on the right for the labels (see labelRoom()).
  * onReset() is called on a double-click, after the value ranges chosen on the axes are dropped, so that the page can return
  * to the time window it started from.
+ * info(topic) may return an element, an information control of the page, to put beside the title of the table of
+ * statistics (topic "statistics").
  * options is the object of buildChartOptions(): line shape, value scale, sample marks, running average and standard
  * deviation band; CHART_OPTIONS holds the values used until the viewer changes one.
  * projection true draws a histogram of the samples in view for each line at the right of the plot, on the value axis of
- * its unit, with a line at its mean, and puts a table of basic statistics under the chart, or in statisticsHost, an
- * element of the page, when the page gives one.
+ * its unit, with a line at its mean, and puts a table of basic statistics under the chart, or in each element of
+ * statisticsHost (an element of the page or a list of them) when the page gives one.
  * legend true gives each line a color and a dash and puts a legend under the chart in place of the labels at the
  * end of the lines; a click on a legend item hides that line until it is clicked again.
  * Replaces the content of host and returns nothing.
  */
 export function drawTimeSeries(host, input) {
     host.textContent = "";
-    if (input.statisticsHost) {
-        input.statisticsHost.textContent = "";
+    // The table of statistics goes into each element of input.statisticsHost (one element or a list); under the chart
+    // when the page gives none.
+    const statisticsHosts = [].concat(input.statisticsHost || []);
+    for (const element of statisticsHosts) {
+        element.textContent = "";
     }
     const { series, from, to, gapMs } = input;
     const legend = input.legend === true;
@@ -410,7 +411,9 @@ export function drawTimeSeries(host, input) {
     }
     const width = Math.max(320, host.clientWidth || 640);
     const narrow = width < 560;
-    const height = 250;
+    // input.height is the height of the drawing in pixels; a taller drawing gets more ticks on its value axes.
+    const height = Math.max(200, Math.floor(input.height || 250));
+    const tickCount = Math.max(4, Math.round((height - 42) / 48));
     const labelNames = input.labelNames !== false;
     const layout = labelLayout(host, drawn, width, labelNames);
     const { names, labelText, widest } = layout;
@@ -420,8 +423,6 @@ export function drawTimeSeries(host, input) {
     const multi = units.length > 1;
     const onLeft = Math.ceil(units.length / 2);
     const onRight = units.length - onLeft;
-    const margin = { top: multi ? 24 : 8, right: right + AXIS_WIDTH * onRight + (input.projection === true ? PROJECTION_WIDTH : 0), bottom: 34, left: 56 + AXIS_WIDTH * (onLeft - 1) };
-    const x = d3.scaleTime().domain([from, to]).range([margin.left, width - margin.right]);
     let ranges = RANGES.get(host);
     if (!ranges) {
         ranges = new Map();
@@ -432,12 +433,14 @@ export function drawTimeSeries(host, input) {
             ranges.delete(unit);
         }
     }
+    const plotTop = multi ? 30 : 8;
+    const plotBottomMargin = 34;
     const options = { ...CHART_OPTIONS, ...(input.options || {}) };
     const scaleNotes = [];
     const scales = new Map(
         units.map((unit) => {
             const values = drawn.filter((s) => (s.egu || "") === unit).flatMap((s) => s.points.map((p) => p.v));
-            const made = makeValueScale(options.yscale, values, ranges.get(unit), [height - margin.bottom, margin.top], unit);
+            const made = makeValueScale(options.yscale, values, ranges.get(unit), [height - plotBottomMargin, plotTop], unit, tickCount);
             if (made.reason) {
                 scaleNotes.push(made.reason);
             }
@@ -445,6 +448,16 @@ export function drawTimeSeries(host, input) {
         })
     );
     const yOf = (s) => scales.get(s.egu || "");
+    // The width of a value axis follows its widest tick label, so that a label such as 1.74e-9 stays clear of the next axis.
+    const tickChars = Math.max(...[...scales.values()].flatMap((scale) => scale.ticks(tickCount).map((tick) => d3.format(".4~g")(tick).length)));
+    const axisWidth = Math.max(AXIS_WIDTH_LEAST, Math.ceil(tickChars * AXIS_CHAR) + 14);
+    const margin = {
+        top: plotTop,
+        right: right + axisWidth * onRight + (input.projection === true ? PROJECTION_WIDTH : 0),
+        bottom: plotBottomMargin,
+        left: axisWidth + axisWidth * (onLeft - 1),
+    };
+    const x = d3.scaleTime().domain([from, to]).range([margin.left, width - margin.right]);
 
     const svg = d3
         .create("svg")
@@ -459,12 +472,12 @@ export function drawTimeSeries(host, input) {
     const axisAt = (index) => {
         const rightSide = index >= onLeft;
         const step = rightSide ? index - onLeft : index;
-        return { rightSide, x: rightSide ? width - margin.right + AXIS_WIDTH * step : margin.left - AXIS_WIDTH * step };
+        return { rightSide, x: rightSide ? width - margin.right + axisWidth * step : margin.left - axisWidth * step };
     };
     units.forEach((unit, index) => {
         const scale = scales.get(unit);
         const { rightSide, x: axisX } = axisAt(index);
-        for (const tick of scale.ticks(4)) {
+        for (const tick of scale.ticks(tickCount)) {
             if (index === 0) {
                 svg.append("line").attr("class", "grid").attr("x1", margin.left).attr("x2", width - margin.right).attr("y1", scale(tick)).attr("y2", scale(tick));
             }
@@ -480,7 +493,7 @@ export function drawTimeSeries(host, input) {
             svg.append("text")
                 .attr("class", "axis unit")
                 .attr("x", axisX)
-                .attr("y", margin.top - 8)
+                .attr("y", margin.top - 14)
                 .attr("text-anchor", rightSide ? "start" : "end")
                 .text(unit || "no unit");
         }
@@ -600,7 +613,7 @@ export function drawTimeSeries(host, input) {
         }
         const scale = yOf(s);
         const color = PALETTE[all.indexOf(s) % PALETTE.length];
-        const bandX = width - margin.right + AXIS_WIDTH * onRight + 14;
+        const bandX = width - margin.right + axisWidth * onRight + 14;
         const bins = d3.bin().domain(scale.domain()).thresholds(PROJECTION_BINS)(values);
         const most = Math.max(1, d3.max(bins, (b) => b.length));
         for (const bin of bins) {
@@ -697,7 +710,6 @@ export function drawTimeSeries(host, input) {
     // A drag across the plot asks the page for that time window (when it passes onZoom); a drag along an axis chooses
     // the value range of that axis and redraws at once; a short click chooses nothing; a double-click returns to the
     // automatic value ranges and, through onReset, to the time window the page was asked for first.
-    const plotTop = margin.top;
     const plotBottom = height - margin.bottom;
     const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
     const band = svg.append("rect").attr("class", "brush").attr("visibility", "hidden");
@@ -711,11 +723,11 @@ export function drawTimeSeries(host, input) {
             return -1;
         }
         if (px < margin.left) {
-            const step = Math.floor((margin.left - px) / AXIS_WIDTH);
+            const step = Math.floor((margin.left - px) / axisWidth);
             return step < onLeft ? step : -1;
         }
         if (px > width - margin.right) {
-            const step = Math.floor((px - (width - margin.right)) / AXIS_WIDTH);
+            const step = Math.floor((px - (width - margin.right)) / axisWidth);
             return step < onRight ? onLeft + step : -1;
         }
         return -1;
@@ -758,7 +770,7 @@ export function drawTimeSeries(host, input) {
         } else {
             const { rightSide, x: axisX } = axisAt(drag.index);
             const now = clamp(py, plotTop, plotBottom);
-            band.attr("visibility", "visible").attr("x", rightSide ? axisX : axisX - AXIS_WIDTH).attr("width", AXIS_WIDTH)
+            band.attr("visibility", "visible").attr("x", rightSide ? axisX : axisX - axisWidth).attr("width", axisWidth)
                 .attr("y", Math.min(drag.start, now)).attr("height", Math.abs(now - drag.start));
         }
     });
@@ -812,7 +824,9 @@ export function drawTimeSeries(host, input) {
         host.append(note);
     }
     if (input.projection === true) {
-        (input.statisticsHost || host).append(buildStatistics(statistics));
+        for (const element of statisticsHosts.length ? statisticsHosts : [host]) {
+            element.append(buildStatistics(statistics, typeof input.info === "function" ? input.info("statistics") : null));
+        }
     }
     host.dataset.egu = egu;
 }

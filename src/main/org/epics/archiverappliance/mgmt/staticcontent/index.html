@@ -10,6 +10,7 @@
     <title>appliance archiver - Browse PVs</title>
     <link rel="stylesheet" href="comm/css/main.css" />
     <link rel="stylesheet" href="comm/css/chart.css" />
+    <link rel="stylesheet" href="css/system.css" />
     <link rel="stylesheet" href="css/browse.css" />
     <script src="comm/js/vendor/d3.min.js" defer></script>
     <script type="module" src="js/browse.js"></script>
@@ -137,21 +138,32 @@
           <a id="viewerAll" class="plain-link" href="#" hidden>Open all selected in the viewer</a>
         </div>
 
-        <h2 class="area">Inspect</h2>
-        <h3 id="chartTitle">Time series</h3>
+        <div class="inspect-head">
+          <h2 class="area">Inspect <span id="chartInfo"></span></h2>
+          <button type="button" id="optionsToggle" class="opt-toggle" aria-expanded="false" aria-controls="optionsPanel">Options</button>
+          <span class="chart-tools">
+            <button type="button" id="enlarge" class="plain">Enlarge chart</button>
+          </span>
+        </div>
+        <div id="plotArea">
         <div class="zoombar">
           <button type="button" id="panEarlier" class="plain" hidden>&laquo; Earlier</button>
           <button type="button" id="panLater" class="plain" hidden>Later &raquo;</button>
           <button type="button" id="zoomReset" class="plain" hidden>Back to the selected range</button>
+          <span id="chartNote" class="head-note"></span>
         </div>
-        <p id="chartNote" class="sub"></p>
-        <div class="chartbar" id="chartBar">
-          <details class="chart-options" id="projection">
-            <summary>Y projection</summary>
-            <div class="optbody" id="projectionStats"></div>
-          </details>
+        <div class="opt-panel" id="optionsPanel" hidden>
+          <div class="opt-tabs" role="tablist" aria-label="Options">
+            <button type="button" role="tab" class="opt-tab" id="tabProjection" aria-controls="panelProjection" aria-selected="true">Projection</button>
+            <button type="button" role="tab" class="opt-tab" id="tabChart" aria-controls="panelChart" aria-selected="false" tabindex="-1">Chart</button>
+          </div>
+          <div class="opt-body" id="panelProjection" role="tabpanel" aria-labelledby="tabProjection">
+            <div id="projectionStats"></div>
+          </div>
+          <div class="opt-body" id="panelChart" role="tabpanel" aria-labelledby="tabChart" hidden></div>
         </div>
         <div id="chart" class="chart"></div>
+        </div>
         <div class="pair">
           <div>
             <h3>Distribution</h3>
@@ -186,6 +198,17 @@
         <div class="detail" id="detail"></div>
       </section>
     </main>
+
+    <dialog id="chartDialog" aria-labelledby="chartDialogTitle">
+      <div class="chart-dialog-box">
+        <div class="chart-dialog-head">
+          <h2 id="chartDialogTitle">Chart <span id="chartDialogInfo"></span></h2>
+          <button type="button" id="optionsToggleBig" class="opt-toggle" aria-expanded="false" aria-controls="optionsPanel">Options</button>
+          <button type="button" id="chartDialogClose" class="plain">Close</button>
+        </div>
+        <div id="chartDialogBody"></div>
+      </div>
+    </dialog>
 
     <dialog id="archiveDialog" aria-labelledby="archiveTitle">
       <form id="archiveForm">

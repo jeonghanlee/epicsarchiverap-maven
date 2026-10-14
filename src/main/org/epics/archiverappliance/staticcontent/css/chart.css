@@ -213,12 +213,6 @@ svg .spark-end.alarm {
     font-weight: 600;
 }
 
-.chart-stats-help {
-    margin: 0 0 8px;
-    color: var(--ink-3);
-    font-size: 0.875rem;
-}
-
 .chart-stats th,
 .chart-stats td {
     padding: 4px 8px;
@@ -266,48 +260,89 @@ svg .spark-end.alarm {
     font-size: 0.875rem;
 }
 
-details.chart-options {
-    display: block;
-    margin: 4px 0;
-}
+/* The options panel of a chart: tabs over a white window. */
 
-details.chart-options summary {
-    cursor: pointer;
-    color: var(--accent);
-}
-
-details.chart-options .optbody {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px 20px;
-    margin-top: 6px;
-    padding: 12px 14px;
+.opt-panel {
+    margin: 6px 0 8px;
     background: var(--c-surface);
     border: 1px solid var(--c-border);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
 }
 
-details.chart-options .optbody label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-details.chart-options .optbody:empty {
+.opt-panel[hidden],
+.opt-body[hidden] {
     display: none;
 }
 
-details.chart-options .optbody .chart-stats-wrap {
-    flex: 1 1 100%;
+.opt-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 6px 12px 0;
+    border-bottom: 1px solid var(--c-border);
+}
+
+/* A tab is a plain button; the selectors are as specific as the site rule for buttons so that its fill and hover do not apply. */
+button.opt-tab,
+button.opt-tab:hover {
+    padding: 6px 14px;
+    margin: 0;
+    background: none;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    color: var(--ink-2);
+    font: inherit;
+    cursor: pointer;
+}
+
+button.opt-tab:hover {
+    background: var(--c-accent-soft);
+}
+
+button.opt-tab[aria-selected="true"],
+button.opt-tab[aria-selected="true"]:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+.opt-body {
+    padding: 12px 14px;
+}
+
+.opt-body .chart-stats-wrap {
     margin-top: 0;
 }
 
-details.chart-options .optbody button.plain {
-    background: none;
-    border: 0;
-    color: var(--accent);
-    cursor: pointer;
-    padding: 4px 0;
+.opt-body:empty {
+    display: none;
+}
+
+.opt-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.opt-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 24px;
+}
+
+.opt-row .opt-info {
+    margin-left: auto;
+}
+
+.opt-controls label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+
+.opt-controls select {
+    width: auto;
 }
