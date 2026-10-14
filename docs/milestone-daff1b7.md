@@ -5154,6 +5154,10 @@ Out of scope: the chart component (M59); adding PVs (M57).
 - Decision Date 2026-10-14: the chart has one Y axis per unit with its own automatic range, the axes split between the left and the right of the plot, the first half on the left.
 - Decision Date 2026-10-14: a PV is named in a legend under the chart (line style, name, unit), not by labels at the line ends; a legend item hides and shows its line, the PV keeping its row and its Plot box.
 - Decision Date 2026-10-14: the hover tooltip shows the date and time of the pointer and the value of each plotted PV with its unit.
+- Decision Date 2026-10-14: with five units the axes are split between the two sides of the plot, and the width left to the plot is not narrowed further; the large window of Enlarge chart is the way to a wider plot.
+- Decision Date 2026-10-14: the tooltip stays as it is, the time of the pointer and the value of each plotted PV with its unit, and does not name the time of the sample a held value comes from.
+- Decision Date 2026-10-14: Open in the analyzer passes the PVs, the time window and the options the user chose; an option left at its default is not passed and the analyzer applies its own default.
+- Decision Date 2026-10-14: the options pass as one named parameter per option in the query string of the analyzer's address (`?`, where the viewer reads `pv`, `from` and `to` today), so that an address can be read and edited by hand; M59 lists the names.
 - Decision Date 2026-10-14: a value of a PVA PV that the appliance does not hold is shown as not provided or not set, not as zero.
 - Decision Date 2026-10-14: the plotted PVs and the time window pass to the analyzer in its address, in the parameters the viewer reads today.
 - Decision Date 2026-10-14: a PV ticked in the list gets its row with the Plot box off; the user turns it on.
@@ -5166,22 +5170,34 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Settled with the owner on 2026-10-14: the layout and content of the Browse PVs page (Decisions above). Still for the owner: the width the axes leave to the plot when there are five (a narrower axis, ticks shown only on the axis under the pointer, or the large window); whether the tooltip names the time of the sample a held value comes from; and the names and form of the parameters that carry the options to the analyzer (settled in M59).
-2. Implement, run on a local appliance, and update the book. Closes with T1 and T2.
+1. Settled with the owner on 2026-10-14: the layout and content of the Browse PVs page and the form of the address (the Decision Date lines above). Still for the owner before acceptance: (a) where the actions on an archived PV (Pause, Resume, Change sampling, Stop archiving, Maintenance), which the Detail area of the Work page holds today, sit once the table replaces the Scan list and the Detail area; (b) how the analyzer sits inside the console across the two origins: the console and the retrieval web application are on different ports, so a frame needs the `frame-src` of the console's content security policy to name the retrieval address, or the analyzer opens as its own page with the site header and a link back; (c) the order with M59: the chart of the page is the simple form of the M59 component, so M59 is built first and the page draws through it.
+2. Find and the table of PVs (`index.html`, `js/work.js`, `js/work/api.js`, `css/workspace.css`): the information button and card of the three search modes; a ticked PV adds a row, at most the 100 of today's scan list; the Plot box off by default and at most 5 on, the others disabled with the reason shown; the columns Plot, PV, Protocol, State, Value, Last event and Details; Value aligned on the decimal point with its unit; the lost-events mark in State, read with `getPVDetails` for each row; the element ids added to `scripts/ui-static-checks.bash`. Check: T1.
+3. The Details window (`js/work.js`): the groups of the Scope from `getPVStatus`, `getPVTypeInfo` and `getPVDetails`, with "not provided" or "not set" for what a PVA PV lacks; Esc, Close and a click outside close it and the focus returns to its button. Check: T2.
+4. The chart: the plotted PVs drawn through the simple form of the M59 component, with the legend, the tooltip, the axes by unit, the ranges chosen with the mouse and the Enlarge chart window; the Inspect panels (distribution, scatter plot, statistics) leave the page for the analyzer. Check: T3.
+5. The analyzer and the control into it (`analyzer.html`, `js/analyzer-forward.js`, `archViewer.html`, `viewer.js`, `index.html`): the menu entry opens the analyzer in the console and in its own window with the site header and logo and a way back; Open in the analyzer builds the address from the plotted PVs, the time window and the chosen options (the names of M59); the address of the viewer forwards to it. Check: T4.
+6. The book (`interface.md`, `operating.md`, the figures of the page and of the analyzer) and `MgmtPageLinksTest` for the pages and entries. Check: T5 and T6.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Browser | On a local appliance with archived fixture PVs, open the mode explanations and the analyzer from the menu and from Browse PVs, inside the console, in its own window, and back | Local appliance, shipped soft IOC fixture | The completion criteria are observed |
-| T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+| T1 | Browser | On a local appliance, open the card of the search modes with its button and close it with Esc, Close and a click outside; tick eight PVs and see eight rows; turn Plot on for five and see the sixth refused with the reason; turn one off and another on; read Value for numbers of both signs; read the lost-events mark on a PV of the fixture that drops events, after `getPVDetails` has confirmed that its lost events are above zero | Local appliance, shipped soft IOC fixture | Each behavior of the Scope is observed with real clicks and keys |
+| T2 | Browser | Open Details of a CA PV and of a PVA PV (a fixture record archived through `pva://`) and compare every value with `getPVStatus`, `getPVTypeInfo` and `getPVDetails` read for the same PV | Local appliance, soft IOC fixture served over CA and PVA (`softIocPVA`) | Every group is present for the CA PV; the PVA PV reads "not provided" for its units and "not set" for its limits; no value differs from the calls |
+| T3 | Browser | Plot five PVs of four units: read the axes and their sides, drag along an axis and over the plot, double-click, hide a line from the legend, hover for the tooltip, open Enlarge chart and return with Esc; look at the page at 720 and 320 px | Local appliance, shipped soft IOC fixture | One axis per unit with its own range; only the dragged axis or the time range changes; the legend hides and shows a line; the tooltip names the date and time and each value with its unit; no sideways scroll; text at least 14 px |
+| T4 | Browser | Choose a line shape, a scale and an axis range, press Open in the analyzer, in the console and in its own window; open the address of the viewer; return to the console | Local appliance, shipped soft IOC fixture | The analyzer shows the same PVs, time window and options; the old address forwards; the way back reaches the console |
+| T5 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids of the page, the menu, the forwards and the links pass |
+| T6 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+| T2 | Not run | Local appliance, soft IOC fixture served over CA and PVA | Pending | none |
+| T3 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T4 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T5 | Not run | Local, JDK 21, Tomcat 9.0.121 | Pending | none |
+| T6 | Not run | JDK 21; GitHub Actions | Pending | none |
 
 ##### Closure Evidence
 
@@ -5228,7 +5244,8 @@ One chart component. The analyzer carries every option and analysis tool below. 
 - time axis ticks on minute, hour and day boundaries (`d3-time`, `scaleTime`);
 - transitions on zoom and range changes (`d3-transition`);
 - CSV export through `d3-dsv`, replacing the viewer's own Download CSV code;
-- values in SI prefixes with matched significant digits (`d3-format`).
+- values in SI prefixes with matched significant digits (`d3-format`);
+- a split by unit: an option that draws one plot for each unit, one under another, sharing the time axis, the crosshair and the time range choice, each with its own value axis and range (the earlier viewer drew one chart per unit); the default is one plot with an axis per unit.
 
 Out of scope: the page layouts (M57, M58); the retrieval server.
 
@@ -5247,7 +5264,15 @@ Out of scope: the page layouts (M57, M58); the retrieval server.
 - Decision Date 2026-10-12: the analyzer is the one place for the detailed options and the analysis tools, including the Distribution panel, the scatter plot and the statistics that the Work page shows today; the other pages use the component in a simple form with the Y projection only and a control into the viewer. The simple form is widened by the decision of 2026-10-14 below.
 - Decision Date 2026-10-14: the simple form of the other pages carries the options listed in the Scope, from the Browse PVs mockup the owner approved; the Distribution panel, the scatter plot, the full statistics and the other analysis tools stay in the analyzer.
 - Decision Date 2026-10-14: a chart with PVs of several units draws one Y axis per unit, each with its own range; a PV with no unit shares one axis named no unit.
-- Decision Date 2026-10-14: the analyzer reads, from its address, the PVs, the time window and the options of the simple form (line, Y scale, sample marks, running average, standard deviation band and its window, the Y projection, and the range of each axis), so that the control into the analyzer of the other pages opens the same picture; the names and form of the parameters are settled in this milestone.
+- Decision Date 2026-10-14: the analyzer reads, from its address, the PVs, the time window and the options of the simple form (line, Y scale, sample marks, running average, standard deviation band and its window, the Y projection, and the range of each axis), so that the control into the analyzer of the other pages opens the same picture; an option the user did not set is not in the address and the analyzer applies its own default; each option is one named parameter in the query string, a name it does not know or a value it cannot read is ignored so that an address with `pv`, `from` and `to` alone opens as before, and the range of an axis is given by the unit of the axis (`none` for a PV with no unit); the names and form of the parameters are settled in this milestone.
+- Reference of 2026-10-14, read in the browser from the bundled D3 7.9.0 (`js/vendor/d3.min.js`, 578 public names); the component is built from these and the page computes the rest:
+  - On a canvas: `d3.line`, `d3.area`, `d3.arc`, `d3.symbol` and `d3.geoPath` take `.context(ctx)`; `d3.contourDensity` gives density outlines, and `d3.Delaunay` and `d3.quadtree` find the point nearest the pointer. The axes (`d3.axis*`) draw SVG only, so a canvas plot draws its ticks from `d3.ticks` and `tickFormat`. Checked by drawing a line, finding a nearest point and drawing outlines on a canvas, and 20000 points drew in 8 ms.
+  - Statistics (`d3-array`): `min`, `max`, `extent`, `sum`, `fsum`, `mean`, `median`, `mode`, `variance`, `deviation`, `quantile`, `rank`, `bin` with `thresholdFreedmanDiaconis`, `thresholdScott` and `thresholdSturges`, `bisect` and `bisector`, `group` and `rollup`, `cumsum`, and `blur` for smoothing.
+  - Scales, time and format: `scaleLinear`, `scaleLog`, `scaleSqrt`, `scalePow`, `scaleSymlog`, `scaleTime`, `scaleUtc`, `scaleQuantile`; `timeTicks`, `utcTicks` and the time intervals from second to year; `format`, `formatPrefix` (SI prefixes), `precisionFixed`, `precisionRound` and `timeFormat`.
+  - Curves and marks: `curveStepAfter`, `curveLinear`, `curveMonotoneX`, `curveCatmullRom`, `curveBasis`, `curveNatural`, `curveBumpX`, and the `symbol` shapes.
+  - Interaction: `zoom` (wheel, drag to pan, pinch), `brush`, `brushX` and `brushY`, `drag`, `pointer` and `pointers`, and `transition` with the `ease*` functions.
+  - Geometry: `polygonHull`, `polygonArea`, `polygonCentroid` and `polygonContains`; the randomness `randomNormal` and the other `random*` for test data.
+  - Not in the bundle, so computed by the page: correlation, covariance, linear regression, the moving average and the exponential average, FFT, a one-dimensional density estimate, and outlier detection.
 - Decision Date 2026-10-12: the correlation and the linear regression are computed by the page, as the correlation is today in `plots.js`; the bundled D3 has neither, and no regression package is added.
 
 ##### Implementation Plan
@@ -5257,22 +5282,31 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Settle with the owner the default of each option and the gestures that conflict on one plot (drag to pan against drag to select).
-2. Build the component, first with the tools the bundled D3 provides, then the computations the page implements (D40); build the analyzer on it in full and move the other pages onto the simple form, and update the book. Closes with T1 and T2.
+1. Settled with the owner on 2026-10-14 for the simple form: its options and gestures (a drag over the plot selects a time range, a drag along an axis selects that axis's range, a double-click returns) and the names of the options in the address (step 4). Still for the owner before acceptance: the default of each option of the analyzer, and the gestures that conflict on one plot there (drag to pan against drag to select).
+2. The component (`staticcontent/js/aa/chart.js`, `staticcontent/js/aa/plots.js`, `staticcontent/css/chart.css`), the simple form first because the Browse PVs page draws through it: one axis per unit with its own automatic range, split between the two sides with the first half on the left; the legend under the chart whose items hide and show a line; the tooltip with the date and time and each value with its unit; the ranges chosen with the mouse; the Y projection with its mean line and the table of basic statistics; the Chart options panel (line, Y scale, sample marks, running average, standard deviation band and its window); the Enlarge chart window that draws again at its size. Check: T1.
+3. The analyzer on the component in full (`archViewer.html`, `viewer.js`, `viewer.css`): every option, analysis tool and gesture of the Scope with `d3-zoom`, `d3-brush` and `d3-drag`, and the computations the page implements (D40). Check: T2.
+4. The address: the analyzer reads the PVs, the time window and the options from the query string and writes them back as the page changes. The names are `pv` (repeated), `from` and `to` as today; `shape` (`step` by default, `line`, `smooth`, `points`); `yscale` (`linear` by default, `symlog`, `log`, `sqrt`); `marks` (`auto` by default, `on`, `off`); `avg` (the window in samples, the running average on when present); `band` (the window in samples, the standard deviation band on when present); `yproj` (`1`); `yrange` (repeated, `unit:low:high`, `none` for a PV with no unit); `interval` (`raw` or the averaging interval in seconds, automatic when absent); `split` (`none` by default, `unit`). Check: T3.
+5. The other pages move onto the simple form (Archive PVs, System) and the book describes the controls. Check: T4 and T5.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Browser | On a local appliance with archived fixture PVs, exercise each option, analysis tool and pointer behavior in the analyzer with mouse and touch, and the simple form and its control into the analyzer on the other pages | Local appliance, shipped soft IOC fixture | Each behavior is observed; a range change issues one data request after the gesture |
-| T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+| T1 | Browser | On a local appliance, exercise each option and gesture of the simple form on the Browse PVs page with the mouse, count the data requests of the browser after a drag that chooses a range, and repeat the options with a PV of no unit and with values that are not above zero for the log scale | Local appliance, shipped soft IOC fixture | Each option and gesture is observed; a chosen range issues one data request after the gesture; a scale that needs positive values falls back to symmetric log with the reason shown |
+| T2 | Browser | In the analyzer, exercise each option, analysis tool and pointer behavior of the Scope with mouse and touch | Local appliance, shipped soft IOC fixture | Each behavior is observed on archived fixture data |
+| T3 | Browser | Set options on the Browse PVs page and press Open in the analyzer; edit the address by hand; add an unknown name and a value that cannot be read; open an address with `pv`, `from` and `to` alone | Local appliance, shipped soft IOC fixture | The analyzer shows the options of the address; the unknown name and the unreadable value are ignored; the old address opens as before |
+| T4 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the pages that draw through the component pass |
+| T5 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+| T2 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T3 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
+| T4 | Not run | Local, JDK 21, Tomcat 9.0.121 | Pending | none |
+| T5 | Not run | JDK 21; GitHub Actions | Pending | none |
 
 ##### Closure Evidence
 
