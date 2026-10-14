@@ -46,12 +46,24 @@ svg .spark-end.alarm {
 .chart {
     position: relative;
     min-height: 120px;
+    overflow-x: auto;
 }
 
 .chart svg text {
     font-family: var(--mono);
     font-size: 0.875rem;
     fill: var(--ink-3);
+}
+
+.chart svg .axis-key {
+    fill: transparent;
+    stroke: none;
+    outline: none;
+}
+
+.chart svg .axis-key:focus-visible {
+    stroke: var(--accent);
+    stroke-width: 2;
 }
 
 .chart svg .grid {

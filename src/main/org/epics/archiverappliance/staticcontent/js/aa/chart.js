@@ -45,6 +45,11 @@ function format(value, egu) {
     return `${text}${egu ? ` ${egu}` : ""}`;
 }
 
+/** The series with the samples whose value is a number; a series left without a sample is dropped. */
+function finiteSeries(series) {
+    return series.map((s) => ({ ...s, points: s.points.filter((p) => Number.isFinite(p.v)) })).filter((s) => s.points.length);
+}
+
 /** The look of the line of the series at position slot of a chart that has a legend. */
 function lineLook(series, slot) {
     return { color: PALETTE[slot % PALETTE.length], dash: DASHES[slot % DASHES.length] || null, width: series.focus ? 2.5 : 1.8 };
@@ -247,6 +252,15 @@ function makeValueScale(kind, values, chosen, range, unit, tickCount) {
     return { scale, kind: applied, reason };
 }
 
+// The least width in pixels the plot keeps; a chart with more axes than its host holds is made wider than the host.
+const PLOT_LEAST = 240;
+
+/** The width of a value axis for its widest tick label, so that a label such as 1.74e-9 stays clear of the next axis. */
+function axisWidthOf(scales, tickCount) {
+    const chars = Math.max(...scales.flatMap((scale) => scale.ticks(tickCount).map((tick) => d3.format(".4~g")(tick).length)));
+    return Math.max(AXIS_WIDTH_LEAST, Math.ceil(chars * AXIS_CHAR) + 14);
+}
+
 /** The mean and the standard deviation of the last `size` values at each position of values (a shorter window at the start). */
 function movingStats(values, size) {
     const out = [];
@@ -349,7 +363,7 @@ function labelLayout(host, drawn, width, labelNames) {
  * as input.labelRoom, so that their time axes line up.
  */
 export function labelRoom(host, input) {
-    const drawn = input.series.filter((s) => s.points.length);
+    const drawn = finiteSeries(input.series);
     if (!drawn.length) {
         return 0;
     }
@@ -357,7 +371,32 @@ export function labelRoom(host, input) {
 }
 
 /**
- * input: {series: [{name, egu, points: [{t, v, s, g?}], focus, quiet?}], from: Date, to: Date, gapMs: number (Infinity: none), labelNames?: boolean, height?: number}
+ * The width in pixels the value axes of a chart need for their tick labels. Charts drawn one above the other pass the
+ * largest of their widths as input.axisWidth, so that their plots start at the same place.
+ */
+export function axisRoom(host, input) {
+    const hidden = HIDDEN.get(host);
+    const all = finiteSeries(input.series);
+    const drawn = input.legend === true && hidden ? all.filter((s) => !hidden.has(s.name)) : all;
+    if (!drawn.length) {
+        return 0;
+    }
+    const height = Math.max(200, Math.floor(input.height || 250));
+    const tickCount = Math.max(4, Math.round((height - 42) / 48));
+    const options = { ...CHART_OPTIONS, ...(input.options || {}) };
+    const units = [...new Set(drawn.map((s) => s.egu || ""))];
+    const ranges = RANGES.get(host) || new Map();
+    const top = units.length > 1 ? 30 : 8;
+    const scales = units.map((unit) => {
+        const values = drawn.filter((s) => (s.egu || "") === unit).flatMap((s) => s.points.map((p) => p.v));
+        return makeValueScale(options.yscale, values, ranges.get(unit), [height - 34, top], unit, tickCount).scale;
+    });
+    return axisWidthOf(scales, tickCount);
+}
+
+/**
+ * input: {series: [{name, egu, points: [{t, v, s, g?}], focus, quiet?}], from: Date, to: Date, gapMs: number (Infinity: none), labelNames?: boolean, height?: number, axisWidth?: number}
+ * axisWidth is the least width in pixels of a value axis (see axisRoom()).
  * onZoom(from, to) turns a horizontal drag over the plot into a request for that window. Exact samples are marked
  * when the window holds few enough of them to be told apart.
  * quiet draws a series thin and pale, as the background of a series that carries the point (a floor over raw values).
@@ -386,7 +425,7 @@ export function drawTimeSeries(host, input) {
     }
     const { series, from, to, gapMs } = input;
     const legend = input.legend === true;
-    const all = series.filter((s) => s.points.length);
+    const all = finiteSeries(series);
     if (!all.length) {
         host.textContent = "No samples in this time range.";
         return;
@@ -409,7 +448,9 @@ export function drawTimeSeries(host, input) {
         host.append(note, legendBox);
         return;
     }
-    const width = Math.max(320, host.clientWidth || 640);
+    const hostWidth = Math.max(320, host.clientWidth || 640);
+    // The drawing is as wide as its host unless its axes and projection leave the plot too little room (see below).
+    let width = hostWidth;
     const narrow = width < 560;
     // input.height is the height of the drawing in pixels; a taller drawing gets more ticks on its value axes.
     const height = Math.max(200, Math.floor(input.height || 250));
@@ -448,21 +489,26 @@ export function drawTimeSeries(host, input) {
         })
     );
     const yOf = (s) => scales.get(s.egu || "");
-    // The width of a value axis follows its widest tick label, so that a label such as 1.74e-9 stays clear of the next axis.
-    const tickChars = Math.max(...[...scales.values()].flatMap((scale) => scale.ticks(tickCount).map((tick) => d3.format(".4~g")(tick).length)));
-    const axisWidth = Math.max(AXIS_WIDTH_LEAST, Math.ceil(tickChars * AXIS_CHAR) + 14);
+    // The width of a value axis follows its widest tick label, and is at least what the page asks for (stacked charts).
+    const axisWidth = Math.max(axisWidthOf([...scales.values()], tickCount), Math.floor(input.axisWidth || 0));
     const margin = {
         top: plotTop,
         right: right + axisWidth * onRight + (input.projection === true ? PROJECTION_WIDTH : 0),
         bottom: plotBottomMargin,
         left: axisWidth + axisWidth * (onLeft - 1),
     };
+    // Axes and projection never take the plot below its least width: the drawing grows wider than its host, which
+    // scrolls sideways inside its own box, and the page does not.
+    if (width - margin.left - margin.right < PLOT_LEAST) {
+        width = margin.left + margin.right + PLOT_LEAST;
+    }
+    const widened = width > hostWidth;
     const x = d3.scaleTime().domain([from, to]).range([margin.left, width - margin.right]);
 
     const svg = d3
         .create("svg")
         .attr("viewBox", `0 0 ${width} ${height}`)
-        .attr("width", "100%")
+        .attr("width", widened ? width : "100%")
         .attr("height", height)
         .attr("role", "img")
         .attr("aria-label", `Time series of ${drawn.length} PV${drawn.length > 1 ? "s" : ""}`);
@@ -800,6 +846,61 @@ export function drawTimeSeries(host, input) {
     svg.on("pointercancel", () => {
         drag = null;
         band.attr("visibility", "hidden");
+    });
+    // The same choice from the keyboard: an axis takes the focus; arrows move its range, plus and minus narrow and widen
+    // it and Home clears it.
+    const rangeByKey = (unit, key) => {
+        const [first, second] = ranges.get(unit) || scales.get(unit).domain();
+        const low = Math.min(first, second);
+        const high = Math.max(first, second);
+        const span = high - low;
+        const mid = (low + high) / 2;
+        const moves = {
+            ArrowUp: [low + span / 4, high + span / 4],
+            ArrowDown: [low - span / 4, high - span / 4],
+            "+": [mid - span / 4, mid + span / 4],
+            "=": [mid - span / 4, mid + span / 4],
+            "-": [mid - span, mid + span],
+        };
+        return moves[key] || null;
+    };
+    units.forEach((unit, index) => {
+        const { rightSide, x: axisX } = axisAt(index);
+        svg.append("rect")
+            .attr("class", "axis-key")
+            .attr("tabindex", 0)
+            .attr("role", "group")
+            .attr("aria-label", `Value range of ${unit || "no unit"}: arrow keys move it, plus and minus narrow and widen it, Home clears it`)
+            .attr("data-unit", unit)
+            .attr("pointer-events", "none")
+            .attr("x", rightSide ? axisX : axisX - axisWidth)
+            .attr("y", plotTop)
+            .attr("width", axisWidth)
+            .attr("height", plotBottom - plotTop)
+            .on("keydown", (event) => {
+                let changed = false;
+                if (event.key === "Home") {
+                    changed = ranges.delete(unit);
+                } else {
+                    const next = rangeByKey(unit, event.key);
+                    if (next && next.every(Number.isFinite)) {
+                        ranges.set(unit, next);
+                        changed = true;
+                    }
+                }
+                if (!changed && !["ArrowUp", "ArrowDown", "+", "=", "-", "Home"].includes(event.key)) {
+                    return;
+                }
+                event.preventDefault();
+                if (changed) {
+                    drawTimeSeries(host, input);
+                    for (const element of host.querySelectorAll(".axis-key")) {
+                        if (element.dataset.unit === unit) {
+                            element.focus();
+                        }
+                    }
+                }
+            });
     });
     svg.on("dblclick", () => {
         const had = ranges.size > 0;

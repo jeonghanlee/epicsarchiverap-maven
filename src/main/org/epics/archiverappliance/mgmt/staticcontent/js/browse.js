@@ -660,7 +660,7 @@ function chartCard() {
         "Reading the chart",
         [
             ["Time window", "Drag across the chart to look at that window. Earlier and Later move it by half a window; double-click returns."],
-            ["Value range", "Drag along an axis to choose the value range of that unit; the statistics follow it. Double-click clears it."],
+            ["Value range", "Drag along an axis, or focus it and use the arrow keys, + and -, to choose the value range of that unit; the statistics follow it. Home or a double-click clears it."],
             [
                 "Values",
                 `A window longer than ${BIN_FREE_MINUTES} minutes shows one point per interval, the mean of its samples; an interval ` +

@@ -1,6 +1,6 @@
 // The archived data viewer. The address keeps the parameters of the previous viewer:
 // pv (repeatable), from and to (ISO 8601). Data comes from this retrieval server only.
-import { drawTimeSeries, labelRoom } from "../comm/js/aa/chart.js";
+import { axisRoom, drawTimeSeries, labelRoom } from "../comm/js/aa/chart.js";
 
 const DATA = "../../data/getData.json";
 const MATCHING = "../../bpl/getMatchingPVs";
@@ -182,10 +182,11 @@ function render() {
             },
         });
     }
-    // The charts share the room of the widest labels, so that their time axes line up.
+    // The charts share the room of the widest labels and of the widest value axis, so that their time axes line up.
     const room = Math.max(0, ...pending.map((chart) => labelRoom(chart.host, chart.input)));
+    const axis = Math.max(0, ...pending.map((chart) => axisRoom(chart.host, chart.input)));
     for (const chart of pending) {
-        drawTimeSeries(chart.host, { ...chart.input, labelRoom: room });
+        drawTimeSeries(chart.host, { ...chart.input, labelRoom: room, axisWidth: axis });
     }
 }
 
