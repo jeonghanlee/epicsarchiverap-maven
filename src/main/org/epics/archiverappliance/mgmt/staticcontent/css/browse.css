@@ -786,3 +786,9 @@ button.opt-toggle:hover {
 .chart-dialog-head {
     margin-bottom: 8px;
 }
+
+.chart-tools a.plain-link,
+.chart-dialog-head a.plain-link {
+    margin-right: 18px;
+    font-weight: 600;
+}

@@ -625,6 +625,17 @@ function setChartHead(note) {
     $("chartNote").textContent = note;
 }
 
+/**
+ * The links that open the PVs of the chart, over its window, in the analyzer. The address is that of the Analyzer entry of the
+ * menu with the PVs and the window as parameters; an empty href hides the links.
+ */
+function setAnalyzerLinks(href) {
+    for (const id of ["openAnalyzer", "openAnalyzerBig"]) {
+        $(id).hidden = !href;
+        $(id).setAttribute("href", href || "#");
+    }
+}
+
 /** Shows or hides the Options panel and its tabs, and draws the chart with or without the Y projection. */
 function showOptions() {
     const projection = state.optionsTab === "projection";
@@ -764,6 +775,7 @@ function renderChart() {
               ? "No samples in this time range. A PV that did not change has none; try a wider range."
               : "Loading samples…";
         setChartHead("");
+        setAnalyzerLinks("");
         showZoomControls();
         renderStats([]);
         renderPlots([]);
@@ -780,6 +792,13 @@ function renderChart() {
         notes.push(`Showing ${clock(first.from)} to ${clock(first.to)}.`);
     }
     setChartHead(notes.join(" "));
+    const analyzer = new URLSearchParams();
+    for (const d of list) {
+        analyzer.append("pv", d.name);
+    }
+    analyzer.set("from", first.from.toISOString());
+    analyzer.set("to", first.to.toISOString());
+    setAnalyzerLinks(`analyzer.html?${analyzer}`);
     drawTimeSeries(host, {
         series: list.map((d) => ({ name: d.name, egu: d.egu, points: d.points, focus: d.name === state.focus })),
         from: first.from,
