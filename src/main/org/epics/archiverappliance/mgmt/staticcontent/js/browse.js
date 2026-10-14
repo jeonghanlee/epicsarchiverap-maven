@@ -615,6 +615,18 @@ function zoomTo(from, to) {
     writeAddress();
 }
 
+/** Returns from a chosen time window to the range of the buttons; nothing changes when no window was chosen. */
+function resetWindow() {
+    if (!state.window) {
+        return;
+    }
+    state.window = null;
+    state.data.clear();
+    refreshData();
+    writeAddress();
+    renderChart();
+}
+
 /** Moves the window by half of its span, earlier or later; it never reaches into the future. */
 function panBy(direction) {
     if (!state.window) {
@@ -671,7 +683,8 @@ function renderChart() {
         notes.push(`Values are means over ${first.bin} s; an interval without a sample has no value. A window of ${BIN_FREE_MINUTES} minutes or less shows the stored samples.`);
     }
     const clock = (date) => date.toLocaleTimeString([], { hour12: false });
-    notes.push(state.window ? `Showing ${clock(first.from)} to ${clock(first.to)}. Drag across the chart to zoom further.` : "Drag across the chart to look at a window.");
+    const gestures = "Drag across the chart for a time window, along an axis for its value range; double-click returns.";
+    notes.push(state.window ? `Showing ${clock(first.from)} to ${clock(first.to)}. ${gestures}` : gestures);
     $("chartNote").textContent = notes.join(" ");
     drawTimeSeries(host, {
         series: list.map((d) => ({ name: d.name, egu: d.egu, points: d.points, focus: d.name === state.focus })),
@@ -680,6 +693,7 @@ function renderChart() {
         gapMs: Infinity,
         legend: true,
         onZoom: zoomTo,
+        onReset: resetWindow,
     });
     showZoomControls();
     renderStats(list);
@@ -1259,13 +1273,7 @@ function wire() {
     });
     $("panEarlier").addEventListener("click", () => panBy(-1));
     $("panLater").addEventListener("click", () => panBy(1));
-    $("zoomReset").addEventListener("click", () => {
-        state.window = null;
-        state.data.clear();
-        refreshData();
-        writeAddress();
-        renderChart();
-    });
+    $("zoomReset").addEventListener("click", resetWindow);
     $("bulkPause").addEventListener("click", () => bulkAction("pause"));
     $("bulkResume").addEventListener("click", () => bulkAction("resume"));
     $("bulkStop").addEventListener("click", () => bulkAction("stop"));

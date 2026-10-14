@@ -15,6 +15,16 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 // The names of the lines a viewer has hidden through the legend, kept per chart host across redraws.
 const HIDDEN = new WeakMap();
 
+// The value ranges a viewer chose by a drag along an axis, by unit, kept per chart host across redraws.
+const RANGES = new WeakMap();
+
+// A drag shorter than this many pixels is a click and chooses nothing.
+const DRAG_LEAST = 6;
+
+// The lines and sample marks are clipped to the plot area; each drawing takes the next id of the page.
+let clipCount = 0;
+const CLIP_PAD = 3;
+
 /** A value with a precision by magnitude: values below 0.001 in exponent form so that a pressure never reads as 0. */
 function format(value, egu) {
     const magnitude = Math.abs(value);
@@ -168,6 +178,8 @@ export function labelRoom(host, input) {
  * quiet draws a series thin and pale, as the background of a series that carries the point (a floor over raw values).
  * labelNames false labels the end of a line with its value only, for a chart whose title already names it.
  * labelRoom is the least room in pixels to leave on the right for the labels (see labelRoom()).
+ * onReset() is called on a double-click, after the value ranges chosen on the axes are dropped, so that the page can return
+ * to the time window it started from.
  * legend true gives each line a color and a dash and puts a legend under the chart in place of the labels at the
  * end of the lines; a click on a legend item hides that line until it is clicked again.
  * Replaces the content of host and returns nothing.
@@ -213,8 +225,22 @@ export function drawTimeSeries(host, input) {
     const onRight = units.length - onLeft;
     const margin = { top: multi ? 24 : 8, right: right + AXIS_WIDTH * onRight, bottom: 34, left: 56 + AXIS_WIDTH * (onLeft - 1) };
     const x = d3.scaleTime().domain([from, to]).range([margin.left, width - margin.right]);
+    let ranges = RANGES.get(host);
+    if (!ranges) {
+        ranges = new Map();
+        RANGES.set(host, ranges);
+    }
+    for (const unit of [...ranges.keys()]) {
+        if (!units.includes(unit)) {
+            ranges.delete(unit);
+        }
+    }
     const scales = new Map(
         units.map((unit) => {
+            const chosen = ranges.get(unit);
+            if (chosen) {
+                return [unit, d3.scaleLinear().domain(chosen).range([height - margin.bottom, margin.top])];
+            }
             const values = drawn.filter((s) => (s.egu || "") === unit).flatMap((s) => s.points.map((p) => p.v));
             let [low, high] = d3.extent(values);
             const pad = (high - low) * 0.1 || Math.abs(high) * 0.05 || 1;
@@ -235,11 +261,15 @@ export function drawTimeSeries(host, input) {
         .attr("aria-label", `Time series of ${drawn.length} PV${drawn.length > 1 ? "s" : ""}`);
 
     const egu = drawn[0].egu;
-    units.forEach((unit, index) => {
-        const scale = scales.get(unit);
+    // The side and the x position of the line of the axis of the unit at position index.
+    const axisAt = (index) => {
         const rightSide = index >= onLeft;
         const step = rightSide ? index - onLeft : index;
-        const axisX = rightSide ? width - margin.right + AXIS_WIDTH * step : margin.left - AXIS_WIDTH * step;
+        return { rightSide, x: rightSide ? width - margin.right + AXIS_WIDTH * step : margin.left - AXIS_WIDTH * step };
+    };
+    units.forEach((unit, index) => {
+        const scale = scales.get(unit);
+        const { rightSide, x: axisX } = axisAt(index);
         for (const tick of scale.ticks(4)) {
             if (index === 0) {
                 svg.append("line").attr("class", "grid").attr("x1", margin.left).attr("x2", width - margin.right).attr("y1", scale(tick)).attr("y2", scale(tick));
@@ -262,7 +292,8 @@ export function drawTimeSeries(host, input) {
         }
     });
     const spanHours = (to - from) / 3600000;
-    const timeFormat = d3.timeFormat(spanHours > 36 ? "%m-%d %H:%M" : "%H:%M");
+    // A window of ten minutes or less is labelled to the second, so that its four labels differ.
+    const timeFormat = d3.timeFormat(spanHours > 36 ? "%m-%d %H:%M" : spanHours > 1 / 6 ? "%H:%M" : "%H:%M:%S");
     [0, 1 / 3, 2 / 3, 1].forEach((fraction, index, all) => {
         const when = new Date(from.getTime() + fraction * (to - from));
         svg.append("text")
@@ -283,6 +314,15 @@ export function drawTimeSeries(host, input) {
         }
     }
 
+    const clipId = `aa-chart-clip-${(clipCount += 1)}`;
+    svg.append("clipPath")
+        .attr("id", clipId)
+        .append("rect")
+        .attr("x", margin.left - CLIP_PAD)
+        .attr("y", margin.top - CLIP_PAD)
+        .attr("width", width - margin.right - margin.left + 2 * CLIP_PAD)
+        .attr("height", height - margin.bottom - margin.top + 2 * CLIP_PAD);
+    const plotArea = svg.append("g").attr("clip-path", `url(#${clipId})`);
     const lineOf = (s) => d3.line().x((p) => x(p.t)).y((p) => yOf(s)(p.v)).curve(d3.curveStepAfter);
     const ordered = drawn.slice().sort((a, b) => Number(a.focus) - Number(b.focus));
     const labels = [];
@@ -290,7 +330,7 @@ export function drawTimeSeries(host, input) {
         const slot = all.indexOf(s);
         const look = legend ? lineLook(s, slot) : null;
         for (const part of splitOnGaps(s.points, gapMs)) {
-            const path = svg.append("path")
+            const path = plotArea.append("path")
                 .attr("class", s.focus ? "line focus" : s.quiet ? "line quiet" : "line")
                 .attr("stroke-dasharray", look ? look.dash : s.focus ? null : DASHES[slot % DASHES.length] || null)
                 .attr("d", lineOf(s)(part));
@@ -307,7 +347,7 @@ export function drawTimeSeries(host, input) {
     if (drawn.every((s) => inView(s).length <= MARKER_LIMIT)) {
         for (const s of ordered) {
             for (const point of inView(s)) {
-                const dot = svg.append("circle")
+                const dot = plotArea.append("circle")
                     .attr("class", s.focus ? "dot focus" : "dot")
                     .attr("cx", x(point.t))
                     .attr("cy", yOf(s)(point.v))
@@ -384,52 +424,111 @@ export function drawTimeSeries(host, input) {
         tip.hidden = true;
     });
 
-    // Drag across the plot to look at that window; a short click does nothing.
-    if (typeof input.onZoom === "function") {
-        const band = svg.append("rect").attr("class", "brush").attr("y", margin.top).attr("height", height - margin.top - margin.bottom).attr("visibility", "hidden");
-        let startX = null;
-        const toUser = (event) => {
-            const box = svg.node().getBoundingClientRect();
-            return Math.max(margin.left, Math.min(width - margin.right, ((event.clientX - box.left) / box.width) * width));
-        };
-        svg.style("touch-action", "pan-y");
-        svg.on("pointerdown", (event) => {
-            const px = toUser(event);
-            if (event.button !== 0 || px <= margin.left - 1 || px >= width - margin.right + 1) {
-                return;
+    // A drag across the plot asks the page for that time window (when it passes onZoom); a drag along an axis chooses
+    // the value range of that axis and redraws at once; a short click chooses nothing; a double-click returns to the
+    // automatic value ranges and, through onReset, to the time window the page was asked for first.
+    const plotTop = margin.top;
+    const plotBottom = height - margin.bottom;
+    const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+    const band = svg.append("rect").attr("class", "brush").attr("visibility", "hidden");
+    const pointAt = (event) => {
+        const box = svg.node().getBoundingClientRect();
+        return [((event.clientX - box.left) / box.width) * width, ((event.clientY - box.top) / box.height) * height];
+    };
+    // The index of the unit whose axis column holds the point, or -1.
+    const axisIndexAt = (px, py) => {
+        if (py < plotTop || py > plotBottom) {
+            return -1;
+        }
+        if (px < margin.left) {
+            const step = Math.floor((margin.left - px) / AXIS_WIDTH);
+            return step < onLeft ? step : -1;
+        }
+        if (px > width - margin.right) {
+            const step = Math.floor((px - (width - margin.right)) / AXIS_WIDTH);
+            return step < onRight ? onLeft + step : -1;
+        }
+        return -1;
+    };
+    let drag = null;
+    svg.style("touch-action", "pan-y");
+    svg.on("pointermove.cursor", (event) => {
+        const [px, py] = pointAt(event);
+        svg.style("cursor", axisIndexAt(px, py) >= 0 ? "ns-resize" : null);
+    });
+    svg.on("pointerdown", (event) => {
+        if (event.button !== 0) {
+            return;
+        }
+        const [px, py] = pointAt(event);
+        const inPlot = px > margin.left - 1 && px < width - margin.right + 1 && py >= plotTop && py <= plotBottom;
+        const index = inPlot ? -1 : axisIndexAt(px, py);
+        if (inPlot && typeof input.onZoom === "function") {
+            drag = { kind: "x", start: clamp(px, margin.left, width - margin.right) };
+        } else if (index >= 0) {
+            drag = { kind: "y", start: clamp(py, plotTop, plotBottom), index };
+        } else {
+            return;
+        }
+        try {
+            svg.node().setPointerCapture(event.pointerId);
+        } catch (error) {
+            // A synthetic pointer has nothing to capture; the drag still works.
+        }
+    });
+    svg.on("pointermove.brush", (event) => {
+        if (drag === null) {
+            return;
+        }
+        const [px, py] = pointAt(event);
+        if (drag.kind === "x") {
+            const now = clamp(px, margin.left, width - margin.right);
+            band.attr("visibility", "visible").attr("x", Math.min(drag.start, now)).attr("width", Math.abs(now - drag.start))
+                .attr("y", plotTop).attr("height", plotBottom - plotTop);
+        } else {
+            const { rightSide, x: axisX } = axisAt(drag.index);
+            const now = clamp(py, plotTop, plotBottom);
+            band.attr("visibility", "visible").attr("x", rightSide ? axisX : axisX - AXIS_WIDTH).attr("width", AXIS_WIDTH)
+                .attr("y", Math.min(drag.start, now)).attr("height", Math.abs(now - drag.start));
+        }
+    });
+    svg.on("pointerup", (event) => {
+        if (drag === null) {
+            return;
+        }
+        const chosen = drag;
+        drag = null;
+        band.attr("visibility", "hidden");
+        const [px, py] = pointAt(event);
+        if (chosen.kind === "x") {
+            const now = clamp(px, margin.left, width - margin.right);
+            if (Math.abs(now - chosen.start) >= DRAG_LEAST + 2) {
+                input.onZoom(x.invert(Math.min(chosen.start, now)), x.invert(Math.max(chosen.start, now)));
             }
-            startX = px;
-            try {
-                svg.node().setPointerCapture(event.pointerId);
-            } catch (error) {
-                // A synthetic pointer has nothing to capture; the drag still works.
-            }
-        });
-        svg.on("pointermove.brush", (event) => {
-            if (startX === null) {
-                return;
-            }
-            const px = toUser(event);
-            band.attr("visibility", "visible").attr("x", Math.min(startX, px)).attr("width", Math.abs(px - startX));
-        });
-        svg.on("pointerup", (event) => {
-            if (startX === null) {
-                return;
-            }
-            const px = toUser(event);
-            const a = Math.min(startX, px);
-            const b = Math.max(startX, px);
-            startX = null;
-            band.attr("visibility", "hidden");
-            if (b - a >= 8) {
-                input.onZoom(x.invert(a), x.invert(b));
-            }
-        });
-        svg.on("pointercancel", () => {
-            startX = null;
-            band.attr("visibility", "hidden");
-        });
-    }
+            return;
+        }
+        const now = clamp(py, plotTop, plotBottom);
+        if (Math.abs(now - chosen.start) >= DRAG_LEAST) {
+            const scale = scales.get(units[chosen.index]);
+            const [a, b] = [scale.invert(chosen.start), scale.invert(now)];
+            ranges.set(units[chosen.index], [Math.min(a, b), Math.max(a, b)]);
+            drawTimeSeries(host, input);
+        }
+    });
+    svg.on("pointercancel", () => {
+        drag = null;
+        band.attr("visibility", "hidden");
+    });
+    svg.on("dblclick", () => {
+        const had = ranges.size > 0;
+        ranges.clear();
+        if (had) {
+            drawTimeSeries(host, input);
+        }
+        if (typeof input.onReset === "function") {
+            input.onReset();
+        }
+    });
 
     host.append(svg.node(), tip);
     if (legendBox) {
