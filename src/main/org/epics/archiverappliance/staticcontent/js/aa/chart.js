@@ -2,11 +2,88 @@
 // range, lines are labelled directly, missing data is a gap, and a monitored value is held until the next sample.
 const d3 = globalThis.d3;
 
+// The width of one value axis, with its tick labels, when a chart draws more than one unit.
+const AXIS_WIDTH = 56;
+
 const DASHES = ["", "", "6 3", "2 3", "9 3 2 3"];
 
+// The colors of the lines of a chart that has a legend, by position in the series list.
+const PALETTE = ["#007681", "#5a6b70", "#b36b00", "#6a4c93", "#b3261e", "#2e7d32", "#c2185b", "#1565c0", "#7b5e00", "#455a64"];
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+// The names of the lines a viewer has hidden through the legend, kept per chart host across redraws.
+const HIDDEN = new WeakMap();
+
+/** A value with a precision by magnitude: values below 0.001 in exponent form so that a pressure never reads as 0. */
 function format(value, egu) {
-    const digits = Math.abs(value) >= 100 ? 1 : Math.abs(value) >= 1 ? 3 : 4;
-    return `${value.toFixed(digits)}${egu ? ` ${egu}` : ""}`;
+    const magnitude = Math.abs(value);
+    let text;
+    if (value === 0) {
+        text = "0";
+    } else if (magnitude < 1e-3) {
+        text = value.toExponential(2);
+    } else {
+        text = value.toFixed(magnitude >= 100 ? 1 : magnitude >= 1 ? 3 : 4);
+    }
+    return `${text}${egu ? ` ${egu}` : ""}`;
+}
+
+/** The look of the line of the series at position slot of a chart that has a legend. */
+function lineLook(series, slot) {
+    return { color: PALETTE[slot % PALETTE.length], dash: DASHES[slot % DASHES.length] || null, width: series.focus ? 2.5 : 1.8 };
+}
+
+/** The legend under a chart: one button per series with its line, name and unit; a click hides or shows that line. */
+function buildLegend(host, all, hidden, redraw) {
+    const box = document.createElement("div");
+    box.className = "legend";
+    box.setAttribute("aria-label", "Legend");
+    all.forEach((s, slot) => {
+        const off = hidden.has(s.name);
+        const look = lineLook(s, slot);
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "item";
+        item.dataset.series = s.name;
+        item.setAttribute("aria-pressed", String(!off));
+        item.title = `${off ? "Show" : "Hide"} ${s.name}`;
+        const swatch = document.createElementNS(SVG_NS, "svg");
+        swatch.setAttribute("width", "30");
+        swatch.setAttribute("height", "10");
+        swatch.setAttribute("aria-hidden", "true");
+        const line = document.createElementNS(SVG_NS, "line");
+        for (const [name, value] of [["x1", "1"], ["x2", "29"], ["y1", "5"], ["y2", "5"], ["stroke", look.color], ["stroke-width", String(look.width)]]) {
+            line.setAttribute(name, value);
+        }
+        if (look.dash) {
+            line.setAttribute("stroke-dasharray", look.dash);
+        }
+        swatch.append(line);
+        item.append(swatch, document.createTextNode(s.name));
+        if (s.egu) {
+            const unit = document.createElement("span");
+            unit.className = "unit";
+            unit.textContent = s.egu;
+            item.append(" ", unit);
+        }
+        item.addEventListener("click", () => {
+            if (hidden.has(s.name)) {
+                hidden.delete(s.name);
+            } else {
+                hidden.add(s.name);
+            }
+            redraw();
+            // The redraw replaced the buttons; the keyboard stays on the item that was pressed.
+            for (const button of host.querySelectorAll(".legend button")) {
+                if (button.dataset.series === s.name) {
+                    button.focus();
+                }
+            }
+        });
+        box.append(item);
+    });
+    return box;
 }
 
 /** Names without the leading segments they all share; a single name stays whole. */
@@ -91,14 +168,35 @@ export function labelRoom(host, input) {
  * quiet draws a series thin and pale, as the background of a series that carries the point (a floor over raw values).
  * labelNames false labels the end of a line with its value only, for a chart whose title already names it.
  * labelRoom is the least room in pixels to leave on the right for the labels (see labelRoom()).
+ * legend true gives each line a color and a dash and puts a legend under the chart in place of the labels at the
+ * end of the lines; a click on a legend item hides that line until it is clicked again.
  * Replaces the content of host and returns nothing.
  */
 export function drawTimeSeries(host, input) {
     host.textContent = "";
     const { series, from, to, gapMs } = input;
-    const drawn = series.filter((s) => s.points.length);
-    if (!drawn.length) {
+    const legend = input.legend === true;
+    const all = series.filter((s) => s.points.length);
+    if (!all.length) {
         host.textContent = "No samples in this time range.";
+        return;
+    }
+    let hidden = HIDDEN.get(host);
+    if (!hidden) {
+        hidden = new Set();
+        HIDDEN.set(host, hidden);
+    }
+    for (const name of [...hidden]) {
+        if (!all.some((s) => s.name === name)) {
+            hidden.delete(name);
+        }
+    }
+    const drawn = legend ? all.filter((s) => !hidden.has(s.name)) : all;
+    const legendBox = legend ? buildLegend(host, all, hidden, () => drawTimeSeries(host, input)) : null;
+    if (!drawn.length) {
+        const note = document.createElement("p");
+        note.textContent = "All lines are hidden. Click a legend item to show it.";
+        host.append(note, legendBox);
         return;
     }
     const width = Math.max(320, host.clientWidth || 640);
@@ -107,16 +205,26 @@ export function drawTimeSeries(host, input) {
     const labelNames = input.labelNames !== false;
     const layout = labelLayout(host, drawn, width, labelNames);
     const { names, labelText, widest } = layout;
-    const right = Math.max(layout.right, Math.min(input.labelRoom || 0, Math.floor(width * 0.45)));
-    const margin = { top: 8, right, bottom: 34, left: 56 };
+    const right = legend ? 12 : Math.max(layout.right, Math.min(input.labelRoom || 0, Math.floor(width * 0.45)));
+    // One value axis per unit, each with its own range: the first half on the left of the plot, the rest on the right.
+    const units = [...new Set(drawn.map((s) => s.egu || ""))];
+    const multi = units.length > 1;
+    const onLeft = Math.ceil(units.length / 2);
+    const onRight = units.length - onLeft;
+    const margin = { top: multi ? 24 : 8, right: right + AXIS_WIDTH * onRight, bottom: 34, left: 56 + AXIS_WIDTH * (onLeft - 1) };
     const x = d3.scaleTime().domain([from, to]).range([margin.left, width - margin.right]);
-    const values = drawn.flatMap((s) => s.points.map((p) => p.v));
-    let [low, high] = d3.extent(values);
-    const pad = (high - low) * 0.1 || Math.abs(high) * 0.05 || 1;
-    // A series that never goes below zero keeps zero as its floor instead of a padded negative value.
-    low = values.every((v) => v >= 0) ? Math.max(0, low - pad) : low - pad;
-    high += pad;
-    const y = d3.scaleLinear().domain([low, high]).nice(4).range([height - margin.bottom, margin.top]);
+    const scales = new Map(
+        units.map((unit) => {
+            const values = drawn.filter((s) => (s.egu || "") === unit).flatMap((s) => s.points.map((p) => p.v));
+            let [low, high] = d3.extent(values);
+            const pad = (high - low) * 0.1 || Math.abs(high) * 0.05 || 1;
+            // A series that never goes below zero keeps zero as its floor instead of a padded negative value.
+            low = values.every((v) => v >= 0) ? Math.max(0, low - pad) : low - pad;
+            high += pad;
+            return [unit, d3.scaleLinear().domain([low, high]).nice(4).range([height - margin.bottom, margin.top])];
+        })
+    );
+    const yOf = (s) => scales.get(s.egu || "");
 
     const svg = d3
         .create("svg")
@@ -127,10 +235,32 @@ export function drawTimeSeries(host, input) {
         .attr("aria-label", `Time series of ${drawn.length} PV${drawn.length > 1 ? "s" : ""}`);
 
     const egu = drawn[0].egu;
-    for (const tick of y.ticks(4)) {
-        svg.append("line").attr("class", "grid").attr("x1", margin.left).attr("x2", width - margin.right).attr("y1", y(tick)).attr("y2", y(tick));
-        svg.append("text").attr("class", "axis").attr("x", margin.left - 6).attr("y", y(tick) + 4).attr("text-anchor", "end").text(d3.format(".4~g")(tick));
-    }
+    units.forEach((unit, index) => {
+        const scale = scales.get(unit);
+        const rightSide = index >= onLeft;
+        const step = rightSide ? index - onLeft : index;
+        const axisX = rightSide ? width - margin.right + AXIS_WIDTH * step : margin.left - AXIS_WIDTH * step;
+        for (const tick of scale.ticks(4)) {
+            if (index === 0) {
+                svg.append("line").attr("class", "grid").attr("x1", margin.left).attr("x2", width - margin.right).attr("y1", scale(tick)).attr("y2", scale(tick));
+            }
+            svg.append("text")
+                .attr("class", "axis")
+                .attr("x", rightSide ? axisX + 6 : axisX - 6)
+                .attr("y", scale(tick) + 4)
+                .attr("text-anchor", rightSide ? "start" : "end")
+                .text(d3.format(".4~g")(tick));
+        }
+        if (multi) {
+            svg.append("line").attr("class", "axis-line").attr("x1", axisX).attr("x2", axisX).attr("y1", margin.top).attr("y2", height - margin.bottom);
+            svg.append("text")
+                .attr("class", "axis unit")
+                .attr("x", axisX)
+                .attr("y", margin.top - 8)
+                .attr("text-anchor", rightSide ? "start" : "end")
+                .text(unit || "no unit");
+        }
+    });
     const spanHours = (to - from) / 3600000;
     const timeFormat = d3.timeFormat(spanHours > 36 ? "%m-%d %H:%M" : "%H:%M");
     [0, 1 / 3, 2 / 3, 1].forEach((fraction, index, all) => {
@@ -153,19 +283,23 @@ export function drawTimeSeries(host, input) {
         }
     }
 
-    const line = d3.line().x((p) => x(p.t)).y((p) => y(p.v)).curve(d3.curveStepAfter);
+    const lineOf = (s) => d3.line().x((p) => x(p.t)).y((p) => yOf(s)(p.v)).curve(d3.curveStepAfter);
     const ordered = drawn.slice().sort((a, b) => Number(a.focus) - Number(b.focus));
     const labels = [];
     ordered.forEach((s) => {
-        const slot = drawn.indexOf(s);
+        const slot = all.indexOf(s);
+        const look = legend ? lineLook(s, slot) : null;
         for (const part of splitOnGaps(s.points, gapMs)) {
-            svg.append("path")
+            const path = svg.append("path")
                 .attr("class", s.focus ? "line focus" : s.quiet ? "line quiet" : "line")
-                .attr("stroke-dasharray", s.focus ? null : DASHES[slot % DASHES.length] || null)
-                .attr("d", line(part));
+                .attr("stroke-dasharray", look ? look.dash : s.focus ? null : DASHES[slot % DASHES.length] || null)
+                .attr("d", lineOf(s)(part));
+            if (look) {
+                path.style("stroke", look.color).style("stroke-width", look.width);
+            }
         }
         const last = s.points[s.points.length - 1];
-        labels.push({ y: y(last.v), series: s, last });
+        labels.push({ y: yOf(s)(last.v), series: s, last });
     });
 
     // The samples themselves, once few enough are in view to be told apart one from another.
@@ -173,11 +307,14 @@ export function drawTimeSeries(host, input) {
     if (drawn.every((s) => inView(s).length <= MARKER_LIMIT)) {
         for (const s of ordered) {
             for (const point of inView(s)) {
-                svg.append("circle")
+                const dot = svg.append("circle")
                     .attr("class", s.focus ? "dot focus" : "dot")
                     .attr("cx", x(point.t))
-                    .attr("cy", y(point.v))
+                    .attr("cy", yOf(s)(point.v))
                     .attr("r", 2.4);
+                if (legend) {
+                    dot.style("stroke", lineLook(s, all.indexOf(s)).color);
+                }
             }
         }
     }
@@ -189,14 +326,14 @@ export function drawTimeSeries(host, input) {
             labels[i].y = labels[i - 1].y + 13;
         }
     }
-    const room = margin.right - 6;
-    for (const label of labels) {
+    const room = right - 6;
+    for (const label of legend ? [] : labels) {
         const full = labelText(label.series, drawn.indexOf(label.series));
         // A label that still does not fit the room is shortened with an ellipsis; its full text is the title.
         const text = widest <= room ? full : `${full.slice(0, Math.max(4, Math.floor((full.length * room) / widest) - 1))}\u2026`;
         const element = svg.append("text")
             .attr("class", label.series.focus ? "label focus" : "label")
-            .attr("x", width - margin.right + 6)
+            .attr("x", width - right + 6)
             .attr("y", label.y + 4)
             .text(text);
         if (text !== full) {
@@ -295,5 +432,8 @@ export function drawTimeSeries(host, input) {
     }
 
     host.append(svg.node(), tip);
+    if (legendBox) {
+        host.append(legendBox);
+    }
     host.dataset.egu = egu;
 }

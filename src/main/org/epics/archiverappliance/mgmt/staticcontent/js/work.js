@@ -597,17 +597,15 @@ function renderScan() {
 function chartList() {
     const focus = state.focus && state.data.get(state.focus);
     if (!focus || !focus.points.length) {
-        return { list: [], other: 0, over: 0 };
+        return { list: [], over: 0 };
     }
-    const same = state.selected
-        .map((name) => state.data.get(name))
-        .filter((d) => d && d.points.length && d.egu === focus.egu);
-    const list = same.slice(0, LIMITS.chart);
+    // The PVs of every unit are drawn, each unit on an axis of its own.
+    const loaded = state.selected.map((name) => state.data.get(name)).filter((d) => d && d.points.length);
+    const list = loaded.slice(0, LIMITS.chart);
     if (!list.includes(focus)) {
         list.splice(LIMITS.chart - 1, 1, focus);
     }
-    const loaded = state.selected.filter((name) => state.data.get(name)?.points.length).length;
-    return { list, other: loaded - same.length, over: same.length - list.length };
+    return { list, over: loaded.length - list.length };
 }
 
 function zoomTo(from, to) {
@@ -645,7 +643,7 @@ function showZoomControls() {
 
 function renderChart() {
     const host = $("chart");
-    const { list, other, over } = chartList();
+    const { list, over } = chartList();
     $("limChart").textContent = String(list.length);
     $("limChartMax").textContent = String(LIMITS.chart);
     if (!list.length) {
@@ -663,11 +661,9 @@ function renderChart() {
         return;
     }
     const first = list[0];
-    $("chartTitle").textContent = `${list.length} PV${list.length > 1 ? "s" : ""}${first.egu ? ` in ${first.egu}` : ""}`;
+    const units = [...new Set(list.map((d) => d.egu).filter(Boolean))];
+    $("chartTitle").textContent = `${list.length} PV${list.length > 1 ? "s" : ""}${units.length ? ` in ${units.join(", ")}` : ""}`;
     const notes = [];
-    if (other > 0) {
-        notes.push(`${other} selected PV${other > 1 ? "s use" : " uses"} another unit and ${other > 1 ? "are" : "is"} not drawn here.`);
-    }
     if (over > 0) {
         notes.push(`${over} more than the chart limit of ${LIMITS.chart} stay in the scan list only.`);
     }
@@ -682,6 +678,7 @@ function renderChart() {
         from: first.from,
         to: first.to,
         gapMs: Infinity,
+        legend: true,
         onZoom: zoomTo,
     });
     showZoomControls();
@@ -707,7 +704,12 @@ function renderPlots(list) {
         $("scatterNote").textContent = "";
         return;
     }
-    const other = list.find((d) => d !== focus);
+    const other = list.find((d) => d !== focus && d.egu === focus.egu);
+    if (!other) {
+        $("scatter").textContent = "Select a second PV of the same unit to compare two PVs.";
+        $("scatterNote").textContent = "";
+        return;
+    }
     const correlation = drawScatter($("scatter"), { x: focus, y: other });
     $("scatterNote").textContent = correlation === null ? "" : `${focus.name} across, ${other.name} up. Correlation ${correlation.toFixed(2)}.`;
 }

@@ -59,6 +59,16 @@ svg .spark-end.alarm {
     stroke-width: 1;
 }
 
+.chart svg .axis-line {
+    stroke: var(--ink-3);
+    stroke-width: 1;
+}
+
+.chart svg .unit {
+    fill: var(--ink-2);
+    font-weight: 600;
+}
+
 .chart svg .line {
     fill: none;
     stroke: var(--ink-2);
@@ -130,4 +140,47 @@ svg .spark-end.alarm {
 
 .chart svg {
     cursor: crosshair;
+}
+
+/* legend under a chart */
+
+.chart .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+    margin: 8px 0 0;
+    font-size: 0.875rem;
+}
+
+.chart .legend .item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 4px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.chart .legend .item:hover {
+    background: var(--grid);
+}
+
+.chart .legend .item[aria-pressed="false"] {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+.chart .legend .unit {
+    color: var(--ink-3);
+    font-family: var(--sans);
+}
+
+.chart .legend svg {
+    cursor: pointer;
 }
