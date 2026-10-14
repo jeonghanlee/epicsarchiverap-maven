@@ -46,25 +46,35 @@ opens the selected PVs in it, over the window of the chart
 
 ## Adding PVs
 
-1. On the Work page, type the PV name in **Find**. The name is a base
-   name with an optional field, such as `SR:BPM:01:X` or
-   `SR:BPM:01:X.RBV`. A name that starts with `pva://` is archived over
-   PVAccess.
-2. When no archived PV matches the words and the text is a valid PV
-   name, the panel offers **Archive** with that name. Select it.
-3. Choose the sampling mode, **Monitor** (store each change) or **Scan**
-   (store at a fixed period), and the sampling period in seconds.
-4. Select **Archive**.
+1. Open **Archive PVs**. Type one PV name, or paste a list with one
+   name per line, into **Add PVs**. A name is a base name with an
+   optional field, such as `SR:BPM:01:X` or `SR:BPM:01:X.RBV`. A name
+   that starts with `pva://` is archived over PVAccess. The note under
+   the box counts the names and shows any that are not valid PV names.
+2. Leave **Sampling** as it is, and the policy of the site chooses the
+   method and the period of each PV. To choose them, open **Sampling**
+   and set **Monitor** (store each change) or **Scan** (store at a fixed
+   period), the period in seconds, a policy by name, or a controlling
+   PV. The choice applies to every name.
+3. Select **Archive**.
 
-![The Archive dialog for a PV that is not archived](images/work-archive-dialog.png)
+![The Archive PVs page after a request of six names](images/archive-page.png)
 
-The dialog archives one name. To archive many PVs at once, send the
-names to the `archivePV` call ([Scripting](scripting.md)).
+Under **Requested in this visit** each name has the answer of the
+request (**Archive request submitted**, or **Already submitted** when
+the PV is archived or its request is pending) and its state, which the
+page reads from the appliance every 2 s while a request is unfinished
+and every 10 s otherwise. Once sampling has started the row shows how
+the PV is sampled and which policy chose it. A list of more than a few
+tens of names is sent to the `archivePV` call ([Scripting](scripting.md)).
 
 The appliance looks up the type and settings of the new PV, applies the
-policy, and starts archiving it. The page reads the state of the
-selected PVs every 3 s while a request is unfinished and every 20 s
-otherwise.
+policy, and starts archiving it. A name that no server answers stays in
+**Initial sampling**: select **Cancel request** in its row. **Pause**,
+**Resume** and **Stop archiving…** of a row act on that PV. Select rows
+to act on several; **Cancel requests** acts on the ones that are
+waiting, and a stop of a request that has not started cancels it
+instead.
 
 | State | Meaning |
 | --- | --- |

@@ -13,7 +13,8 @@ carries a content security policy, and the charts are drawn with D3.
 
 | Page | Address | For | Content |
 | :--- | :--- | :--- | :--- |
-| Work | `index.html` | Everyone | Find PVs, scan the selected ones, inspect them, act on them |
+| Archive PVs | `archive.html` | Everyone | Add one PV or a list of names, follow each request to the state Being archived, cancel, pause, resume or stop from its row |
+| Work (Browse PVs) | `index.html` | Everyone | Find PVs, scan the selected ones, inspect them, act on them |
 | System: Overview | `system.html` | Everyone | Three verdict lines and one row per measure with its value, its status and a link to the detail; the **i** button of a measure opens its meaning |
 | System: Operations | `operations.html` | The person who looks after the appliance | Samples, dropped samples, write path, stores and ETL, processes, configuration |
 | System: Retrieval performance | `retrieval.html` | A person whose data requests are slow | What the server reports and a request measured in the browser |
@@ -26,6 +27,16 @@ The addresses `metrics.html`, `storage.html`, `appliance.html`,
 `reports.html`, `pvdetails.html`, `integration.html` and `cacompare.html`
 forward to the page that replaced them; `pvdetails.html?pv=<name>` opens that PV on the Work
 page.
+
+## Archive PVs page
+
+One input takes a PV name or a pasted list with one name per line. The
+sampling is left to the policy of the site; a folded **Sampling** choice
+sets the method, the period, a policy or a controlling PV for every name.
+Under **Requested in this visit** each name has the answer of the request
+and its state, and the actions of that state:
+
+![The Archive PVs page after a request of six names](images/archive-page.png)
 
 ## Work page
 
