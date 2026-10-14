@@ -693,3 +693,14 @@ a.plain-link {
         min-height: 44px;
     }
 }
+
+.chartbar {
+    margin: 4px 0 8px;
+}
+
+.chartbar label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}

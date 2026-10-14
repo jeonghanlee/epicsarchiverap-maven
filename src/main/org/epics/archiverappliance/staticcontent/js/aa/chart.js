@@ -21,6 +21,11 @@ const RANGES = new WeakMap();
 // A drag shorter than this many pixels is a click and chooses nothing.
 const DRAG_LEAST = 6;
 
+// The Y projection: the room right of the right axes, the bins of a histogram and its longest bar, in pixels.
+const PROJECTION_WIDTH = 140;
+const PROJECTION_BINS = 24;
+const PROJECTION_BAR = 100;
+
 // The lines and sample marks are clipped to the plot area; each drawing takes the next id of the page.
 let clipCount = 0;
 const CLIP_PAD = 3;
@@ -42,6 +47,62 @@ function format(value, egu) {
 /** The look of the line of the series at position slot of a chart that has a legend. */
 function lineLook(series, slot) {
     return { color: PALETTE[slot % PALETTE.length], dash: DASHES[slot % DASHES.length] || null, width: series.focus ? 2.5 : 1.8 };
+}
+
+/**
+ * The table of basic statistics of the samples in view, one row per drawn series: samples, minimum, mean, median,
+ * maximum, standard deviation and the unit.
+ */
+function buildStatistics(rows) {
+    const wrap = document.createElement("div");
+    wrap.className = "chart-stats-wrap";
+    const title = document.createElement("h3");
+    title.className = "chart-stats-title";
+    title.textContent = "Y projection statistics";
+    const help = document.createElement("p");
+    help.className = "chart-stats-help";
+    help.textContent = "Computed from the samples now inside the chart: the time window shown and any value range you dragged "
+        + "on an axis. The histogram at the right edge shows how they spread over the value axis; its line is the mean.";
+    const table = document.createElement("table");
+    table.className = "chart-stats";
+    table.setAttribute("aria-label", "Y projection statistics");
+    const head = document.createElement("tr");
+    for (const title of ["PV", "Samples", "Min", "Mean", "Median", "Max", "Std dev", "Unit"]) {
+        const cell = document.createElement("th");
+        cell.scope = "col";
+        cell.textContent = title;
+        head.append(cell);
+    }
+    const thead = document.createElement("thead");
+    thead.append(head);
+    const body = document.createElement("tbody");
+    for (const row of rows) {
+        const tr = document.createElement("tr");
+        const name = document.createElement("td");
+        const swatch = document.createElement("span");
+        swatch.className = "swatch";
+        swatch.style.background = row.color;
+        name.append(swatch, document.createTextNode(row.name));
+        tr.append(name);
+        const values = row.values;
+        const cells = values.length
+            ? [String(values.length), format(d3.min(values), ""), format(d3.mean(values), ""), format(d3.median(values), ""),
+               format(d3.max(values), ""), format(d3.deviation(values) || 0, "")]
+            : ["0", "-", "-", "-", "-", "-"];
+        for (const text of cells) {
+            const cell = document.createElement("td");
+            cell.className = "num";
+            cell.textContent = text;
+            tr.append(cell);
+        }
+        const unit = document.createElement("td");
+        unit.textContent = row.egu || "-";
+        tr.append(unit);
+        body.append(tr);
+    }
+    table.append(thead, body);
+    wrap.append(title, help, table);
+    return wrap;
 }
 
 /** The legend under a chart: one button per series with its line, name and unit; a click hides or shows that line. */
@@ -131,6 +192,134 @@ function splitOnGaps(points, gapMs) {
     return parts;
 }
 
+/** The options a viewer can change on a chart, with the value each has until it is changed (see buildChartOptions). */
+export const CHART_OPTIONS = { shape: "step", yscale: "linear", marks: "auto", average: false, band: false, window: 30 };
+
+// The most sample marks drawn for one line when marks are asked for on every sample.
+const MARK_CAP = 1500;
+
+/**
+ * The value scale of one unit. kind is linear, symlog, log or sqrt. A kind the values do not suit (log needs values
+ * above zero, square root values not below zero) falls back to symmetric log with the reason in the result.
+ * chosen is a value range the viewer dragged out, or undefined.
+ */
+function makeValueScale(kind, values, chosen, range, unit) {
+    let applied = kind;
+    let reason = "";
+    const name = unit || "no unit";
+    if (applied === "log" && values.some((v) => !(v > 0))) {
+        applied = "symlog";
+        reason = `${name}: the log scale needs values above zero, so symmetric log is shown.`;
+    } else if (applied === "sqrt" && values.some((v) => v < 0)) {
+        applied = "symlog";
+        reason = `${name}: the square root scale needs values that are not below zero, so symmetric log is shown.`;
+    }
+    let fixed = chosen;
+    if (fixed && ((applied === "log" && Math.min(...fixed) <= 0) || (applied === "sqrt" && Math.min(...fixed) < 0))) {
+        fixed = undefined;
+    }
+    let [low, high] = fixed || d3.extent(values);
+    if (!fixed) {
+        const pad = (high - low) * 0.1 || Math.abs(high) * 0.05 || 1;
+        if (applied === "log") {
+            low /= 1.2;
+            high *= 1.2;
+        } else {
+            // A series that never goes below zero keeps zero as its floor instead of a padded negative value.
+            low = values.every((v) => v >= 0) ? Math.max(0, low - pad) : low - pad;
+            high += pad;
+        }
+    }
+    let scale;
+    if (applied === "log") {
+        scale = d3.scaleLog();
+    } else if (applied === "sqrt") {
+        scale = d3.scaleSqrt();
+    } else if (applied === "symlog") {
+        scale = d3.scaleSymlog().constant(Math.max(Math.abs(high), Math.abs(low)) / 100 || 1);
+    } else {
+        scale = d3.scaleLinear();
+    }
+    scale.domain([low, high]).range(range);
+    if (!fixed) {
+        scale.nice(4);
+    }
+    return { scale, kind: applied, reason };
+}
+
+/** The mean and the standard deviation of the last `size` values at each position of values (a shorter window at the start). */
+function movingStats(values, size) {
+    const out = [];
+    for (let i = 0; i < values.length; i += 1) {
+        const window = values.slice(Math.max(0, i - size + 1), i + 1);
+        const mean = d3.mean(window);
+        out.push({ mean, deviation: window.length > 1 ? d3.deviation(window) : 0 });
+    }
+    return out;
+}
+
+/**
+ * The panel of the options of a chart: line shape, value scale, sample marks, running average, standard deviation band
+ * and their window in samples. options is the object the page holds; onChange(next) is called with a new object after
+ * each change, and the page draws the chart again with it.
+ */
+export function buildChartOptions(options, onChange) {
+    const current = { ...CHART_OPTIONS, ...options };
+    const details = document.createElement("details");
+    details.className = "chart-options";
+    const summary = document.createElement("summary");
+    summary.textContent = "Chart options";
+    const body = document.createElement("div");
+    body.className = "optbody";
+    const apply = (name, value) => {
+        current[name] = value;
+        onChange({ ...current });
+    };
+    const select = (label, name, choices, convert = (v) => v) => {
+        const wrap = document.createElement("label");
+        wrap.append(`${label} `);
+        const element = document.createElement("select");
+        for (const [value, text] of choices) {
+            const option = document.createElement("option");
+            option.value = String(value);
+            option.textContent = text;
+            element.append(option);
+        }
+        element.value = String(current[name]);
+        element.addEventListener("change", () => apply(name, convert(element.value)));
+        wrap.append(element);
+        return wrap;
+    };
+    const check = (label, name) => {
+        const wrap = document.createElement("label");
+        const element = document.createElement("input");
+        element.type = "checkbox";
+        element.checked = Boolean(current[name]);
+        element.addEventListener("change", () => apply(name, element.checked));
+        wrap.append(element, ` ${label}`);
+        return wrap;
+    };
+    body.append(
+        select("Line", "shape", [["step", "Step (held value)"], ["line", "Straight"], ["smooth", "Smooth"], ["points", "Points only"]]),
+        select("Y scale", "yscale", [["linear", "Linear"], ["symlog", "Symmetric log"], ["log", "Log"], ["sqrt", "Square root"]]),
+        select("Sample marks", "marks", [["auto", "Automatic"], ["on", "On every sample"], ["off", "Off"]]),
+        check("Running average", "average"),
+        check("Standard deviation band", "band"),
+        select("Window", "window", [[10, "10 samples"], [30, "30 samples"], [60, "60 samples"]], Number)
+    );
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "plain";
+    close.textContent = "Close";
+    close.addEventListener("click", () => {
+        details.open = false;
+        summary.focus();
+    });
+    body.append(close);
+    details.append(summary, body);
+    return details;
+}
+
 /**
  * The width in pixels the end-of-line labels need, measured with the style of a label in the host. A label that is wider
  * than the room the chart leaves would be cut at the edge of the drawing, with the end of the value missing.
@@ -180,12 +369,20 @@ export function labelRoom(host, input) {
  * labelRoom is the least room in pixels to leave on the right for the labels (see labelRoom()).
  * onReset() is called on a double-click, after the value ranges chosen on the axes are dropped, so that the page can return
  * to the time window it started from.
+ * options is the object of buildChartOptions(): line shape, value scale, sample marks, running average and standard
+ * deviation band; CHART_OPTIONS holds the values used until the viewer changes one.
+ * projection true draws a histogram of the samples in view for each line at the right of the plot, on the value axis of
+ * its unit, with a line at its mean, and puts a table of basic statistics under the chart, or in statisticsHost, an
+ * element of the page, when the page gives one.
  * legend true gives each line a color and a dash and puts a legend under the chart in place of the labels at the
  * end of the lines; a click on a legend item hides that line until it is clicked again.
  * Replaces the content of host and returns nothing.
  */
 export function drawTimeSeries(host, input) {
     host.textContent = "";
+    if (input.statisticsHost) {
+        input.statisticsHost.textContent = "";
+    }
     const { series, from, to, gapMs } = input;
     const legend = input.legend === true;
     const all = series.filter((s) => s.points.length);
@@ -223,7 +420,7 @@ export function drawTimeSeries(host, input) {
     const multi = units.length > 1;
     const onLeft = Math.ceil(units.length / 2);
     const onRight = units.length - onLeft;
-    const margin = { top: multi ? 24 : 8, right: right + AXIS_WIDTH * onRight, bottom: 34, left: 56 + AXIS_WIDTH * (onLeft - 1) };
+    const margin = { top: multi ? 24 : 8, right: right + AXIS_WIDTH * onRight + (input.projection === true ? PROJECTION_WIDTH : 0), bottom: 34, left: 56 + AXIS_WIDTH * (onLeft - 1) };
     const x = d3.scaleTime().domain([from, to]).range([margin.left, width - margin.right]);
     let ranges = RANGES.get(host);
     if (!ranges) {
@@ -235,19 +432,16 @@ export function drawTimeSeries(host, input) {
             ranges.delete(unit);
         }
     }
+    const options = { ...CHART_OPTIONS, ...(input.options || {}) };
+    const scaleNotes = [];
     const scales = new Map(
         units.map((unit) => {
-            const chosen = ranges.get(unit);
-            if (chosen) {
-                return [unit, d3.scaleLinear().domain(chosen).range([height - margin.bottom, margin.top])];
-            }
             const values = drawn.filter((s) => (s.egu || "") === unit).flatMap((s) => s.points.map((p) => p.v));
-            let [low, high] = d3.extent(values);
-            const pad = (high - low) * 0.1 || Math.abs(high) * 0.05 || 1;
-            // A series that never goes below zero keeps zero as its floor instead of a padded negative value.
-            low = values.every((v) => v >= 0) ? Math.max(0, low - pad) : low - pad;
-            high += pad;
-            return [unit, d3.scaleLinear().domain([low, high]).nice(4).range([height - margin.bottom, margin.top])];
+            const made = makeValueScale(options.yscale, values, ranges.get(unit), [height - margin.bottom, margin.top], unit);
+            if (made.reason) {
+                scaleNotes.push(made.reason);
+            }
+            return [unit, made.scale];
         })
     );
     const yOf = (s) => scales.get(s.egu || "");
@@ -323,13 +517,43 @@ export function drawTimeSeries(host, input) {
         .attr("width", width - margin.right - margin.left + 2 * CLIP_PAD)
         .attr("height", height - margin.bottom - margin.top + 2 * CLIP_PAD);
     const plotArea = svg.append("g").attr("clip-path", `url(#${clipId})`);
-    const lineOf = (s) => d3.line().x((p) => x(p.t)).y((p) => yOf(s)(p.v)).curve(d3.curveStepAfter);
+    const curve = { step: d3.curveStepAfter, line: d3.curveLinear, smooth: d3.curveMonotoneX }[options.shape] || d3.curveStepAfter;
+    const lineOf = (s) => d3.line().x((p) => x(p.t)).y((p) => yOf(s)(p.v)).curve(curve);
     const ordered = drawn.slice().sort((a, b) => Number(a.focus) - Number(b.focus));
     const labels = [];
+    const inView = (s) => s.points.filter((p) => p.t >= from.getTime() && p.t <= to.getTime());
     ordered.forEach((s) => {
         const slot = all.indexOf(s);
         const look = legend ? lineLook(s, slot) : null;
+        const color = look ? look.color : null;
         for (const part of splitOnGaps(s.points, gapMs)) {
+            // A band of one standard deviation and a running average of the last samples, under the line itself.
+            if ((options.band || options.average) && part.length > 1) {
+                const stats = movingStats(part.map((p) => p.v), options.window);
+                const scale = yOf(s);
+                const [lowest] = d3.extent(scale.domain());
+                if (options.band) {
+                    const area = d3.area()
+                        .x((p) => x(p.t))
+                        .y0((p, i) => scale(Math.max(stats[i].mean - stats[i].deviation, lowest)))
+                        .y1((p, i) => scale(stats[i].mean + stats[i].deviation))
+                        .curve(d3.curveLinear);
+                    const band = plotArea.append("path").attr("class", "band").attr("d", area(part));
+                    if (color) {
+                        band.style("fill", color);
+                    }
+                }
+                if (options.average) {
+                    const average = d3.line().x((p) => x(p.t)).y((p, i) => scale(stats[i].mean)).curve(d3.curveLinear);
+                    const path = plotArea.append("path").attr("class", "average").attr("d", average(part));
+                    if (color) {
+                        path.style("stroke", color);
+                    }
+                }
+            }
+            if (options.shape === "points") {
+                continue;
+            }
             const path = plotArea.append("path")
                 .attr("class", s.focus ? "line focus" : s.quiet ? "line quiet" : "line")
                 .attr("stroke-dasharray", look ? look.dash : s.focus ? null : DASHES[slot % DASHES.length] || null)
@@ -342,11 +566,14 @@ export function drawTimeSeries(host, input) {
         labels.push({ y: yOf(s)(last.v), series: s, last });
     });
 
-    // The samples themselves, once few enough are in view to be told apart one from another.
-    const inView = (s) => s.points.filter((p) => p.t >= from.getTime() && p.t <= to.getTime());
-    if (drawn.every((s) => inView(s).length <= MARKER_LIMIT)) {
+    // The samples themselves: automatically once few enough are in view to be told apart, or on every sample, or never.
+    const showMarks = options.shape === "points" || options.marks === "on"
+        || (options.marks === "auto" && drawn.every((s) => inView(s).length <= MARKER_LIMIT));
+    if (showMarks) {
         for (const s of ordered) {
-            for (const point of inView(s)) {
+            const inside = inView(s);
+            const stride = Math.max(1, Math.ceil(inside.length / MARK_CAP));
+            for (const point of inside.filter((p, i) => i % stride === 0)) {
                 const dot = plotArea.append("circle")
                     .attr("class", s.focus ? "dot focus" : "dot")
                     .attr("cx", x(point.t))
@@ -356,6 +583,49 @@ export function drawTimeSeries(host, input) {
                     dot.style("stroke", lineLook(s, all.indexOf(s)).color);
                 }
             }
+        }
+    }
+
+    // The Y projection: for each line the samples in view in bins of the value axis of its unit, drawn as bars growing
+    // to the right from the edge of the band, and a line at the mean. The samples in view are those inside the time
+    // window and, when the viewer dragged a value range out on the axis of the unit, inside that range.
+    const statistics = [];
+    for (const s of drawn) {
+        const chosen = ranges.get(s.egu || "");
+        const [floor, ceiling] = chosen ? [Math.min(...chosen), Math.max(...chosen)] : [-Infinity, Infinity];
+        const values = inView(s).map((p) => p.v).filter((v) => Number.isFinite(v) && v >= floor && v <= ceiling);
+        statistics.push({ name: s.name, egu: s.egu, color: PALETTE[all.indexOf(s) % PALETTE.length], values });
+        if (input.projection !== true || !values.length) {
+            continue;
+        }
+        const scale = yOf(s);
+        const color = PALETTE[all.indexOf(s) % PALETTE.length];
+        const bandX = width - margin.right + AXIS_WIDTH * onRight + 14;
+        const bins = d3.bin().domain(scale.domain()).thresholds(PROJECTION_BINS)(values);
+        const most = Math.max(1, d3.max(bins, (b) => b.length));
+        for (const bin of bins) {
+            if (!bin.length) {
+                continue;
+            }
+            svg.append("rect")
+                .attr("class", "proj")
+                .attr("x", bandX)
+                .attr("y", Math.min(scale(bin.x0), scale(bin.x1)))
+                .attr("width", (bin.length / most) * PROJECTION_BAR)
+                .attr("height", Math.max(1, Math.abs(scale(bin.x0) - scale(bin.x1)) - 1))
+                .style("fill", color)
+                .style("stroke", color);
+        }
+        const mean = d3.mean(values);
+        const [low, high] = d3.extent(scale.domain());
+        if (mean >= low && mean <= high) {
+            svg.append("line")
+                .attr("class", "proj-mean")
+                .attr("x1", bandX - 8)
+                .attr("x2", bandX + PROJECTION_BAR)
+                .attr("y1", scale(mean))
+                .attr("y2", scale(mean))
+                .style("stroke", color);
         }
     }
 
@@ -533,6 +803,16 @@ export function drawTimeSeries(host, input) {
     host.append(svg.node(), tip);
     if (legendBox) {
         host.append(legendBox);
+    }
+    if (scaleNotes.length) {
+        const note = document.createElement("p");
+        note.className = "chart-note";
+        note.setAttribute("role", "status");
+        note.textContent = scaleNotes.join(" ");
+        host.append(note);
+    }
+    if (input.projection === true) {
+        (input.statisticsHost || host).append(buildStatistics(statistics));
     }
     host.dataset.egu = egu;
 }

@@ -1,6 +1,6 @@
 // The Browse PVs page: find PVs, scan the selected ones, inspect a few in detail, and act on them.
 import * as api from "./browse/api.js";
-import { drawTimeSeries } from "../comm/js/aa/chart.js";
+import { CHART_OPTIONS, buildChartOptions, drawTimeSeries } from "../comm/js/aa/chart.js";
 import { sparkline } from "../comm/js/aa/spark.js";
 import { drawHistogram, drawScatter } from "../comm/js/aa/plots.js";
 
@@ -124,6 +124,10 @@ const state = {
     status: new Map(),
     data: new Map(),
     rangeMinutes: 60,
+    // The histograms of the chart at its right edge and the table of statistics under it, chosen by the person.
+    projection: false,
+    // The line shape, value scale, sample marks, running average and band the person chose (see buildChartOptions).
+    chartOptions: { ...CHART_OPTIONS },
     // The address of the data retrieval application, known after the first answer of the appliance information.
     retrievalBase: "",
     // A window the person dragged out of the chart, or null while the range button decides.
@@ -694,6 +698,9 @@ function renderChart() {
         to: first.to,
         gapMs: Infinity,
         legend: true,
+        projection: state.projection,
+        statisticsHost: $("projectionStats"),
+        options: state.chartOptions,
         onZoom: zoomTo,
         onReset: resetWindow,
     });
@@ -1276,6 +1283,18 @@ function wire() {
     $("panEarlier").addEventListener("click", () => panBy(-1));
     $("panLater").addEventListener("click", () => panBy(1));
     $("zoomReset").addEventListener("click", resetWindow);
+    // The Y projection is on while its window is open; the window opens closed, as the page state starts off.
+    state.projection = $("projection").open;
+    $("projection").addEventListener("toggle", (event) => {
+        state.projection = event.target.open;
+        renderChart();
+    });
+    $("chartBar").append(
+        buildChartOptions(state.chartOptions, (next) => {
+            state.chartOptions = next;
+            renderChart();
+        })
+    );
     $("bulkPause").addEventListener("click", () => bulkAction("pause"));
     $("bulkResume").addEventListener("click", () => bulkAction("resume"));
     $("bulkStop").addEventListener("click", () => bulkAction("stop"));

@@ -184,3 +184,130 @@ svg .spark-end.alarm {
 .chart .legend svg {
     cursor: pointer;
 }
+
+/* Y projection and the table of statistics under a chart */
+
+.chart svg .proj {
+    fill-opacity: 0.18;
+    stroke-width: 1;
+}
+
+.chart svg .proj-mean {
+    stroke-width: 2;
+}
+
+.chart-stats-wrap {
+    overflow-x: auto;
+    margin-top: 12px;
+}
+
+.chart-stats {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.chart-stats-wrap .chart-stats-title {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.chart-stats-help {
+    margin: 0 0 8px;
+    color: var(--ink-3);
+    font-size: 0.875rem;
+}
+
+.chart-stats th,
+.chart-stats td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--grid);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.chart-stats th:not(:first-child):not(:last-child),
+.chart-stats td.num {
+    text-align: right;
+}
+
+.chart-stats td.num {
+    font-family: var(--mono);
+}
+
+.chart-stats .swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    border-radius: 3px;
+}
+
+/* running average, band, notes and the options panel */
+
+.chart svg .average {
+    fill: none;
+    stroke: var(--ink-2);
+    stroke-width: 3;
+    stroke-linejoin: round;
+    opacity: 0.8;
+}
+
+.chart svg .band {
+    fill: var(--ink-2);
+    fill-opacity: 0.14;
+    stroke: none;
+}
+
+.chart .chart-note {
+    margin: 8px 0 0;
+    color: var(--ink-3);
+    font-size: 0.875rem;
+}
+
+details.chart-options {
+    display: block;
+    margin: 4px 0;
+}
+
+details.chart-options summary {
+    cursor: pointer;
+    color: var(--accent);
+}
+
+details.chart-options .optbody {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 20px;
+    margin-top: 6px;
+    padding: 12px 14px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+details.chart-options .optbody label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+details.chart-options .optbody:empty {
+    display: none;
+}
+
+details.chart-options .optbody .chart-stats-wrap {
+    flex: 1 1 100%;
+    margin-top: 0;
+}
+
+details.chart-options .optbody button.plain {
+    background: none;
+    border: 0;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 4px 0;
+}
