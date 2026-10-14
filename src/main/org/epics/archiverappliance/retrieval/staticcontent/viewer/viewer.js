@@ -1,6 +1,6 @@
 // The archived data viewer. The address keeps the parameters of the previous viewer:
 // pv (repeatable), from and to (ISO 8601). Data comes from this retrieval server only.
-import { drawTimeSeries } from "../comm/js/aa/chart.js";
+import { drawTimeSeries, labelRoom } from "../comm/js/aa/chart.js";
 
 const DATA = "../../data/getData.json";
 const MATCHING = "../../bpl/getMatchingPVs";
@@ -157,6 +157,7 @@ function render() {
         }
         groups.get(key).push(series);
     }
+    const pending = [];
     for (const [unit, list] of groups) {
         const drawn = list.slice(0, SERIES_PER_CHART);
         const section = node("section", { class: "unit" });
@@ -171,12 +172,20 @@ function render() {
         const host = node("div", { class: "chart" });
         section.append(host);
         charts.append(section);
-        drawTimeSeries(host, {
-            series: drawn.map((series, index) => ({ name: series.name, egu: series.egu, points: series.points, focus: index === 0 })),
-            from: state.from,
-            to: state.to,
-            gapMs: Infinity,
+        pending.push({
+            host,
+            input: {
+                series: drawn.map((series, index) => ({ name: series.name, egu: series.egu, points: series.points, focus: index === 0 })),
+                from: state.from,
+                to: state.to,
+                gapMs: Infinity,
+            },
         });
+    }
+    // The charts share the room of the widest labels, so that their time axes line up.
+    const room = Math.max(0, ...pending.map((chart) => labelRoom(chart.host, chart.input)));
+    for (const chart of pending) {
+        drawTimeSeries(chart.host, { ...chart.input, labelRoom: room });
     }
 }
 

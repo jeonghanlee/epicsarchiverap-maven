@@ -45,11 +45,52 @@ function splitOnGaps(points, gapMs) {
 }
 
 /**
+ * The width in pixels the end-of-line labels need, measured with the style of a label in the host. A label that is wider
+ * than the room the chart leaves would be cut at the edge of the drawing, with the end of the value missing.
+ */
+function labelWidth(host, texts) {
+    const probe = d3.select(host).append("svg").attr("width", 0).attr("height", 0).attr("aria-hidden", "true");
+    let widest = 0;
+    for (const text of texts) {
+        widest = Math.max(widest, probe.append("text").attr("class", "label focus").text(text).node().getComputedTextLength());
+    }
+    probe.remove();
+    return widest;
+}
+
+/** The texts of the labels at the end of the lines of a chart and the room they need on the right. */
+function labelLayout(host, drawn, width, labelNames) {
+    const narrow = width < 560;
+    const names = shortNames(drawn.map((d) => d.name));
+    const labelText = (s, i) => {
+        const value = format(s.points[s.points.length - 1].v, "");
+        return !labelNames ? value : narrow ? names[i] : `${names[i]}  ${value}`.trim();
+    };
+    // The widest label and its offset, within a share of the chart, with the earlier fixed size as the least.
+    const widest = Math.ceil(labelWidth(host, drawn.map(labelText)));
+    const least = labelNames ? (narrow ? 76 : 170) : 70;
+    return { names, labelText, widest, right: Math.max(least, Math.min(widest + 12, Math.floor(width * 0.45))) };
+}
+
+/**
+ * The room on the right of a chart for its labels. Charts drawn one above the other pass the largest of their rooms
+ * as input.labelRoom, so that their time axes line up.
+ */
+export function labelRoom(host, input) {
+    const drawn = input.series.filter((s) => s.points.length);
+    if (!drawn.length) {
+        return 0;
+    }
+    return labelLayout(host, drawn, Math.max(320, host.clientWidth || 640), input.labelNames !== false).right;
+}
+
+/**
  * input: {series: [{name, egu, points: [{t, v, s, g?}], focus, quiet?}], from: Date, to: Date, gapMs: number (Infinity: none), labelNames?: boolean}
  * onZoom(from, to) turns a horizontal drag over the plot into a request for that window. Exact samples are marked
  * when the window holds few enough of them to be told apart.
  * quiet draws a series thin and pale, as the background of a series that carries the point (a floor over raw values).
  * labelNames false labels the end of a line with its value only, for a chart whose title already names it.
+ * labelRoom is the least room in pixels to leave on the right for the labels (see labelRoom()).
  * Replaces the content of host and returns nothing.
  */
 export function drawTimeSeries(host, input) {
@@ -64,7 +105,10 @@ export function drawTimeSeries(host, input) {
     const narrow = width < 560;
     const height = 250;
     const labelNames = input.labelNames !== false;
-    const margin = { top: 8, right: labelNames ? (narrow ? 76 : 170) : 70, bottom: 34, left: 56 };
+    const layout = labelLayout(host, drawn, width, labelNames);
+    const { names, labelText, widest } = layout;
+    const right = Math.max(layout.right, Math.min(input.labelRoom || 0, Math.floor(width * 0.45)));
+    const margin = { top: 8, right, bottom: 34, left: 56 };
     const x = d3.scaleTime().domain([from, to]).range([margin.left, width - margin.right]);
     const values = drawn.flatMap((s) => s.points.map((p) => p.v));
     let [low, high] = d3.extent(values);
@@ -112,7 +156,6 @@ export function drawTimeSeries(host, input) {
     const line = d3.line().x((p) => x(p.t)).y((p) => y(p.v)).curve(d3.curveStepAfter);
     const ordered = drawn.slice().sort((a, b) => Number(a.focus) - Number(b.focus));
     const labels = [];
-    const shortOf = new Map(drawn.map((s, i) => [s, shortNames(drawn.map((d) => d.name))[i]]));
     ordered.forEach((s) => {
         const slot = drawn.indexOf(s);
         for (const part of splitOnGaps(s.points, gapMs)) {
@@ -146,13 +189,19 @@ export function drawTimeSeries(host, input) {
             labels[i].y = labels[i - 1].y + 13;
         }
     }
+    const room = margin.right - 6;
     for (const label of labels) {
-        const short = shortOf.get(label.series);
-        svg.append("text")
+        const full = labelText(label.series, drawn.indexOf(label.series));
+        // A label that still does not fit the room is shortened with an ellipsis; its full text is the title.
+        const text = widest <= room ? full : `${full.slice(0, Math.max(4, Math.floor((full.length * room) / widest) - 1))}\u2026`;
+        const element = svg.append("text")
             .attr("class", label.series.focus ? "label focus" : "label")
             .attr("x", width - margin.right + 6)
             .attr("y", label.y + 4)
-            .text(!labelNames ? format(label.last.v, "") : narrow ? short : `${short}  ${format(label.last.v, "")}`.trim());
+            .text(text);
+        if (text !== full) {
+            element.append("title").text(full);
+        }
     }
 
     const cross = svg.append("line").attr("class", "cross").attr("y1", margin.top).attr("y2", height - margin.bottom).attr("visibility", "hidden");
@@ -178,7 +227,7 @@ export function drawTimeSeries(host, input) {
         for (const s of drawn) {
             const point = s.points[bisect(s.points, when.getTime())];
             const row = document.createElement("div");
-            row.textContent = `${shortOf.get(s)}  ${point ? format(point.v, s.egu) : "no sample"}${point && point.s ? "  ALARM" : ""}`;
+            row.textContent = `${names[drawn.indexOf(s)]}  ${point ? format(point.v, s.egu) : "no sample"}${point && point.s ? "  ALARM" : ""}`;
             if (point && point.s) {
                 row.className = "alarm-text";
             }
