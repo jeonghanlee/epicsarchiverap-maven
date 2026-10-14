@@ -75,7 +75,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M53 | Book pages for the replaced web interface | Milestone | Complete | No | M47, M52, M54 | Operating, interface, retrieval, installing, index, redundancy and FAQ pages describe the replaced interface with ten screenshots of the default-site build; no placeholder remains; the book builds with no broken link; landed in 75fc3088, Pages run 38300321856 of fcf01d9c passed, #36 closed 2026-10-12T23:44:25Z; [detail](#m53---book-pages-for-the-replaced-web-interface) |
 | Phase 2 | M54 | Version text from the build commit and day | Milestone | Complete | No | D37 | `ui/comm/version.txt` of the four WARs reads `Archiver Appliance Version <commit>, built <UTC day>`, the commit and day of the WAR names; the System page finds one version; landed in f4ded662, Maven run 38300321889 of fcf01d9c passed, #37 closed 2026-10-12T23:44:28Z; [detail](#m54---version-text-from-the-build-commit-and-day) |
 | Interface console | M56 | Menu by task and console pages | Milestone | Complete | No | D38, D39, D41, D42 | The menu reads Archive PVs, Browse PVs, System, Help and Analyzer, each entry opens its page and marks the page in view, and the old addresses forward outside it; the external Archiver Appliance servers sit under System without the Channel Archiver parts; System explanations open on demand; text sizes follow the browser, 14 px at the least; Help opens the console help page with a link to the book; [detail](#m56---menu-by-task-and-console-pages) |
-| Interface console | M57 | Archive PVs page | Milestone | Not started | Yes | M56, D38 | Adding PVs has a visible entry apart from Find, takes a pasted list with a result per name and offers nothing for a half-typed name; each Scan row and the bulk actions carry the actions of the PV's state, including the cancel of a pending request; [detail](#m57---archive-pvs-page) |
+| Interface console | M57 | Archive PVs page | Milestone | In progress | No | M56, D38 | Adding PVs has a visible entry apart from Find, takes a pasted list with a result per name and offers nothing for a half-typed name; each Scan row and the bulk actions carry the actions of the PV's state, including the cancel of a pending request; [detail](#m57---archive-pvs-page) |
 | Interface analyzer | M58 | Browse PVs page and the analyzer | Milestone | Not started | Yes | M56, D38, D40 | Find explains its search modes on demand and Browse PVs gives a simple summary; the analyzer replaces the viewer, opens from the menu and from Browse PVs, inside the console and in its own window, has the site header and logo and a way back; [detail](#m58---browse-pvs-page-and-the-analyzer) |
 | Interface analyzer | M59 | One chart component with drawing options and pointer controls | Milestone | Not started | Yes | M56, D40 | The analyzer carries the drawing options, the analysis plots and tools, and the D3 pointer behaviors through one chart component, which the other pages use in a simple form with a control into the analyzer; [detail](#m59---one-chart-component-with-drawing-options-and-pointer-controls) |
 | Interface console | M60 | Name check on the network and hold of a pending request | Milestone | Not started | No | M57 | The appliance reports whether a complete PV name answers on the network before it is archived, and a pending archive request can be paused and held as well as cancelled; [detail](#m60---name-check-on-the-network-and-hold-of-a-pending-request) |
@@ -5027,7 +5027,7 @@ Last Compared: 2026-10-12; `gh issue view 38` shows the drafted body, open, assi
 Origin: daff1b7 / M57
 Identity History: none
 GitHub Issue: #38 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/38)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -5065,7 +5065,7 @@ Out of scope: the check of a name on the network and the pause and hold of a pen
 
 Plan Status: accepted
 Plan Acceptance: 2026-10-13: the owner accepted the layout of the clickable mockup: one multi-line input, a folded sampling choice that leaves the decision to the site policy, and a table of the PVs requested in this visit with the state of each and the actions of its state
-Implementation Authorization: none
+Implementation Authorization: 2026-10-13, the owner directed the implementation of the accepted plan, in small steps that are tested and shown one by one
 Superseded Plan Artifacts: none
 
 1. Settled with the owner on 2026-10-13 (the Decision Date lines above).
@@ -5083,8 +5083,8 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+| T1 | 2026-10-13 23:18-23:25 PDT | Local appliance of the working tree over f939e2da with the soft IOC fixture, Firefox headless through Marionette | Pass | On `archive.html`: a name carried in the address fills the input; a pasted list of six names (one already requested, one nobody serves, one not a valid name) is requested in one `archivePV` call and each name answers ("Archive request submitted", "Already submitted", "Not a valid PV name" without a request); the states follow to Being archived and the row shows the policy the appliance chose (read from `getPVTypeInfo`); the name nobody serves stays in Initial sampling and `Cancel request` leaves it Not being archived, read back from `getPVStatus`; Pause, Resume and Stop archiving… from a row are read back as Paused, Being archived and Not being archived; a chosen Scan at 0.5 s reaches the settings of the PV (`getPVTypeInfo`: SCAN, 0.5) and a period below the minimum disables Archive; the bulk Pause and Resume act on two PVs; a bulk stop that includes a pending request stops the archived PV and cancels the pending one and says so; `Cancel requests` is last of the bulk actions and cancels a selected pending request; no sideways scroll at 720 and 320 px; text at least 14 px. The link of the Find panel of the Work page reads the same whatever is typed and carries one complete name or nothing; the menu marks Archive PVs on the new page and Browse PVs on the Work page (`archive_test.py`, `work_link_test.py`) |
+| T2 | 2026-10-13 23:35-23:46 PDT | JDK 21, wrapper Maven, working tree over f939e2da | Pass (local suite) | `./mvnw -o -B -ntp clean verify`: 964 tests, 0 failures, 0 errors, BUILD SUCCESS in 10 min 15 s; the static checks (365) and `MgmtPageLinksTest`, which now lists `archive.html` as a menu page and requires the two entries Archive PVs and Browse PVs to open different pages, pass. The Maven and Pages workflows are read after the push |
 
 ##### Closure Evidence
 
