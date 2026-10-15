@@ -583,7 +583,8 @@ export function axisRoom(host, input) {
  * to the time window it started from.
  * info(topic) may return an element, an information control of the page, to put beside the title of the table of
  * statistics (topic "statistics") and at the end of the range strip (topic "range").
- * The range strip above the chart always shows the time window as an interval, with its date and time; windowChosen true
+ * The range strip above the chart always shows the time window as an interval, with its date and time (strip false leaves it
+ * out, for a page that shows the window itself); windowChosen true
  * says that the window was chosen and not the range of the page, which lights the controls given by onPan(direction) (earlier
  * is -1, later is 1; canPanLater false dims later) and onReset(). fromIncluded and toIncluded false write that end of the
  * interval with a parenthesis because the data at that end is left out; both are included unless a page says otherwise.
@@ -1098,7 +1099,10 @@ export function drawTimeSeries(host, input) {
         }
     });
 
-    host.append(buildRangeStrip(input, ranges, units, () => drawTimeSeries(host, input)), svg.node(), tip);
+    if (input.strip !== false) {
+        host.append(buildRangeStrip(input, ranges, units, () => drawTimeSeries(host, input)));
+    }
+    host.append(svg.node(), tip);
     if (legendBox) {
         host.append(legendBox);
     }

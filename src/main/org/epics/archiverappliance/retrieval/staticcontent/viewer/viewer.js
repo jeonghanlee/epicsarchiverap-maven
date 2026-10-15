@@ -179,6 +179,8 @@ function render() {
                 from: state.from,
                 to: state.to,
                 gapMs: Infinity,
+                // The bar of the viewer already holds the time range, and one chart is drawn for each unit.
+                strip: false,
             },
         });
     }
