@@ -49,7 +49,7 @@ The Browse PVs page, with three PVs selected:
 | Find | Words in any order with case ignored, glob, or regular expression; chips group the matches by the first two `:` segments; the rows in view show the state of a PV that is not in the scan list (paused, not archived), read in one call for at most 60 rows |
 | Show | A selection of the list by one of the server reports: disconnected now, paused, never connected, waiting for the first connection, recently added, recently changed, highest event rate, highest storage rate, most storage used, most connection drops, silent for the longest time, most events dropped for a wrong time stamp, by buffer overflow and by a type change |
 | Scan | One row per selected PV with its state, a trend of the chosen range, the value now and the last event; at most 100 PVs. The link Open all selected in the viewer opens the selected PVs in the data viewer over the window of the chart |
-| Inspect | Time series of at most 5 PVs with one value axis for each unit and a legend, then distribution, scatter and statistics; Options, Enlarge chart and Open in the analyzer on the row of the Inspect heading; Earlier and Later, shown once a time window is chosen, move it by half its span. The gestures and options are listed under [Chart controls](#chart-controls) |
+| Inspect | Time series of at most 5 PVs with one value axis for each unit and a legend, then distribution, scatter and statistics; Options, Enlarge chart and Open in the analyzer on the row of the Inspect heading; the line above the chart with the time window and the value ranges. The gestures and options are listed under [Chart controls](#chart-controls) |
 | Detail | State with its explanation, the actions that apply, a link that opens the PV in the data viewer, and the full details list |
 
 A PV name is a base name with an optional field (`X:Y` or `X:Y.RBV`); a
@@ -99,8 +99,9 @@ The chart of the Browse PVs page draws up to 5 PVs. Each unit has its own value 
 
 | Control | Effect |
 | :--- | :--- |
+| The line above the chart | Always there, so that choosing a range moves nothing. It writes the time window as an interval on a 24 hour clock, `2026-10-15 [10:51:45, 11:01:45]`, with what both ends share written once before the brackets, and offers Earlier, Later and Back to the selected range as icons with a tooltip; Earlier and Later also work on the range of the buttons. Each value axis has a control that names its unit and shows the range chosen on it, and All resets the window and every range. A bracket includes the data at that end and a parenthesis leaves it out. A control with nothing to do is dim |
 | Drag across the plot | Chooses a time window. After you release the button the page requests the data of the window once, one request for each PV. A double-click, or the button Back to the selected range, returns to the selected range |
-| Drag along an axis | Chooses the value range of that unit and makes no request. The histogram and the table of the Projection tab count the samples inside it. Home or a double-click clears it |
+| Drag along an axis | Chooses the value range of that unit and makes no request. The histogram and the table of the Projection tab count the samples inside it. Home, a double-click or the control of its unit in the line above the chart clears it |
 | Arrow keys, `+` and `-` on a focused axis | Move, narrow and widen the value range of that unit; Home clears it. Tab moves the focus to the axes |
 | Pointer over the plot | Shows a tooltip with the date and time and the value of each PV with its unit |
 | Legend item | Hides or shows that line |

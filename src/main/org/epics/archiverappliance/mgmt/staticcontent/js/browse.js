@@ -659,8 +659,7 @@ function chartCard() {
     return [
         "Reading the chart",
         [
-            ["Time window", "Drag across the chart to look at that window. Earlier and Later move it by half a window; double-click returns."],
-            ["Value range", "Drag along an axis, or focus it and use the arrow keys, + and -, to choose the value range of that unit; the statistics follow it. Home or a double-click clears it."],
+            ["Ranges", "The line above the chart holds the time window and the value range of each axis; its information control explains them."],
             [
                 "Values",
                 `A window longer than ${BIN_FREE_MINUTES} minutes shows one point per interval, the mean of its samples; an interval ` +
@@ -671,6 +670,16 @@ function chartCard() {
         HELP_PAGE,
     ];
 }
+const RANGE_CARD = [
+    "Time and value range",
+    [
+        ["Time window", "Drag across the plot to look at that window. Earlier and Later move it by half its span, from the range of the buttons too; Back to the selected range, or a double-click, returns to that range. The date and hour both ends share are written once, before the brackets."],
+        ["Value range", "Drag along an axis, or Tab to it and use the arrow keys, + and -, to choose the range of that unit. The control of its unit returns it to the automatic range; so does Home or a double-click, and All resets the window and every range. The statistics follow it."],
+        ["Notation", "A bracket includes the data at that end and a parenthesis leaves it out: [a, b] includes both ends, (a, b] leaves the start out."],
+    ],
+    null,
+    HELP_PAGE,
+];
 const OPTIONS_CARD = [
     "Chart options",
     [
@@ -738,11 +747,10 @@ function resetWindow() {
 
 /** Moves the window by half of its span, earlier or later; it never reaches into the future. */
 function panBy(direction) {
-    if (!state.window) {
-        return;
-    }
-    const span = state.window.to.getTime() - state.window.from.getTime();
-    let to = state.window.to.getTime() + (direction * span) / 2;
+    // Before a window is chosen the window is the range of the buttons, ending now.
+    const current = state.window || { from: new Date(Date.now() - state.rangeMinutes * 60000), to: new Date() };
+    const span = current.to.getTime() - current.from.getTime();
+    let to = current.to.getTime() + (direction * span) / 2;
     const now = Date.now();
     if (to > now) {
         to = now;
@@ -751,15 +759,6 @@ function panBy(direction) {
     state.data.clear();
     refreshData();
     writeAddress();
-}
-
-function showZoomControls() {
-    const zoomed = Boolean(state.window);
-    for (const id of ["zoomReset", "panEarlier", "panLater"]) {
-        $(id).hidden = !zoomed;
-    }
-    // A window that already ends now cannot move later.
-    $("panLater").disabled = zoomed && Date.now() - state.window.to.getTime() < 2000;
 }
 
 function renderChart() {
@@ -776,7 +775,6 @@ function renderChart() {
               : "Loading samples…";
         setChartHead("");
         setAnalyzerLinks("");
-        showZoomControls();
         renderStats([]);
         renderPlots([]);
         return;
@@ -786,10 +784,6 @@ function renderChart() {
     const notes = [];
     if (over > 0) {
         notes.push(`${over} more PVs are not drawn (limit ${LIMITS.chart}).`);
-    }
-    const clock = (date) => date.toLocaleTimeString([], { hour12: false });
-    if (state.window) {
-        notes.push(`Showing ${clock(first.from)} to ${clock(first.to)}.`);
     }
     setChartHead(notes.join(" "));
     const analyzer = new URLSearchParams();
@@ -808,13 +802,15 @@ function renderChart() {
         projection: state.projection,
         // The table of the Y projection is in the Projection tab above the chart, on the page and in the large window alike.
         statisticsHost: $("projectionStats"),
-        info: (topic) => (topic === "statistics" ? infoButton(...STATISTICS_CARD) : null),
+        info: (topic) => (topic === "statistics" ? infoButton(...STATISTICS_CARD) : topic === "range" ? infoButton(...RANGE_CARD) : null),
+        windowChosen: Boolean(state.window),
+        canPanLater: Boolean(state.window) && Date.now() - state.window.to.getTime() >= 2000,
+        onPan: panBy,
         height: state.enlarged ? Math.max(380, window.innerHeight - 320) : undefined,
         options: state.chartOptions,
         onZoom: zoomTo,
         onReset: resetWindow,
     });
-    showZoomControls();
     renderStats(list);
     renderPlots(list);
 }
@@ -1390,9 +1386,6 @@ function wire() {
     $("results").addEventListener("focus", () => {
         $("results").setAttribute("aria-activedescendant", `row-${state.active}`);
     });
-    $("panEarlier").addEventListener("click", () => panBy(-1));
-    $("panLater").addEventListener("click", () => panBy(1));
-    $("zoomReset").addEventListener("click", resetWindow);
     $("chartInfo").append(infoButton(...chartCard()));
     $("chartDialogInfo").append(infoButton(...chartCard()));
     $("enlarge").addEventListener("click", enlargeChart);

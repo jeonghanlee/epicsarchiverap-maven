@@ -358,3 +358,129 @@ button.opt-tab[aria-selected="true"]:hover {
 .opt-controls select {
     width: auto;
 }
+
+/* The range strip above a chart: the time window as an interval, the controls that move it, and one control for each value axis. */
+.range-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 16px;
+    min-height: 38px;
+    margin: 0 0 6px;
+    padding: 2px 6px;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: #fafcfc;
+}
+
+.strip-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+}
+
+.strip-window,
+.strip-range {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.strip-window {
+    margin-left: 6px;
+}
+
+.strip-range {
+    margin: 0 8px 0 2px;
+}
+
+.strip-spacer {
+    flex: 1;
+}
+
+.strip-tool {
+    all: unset;
+    position: relative;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 4px;
+    border-radius: 6px;
+    color: var(--accent);
+    cursor: pointer;
+}
+
+/* The touch rules of the pages make a button 44 px high; a control of the strip keeps its size and widens its tap area. */
+.range-strip button.strip-tool {
+    min-width: 28px;
+    min-height: 0;
+}
+
+.strip-tool::before {
+    content: "";
+    position: absolute;
+    inset: -8px -2px;
+}
+
+.strip-tool svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.strip-label {
+    color: var(--ink);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.strip-tool:hover,
+.strip-tool:focus-visible {
+    background: var(--focus-bg);
+}
+
+.strip-tool:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.strip-tool.dim {
+    color: #a9b6ba;
+    cursor: default;
+}
+
+.strip-tool.dim .strip-label {
+    color: #a9b6ba;
+}
+
+.strip-tip {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 40;
+    display: none;
+    padding: 5px 9px;
+    border-radius: 6px;
+    background: var(--c-brand);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 0.76rem;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: var(--shadow-md);
+}
+
+.strip-tool:hover .strip-tip,
+.strip-tool:focus-visible .strip-tip {
+    display: block;
+}
