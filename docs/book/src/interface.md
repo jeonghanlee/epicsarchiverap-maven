@@ -48,8 +48,8 @@ The Browse PVs page, with three PVs selected:
 | :--- | :--- |
 | Find | Words in any order with case ignored, glob, or regular expression; chips group the matches by the first two `:` segments; the rows in view show the state of a PV that is not in the scan list (paused, not archived), read in one call for at most 60 rows |
 | Show | A selection of the list by one of the server reports: disconnected now, paused, never connected, waiting for the first connection, recently added, recently changed, highest event rate, highest storage rate, most storage used, most connection drops, silent for the longest time, most events dropped for a wrong time stamp, by buffer overflow and by a type change |
-| Scan | One row per selected PV with its state, a trend of the chosen range, the value now and the last event; at most 100 PVs. A link opens the selected PVs in the data viewer over the window of the chart |
-| Inspect | Time series of at most 5 PVs of the same unit, distribution, scatter and statistics; a drag across the chart zooms to that window and marks the samples when 200 or fewer are in view; Earlier and Later move the window by half its span |
+| Scan | One row per selected PV with its state, a trend of the chosen range, the value now and the last event; at most 100 PVs. The link Open all selected in the viewer opens the selected PVs in the data viewer over the window of the chart |
+| Inspect | Time series of at most 5 PVs with one value axis for each unit and a legend, then distribution, scatter and statistics; Options, Enlarge chart and Open in the analyzer on the row of the Inspect heading; Earlier and Later, shown once a time window is chosen, move it by half its span. The gestures and options are listed under [Chart controls](#chart-controls) |
 | Detail | State with its explanation, the actions that apply, a link that opens the PV in the data viewer, and the full details list |
 
 A PV name is a base name with an optional field (`X:Y` or `X:Y.RBV`); a
@@ -92,6 +92,22 @@ The state is kept in the fragment of the address, the part after `#`
 | `range` | The range in minutes (default 60) |
 | `from`, `to` | A zoomed window, in milliseconds since the epoch |
 | `pv` (repeated) | The selected PVs |
+
+## Chart controls
+
+The chart of the Browse PVs page draws up to 5 PVs. Each unit has its own value axis, split between the left and the right side of the plot; PVs with no unit share one axis named no unit. The chart answers these controls:
+
+| Control | Effect |
+| :--- | :--- |
+| Drag across the plot | Chooses a time window. After you release the button the page requests the data of the window once, one request for each PV. A double-click, or the button Back to the selected range, returns to the selected range |
+| Drag along an axis | Chooses the value range of that unit and makes no request. The histogram and the table of the Projection tab count the samples inside it. Home or a double-click clears it |
+| Arrow keys, `+` and `-` on a focused axis | Move, narrow and widen the value range of that unit; Home clears it. Tab moves the focus to the axes |
+| Pointer over the plot | Shows a tooltip with the date and time and the value of each PV with its unit |
+| Legend item | Hides or shows that line |
+| Options, Projection tab | Shows a histogram of the samples at the right edge of the chart, with a line at the mean, and a table with the number of samples, the minimum, mean, median, maximum, and standard deviation of each PV. They count the samples inside the time window and inside a chosen value range. The Summary of the chart below the plots counts the whole time window and does not follow a value range |
+| Options, Chart tab | Sets the Line (Step, Straight, Smooth, Points), the Y scale (Linear, Symmetric log, Log, Square root), the Marks (Auto marks the samples when 200 or fewer are in view, On marks every sample, Off hides them), the Window of 30 samples by default, the Running average, and the Standard deviation band. The running average and the band restart after a gap in the data. Log needs values above zero and Square root values not below zero; otherwise the chart shows Symmetric log and states the reason |
+| Enlarge chart | Draws the chart again in a window as large as the browser window; Esc or Close returns |
+| Open in the analyzer | Opens the PVs and the time window of the chart in the analyzer, in a new tab; the link is hidden until the chart has PVs |
 
 ## The list of PV names
 
@@ -184,7 +200,7 @@ type are not in the interface; their calls remain
 | Item | Value |
 | :--- | :--- |
 | PVs in the scan list | 100 |
-| PVs in a chart | 5, and at most one unit per chart |
+| PVs in a chart | 5; each unit has its own value axis |
 | Concurrent data requests | 6 |
 | Status of the selected PVs | Every 3 s while a request is unfinished or an action is recent, every 20 s otherwise |
 | System: Overview, Operations, Retrieval performance | Every 20 s, 30 s and 30 s while the page is visible |

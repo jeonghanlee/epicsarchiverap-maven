@@ -40,8 +40,11 @@ statistics, and the detail of the first PV.
 
 ![The Browse PVs page with three PVs selected](images/browse-page.png)
 
-The data viewer shows PVs as charts per unit. A link on the Browse PVs page
-opens the selected PVs in it, over the window of the chart
+The controls of the chart (the time window, the value range of each unit, the
+Options panel, Enlarge chart) are listed in
+[Chart controls](interface.md#chart-controls). The link **Open in the
+analyzer** above the chart opens the PVs of the chart in the data viewer,
+which shows PVs as charts per unit, over the window of the chart
 ([Retrieving data](retrieval.md#the-data-viewer)).
 
 ## Adding PVs
