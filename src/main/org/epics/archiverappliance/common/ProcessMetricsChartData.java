@@ -101,11 +101,10 @@ public class ProcessMetricsChartData implements BPLAction {
 				HashMap<String, String> engineMetric = (HashMap<String, String>) processMetrics.get(i);
 				String timeInEpochSecondsStr = engineMetric.get("timeInEpochSeconds");
 				long epochMillisUTC = Long.parseLong(timeInEpochSecondsStr)*1000;
-				long epochMillisLocalTZ = TimeUtils.convertToLocalEpochMillis(epochMillisUTC);
 				String heapUsedPercentStr = engineMetric.get(yaxisdataelementName);
 				Double heapUsedPercent = Double.parseDouble(heapUsedPercentStr);
 				LinkedList<Number> dataElements = new LinkedList<Number>();
-				dataElements.add(epochMillisLocalTZ);
+				dataElements.add(epochMillisUTC);
 				dataElements.add(heapUsedPercent);
 				data.add(dataElements);
 			}
