@@ -244,7 +244,6 @@ function render(appliance, data) {
     const storingProblem = firstProblem(STORING);
     const storingUnknown = unreportedIn(STORING);
     const storingKind = findings(STORING) !== "ok" ? findings(STORING) : storingUnknown.length ? "unknown" : "ok";
-    const roomUnknown = result.storage.kind === "unknown";
     const verdicts = [
         {
             what: "Storing samples",
@@ -256,17 +255,12 @@ function render(appliance, data) {
         {
             what: "Reading data",
             kind: result.retrievalDown ? "bad" : "ok",
-            text: result.retrievalDown ? "Retrieval is not running. See Processes." : `${rowOf("Retrieval").detail}`,
+            text: result.retrievalDown ? "Retrieval is not running. See Processes." : rowOf("Retrieval").detail,
         },
         {
             what: "Room left",
             kind: result.storage.kind,
-            text:
-                result.storage.kind === "ok"
-                    ? `${rowOf("Storage left").detail}`
-                    : roomUnknown
-                      ? `${result.storage.text} See Stores.`
-                      : `${result.storage.text} See Stores.`,
+            text: result.storage.kind === "ok" ? rowOf("Storage left").detail : `${result.storage.text} See Stores.`,
         },
     ];
     const overall = worst([...verdicts.map((v) => v.kind), ...rows.map((r) => r.kind)]);
