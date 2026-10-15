@@ -397,6 +397,12 @@ form.inline button {
     white-space: normal;
 }
 
+/* The Detail column of the Summary reads as text, from the left. */
+.grid.plain td.detail {
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
 .grid.plain .pv {
     overflow-wrap: anywhere;
 }
@@ -659,4 +665,27 @@ button.info {
 .treemap a:focus-visible {
     outline: 3px solid var(--c-accent);
     outline-offset: 1px;
+}
+
+/* The Summary table of the overview: the Now column holds its longest values on one line and the Detail column has room. */
+@media (min-width: 721px) {
+    #summary th:nth-child(1),
+    #summary td:nth-child(1) {
+        width: 19%;
+    }
+
+    #summary th:nth-child(2),
+    #summary td:nth-child(2) {
+        width: 24%;
+    }
+
+    #summary th:nth-child(3),
+    #summary td:nth-child(3) {
+        width: 11%;
+    }
+
+    #summary th:nth-child(4),
+    #summary td:nth-child(4) {
+        width: 32%;
+    }
 }
