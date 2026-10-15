@@ -792,3 +792,10 @@ button.opt-toggle:hover {
     margin-right: 18px;
     font-weight: 600;
 }
+
+/* The two notes under the Selected row take no room while they hold no text. */
+#limitNote:empty,
+#actionNote:empty {
+    margin: 0;
+    padding: 0;
+}
