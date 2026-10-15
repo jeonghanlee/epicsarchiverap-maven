@@ -52,7 +52,7 @@ function finiteSeries(series) {
 
 /** The look of the line of the series at position slot of a chart that has a legend. */
 function lineLook(series, slot) {
-    return { color: PALETTE[slot % PALETTE.length], dash: DASHES[slot % DASHES.length] || null, width: series.focus ? 2.5 : 1.8 };
+    return { color: PALETTE[slot % PALETTE.length], dash: DASHES[slot % DASHES.length] || null, width: series.focus ? 2.5 : series.quiet ? 1.2 : 1.8 };
 }
 
 /**
@@ -619,6 +619,10 @@ export function drawTimeSeries(host, input) {
                 .attr("d", lineOf(s)(part));
             if (look) {
                 path.style("stroke", look.color).style("stroke-width", look.width);
+                if (s.quiet) {
+                    // A series that is only the background of another one stays pale in a chart with a legend too.
+                    path.style("opacity", "0.6");
+                }
             }
         }
         const last = s.points[s.points.length - 1];

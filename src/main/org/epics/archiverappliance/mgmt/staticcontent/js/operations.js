@@ -18,7 +18,7 @@ import {
     groupByHost,
 } from "./system/judge.js";
 import { drawUsage, usageGroups } from "./system/treemap.js";
-import { chooseAppliance, infoButton, statusNode, timeText } from "./system/view.js";
+import { HEAP_WORDS, chooseAppliance, infoButton, statusNode, timeText } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_MS = 30000;
@@ -498,7 +498,12 @@ function seriesByLabel(series, label) {
 function floorChart(host, title, floor) {
     const points = floor.data.map(([t, v]) => ({ t, v, s: 0 }));
     const lowest = floor.floor.map(([t, v]) => ({ t, v, s: 0 }));
-    const section = node("div", { class: "process-chart" }, node("h3", null, title), statusNode(floor.kind, floor.text));
+    const section = node(
+        "div",
+        { class: "process-chart" },
+        node("h3", null, title, " ", infoButton("Heap and floor", HEAP_WORDS, null, HELP)),
+        statusNode(floor.kind, floor.text)
+    );
     const chart = node("div", { class: "chart" });
     section.append(chart);
     host.append(section);
@@ -510,6 +515,7 @@ function floorChart(host, title, floor) {
         from: new Date(points[0].t),
         to: new Date(points[points.length - 1].t),
         gapMs: 600000,
+        legend: true,
     });
     const rhythm = floor.rhythm === null ? "" : ` A collection runs about every ${floor.rhythm.toFixed(0)} minutes.`;
     section.append(node("p", { class: "sub" }, `Lowest after a collection: ${floor.first.toFixed(0)} % at the start of the day, ${floor.last.toFixed(0)} % now.${rhythm}`));

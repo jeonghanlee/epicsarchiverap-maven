@@ -2,7 +2,7 @@
 import { drawTimeSeries } from "../comm/js/aa/chart.js";
 import { appliances, get, node, number, settled } from "./system/api.js";
 import { etlTiers, heapFloor, measureMap } from "./system/judge.js";
-import { chooseAppliance, infoButton, statusNode } from "./system/view.js";
+import { HEAP_WORDS, chooseAppliance, infoButton, statusNode } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_MS = 30000;
@@ -35,6 +35,7 @@ const CARDS = [
             ["Not recorded", "The server counts requests and users but does not record how long a request took. That is why the measurement is made in the browser."],
         ],
     ],
+    ["heapHeading", "Heap and floor", HEAP_WORDS],
     [
         "dataHeading",
         "Data available for a PV",
@@ -106,6 +107,7 @@ async function renderServer() {
         from: new Date(floor.data[0][0]),
         to: new Date(floor.data[floor.data.length - 1][0]),
         gapMs: 600000,
+        legend: true,
     });
     $("heapNote").textContent = `Lowest after a collection: ${floor.first.toFixed(0)} % at the start of the day, ${floor.last.toFixed(0)} % now. ${floor.text}`.trim();
 }

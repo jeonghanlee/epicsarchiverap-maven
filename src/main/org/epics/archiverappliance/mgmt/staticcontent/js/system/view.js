@@ -11,6 +11,15 @@ export function statusNode(kind, text) {
     return box;
 }
 
+/** The two words of a heap chart: the line that rises and falls and the line that matters, as rows of an information card. */
+export const HEAP_WORDS = [
+    ["heap", "The memory the process holds, in percent of its maximum. It rises and falls all the time; that is normal garbage collection."],
+    [
+        "floor",
+        "The lowest point of the heap after a collection, drawn as the strong line. A floor that climbs from day to day means the heap is too small or something leaks.",
+    ],
+];
+
 let openTitle = null;
 let openCard = null;
 
