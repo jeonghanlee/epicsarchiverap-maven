@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; plan accepted and implementation authorized on 2026-10-14, in progress: the component, the chart of the Browse PVs page and the control into the analyzer are built; left are the System pages Operations and Retrieval performance, the book and the checks T1 to T3, see Progress in its detail), then M58 (the Browse PVs page), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The body of #38 still has to be refreshed for M57. M46 and M48 wait on G6 and G7, which other sessions report.
+Next session entry point: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; plan accepted and implementation authorized on 2026-10-14, in progress: the component, the chart of the Browse PVs page and the control into the analyzer are built; left are the commit of the legend of the heap charts, the book and the checks T1 to T3, see Progress in its detail), then M58 (the Browse PVs page), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built in the working tree and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46 and M48 wait on G6 and G7, which other sessions report.
 
 Other open work: M28 (issue #12) resumes in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07, both startup transfers and the shortened STS repeat preserved the expected old interval, and a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. M28 stays In progress until the revised focused checks and soak criteria have execution evidence. M36's reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02; do not resend it. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) owns full VM revalidation.
 
@@ -82,6 +82,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Interface analyzer | M63 | Analysis of numeric signals in the analyzer | Milestone | Not started | No | M62, D40 | The analyzer summarises, fits, correlates, compares and tests one or several numeric signals (statistics, distribution, trend, fit, correlation, dependency, FFT), computed by the page where the D3 bundle has no function; [detail](#m63---analysis-of-numeric-signals-in-the-analyzer) |
 | Interface analyzer | M64 | Waveform and image analysis in the analyzer | Milestone | Not started | No | M63, M62, D40 | The analyzer draws an array at a time, over time and as a heatmap, computes its summary values and spectrum, and analyses an image by region, projections, centroid and size; [detail](#m64---waveform-and-image-analysis-in-the-analyzer) |
 | Interface console | M60 | Name check on the network and hold of a pending request | Milestone | Not started | Yes | M57 | The appliance reports whether a complete PV name answers on the network before it is archived, and a pending archive request can be paused and held as well as cancelled; [detail](#m60---name-check-on-the-network-and-hold-of-a-pending-request) |
+| Interface console | M65 | System pages read item by item | Milestone | Not started | Yes | M56, D38 | Every item of the System pages (System, Operations, Retrieval performance, External servers) has an information card that says what it is and when it is normal, needs attention or is a problem, and its state in words beside a one-word status; a measure that is not reported never reads Normal; [detail](#m65---system-pages-read-item-by-item) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -5164,6 +5165,7 @@ Out of scope: the chart component (M59); the analyzer page, options and address 
 - Decision Date 2026-10-14: a PV ticked in the list gets its row with the Plot box off; the user turns it on.
 - Decision Date 2026-10-14: the actions on an archived PV (Pause, Resume, Change sampling, Stop archiving, Maintenance) and the cancel of a pending request are in the row of the PV, replacing the Scan list and the Detail area of the Browse PVs page; the owner approved the placement from the mockup.
 - Decision Date 2026-10-14: Open in the analyzer carries the options chosen on the page as well as the PVs and the time window, so that the analyzer shows the picture the user was looking at; M62 gives the analyzer the parameters to read them.
+- Open item 2026-10-14 (the owner, from using the Scan list of the page as it is): the State column is empty for a PV that is archived normally, so it reads as missing data. Settle in the build of the table whether the column is left out while every PV is normal and shown when one is not, or shows a mark for the normal state; the lost-events mark of the State column is part of the same decision. The cleanups made to the Scan list before this item (the Scan heading and the empty lines under the Selected row are gone) end with the replacement of the Scan list and the Detail area by the table.
 
 ##### Implementation Plan
 
@@ -5228,7 +5230,7 @@ The Browse PVs page and the viewer share the drawing function `drawTimeSeries` (
 
 One chart component. The pages that plot (the Browse PVs page, which hosts the chart in its present form until M58 redesigns it, and the System pages Operations and Retrieval performance) use the same component in a simple form (decision of 2026-10-14, from the Browse PVs mockup): the crosshair and tooltip on hover; a time range chosen by a drag over the plot and a value range by a drag along an axis, a double-click returning; one Y axis per unit, each with its own automatic range; the axes split between the two sides of the plot; a legend under the chart with the line style, name and unit of each PV, an item hiding and showing its line; a hover tooltip with the date and time and the value of each PV with its unit; the Y projection with its mean line and a table of basic statistics of the samples in view (samples, minimum, mean, median, maximum, standard deviation); a Chart options panel with the line (step, straight, smooth, points only), the Y scale (linear, symmetric log, log, square root, a scale that needs positive values falling back to symmetric log with the reason shown), sample marks, a running average and a standard deviation band over a window of samples; an Enlarge chart button that draws the chart again at the size of a large window; and a control that opens their PVs in the analyzer. No other option or analysis tool; the options and gestures it omits are those of the analyzer (M62), which draws through the same component.
 
-Out of scope: the analyzer page, its drawing options, gestures and address (M62); the analysis tools (M63, M64); the page layouts (M57, M58); the retrieval server.
+Out of scope: the analyzer page, its drawing options, gestures and address (M62); the analysis tools (M63, M64); the page layouts (M57, M58); the explanation of the items of the System pages, their tables and cards (M65); the retrieval server.
 
 ##### Completion Criteria
 
@@ -5262,19 +5264,20 @@ Out of scope: the analyzer page, its drawing options, gestures and address (M62)
 - Decision Date 2026-10-14: charts drawn one above the other (the data viewer) share the width of their widest value axis as well as the room of their labels, so that their plots start at the same place; a chart whose axes and projection would leave its plot under a least width (240 pixels, chosen in the build) is drawn wider than its host, which scrolls sideways inside its own box while the page does not; a sample whose value is not a number is not drawn.
 - Decision Date 2026-10-14: an axis can take the focus; its arrow keys move its value range, plus and minus narrow and widen it and Home clears it, as the drag along the axis does for the pointer.
 - Decision Date 2026-10-14: a page says only what changes how the chart reads now (the window shown, the PVs left out); the gestures, the meaning of the values and the options are explained in information cards opened with the i buttons, which link to the help page.
+- Decision Date 2026-10-14: the explanation of the items of the System pages (the tables, the information cards, the state in words, the lines at the top of the Overview) is the milestone M65 and not part of this item; this item keeps what the System charts draw through the component (the legend, its quiet look and the tooltip), and M65 the words of their cards.
 
 ##### Implementation Plan
 
 Plan Status: accepted
-Plan Acceptance: 2026-10-14 (revised the same day, the owner directing the three corrections to be applied: the host of T1 is the Browse PVs page, the pages that move are the Browse PVs page and the two System pages, and the Browse PVs page lifts its limit of one unit): the owner accepted the plan of the chart component and its simple form, as split from the chart and analyzer work: the component in the simple form approved from the Browse PVs mockup (one axis per unit split between the sides, the legend, the tooltip with the date and time, ranges chosen with the mouse, the Y projection with its statistics, Chart options, the enlarged window), the build order and the tests T1 to T3; revised again on 2026-10-14 after a review of the built component, the owner directing that the criterion for the data requests read one batch with one request for each drawn PV, and that the soft IOC fixture of T1 be the tracked file `src/resources/test/ConsoleChartPVs.db`
-Implementation Authorization: 2026-10-14, the owner directed the implementation of the accepted plan, in small steps that are tested on a local appliance and shown one by one; renewed the same day for the revised plan, which the owner approved and directed to be applied, and again for the fixes and the fixture listed under Progress
+Plan Acceptance: 2026-10-14 (revised the same day, the owner directing the three corrections to be applied: the host of T1 is the Browse PVs page, the pages that move are the Browse PVs page and the two System pages, and the Browse PVs page lifts its limit of one unit): the owner accepted the plan of the chart component and its simple form, as split from the chart and analyzer work: the component in the simple form approved from the Browse PVs mockup (one axis per unit split between the sides, the legend, the tooltip with the date and time, ranges chosen with the mouse, the Y projection with its statistics, Chart options, the enlarged window), the build order and the tests T1 to T3; revised again on 2026-10-14 after a review of the built component, the owner directing that the criterion for the data requests read one batch with one request for each drawn PV, and that the soft IOC fixture of T1 be the tracked file `src/resources/test/ConsoleChartPVs.db`; revised once more on 2026-10-14, the owner directing that the explanation of the items of the System pages, first placed in this item, be the milestone M65 and that this item be finished within its own scope (scope, criterion, step 3 and the check T4 taken out)
+Implementation Authorization: 2026-10-14, the owner directed the implementation of the accepted plan, in small steps that are tested on a local appliance and shown one by one; renewed the same day for the revised plan, which the owner approved and directed to be applied, and again for the fixes and the fixture listed under Progress; the System pages items are not part of the authorized plan of this item
 Superseded Plan Artifacts: none
 
 1. Settled with the owner on 2026-10-14 for the simple form: its options and gestures (a drag over the plot selects a time range, a drag along an axis selects that axis's range, a double-click returns).
 2. The component (`staticcontent/js/aa/chart.js`, `staticcontent/js/aa/plots.js`, `staticcontent/css/chart.css`), the simple form first because the Browse PVs page draws through it: one axis per unit with its own automatic range, split between the two sides with the first half on the left; the legend under the chart whose items hide and show a line; the tooltip with the date and time and each value with its unit; the ranges chosen with the mouse; the Y projection with its mean line and the table of basic statistics; the Chart options panel (line, Y scale, sample marks, running average, standard deviation band and its window); the Enlarge chart window that draws again at its size. Check: T1.
 3. The pages that draw today move onto the simple form: the Browse PVs page (`js/browse.js`) lifts its limit of one unit, passes the PVs of all units to the component and gets a control into the analyzer, and the System pages (`js/operations.js`, `js/retrieval.js`) use the new legend and tooltip; the Archive PVs page draws no chart and has nothing to move. The book describes the controls. Check: T2 and T3.
 
-Progress on 2026-10-14 at 15:30 PDT, observed state and not a change of the plan: step 2 is built and pushed to origin/modernize in the commits 8e0540e6 (one axis per unit, legend), 65245250 (ranges chosen with the mouse, lines clipped to the plot), 16172de3 (the chart is drawn again when a PV is unchecked), b8c34723 (Y projection with its statistics, Chart options) and 31592ab7 (Enlarge chart over the whole window, the Options panel with tabs, information cards); in step 3 the Browse PVs page lifts its limit of one unit (8e0540e6). In the working tree after 31592ab7 and not yet committed: the control that opens the PVs of the chart in the analyzer (the link Open in the analyzer on the row of the Inspect heading and in the large window, to the address of the Analyzer entry with the PVs and the window), the soft IOC fixture `src/resources/test/ConsoleChartPVs.db` (a storage ring in top-up operation, the PVs and units of T1), and fixes found by a review of the built component (the plots of stacked charts in the data viewer start at the same place, the plot keeps at least 240 pixels, samples that are not numbers are not drawn, the keyboard control of an axis). Left: the System pages Operations and Retrieval performance onto the component, the book, and the checks T1 to T3 on the final tree.
+Progress on 2026-10-14 at 16:55 PDT, observed state and not a change of the plan: step 2 is built and pushed to origin/modernize in the commits 8e0540e6 (one axis per unit, legend), 65245250 (ranges chosen with the mouse, lines clipped to the plot), 16172de3 (the chart is drawn again when a PV is unchecked), b8c34723 (Y projection with its statistics, Chart options), 31592ab7 (Enlarge chart over the whole window, the Options panel with tabs, information cards), 42213e4b (the link Open in the analyzer), 9f2388da (the plots of stacked charts start at the same place, an axis takes the keyboard) and b4b7ca61 (the soft IOC fixture `src/resources/test/ConsoleChartPVs.db`); in step 3 the Browse PVs page lifts its limit of one unit (8e0540e6). In the working tree and not yet committed: the legend and the quiet look of the heap charts of Operations and Retrieval performance (`legend: true` in `js/operations.js` and `js/retrieval.js`, `lineLook` in `chart.js`); the working tree holds the tables and cards of the System pages as well, which belong to M65. Left: the commit of the legend, the book, and the checks T1 to T3 on the final tree (a PV of no unit archived on the appliance and the heap chart of Retrieval performance with two hours of values are not yet observed).
 
 ##### Test Plan
 
@@ -5655,6 +5658,83 @@ Observed State: OPEN
 Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-12; `gh issue view 38` shows the drafted body, open, assignee jeonghanlee
+
+#### M65 - System pages read item by item
+
+Origin: daff1b7 / M65
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The four System pages of the console (System, `system.html`; Operations, `operations.html`; Retrieval performance, `retrieval.html`; External servers, `external.html`) are the status monitoring of D38. A table row shows a value, a mark and a word of status; the rules that judge a measure and their threshold values are in `js/system/judge.js` (`THRESHOLDS`). A reader who does not already know the appliance cannot tell from a row what the item is, when its value is normal and what a mark asks for, and a line at the top of the Overview can read Normal while a measure under it is not reported.
+
+##### Scope
+
+Every item of the four pages is readable by itself: an information card (the `i` control of D38) that says what the item is, when it is normal, when it needs attention, when it is a problem and what to do then, with its values read from `THRESHOLDS` and not typed again; a state in words (Detail) beside the one-word status; a measure that is not reported reads Not reported and is never Normal, in a row and in the three lines at the top of the Overview, where a line is Normal only when every measure it rests on is reported. The summary table of the Overview has the columns Item, Now, Status (a word), Detail (the state in words) and Open (the link). The pages say only what changes how they read now; the explanations are in the cards (decision of 2026-10-14 recorded in M59).
+
+Out of scope: the drawing of the charts of these pages (M59); the judgement rules and their threshold values (`js/system/judge.js` stays as it is); new measures and the appliance status as PVA PVs (M61); the page frame and the menu (M56, M57).
+
+##### Completion Criteria
+
+- The summary table of the Overview has the columns Item, Now, Status, Detail and Open, and its three top lines rest only on measures that are reported.
+- Every item of the four pages has an information card that says what the item is, and the pages Operations, Retrieval performance and External servers show a state in words beside the one-word status.
+- A measure that is not reported is never Normal, in a row or in a line at the top of the Overview.
+- The book describes the System pages item by item and the default suite passes.
+
+##### Dependencies And Decisions
+
+- M56 (Complete): the page frame and the menu the pages sit in.
+- D38: explanations open on demand, not as standing text; the System pages provide status monitoring.
+- Decision Date 2026-10-14: the explanation of the items of the System pages is a milestone of its own; it was placed in M59 first and moved here on the owner's direction.
+- Decision Date 2026-10-14: the cards, the tables and the heap and floor cards of the System charts are this item's; the drawing of the charts through the component (the legend, its quiet look, the tooltip) stays in M59.
+- Open item 2026-10-14: the comment at the head of `js/system/judge.js` names the decision D51 for the reasons of the rules, and this register holds no D51; the owner decides whether the reasons are recorded here as a decision or the comment is corrected.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. The Overview (`js/system.js`, `system.html`, `css/system.css`): the five columns, a card for every row built from `THRESHOLDS`, the three top lines resting on reported measures. Check: T1, T2.
+2. Operations (`js/operations.js`): a card for every measure and a state in words beside the status, in the same form. Check: T1, T2.
+3. Retrieval performance (`js/retrieval.js`, `retrieval.html`): the same form, with the heap and floor card. Check: T1, T2.
+4. External servers (`external.html`, `js/external.js`): the same form. Check: T1, T2.
+5. The book (`docs/book/src/interface.md`, `operating.md`) describes the pages item by item. Check: T3.
+
+Progress on 2026-10-14 at 16:55 PDT, observed state and not a change of the plan: step 1 is built in the working tree and not committed (`js/system.js`, `system.html`, `css/system.css`); of steps 2 and 3 only the heap and floor cards exist (`js/operations.js`, `js/retrieval.js`, `retrieval.html`, `js/system/view.js`, working tree). The Overview was read on a local appliance at 500 pixels without a sideways scroll of the page, and `bash scripts/ui-static-checks.bash` passes 366 checks. The rest is not started.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the System pages pass |
+| T2 | Browser | Open each System page on a local appliance, press the information control of every item and read the card, read the Status and the Detail of every row of a table, and look at a measure that is not reported (the write time of a new appliance) | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | Each card says what the item is; the Detail agrees with the Status; a measure that is not reported is never Normal, and the lines at the top of the Overview agree with the table |
+| T3 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Local, JDK 21, Tomcat 9.0.121 | Pending | none |
+| T2 | Not run | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | Pending | none |
+| T3 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: System pages read item by item
+Labels: none
+GitHub Milestone: none
+Observed State: none
+Observed Labels: none
+Observed Milestone: none
+Last Compared: never
 
 #### G6 - Multi-hour appliance run at or after 6c6b973a with zero sample-buffer-full losses
 
