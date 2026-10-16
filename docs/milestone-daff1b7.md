@@ -5999,7 +5999,7 @@ Superseded Plan Artifacts: none
 5. The book (`docs/book/src`): the page of the times, `SUMMARY.md`, `faq.md`, `retrieval.md`, `configuration.md`. Check: T3.
 6. The default suite and the workflows. Check: T4.
 
-Progress on 2026-10-16 at 01:50 PDT, observed state and not a change of the plan: step 1 is built in the working tree and not committed. `GetDataAtTimeTwoStoresTest` (13 tests) fails on the original order of the stores in 4 of its first 7 tests; `getDataAtTimeForPVFromStores` now searches the shortest-term store first and a store that cannot answer does not stop the search of the next one (searching the shortest-term store first alone made some instants answer nothing, because a short term file that holds only samples later than the instant throws `Max iterations reached`, which is #43). `GetDataAtTime*Test` passes with 26 tests and `./mvnw -B -ntp clean verify` with 977 tests and no failure. On a local appliance of the working tree the instants that answered a sample an hour old or nothing answer the newest sample at or before them (`at` 06:59:59.400Z answers 06:59:59.354Z, where it answered 05:59:59.354Z). A comparison of `getDataAtTime` with the last sample at or before the instant read with `getData`, for 8 PVs at 10 instants, agrees in 79 of 80 cases; the other case is a PV whose newest sample is the only sample of its day file and of its hour file, which the search of a PB file does not find (M71). The rest of the plan is not started.
+Progress on 2026-10-16 at 01:50 PDT, observed state and not a change of the plan: step 1 is built in the working tree and not committed. `GetDataAtTimeTwoStoresTest` (13 tests) fails on the original order of the stores in 4 of its first 7 tests; `getDataAtTimeForPVFromStores` now searches the shortest-term store first and a store that cannot answer does not stop the search of the next one (searching the shortest-term store first alone made some instants answer nothing, because a short term file that holds only samples later than the instant throws `Max iterations reached`, which is #43). `GetDataAtTime*Test` passes with 26 tests and `./mvnw -B -ntp clean verify` with 977 tests and no failure. On a local appliance of the working tree the instants that answered a sample an hour old or nothing answer the newest sample at or before them (`at` 06:59:59.400Z answers 06:59:59.354Z, where it answered 05:59:59.354Z). A comparison of `getDataAtTime` with the last sample at or before the instant read with `getData`, for 8 PVs at 10 instants, agrees in 79 of 80 cases; the other case is a PV whose newest sample is the only sample of its day file and of its hour file, which the backward reader of a PB file does not return (M71). The rest of the plan is not started.
 
 ##### Test Plan
 
@@ -6094,7 +6094,7 @@ epicsarchiverap-env runs its installation checks of a MariaDB-backed appliance o
 | Verification | M66 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | M46, G8 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m66---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
 | Interface console | M69 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes |  | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of the same record does; [detail](#m69---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
 | Interface console | M70 | Epoch seconds beside the text of a time in the management calls | Milestone | Not started | Yes |  | The management calls that write a time as text (`getPVStatus`, `getPVDetails` and the reports) also send the same instant as epoch seconds, so that a client can write it in another time zone; the existing fields stay; [detail](#m70---epoch-seconds-beside-the-text-of-a-time-in-the-management-calls) |
-| Interface console | M71 | The search for a time in a PB file ends with not found when all samples are later | Milestone | Not started | Yes |  | A search in a PB file for a time earlier than every sample of a small file returns not found and does not throw `Max iterations reached`, and a backward read of a file with one sample finds that sample; [detail](#m71---the-search-for-a-time-in-a-pb-file-ends-with-not-found-when-all-samples-are-later) |
+| Interface console | M71 | Backward read of a small PB file | Milestone | In progress | No |  | A backward read of a PB file with one sample returns the sample, and a search for a time earlier than every sample of a small file returns not found and does not throw `Max iterations reached`; [detail](#m71---backward-read-of-a-small-pb-file) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Backlog Details
@@ -6593,58 +6593,95 @@ Superseded Plan Artifacts: none
 
 - none
 
-#### M71 - The search for a time in a PB file ends with not found when all samples are later
+#### M71 - Backward read of a small PB file
 
 Origin: daff1b7 / M71
 Identity History: none
 GitHub Issue: #43 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/43)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
-`FileEventStreamSearch.binarysearch` throws `IOException: Max iterations reached` when it looks in a small PB file for a time that is earlier than every sample of the file, where its callers expect `false`. It happened for the file of an hour partition of the short term store that held only the samples written after an ETL run, through `FileBackedPBEventStream.seekToEndTime` and `PlainPBStoragePlugin.iterate`; `getData` over the same file for the same times succeeded. The throw site is known; why the interval (`min`, `max`) does not close for a file of a few lines is a hypothesis (the condition `max > (min - 4)` and the offset `Math.max(2, mid - 2)`).
+A backward read of a small PB file fails in two ways, in two classes.
 
-The same search does not find the sample of a file that holds one sample when the end time is at or after it: `FileEventStreamSearch.seekToTime` needs two lines (s1 and s2) to answer, so it returns `false`, `FileBackedPBEventStream.seekToEndTime` returns -1 and the backward iteration yields nothing. Observed on 2026-10-16 on the local appliance: `getDataAtTime` for `BL:01:SHUTTER:STATE` at 08:18:19Z and 08:18:36Z answered the sample of the day before, because the sample of 08:18:18.354Z was the only one in the day file of the medium term store and the only sample in the hour file of the short term store was later. In a test with the storage plugin, a PV with older samples in the day file of the previous day, one sample in the day file of the medium term store and one later sample in the hour file of the short term store answered the older sample at 6 of 7 instants, among them an instant equal to the time of the sample of the short term store. A PV with two samples in the hour file answered correctly at the 8 instants tried.
+`ReverseLineByteStream.readLine` tests `chReadUntil + currentBufferPos < stopAtPosition` before it returns the line that the constructor has already buffered. For a file with one sample that line directly follows the header, so the test always holds and the line is never returned. Observed on 2026-10-16 by running the class on files written by the storage plugin, with the start position at the first sample and the end position at the end of the file: 0 lines for a file with one sample, every line for files with two to four samples. The search is not involved: for a one-sample file `FileBackedPBEventStream` replaces a search result of 0 or less by the size of the file (43 bytes in the file tried), and the stream is still empty. The backward reader is used only through `PBEventStreamPositionBasedReverseIterator`, which only `FileBackedPBEventStream` creates.
+
+`FileEventStreamSearch.binarysearch` throws `IOException: Max iterations reached` when it looks in a small PB file for a time that is earlier than every sample of the file, where its callers expect `false`. It happened for the file of an hour partition of the short term store that held only the samples written after an ETL run, through `FileBackedPBEventStream.seekToEndTime` and `PlainPBStoragePlugin.iterate`; `getData` over the same file for the same times succeeded. The throw site is known, and the cause was confirmed on 2026-10-16 by tracing the loop on such a file: when the sought time is earlier than the first line, every step is `GO_LEFT`; once `mid` is `min`, `max` becomes `min - 1`, `(max - min) / 2` is 0 in integer division, so `mid` stays `min`, `min` and `max` do not change, and the loop repeats until the counter of 1000 iterations ends.
+
+Effect on `getDataAtTime`: on 2026-10-16 on the local appliance, `getDataAtTime` for `BL:01:SHUTTER:STATE` at 08:18:19Z and 08:18:36Z answered the sample of the day before, because the sample of 08:18:18.354Z was the only one in the day file of the medium term store and the only sample in the hour file of the short term store was later. The cases that fail are listed under Cases.
 
 ##### Scope
 
-The search ends with `false` when the sought time is earlier than the first sample of the file, and the loop ends by its interval and not by the counter of iterations, which stays a guard against a corrupt file. A backward iteration over a file with one sample, with an end time at or after that sample, finds the sample.
+Step 1: a backward read of a PB file with one sample, with an end time at or after that sample, returns the sample, and the reads of files with two or more samples return the same lines as before.
 
-Out of scope: another search algorithm; the choice of the partition files of a time. Considered and left to a later item, because they change the cost and not this defect: computing the name of the partition file of the time instead of listing the folder of the PV (`PlainPBPathNameUtility.getPathsWithData` reads the whole folder at each call), reading the end of the file directly for a time after its last sample, and reading a file of a few kilobytes from its start.
+Step 2: the search ends with `false` when the sought time is earlier than the first sample of the file, and the loop ends by its interval and not by the counter of iterations, which stays a guard against a corrupt file.
+
+Out of scope: another search algorithm; the choice of the partition files of a time. Considered and left to a later item, because they change the cost and not these defects: computing the name of the partition file of the time instead of listing the folder of the PV (`PlainPBPathNameUtility.getPathsWithData` reads the whole folder at each call), reading the end of the file directly for a time after its last sample, and reading a file of a few kilobytes from its start.
 
 ##### Completion Criteria
 
+- `ReverseLineByteStream`, given the start position of the first sample, reads the sample of a file with one sample and returns the same lines as before for files with two or more samples.
+- A backward iteration over a PB file with one sample, with an end time equal to or later than the sample, yields that sample, and `getDataAtTime` answers the newest sample at or before the instant when the files of the stores hold one sample each.
 - For a PB file with one sample and for a file with two samples, a search for an end time earlier than the first sample returns `false` and throws nothing.
-- A backward iteration over a PB file with one sample, with an end time equal to or later than the sample, yields that sample; `getDataAtTime` answers the newest sample at or before the instant when the files of the stores hold one sample each.
 - Searches for times inside the range and after the last sample return the same positions as before.
-- The existing search tests and the default suite pass.
+- The existing search and reverse reader tests and the default suite pass.
 
 ##### Dependencies And Decisions
 
-- Origin: recorded on 2026-10-16 at the owner's direction, from the observation made while fixing `getDataAtTime` (M68, issue #42), which stops its search of the stores on this exception and now continues with the next store. The one-sample file case was found in the independent review of that fix and added on 2026-10-16 at the owner's direction.
+- Origin: recorded on 2026-10-16 at the owner's direction, from the observation made while fixing `getDataAtTime` (M68, issue #42), which stops its search of the stores on the exception of step 2 and now continues with the next store. The one-sample case was added on 2026-10-16 at the owner's direction; its first recorded cause (the search) was corrected the same day after the reverse reader was run on the files.
+- Decision Date: 2026-10-16. One item with two ordered steps, the reverse reader first, because both show in the small files of a freshly started store and both close with the same `getDataAtTime` check.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-16; the owner accepted the plan of three steps with its criteria and the decision of one item with two steps
+Implementation Authorization: 2026-10-16; the owner authorized the three steps of this plan
 Superseded Plan Artifacts: none
 
-1. The tests first in the search tests of the PlainPB package (a file written by the storage plugin with one and with two samples, searched for a time before them, and a backward iteration over a file with one sample; and in `GetDataAtTimeTwoStoresTest` a PV with one sample in the day file of the medium term store and one in the hour file of the short term store), then the change of `binarysearch` and of `FileEventStreamSearch.seekToTime`, which needs two lines to answer. Closes with T1 and T2.
+1. The tests first, then `ReverseLineByteStream.readLine`: in `ReverseLineByteStreamTest` a file written with a header and one line, read with the start position of that line; in the tests of the PlainPB package a backward iteration over a file written by the storage plugin with one sample, with end times before, at and after the sample; in `GetDataAtTimeTwoStoresTest` a PV with one sample in the day file of the medium term store and one in the hour file of the short term store. Each fails on the code before the change. Closes with T1.
+2. The tests first, then `FileEventStreamSearch.binarysearch`: in the search tests of the PlainPB package a file written by the storage plugin with one and with two samples, searched for a time before them; the loop is traced on that file before the change to settle the hypothesis of the Summary. Closes with T2.
+3. The default suite and the workflows. Closes with T3.
+
+##### Progress
+
+Progress on 2026-10-16 at 08:40 PDT, observed state and not a change of the plan: steps 1 and 2 are built in the working tree and not committed (`ReverseLineByteStream.readLine`: a line already buffered is returned and the stop position applies only to reading a further line; `FileEventStreamSearch.binarysearch`: the loop ends when an iteration leaves `min` and `max` unchanged). On a local appliance built from the working tree, `getDataAtTime` for `BL:01:SHUTTER:STATE` at 08:18:19Z and 08:18:36Z answers the sample of 08:18:18.354Z where it answered the sample of the day before, and the comparison of `getDataAtTime` with the last sample at or before the instant read with `getData`, for 8 PVs at 10 instants, agrees in 80 of 80 cases (79 of 80 before the changes of this detail). The workflows have not run.
+
+##### Cases
+
+Observed on 2026-10-16 by running the tests of this detail on the code before the change and on the working tree, case by case through a temporary harness that calls the same test methods and was not kept. The files are day files written by the storage plugin with the header line of a PB file; the samples are at 60.354 s, 280.354 s and 500.354 s after the start of the day, and the end times are in seconds after the start of the day.
+
+| Case | Before the change | After the change |
+| --- | --- | --- |
+| Backward iteration, file of 1 sample, end time before the sample (30 s, 60 s) | Correct: no event at or before the end time | Same |
+| Backward iteration, file of 1 sample, end time at or after the sample (61 s, 279 s, 280 s, 500 s, 1120 s) | Wrong: no event is yielded, the sample is missed | Yields the sample |
+| Backward iteration, file of 2 or 3 samples, end time before the first sample (30 s, 60 s) | `IOException: Max iterations reached` | No event at or before the end time |
+| Backward iteration, file of 2 or 3 samples, end time at or after the first sample (61 s to 1120 s) | Correct | Same |
+| `ReverseLineByteStream` from the start position of the first sample to the end of the file, file of 1 line | 0 lines | The line |
+| `ReverseLineByteStream`, files of 2, 3 and 4 lines | Every line | Same |
+| `getDataAtTime`, one sample in the day file of the medium term store and one later sample in the hour file of the short term store, end times 60.354 s, 61.354 s, 279.354 s, 280.354 s, 290.354 s | The older sample of the previous day (5 of 6 end times tried) | The newest sample at or before the end time |
+| `getDataAtTime`, same PV, end time 30 s | Correct | Same |
+| `getDataAtTime`, PV with two samples in the hour file, 8 end times | Correct | Same |
+| Search with the comparison of `FileEventStreamSearchSmallFileTest`, header line and 1 to 3 lines, number before the first line | `Max iterations reached` for the files with a header (1 to 3 lines) | Not found, no exception |
+| Same search, number at or after the first line | Found for the files with a header | Same |
+| Same search, files without a header line (a layout that PB files do not have), lines 100, 200, 300 | Files of 2 and 3 lines: `Max iterations reached` for the numbers 50, 100 and 150; file of 1 line: not found for 50, 100 and 150 | Files of 2 and 3 lines: not found for 50, found from 100 on; file of 1 line: not found, as before |
+
+Not tried: files of four or more samples for end times before the first sample (the existing search test on a file of 5000001 lines passes for numbers below the first line).
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Unit | Write a PB file with the storage plugin with one sample and with two samples, search it for an end time earlier than the first sample, for a time inside its range and for a time after the last sample; the first search fails with the exception on the code before the change; a backward iteration over the one-sample file with an end time at and after the sample yields nothing on the code before the change; `GetDataAtTimeTwoStoresTest` with the PV of one sample per file answers an older sample on the code before the change | JDK 21 | The first search returns `false`, the iteration yields the sample, `getDataAtTime` answers the newest sample at or before each instant, the others return the positions they returned before the change |
-| T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+| T1 | Unit | The three tests of step 1 on the code before the change and after it; the line reader on a file of one line and on files of two to four lines | JDK 21 | Before: 0 lines for the file of one line, an older sample from `getDataAtTime`; after: the sample, the same lines for the files of two or more lines, the newest sample at or before each instant |
+| T2 | Unit | Write a PB file with the storage plugin with one sample and with two samples, search it for an end time earlier than the first sample, for a time inside its range and for a time after the last sample; the first search fails with the exception on the code before the change | JDK 21 | The first search returns `false`, the others return the positions they returned before the change |
+| T3 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21 | Pending | none |
-| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+| T1 | 2026-10-16 | JDK 21; working tree | Pass | On the code before the change `ReverseLineByteStreamTest.testStartPositionAtTheFirstLine` failed for the file of one line, `BackwardIterationOfSmallFileTest` failed in 5 cases of the file with one sample, and `GetDataAtTimeTwoStoresTest` failed in 5 cases of the PV with one sample per file; 4 more cases of `BackwardIterationOfSmallFileTest` (files of 2 and 3 samples, end time before the first sample) ended with `Max iterations reached`, which T2 closes; after the changes of both steps all pass, as do `FileBackedPBEventStreamTest` and `FileBackedIteratorTest` |
+| T2 | 2026-10-16 | JDK 21; working tree | Pass | On the code before the change `FileEventStreamSearchSmallFileTest` failed with `Max iterations reached`; a trace of the loop showed `min=0 mid=0 max=-1` repeating, because `(max - min) / 2` is 0 when `max` is `min - 1`, so `mid` and the window do not change; the plan named files written by the storage plugin, and the search itself is tested on files of numbered lines with and without a header line in `FileEventStreamSearchSmallFileTest`, while the files written by the storage plugin are covered by the cases of `BackwardIterationOfSmallFileTest` named under T1; after the change that test, `FileEventStreamSearchTest` and `SearchInPBFileTest` pass |
+| T3 | 2026-10-16 | JDK 21; working tree | Partial | `./mvnw -B -ntp clean verify` passes with 1006 tests and no failure; the Maven and Pages workflows have not run |
 
 ##### Closure Evidence
 
@@ -6652,13 +6689,13 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: PB file search throws "Max iterations reached" when all samples are later than the sought time
+Title: A backward read of a small PB file fails: Max iterations reached, and no sample from a one-sample file
 Labels: bug
 GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-16; `gh issue view 43` shows the drafted body, open, assignee jeonghanlee
+Last Compared: 2026-10-16; `gh issue view 43` shows the title and the body of this detail, open, assignee jeonghanlee
 
 ## Assignment History
 
