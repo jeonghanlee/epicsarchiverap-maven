@@ -8,7 +8,9 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; Ready, its plan a draft that waits for the owner's acceptance and implementation authorization), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46 and M48 wait on G6 and G7, which other sessions report.
+Next session entry point: Prepare G6's real-path delay and measurement preflight in `docs/milestone-daff1b7.md` under M46 / T5. Remaining acceptance is one four-hour stress observation under T6-T7 after successful preflight and execution authorization. M66 is separate Backlog work waiting on G8.
+
+Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; Ready, its plan a draft that waits for the owner's acceptance and implementation authorization), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46 and M48 wait on G6 and G7, which other sessions report.
 
 Other open work: M28 (issue #12) resumes in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07, both startup transfers and the shortened STS repeat preserved the expected old interval, and a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. M28 stays In progress until the revised focused checks and soak criteria have execution evidence. M36's reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02; do not resend it. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) owns full VM revalidation.
 
@@ -65,7 +67,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M43 | One engine CA context never receives search replies | Milestone | Complete | No | | The shared UDP search port is reproduced with real CAJ contexts on Rocky 8.10 and Debian 13; the engine compares its command threads' search ports and recreates the earlier-bound context of a sharing pair (7adc7d5a); the new test fails without the check and passes with it, 901 default tests, 26 engine CA tests and the Maven workflow pass, and 30 restarts on a Rocky 8.10 guest were clean; issue #26 closed as completed on 2026-10-05; why the field rate exceeds the probe rate stays open; [detail](#m43---one-engine-ca-context-never-receives-search-replies) |
 | Phase 2 | M44 | Preserve ETL source data when append fails | Milestone | Complete | No | | A failed append retains its source partition, is excluded from moved totals and is reported as a failed job; recovery and ordinary transfers preserve the required samples; landed in f8fa719d, Maven run 37551730326 succeeded, issue #27 closed on 2026-10-07; [detail](#m44---preserve-etl-source-data-when-append-fails) |
 | Phase 2 | M45 | Use a full-cadence deadline for ETL startup and scheduled passes | Milestone | Complete | No | G5 | Overrun means endedAt is strictly later than plannedAt plus cadence; real-job regressions cover startup wait, scheduled delay and deadline boundaries, with scheduling and physical transfer preserved; landed in 120d53fe, Maven run 37698987276 succeeded, issue #28 closed on 2026-10-07; [detail](#m45---use-a-full-cadence-deadline-for-etl-startup-and-scheduled-passes) |
-| Phase 2 | M46 | Sample buffers sized with a time margin | Milestone | Blocked | No | G6 | Every PV's sample buffer holds one write period of samples plus `sampleBufferMarginSeconds` (default and minimum 1.0 s) instead of one extra sample (6c6b973a); capacity, property and real-IOC tests pass, and a 500 ms write-pass delay loses nothing; the multi-hour appliance run is G6; [detail](#m46---sample-buffers-sized-with-a-time-margin) |
+| Phase 2 | M46 | Sample buffers sized with a time margin | Milestone | Blocked | No | G6 | Every PV's sample buffer holds one write period of samples plus `sampleBufferMarginSeconds` (default and minimum 1.0 s) instead of one extra sample (6c6b973a); capacity, property and real-IOC tests pass, and a 500 ms write-pass delay loses nothing; the preflight and one four-hour stress run are G6; [detail](#m46---sample-buffers-sized-with-a-time-margin) |
 | Phase 2 | M47 | Management interface and data viewer replacement | Milestone | Complete | No | | The 35 interface files of jeonghanlee/epicsarchiverap-env@3353b74 land in d0932d1b with the jQuery, flot and viewer archive assets removed; 254 static checks run in the CI as scripts/ui-static-checks.bash and the book describes the pages (696117bc); issue #30 closed as completed on 2026-10-11; [detail](#m47---management-interface-and-data-viewer-replacement) |
 | Phase 2 | M48 | MariaDB JDBC driver 3.5.10 | Milestone | Blocked | No | G7 | `mariadb-java-client` 3.5.10 in every WAR (61e1b4c5), LICENCES/NOTICE lists the 43 runtime jars, the CI run passes; the socket and TCP installation checks of aa-env at a pin at or after 61e1b4c5 are G7; [detail](#m48---mariadb-jdbc-driver-3510) |
 | Phase 2 | M49 | Engine shutdown polls the CA command queue at its own cadence | Milestone | Complete | No | | `JCACommandThread.shutdown()` checks the queue before sleeping and polls every 100 ms under the 30 s cap (9a0c9677); `shutdownNow()` 1.3 s instead of 10.4 s, the default unit set 12 min 47 s instead of 34 min 52 s; issue #32 closed as completed on 2026-10-11; [detail](#m49---engine-shutdown-polls-the-ca-command-queue-at-its-own-cadence) |
@@ -88,7 +90,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
 | Tracking | G4 | ansible-provision deploy path for aa-env with SQLite | External gate | Complete | No | | ansible-provision deploys aa-env at or past bbe0968 with the MariaDB and the SQLite backend on a lab VM, and LAB-ansible-provision reports it; [detail](#g4---ansible-provision-deploy-path-for-aa-env-with-sqlite) |
 | Tracking | G5 | ETL pass deadline plan authorization and issue creation | External gate | Complete | No | | The current M45 plan is accepted and explicitly authorized, and its prepared bug issue exists on GitHub before implementation; [detail](#g5---etl-pass-deadline-plan-authorization-and-issue-creation) |
-| Tracking | G6 | Multi-hour appliance run at or after 6c6b973a with zero sample-buffer-full losses | External gate | Open | No | | ansible-provision reports a run of its 903-PV population on a build carrying 6c6b973a with zero "sample buffer full" lost events; [detail](#g6---multi-hour-appliance-run-at-or-after-6c6b973a-with-zero-sample-buffer-full-losses) |
+| Tracking | G6 | Four-hour appliance stress run at or after 6c6b973a with zero sample-buffer-full losses | External gate | Open | No | | ansible-provision supplies successful real-path preflight and four-hour 903-PV stress evidence under M46 / T5-T7; [detail](#g6---four-hour-appliance-stress-run-at-or-after-6c6b973a-with-zero-sample-buffer-full-losses) |
 | Tracking | G7 | aa-env installation checks of the MariaDB socket and TCP paths at 61e1b4c5 or later | External gate | Open | No | | epicsarchiverap-env reports both MariaDB installation checks passing at a pin at or after 61e1b4c5; [detail](#g7---aa-env-installation-checks-of-the-mariadb-socket-and-tcp-paths-at-61e1b4c5-or-later) |
 
 ### Decisions
@@ -4305,6 +4307,35 @@ Status: Blocked
 
 A PV's engine sample buffer held the samples expected within one write period plus one extra sample, so the margin in time equalled the sampling period: with the default 10 s write period a 0.1 s PV had 101 slots and a write-pass delay of a little over 0.1 s overflowed it, while a 1 s PV tolerated 1 s. Two Rocky Linux 8.10 appliances with 903 PVs lost single samples of 10 or 11 of their 110 fast PVs at once, each loss matched one to one by the "sample buffer full" counter. The margin is now a time, `org.epics.archiverappliance.config.PVTypeInfo.sampleBufferMarginSeconds` (default and minimum 1.0 s), and `sampleBufferCapacityAdjustment` is removed.
 
+##### Root Cause
+
+`ArchiveEngine.java` sized every buffer as `round(max(write_period / pvSamplingPeriod * sampleBufferCapacityAdjustment, 1.0)) + 1`. The `+ 1` is the whole margin, so in time it equals the sampling period and shrinks with the rate; `sampleBufferCapacityAdjustment` multiplies the expected sample count and therefore cannot give every PV the same margin in time. A write pass is late by a duration that has nothing to do with the sampling rate, so the fastest PVs lose samples first and the slower ones never do.
+
+The code paths involved, read at 162269e7:
+
+- `src/main/org/epics/archiverappliance/engine/ArchiveEngine.java`: capacity computed when a PV's channel is created.
+- `src/main/org/epics/archiverappliance/engine/model/SampleBuffer.java`: `add()` removes the oldest sample when no slot remains and counts the loss. The dropped sample is the first one received after the previous swap, so the overflow happens about one write period after the timestamp of the missing sample.
+- `src/main/org/epics/archiverappliance/engine/pv/EngineContext.java` (`startWriteThread`): one scheduler thread runs the writer with `scheduleAtFixedRate` every write period.
+- `src/main/org/epics/archiverappliance/engine/writer/WriterRunnable.java`: `write()` iterates the buffers in `ConcurrentHashMap` order and, per buffer, swaps the sample list and then calls `appendData`; one slow append delays the swap of every buffer behind it in the same pass.
+
+Reproduced at 162269e7 with the real engine and a real soft IOC, write period 10 s, 40 PVs at 0.1 s, 20 at 1 s and 5 at 10 s, every append taking 1 ms and one append per run delayed once by a chosen amount: delays up to 120 ms lost nothing; 130 ms lost one sample on 17 of the 39 fast PVs written after the delayed append; 200 ms lost one on all 39; 300, 500 and 1000 ms lost 2, 4 and 9 per fast PV; the 1 s and 10 s PVs lost nothing in any run. The threshold at 0.1 s lies between one and two sampling periods because the first sample after a swap arrives up to one period later. The engine's lost-event counter and the gaps in the values handed to the writer agreed in every run.
+
+The trigger of the delay on the two appliances where the loss was observed is not identified. The candidates are a late write pass (CPU or I/O contention, GC, scheduling), one slow append earlier in the same pass, and a Channel Access delivery stall followed by a burst. The stored IOC timestamps cannot tell them apart, and the engine logs neither the start time nor the interval of a write pass.
+
+##### Observed Deployment Evidence
+
+Two Rocky Linux 8.10 guests, each with 2 vCPU and 4 GiB memory, one appliance with four JVMs of 256 MiB, 903 PVs from one IOC process: 110 at 0.1 s, 783 at 1 s, 10 at 10 s, about 1,900 events/s in total. A write pass over all buffers took 0.04 to 0.05 s on average. The runtime capacity of an affected 0.1 s PV was 101.
+
+- Losses occurred only on 0.1 s monitor PVs, one sample per PV per event, and in each event 10 or 11 of the 110 fast PVs lost a sample at the same instant. No 1 s or 10 s PV lost a sample.
+- One guest lost 16 samples over about 9.5 h in several events, the largest hitting 11 PVs at once. The other lost 10 samples in a single event.
+- Around the missing sample the IOC timestamps are regular 0.1 s steps with about 5 ms jitter, and the missing value is the only gap. Decoding the stored PB files shows the event counter skipping exactly one value, and the per-PV "events lost because the sample buffer is full" counter matches one to one.
+- Connection-loss, wrong-timestamp and type-change counters stayed zero.
+- On one guest an ETL pass ran 2 to 3 s before the overflow and a 54 ms young GC of the engine JVM fell in the sampled second that contains it. On the other guest no ETL pass was near the overflow and the system journal had no entry in the window. Neither is shown to cause the delay.
+
+##### Implemented Correction
+
+Implemented in 6c6b973a on branch `issue-29-sample-buffer-margin`. The margin is a time: `capacity = round(max(write_period / period, 1)) + max(ceil(sampleBufferMarginSeconds / period), 1)`, read from `org.epics.archiverappliance.config.PVTypeInfo.sampleBufferMarginSeconds` with default 1.0 and minimum 1.0. A missing key uses the default and is logged; a value below 1.0 is raised to 1.0 with a warning; a value that is not a finite number falls back to the default with a warning. `sampleBufferCapacityAdjustment` is removed from the code, the site properties files and the documentation; an old key left in a deployed `archappl.properties` is ignored. With the defaults a 0.1 s PV holds 110 samples, a 1 s PV 11 and a 10 s PV 2. The reproduction above, repeated at 6c6b973a: a 500 ms delay loses nothing on any class, and a 1.5 s delay loses on the 0.1 s PVs only.
+
 ##### Scope
 
 `ArchiveEngine.computeBufferCapacity(writePeriod, samplingPeriod, margin)` = round(max(writePeriod / samplingPeriod, 1)) + max(ceil(margin / samplingPeriod), 1); `EngineContext` reads the property with INFO on a missing key, WARN and the default on a non-finite value, WARN and 1.0 on a value below 1.0; the property removed from the code, the site properties files, faq and configuration pages; tests for the capacity, the property handling and a real-IOC loss measurement.
@@ -4315,23 +4346,64 @@ Out of scope: finding the source of the write-pass delay; the write scheduler an
 
 - A 0.1 s PV no longer loses samples to a write-pass delay that a 1 s PV tolerates.
 - A unit test asserts the capacity for 0.1 s, 1 s and 10 s PVs (110, 11, 2 with the defaults).
-- A multi-hour run with the 903-PV population shows zero "sample buffer full" lost events (G6).
+- After the bounded real-path preflight passes, one four-hour stress run of the 903-PV population meets the measured per-target/per-cycle exposure thresholds, reports zero buffer-full counter increase on every PV, complete fast-input/PB comparisons and continuous process/evidence coverage (G6).
 
 ##### Dependencies And Decisions
 
-- G6 is Open: the multi-hour run belongs to ansible-provision, whose ETL verification stays pinned to 162269e7 until its own plan review adopts 6c6b973a; resume as In progress when G6 completes.
+- G6 is Open: ansible-provision supplies the corrected-build deployment, real-path delay/measurement preparation and four-hour result; resume as In progress when G6 completes. Completed ETL/journal observations retain their original builds and records.
+- Decision Date: 2026-10-15. The remaining deployment acceptance is one four-hour stress run after short preflight. Repeat the 10-minute schedule 24 times; inspect cumulative results after one, two and three hours and decide at four hours. Preparation, warm-up and final comparison are outside the observation. No automatic extension or rerun.
+- Decision Date: 2026-10-15. The later integrated 24-hour campaign is Backlog M66 after G8 confirms the required Ansible tools are ready. It does not block closure after G6 succeeds.
+- The completed production scope retains its acceptance and implementation authorization of 2026-10-11. New stress-harness implementation and VM execution have not been authorized.
 - Decision Date: 2026-10-11. The margin is a time with a floor of 1.0 s, not a multiplier of the expected sample count; the old multiplier key is dropped rather than kept as an alias.
 
 ##### Implementation Plan
 
 Plan Status: accepted
-Plan Acceptance: 2026-10-11; owner accepted the time margin and the removal of the multiplier in discussion
-Implementation Authorization: 2026-10-11; owner directed the change on `modernize` without a branch
-Superseded Plan Artifacts: none
+Plan Acceptance: 2026-10-15; owner selected one four-hour run and accepted measured-stress and bounded-preflight corrections
+Implementation Authorization: none for the revised stress harness or VM execution
+Superseded Plan Artifacts: the unspecified multi-hour criterion at 0a501025caec8b107c956617e2b10b56b0779ef9; completed T1-T4 evidence is retained
 
 1. Compute the capacity from a time margin in `ArchiveEngine` and read the property in `EngineContext`; remove `sampleBufferCapacityAdjustment` from code, properties files and the book. Closes with T1 and T2.
 2. Measure the loss with the real engine and a real soft IOC at the old and the new sizing. Closes with T3.
 3. Run the default unit set and the CI. Closes with T4.
+4. Prepare a separate corrected-build appliance with the shipped 903-PV fixture and the actual IOC, engine, writer and PlainPB path. Verify installed identities, write period 10 s, margin 1 s and effective capacities 110, 11 and 2. Establish filesystem-I/O boundary injection preserving real writes, actual pass markers, monotonic delay measurements, PV buffer-swap intervals and input-burst evidence. Disk contention or a requested sleep alone is insufficient. The injection/measurement mechanism remains unverified; do not start the main observation unless the bounded preflight below demonstrates it and the input/PB comparison path. Closes with T5.
+5. After successful preflight and separate execution authorization, run one uninterrupted 14400-second monotonic observation. Repeat the schedule below 24 times. Use the eligibility, first/last-write alternation, frozen target list and measured per-PV exposure requirements below. Each eligible actual pass has exactly one verified delayed filesystem write; baseline/recovery passes have none. Retain requested/applied delay and actual writer impact. Missing, duplicate or unproved injections remain coverage findings and cannot establish Passed. Closes with T6.
+6. Stop injection, identify the final input boundary, complete real normal writes/flush and compare native decoded PB output with independent actual inputs. Preserve all declared intervals, loss, excess-delay and tool findings; do not remove a segment after seeing its result. Re-evaluate retained originals for tool correction before deciding whether any new observation is needed. Closes with T7.
+
+| Offset In Each 10-minute Cycle | Condition |
+| --- | --- |
+| 0-1 minute | No injected delay; verify live input and writes |
+| 1-5 minutes | Repeated 500 ms requested delay, exactly once per eligible actual pass |
+| 5-9 minutes | Repeated 800 ms requested delay, exactly once per eligible actual pass |
+| 9-10 minutes | Remove injection and confirm continued writes |
+
+Requested 500/800 ms delay does not prove that every buffer remained within its margin. Retain actual swap intervals, scheduling/queue time and input bursts. Any loss in the positive observation prevents an overall Passed result. An exceeded margin remains visible as a limit condition and is not automatically proof of an incorrect sizing fix.
+
+All 903 PVs require registration, active-input and counter coverage. Independent actual-input/unreduced-PB comparisons cover all 110 fast PVs; the remaining 793 PVs have counter/input-activity checks. Capture actual incoming events before the engine buffer, independently of stored output; compare timestamps including nanoseconds, values, status, severity, order and event multiplicities. Counter resets or decreases remain continuity findings and cannot be interpreted as zero loss. Preserve or read the real unreduced output before intentional ETL reduction/deletion. Retrieval deduplication, reduced counts and configured frequency multiplied by elapsed time are not actual input evidence. Do not claim exact value-level preservation of all 903 PVs.
+
+##### Measured Stress Coverage
+
+Assign each actual writer pass to the half-open phase window containing its monotonic start time. A pass is eligible when it starts inside a 500 or 800 ms phase after all 903 PVs are registered, has a native PB write and has complete pass, write and swap evidence. Keep every started pass in the record; an incomplete pass is a coverage gap, not an eligibility exclusion. Inject exactly once per eligible pass and never in passes assigned to baseline or recovery. At phase boundaries, finish the assigned pass without injecting a second time.
+
+Alternate the selected native write between the first and last observed write positions in consecutive eligible passes, preserving actual write order and recording the selected PV and write position. Repeating a delay at an unchanged position does not establish repeated buffer pressure. Preflight must demonstrate this selection mechanism; a requested delay or an append-call count alone is insufficient.
+
+Freeze the stress target list before the main run. Include all 110 fast PVs unless the first native write belongs to a fast PV whose swap necessarily precedes the injection. Only that one identified PV may be exempt from the stress-count requirement, leaving at least 109 targets; retain its all-PV loss checks and exact input/PB comparison. Do not select targets or exemptions from main-run outcomes.
+
+A qualifying 500 ms exposure requires an observed filesystem-write delay of at least 500 ms, a consecutive swap interval of at least 10.4 s and at most 11.0 s, and 104-110 independently captured incoming events between those swaps. A qualifying 800 ms exposure requires at least 800 ms observed write delay, a swap interval of at least 10.7 s and at most 11.0 s, and 107-110 incoming events. Use monotonic engine-arrival/swap times for these measurements; retain IOC timestamps separately for PB comparison. Attribute each exposure to the delayed pass and its assigned phase.
+
+Every target must receive at least one qualifying exposure of each level in each 10-minute cycle: at least 24 at 500 ms and 24 at 800 ms over four hours. The preflight requires at least one of each level per target. Report the per-PV/per-cycle counts, actual intervals, input counts and injection evidence. Fewer exposures means Incomplete even if loss counters remain zero. Keep all other intervals, including intervals above 11.0 s or inputs above capacity, in the overall record; they cannot erase observed loss or manufacture Passed.
+
+##### Bounded Preflight
+
+Allow one preflight attempt with a 1200-second monotonic deadline from the first fixture-registration or probe action after deployment. Registration, effective-configuration checks and complete capture must become ready within its first 300 seconds. After readiness, observe 120 seconds without injection, 120 seconds with the 500 ms schedule and 120 seconds with the 800 ms schedule. Require zero buffer-full counter increase and complete actual-input/PB matches in these normal and within-margin stages, plus the per-target measured exposures defined above.
+
+Before the expected-loss control, disable injection and drain native writes beyond the recorded input cutoffs of the normal/500/800 ms stages. Complete and freeze those stages' input/PB comparisons before introducing intentional loss. Retain all intervening recovery inputs in the subsequent full preflight comparison so a delayed drop cannot be misclassified as a previous-stage loss or disappear from the evidence.
+
+Then inject one observed filesystem-write delay of at least 1500 ms at the first native write of one pass, preserving the real IOC, engine, writer and PB path. This deliberately exceeds the configured margin: require at least one fast PV to have a positive buffer-full counter delta and an equal independently measured missing-event count in native PB after final writes/flush. Reconcile every fast PV; do not accept counter-only evidence or a comparator failure as successful loss detection. This expected-loss control is a separate preflight result, never part of the four-hour zero-loss acceptance.
+
+Complete capture, native flush/decode, comparisons and the preflight verdict within the same 1200-second deadline. Passed requires every normal, measured-stress and expected-loss check. Unexpected loss in a normal/within-margin stage is a failed check; absent loss in the expected-loss control or missing coverage/evidence is Incomplete; record collector/evaluator errors separately. On any unmet condition or timeout, disable injection, retain originals, report the blocking finding and do not start the main run. No automatic retry or extension.
+
+After Passed, start the main observation in a fresh engine execution with the same verified build, fixture and effective configuration, a new capture boundary and recorded initial counters. The preflight's expected losses remain preserved under its own process identity; a restart is not a reset within the main observation. Require continuous engine/counter identity throughout the subsequent four hours.
 
 ##### Test Plan
 
@@ -4341,6 +4413,9 @@ Superseded Plan Artifacts: none
 | T2 | Unit | `SampleBufferMarginPropertyTest`: missing key, value below 1.0, non-finite value | JDK 21, wrapper Maven | default 1.0, raised to 1.0, default with a warning |
 | T3 | Real engine and IOC | `SampleBufferMarginTest` (`localEpics`): 40 PVs at 0.1 s, 20 at 1 s, 5 at 10 s, write period 10 s, one append delayed once | Local soft IOC | 500 ms delay: zero lost events on every class; 1.5 s delay: losses on the 0.1 s PVs only |
 | T4 | Default suite and CI | `./mvnw -B -ntp clean verify`; Maven workflow | JDK 21; GitHub Actions | Pass |
+| T5 | Deployment preflight | Execute the one-attempt, 1200-second normal/500/800 ms stages and separate 1500 ms expected-loss control through native writes and independent input/PB comparison | Separate corrected-build appliance; shipped 903-PV fixture | All stated checks pass before the deadline; at least 109 frozen targets meet both measured exposure levels and real loss is detected consistently by counters and PB |
+| T6 | Four-hour stress | Repeat the schedule 24 times; retain per-target/per-cycle measured exposures, all-PV counters/input activity, pass/swap/burst/delay evidence and 1/2/3-hour checkpoints | Same verified deployment after T5; fresh engine execution continuous throughout T6 | At least 14400 monotonic seconds; every frozen target has at least one qualifying 500 and 800 ms exposure per cycle; zero buffer-full counter increase on all 903 PVs and complete evidence |
+| T7 | Final data and verdict | Execute normal final writes/flush and native PB decode against retained independent inputs for all 110 fast PVs; reconcile every declared interval | T6 deployment and immutable originals | No missing/conflicting fast events or hidden interval exclusion; product loss, evidence gaps and tool errors remain distinct |
 
 ##### Verification Results
 
@@ -4350,10 +4425,13 @@ Superseded Plan Artifacts: none
 | T2 | 2026-10-11 | JDK 21, wrapper Maven, tree 6c6b973a | Pass | 3 tests pass |
 | T3 | 2026-10-11 | Local soft IOC, tree 6c6b973a | Pass | 500 ms delay: 0 lost events on 0.1 s, 1 s and 10 s PVs; 1.5 s delay: losses on the 0.1 s PVs only. At 162269e7 the same harness lost one sample on 17 of 39 fast PVs at 130 ms and on all 39 at 200 ms |
 | T4 | 2026-10-11T09:16:02Z | GitHub Actions, run 38125132721 on 1f099b2f (the next commit, which changes only the CI timeout) | Pass | The run on 6c6b973a itself was cancelled by the push of 1f099b2f under the workflow's cancel-in-progress rule |
+| T5 | Not run | Corrected-build appliance and shipped fixture | Pending | Injection/measurement mechanism is unverified; plan preparation only |
+| T6 | Not run | T5 deployment | Pending | Four-hour observation has not started |
+| T7 | Not run | T6 originals and native readers | Pending | No new input/PB comparison |
 
 ##### Closure Evidence
 
-- 6c6b973a is on origin/modernize. Issue #29 body carries the measurements, the change and two checked criteria; its third criterion waits on G6, so M46 stays Blocked.
+- 6c6b973a is on origin/modernize. Issue #29 body carries the measurements, the change and two checked criteria; its third criterion awaits four-hour evidence under G6, so M46 stays Blocked. No new stress result is claimed.
 
 ##### GitHub Projection
 
@@ -4363,7 +4441,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-12T03:36Z; `gh issue view 29` shows two criteria checked and the multi-hour run unchecked
+Last Compared: 2026-10-15T21:25:56Z; live #29 is OPEN with label bug, no milestone and two criteria checked; its unspecified multi-hour criterion differs from the prepared four-hour body update
 
 #### M47 - Management interface and data viewer replacement
 
@@ -5766,7 +5844,7 @@ Observed Labels: none
 Observed Milestone: none
 Last Compared: never
 
-#### G6 - Multi-hour appliance run at or after 6c6b973a with zero sample-buffer-full losses
+#### G6 - Four-hour appliance stress run at or after 6c6b973a with zero sample-buffer-full losses
 
 Origin: daff1b7 / G6
 GitHub Issue: #29 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/29)
@@ -5774,17 +5852,21 @@ Status: Open
 
 ##### Summary
 
-ansible-provision runs its 903-PV population (110 at 0.1 s, 783 at 1 s, 10 at 10 s) for several hours on a build carrying 6c6b973a and reports the "sample buffer full" lost-event counters. Its ETL verification is pinned to 162269e7 until its own plan review adopts the newer commit. Affects M46.
+ansible-provision prepares a separate corrected-build deployment of its 903-PV fixture, demonstrates real filesystem-boundary delay and reliable measurement/comparison in short preflight, then supplies one four-hour stress result. M46 / T5-T7 define the accepted sequence and evidence. Completed ETL/journal observations retain their original builds and records. Affects M46.
 
 ##### Completion Criteria
 
-- A run of at least several hours on a build at or after 6c6b973a reports zero "sample buffer full" lost events on every PV, and the result is recorded in issue #29.
+- M46 / T5 passes its one-attempt, 1200-second preflight, including registration/capture readiness within 300 seconds, normal and measured 500/800 ms stages and the separate 1500 ms expected-loss control reconciled through counters and native PB. Freeze at least 109 stress targets under the stated single-PV exception before the main run.
+- M46 / T6 starts a fresh engine execution after preflight and completes 14400 monotonic seconds, 24 cycles and one/two/three-hour checkpoints continuously. Every frozen target meets at least one qualifying 500 and 800 ms exposure per cycle; all 903 PVs have zero buffer-full counter increase and complete evidence. Preflight losses retain their separate process identity.
+- M46 / T7 reconciles independent actual inputs with unreduced physical PB output for all 110 fast PVs and preserves every declared interval and product/evidence/tool result. No excess-delay interval is discarded to manufacture Passed.
+- The result is reported to this repository and recorded in issue #29. A failed/incomplete preflight prevents the main observation. No automatic extension or rerun is authorized.
 
 ##### Verification Results
 
 | Observed At | Result | Evidence |
 | --- | --- | --- |
-| Not run | Pending | The ansible-provision session was told of 6c6b973a on 2026-10-11; no run reported |
+| Not run | Pending | The ansible-provision session was told of 6c6b973a on 2026-10-11; no corrected-build run reported |
+| 2026-10-15 | Pending | Four-hour scope selected; design review identified unverified injection/measurement and required comparison coverage; M46 / T5-T7 remain unexecuted |
 
 ##### Closure Evidence
 
@@ -5824,6 +5906,8 @@ epicsarchiverap-env runs its installation checks of a MariaDB-backed appliance o
 | Phase 2 | M41 | Mail delivery for the alert checks | Milestone | Not started | No | M37 | emailHandler.py's mail delivery is available to the on-demand alert checks of M37 with a defined configuration, timeout and failure contract and is verified against a real SMTP endpoint; [detail](#m41---mail-delivery-for-the-alert-checks) |
 | Phase 2 | M55 | Verify the proxy to an external Archiver Appliance | Milestone | Not started | Yes |  | An integration test on two appliances registers the second as an external `ARCHAPPL_PBRAW` server of the first and observes, through the first, the data, the name match and the value at a time of a PV archived only on the second; [detail](#m55---verify-the-proxy-to-an-external-archiver-appliance) |
 | Interface console | M61 | Appliance status as PVA PVs | Milestone | Not started | Yes |  | The appliance publishes its status measures as PVA PVs through its own PVA server and archives them, so the analyzer plots them like any archived PV; [detail](#m61---appliance-status-as-pva-pvs) |
+| Verification | M66 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | M46, G8 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m66---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
+| Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Backlog Details
 
@@ -6096,6 +6180,103 @@ Observed State: none
 Observed Labels: none
 Observed Milestone: none
 Last Compared: not created
+
+#### M66 - Integrated 24-hour ETL, journal and sample-buffer verification
+
+Origin: daff1b7 / M66
+Identity History: none
+GitHub Issue: none
+Status: Blocked
+
+##### Summary
+
+A later 24-hour campaign combines corrected engine buffer verification with ETL and journal checks after the required Ansible tools are ready. This is additional integration evidence, independent of the accepted ETL/journal results and four-hour buffer-fix acceptance.
+
+##### Scope
+
+Use a build carrying 6c6b973a, the agreed 903-PV fixture and the shortened/default ETL and journal contracts established in jeonghanlee/ansible-provision#30 and jeonghanlee/ansible-provision#31. Coordinate the campaign while retaining independently bounded deployments, inputs, timelines and verdicts. Include all-PV buffer counters and M46's declared fast-input/unreduced-PB comparison scope. Freeze tool/artifact identities and boundaries before execution.
+
+Out of scope: reopening completed ETL/journal acceptance because this campaign is pending; delaying #29 closure after G6 succeeds; unrelated tool variants, product changes, host sizing or new fault categories.
+
+##### Completion Criteria
+
+- G8 supplies real-path readiness evidence for the specific corrected tools needed here; unrelated Ansible issue closure is not required.
+- Every declared observation completes at least 86400 elapsed seconds with valid process/clock and original-record coverage on the corrected build.
+- ETL movement/transformation/retention/retrieval and repeated passes, journal delivery/live retention/collection and buffer preservation receive independent evidence-backed verdicts within explicit comparison scopes.
+- Counter/input-activity checks cover all 903 PVs; exact event/value claims are limited to independently compared inputs. Preserve failures, evidence gaps and tool findings without silent exclusions or automatic reruns.
+
+##### Dependencies And Decisions
+
+- G8: ansible-provision's external report that the required corrected tools are ready. Initial block; resume as Not started when G8 completes and all work dependencies are satisfied.
+- M46: the owner placed this additional campaign after four-hour buffer-fix acceptance.
+- Decision Date: 2026-10-15. Keep this unassigned in Backlog until the required Ansible tools are ready. It does not block independent current functionality acceptances.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Confirm G8 and M46 completion, then freeze deployments, corrected build, fixture, actual-input comparison scopes and independent per-product acceptance rules. Closes with T1.
+2. Prepare and execute the separately authorized 24-hour campaign through the real shipped application, journal and corrected collection/evaluation paths. Closes with T2.
+3. Reconcile unchanged original inputs and results through native readers/evaluators and publish scoped conclusions. Closes with T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Readiness | Read actual readiness evidence and perform bounded real-path capture/comparison checks for this campaign | Prepared corrected-build deployments | Required tools and independent inputs support frozen contracts |
+| T2 | Integrated campaign | Execute actual application, ETL, journal and buffer checks for at least 86400 seconds per declared observation | Shipped 903-PV fixture; corrected engine/tools | Complete independently judged product evidence, with no hidden missing intervals |
+| T3 | Evidence reconciliation | Run actual frozen readers/evaluators against unchanged originals and compare each declared scope | Retained campaign evidence | Reproducible scoped product and evidence/tool verdicts |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Future prepared deployments | Pending | G8 is Open |
+| T2 | Not run | T1 deployments | Pending | No campaign started |
+| T3 | Not run | T2 originals | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: none
+Labels: none
+GitHub Milestone: none
+Observed State: none
+Observed Labels: none
+Observed Milestone: none
+Last Compared: not created
+
+#### G8 - Ansible tools ready for the integrated 24-hour campaign
+
+Origin: daff1b7 / G8
+GitHub Issue: none
+Status: Open
+
+##### Summary
+
+ansible-provision reports readiness of the actual collection, comparison and terminal-handling tools needed by M66 after their corrections. The condition is a report for this campaign, not closure of every Ansible follow-up issue. Affects M66.
+
+##### Completion Criteria
+
+- Required corrected tools demonstrate real-path capture, source/process/time selection, final handling and input/output comparison against retained or bounded real observations.
+- The report identifies tools, supported scopes and unresolved limitations sufficiently to prepare M66 without treating a collector/evaluator failure as product failure.
+- ETL/journal verdicts remain independent and original unsuccessful records remain preserved.
+
+##### Verification Results
+
+| Observed At | Result | Evidence |
+| --- | --- | --- |
+| Not run | Pending | No readiness report for the combined corrected-build campaign |
+
+##### Closure Evidence
+
+- none
 
 ## Assignment History
 
