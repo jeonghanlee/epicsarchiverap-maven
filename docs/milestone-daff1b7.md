@@ -86,7 +86,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Interface console | M60 | Name check on the network and hold of a pending request | Milestone | Not started | Yes | M57 | The appliance reports whether a complete PV name answers on the network before it is archived, and a pending archive request can be paused and held as well as cancelled; [detail](#m60---name-check-on-the-network-and-hold-of-a-pending-request) |
 | Interface console | M65 | System pages read item by item | Milestone | Not started | Yes | M56, D38 | Every item of the System pages (System, Operations, Retrieval performance, External servers) has an information card that says what it is and when it is normal, needs attention or is a problem, and its state in words beside a one-word status; a measure that is not reported never reads Normal; [detail](#m65---system-pages-read-item-by-item) |
 | Interface analyzer | M67 | Time zone choice for charts and times | Milestone | Not started | Yes | M59, D38 | One selection box in the header of the console and in that of the analyzer (Browser, UTC, Berkeley, Chicago, NYC, Seoul, Berlin) decides the time zone of every chart and time text, the range strip names the zone, and the choice passes from the console to the analyzer in the address; [detail](#m67---time-zone-choice-for-charts-and-times) |
-| Interface console | M68 | Time handling of the server and the time page in the book | Milestone | Not started | Yes |  | The server writes the same instant the same way in every response (a valid `getData.jplot`, a `getDataAtTime` that returns the newest sample at or before an instant in the recent past, a response to a time without a zone that is HTTP 400 in every call, a fixed locale in the text of a time, nanoseconds cleared in every partition boundary), the code and comments agree with `docs/time-handling.md`, and the book has the page of the times; [detail](#m68---time-handling-of-the-server-and-the-time-page-in-the-book) |
+| Interface console | M68 | Time handling of the server and the time page in the book | Milestone | In progress | No |  | The server writes the same instant the same way in every response (a valid `getData.jplot`, a `getDataAtTime` that returns the newest sample at or before an instant in the recent past, a response to a time without a zone that is HTTP 400 in every call, a fixed locale in the text of a time, nanoseconds cleared in every partition boundary), the code and comments agree with `docs/time-handling.md`, and the book has the page of the times; [detail](#m68---time-handling-of-the-server-and-the-time-page-in-the-book) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
@@ -5945,7 +5945,7 @@ GitHub Milestone: none
 Origin: daff1b7 / M68
 Identity History: none
 GitHub Issue: #42 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/42), for the fix of `getDataAtTime`; the other fixes have no issue
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -5987,9 +5987,9 @@ Out of scope: the format and the zone of the times that the consoles write (M67,
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-16; the owner accepted the plan of six steps with its criteria and decisions
+Implementation Authorization: 2026-10-16; the owner authorized step 1 (the stores of `getDataAtTime`), which the Browse PVs page waits for; the other steps wait for their own authorization
 Superseded Plan Artifacts: none
 
 1. `GetDataAtTime.java` (`getDataAtTimeForPVFromStores`): the stores are searched from the shortest term to the longest and the search stops at the first store that holds a sample at or before the instant (issue #42); the case of two stores that hold different ranges first, in `GetDataAtTimeForPVFromStoresTest`. Check: T1.
@@ -5998,6 +5998,8 @@ Superseded Plan Artifacts: none
 4. The stopwatch sites and the rates (`PvaGetPVData.java`, `DataRetrievalServlet.java`, `GetEngineDataAction.java`, `WriterRunnable.java`, `ETLJob.java`, `PoorMansProfiler.java`, `ScannedArchiveChannel.java`, `Throttle.java`, `PVMetrics.java`, `MetaInfo.java`, `MetaGet.java`, `MgmtMetrics.java`): `System.nanoTime` for the elapsed time, the epoch seconds that are shown unchanged. Check: T2 and T3.
 5. The book (`docs/book/src`): the page of the times, `SUMMARY.md`, `faq.md`, `retrieval.md`, `configuration.md`. Check: T3.
 6. The default suite and the workflows. Check: T4.
+
+Progress on 2026-10-16 at 01:50 PDT, observed state and not a change of the plan: step 1 is built in the working tree and not committed. `GetDataAtTimeTwoStoresTest` (13 tests) fails on the original order of the stores in 4 of its first 7 tests; `getDataAtTimeForPVFromStores` now searches the shortest-term store first and a store that cannot answer does not stop the search of the next one (searching the shortest-term store first alone made some instants answer nothing, because a short term file that holds only samples later than the instant throws `Max iterations reached`, which is #43). `GetDataAtTime*Test` passes with 26 tests and `./mvnw -B -ntp clean verify` with 977 tests and no failure. On a local appliance of the working tree the instants that answered a sample an hour old or nothing answer the newest sample at or before them (`at` 06:59:59.400Z answers 06:59:59.354Z, where it answered 05:59:59.354Z). A comparison of `getDataAtTime` with the last sample at or before the instant read with `getData`, for 8 PVs at 10 instants, agrees in 79 of 80 cases; the other case is a PV whose newest sample is the only sample of its day file and of its hour file, which the search of a PB file does not find (M71). The rest of the plan is not started.
 
 ##### Test Plan
 
@@ -6092,6 +6094,7 @@ epicsarchiverap-env runs its installation checks of a MariaDB-backed appliance o
 | Verification | M66 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | M46, G8 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m66---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
 | Interface console | M69 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes |  | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of the same record does; [detail](#m69---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
 | Interface console | M70 | Epoch seconds beside the text of a time in the management calls | Milestone | Not started | Yes |  | The management calls that write a time as text (`getPVStatus`, `getPVDetails` and the reports) also send the same instant as epoch seconds, so that a client can write it in another time zone; the existing fields stay; [detail](#m70---epoch-seconds-beside-the-text-of-a-time-in-the-management-calls) |
+| Interface console | M71 | The search for a time in a PB file ends with not found when all samples are later | Milestone | Not started | Yes |  | A search in a PB file for a time earlier than every sample of a small file returns not found and does not throw `Max iterations reached`, and a backward read of a file with one sample finds that sample; [detail](#m71---the-search-for-a-time-in-a-pb-file-ends-with-not-found-when-all-samples-are-later) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Backlog Details
@@ -6589,6 +6592,73 @@ Superseded Plan Artifacts: none
 ##### Closure Evidence
 
 - none
+
+#### M71 - The search for a time in a PB file ends with not found when all samples are later
+
+Origin: daff1b7 / M71
+Identity History: none
+GitHub Issue: #43 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/43)
+Status: Not started
+
+##### Summary
+
+`FileEventStreamSearch.binarysearch` throws `IOException: Max iterations reached` when it looks in a small PB file for a time that is earlier than every sample of the file, where its callers expect `false`. It happened for the file of an hour partition of the short term store that held only the samples written after an ETL run, through `FileBackedPBEventStream.seekToEndTime` and `PlainPBStoragePlugin.iterate`; `getData` over the same file for the same times succeeded. The throw site is known; why the interval (`min`, `max`) does not close for a file of a few lines is a hypothesis (the condition `max > (min - 4)` and the offset `Math.max(2, mid - 2)`).
+
+The same search does not find the sample of a file that holds one sample when the end time is at or after it: `FileEventStreamSearch.seekToTime` needs two lines (s1 and s2) to answer, so it returns `false`, `FileBackedPBEventStream.seekToEndTime` returns -1 and the backward iteration yields nothing. Observed on 2026-10-16 on the local appliance: `getDataAtTime` for `BL:01:SHUTTER:STATE` at 08:18:19Z and 08:18:36Z answered the sample of the day before, because the sample of 08:18:18.354Z was the only one in the day file of the medium term store and the only sample in the hour file of the short term store was later. In a test with the storage plugin, a PV with older samples in the day file of the previous day, one sample in the day file of the medium term store and one later sample in the hour file of the short term store answered the older sample at 6 of 7 instants, among them an instant equal to the time of the sample of the short term store. A PV with two samples in the hour file answered correctly at the 8 instants tried.
+
+##### Scope
+
+The search ends with `false` when the sought time is earlier than the first sample of the file, and the loop ends by its interval and not by the counter of iterations, which stays a guard against a corrupt file. A backward iteration over a file with one sample, with an end time at or after that sample, finds the sample.
+
+Out of scope: another search algorithm; the choice of the partition files of a time. Considered and left to a later item, because they change the cost and not this defect: computing the name of the partition file of the time instead of listing the folder of the PV (`PlainPBPathNameUtility.getPathsWithData` reads the whole folder at each call), reading the end of the file directly for a time after its last sample, and reading a file of a few kilobytes from its start.
+
+##### Completion Criteria
+
+- For a PB file with one sample and for a file with two samples, a search for an end time earlier than the first sample returns `false` and throws nothing.
+- A backward iteration over a PB file with one sample, with an end time equal to or later than the sample, yields that sample; `getDataAtTime` answers the newest sample at or before the instant when the files of the stores hold one sample each.
+- Searches for times inside the range and after the last sample return the same positions as before.
+- The existing search tests and the default suite pass.
+
+##### Dependencies And Decisions
+
+- Origin: recorded on 2026-10-16 at the owner's direction, from the observation made while fixing `getDataAtTime` (M68, issue #42), which stops its search of the stores on this exception and now continues with the next store. The one-sample file case was found in the independent review of that fix and added on 2026-10-16 at the owner's direction.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. The tests first in the search tests of the PlainPB package (a file written by the storage plugin with one and with two samples, searched for a time before them, and a backward iteration over a file with one sample; and in `GetDataAtTimeTwoStoresTest` a PV with one sample in the day file of the medium term store and one in the hour file of the short term store), then the change of `binarysearch` and of `FileEventStreamSearch.seekToTime`, which needs two lines to answer. Closes with T1 and T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit | Write a PB file with the storage plugin with one sample and with two samples, search it for an end time earlier than the first sample, for a time inside its range and for a time after the last sample; the first search fails with the exception on the code before the change; a backward iteration over the one-sample file with an end time at and after the sample yields nothing on the code before the change; `GetDataAtTimeTwoStoresTest` with the PV of one sample per file answers an older sample on the code before the change | JDK 21 | The first search returns `false`, the iteration yields the sample, `getDataAtTime` answers the newest sample at or before each instant, the others return the positions they returned before the change |
+| T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21 | Pending | none |
+| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: PB file search throws "Max iterations reached" when all samples are later than the sought time
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-16; `gh issue view 43` shows the drafted body, open, assignee jeonghanlee
 
 ## Assignment History
 
