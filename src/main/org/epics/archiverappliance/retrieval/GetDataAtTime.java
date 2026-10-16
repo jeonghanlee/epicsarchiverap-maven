@@ -32,7 +32,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -459,14 +458,14 @@ public class GetDataAtTime {
         pvName = typeInfo.getPvName();
 
         // There is a separate bulk call for the engine; so we can skip the engine.
-        // Go thru the stores in reverse order...
-        try {
-            // Very important we make a copy of the datastores here...
-            List<String> datastores = new ArrayList<String>(Arrays.asList(typeInfo.getDataStores()));
-            Collections.reverse(datastores);
-            for (String store : datastores) {
+        // The stores of a PV are in the order of the data they hold, the shortest term first. The newest sample at or
+        // before the instant is in the first store that holds one, so the search stops there. A store that cannot answer,
+        // for example a file whose samples all come later than the instant, does not stop the search of the next store.
+        List<String> datastores = new ArrayList<String>(Arrays.asList(typeInfo.getDataStores()));
+        for (String store : datastores) {
+            try {
                 StoragePlugin storagePlugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
-                // Check to see if there is a named flag that turns off this data source. 
+                // Check to see if there is a named flag that turns off this data source.
                 String namedFlagForSkippingDataSource = "SKIP_" + storagePlugin.getName() + "_FOR_RETRIEVAL";
                 if(configService.getNamedFlag(namedFlagForSkippingDataSource)) {
                     logger.warn("Skipping " + storagePlugin.getName() + " as the named flag " + namedFlagForSkippingDataSource + " is set");
@@ -481,7 +480,7 @@ public class GetDataAtTime {
                         ((BiDirectionalIterable)storagePlugin).iterate(context, pvName, startAtTime, thePredicate, IterationDirection.BACKWARDS, searchPeriod.plusDays(31));
                         if(thePredicate.pickedUpValue) {
                             return new PVWithData(nameFromUser, thePredicate.evnt);
-                        }                        
+                        }
                     } else {
                         GetDataPredicate thePredicate = new GetDataPredicate(pvName, atTime);
                         getDataFromForwardStore(context, storagePlugin, pvName, atTime, searchPeriod, thePredicate);
@@ -490,9 +489,11 @@ public class GetDataAtTime {
                         }
                     }
                 }
+            } catch (Exception ex) {
+                logger.warn("Getting data at time for PV " + pvName + " from the store " + store + " failed with " + ex
+                        + "; the next store is searched");
+                logger.debug("Getting data at time for PV " + pvName + " from the store " + store, ex);
             }
-        } catch (Exception ex) {
-            logger.error("Getting data at time for PV " + pvName, ex);
         }
 
         return null;
