@@ -21,7 +21,7 @@ The archiver stamps three more times with the clock of its own server. None is s
 | Recorded | The second at which the engine last passed its sample buffer to the short term store | `What did we last push the data to the short term store?` |
 | Moved | The second at which ETL last moved data between stores, and the time of its next run | `ETL 0 last completed`, `ETL 0 next job runs at` |
 
-`getPVStatus` returns the received time as `lastEvent`. The time of the data of the last event that the engine accepted is `Instant of last event from the IOC - correct or not.` in `getPVDetails`; an event that the engine drops for its time does not change it. `getLastKnownTimeStampReport` of the engine web application (`.../engine/bpl/`, not the management interface) returns it for every PV of the engine as epoch seconds under the same key `lastEvent`.
+`getPVStatus` returns the received time as `lastEvent`. The time of the data of the last event is `Instant of last event from the IOC - correct or not.` in `getPVDetails`. It covers every event the engine received, kept or dropped for its time; a repeat of the same time stamp does not change it. `getLastKnownTimeStampReport` of the engine web application (`.../engine/bpl/`, not the management interface) returns it for every PV of the engine as epoch seconds under the same key `lastEvent`.
 
 The archiver also keeps times that describe the PV and not its data, written the same way. Four describe the connection:
 
