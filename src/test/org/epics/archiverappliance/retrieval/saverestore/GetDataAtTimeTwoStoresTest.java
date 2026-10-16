@@ -52,6 +52,7 @@ import edu.stanford.slac.archiverappliance.PlainPB.PlainPBStoragePlugin;
 public class GetDataAtTimeTwoStoresTest {
     private static final String PV_NAME = "GetDataAtTimeTwoStoresTest";
     private static final String TINY_PV_NAME = "GetDataAtTimeTwoStoresTinyTest";
+    private static final String ONE_PV_NAME = "GetDataAtTimeTwoStoresOneSampleTest";
     private static final ArchDBRTypes DBR_TYPE = ArchDBRTypes.DBR_SCALAR_DOUBLE;
     private static final Instant NOW = TimeUtils.now().truncatedTo(ChronoUnit.SECONDS);
     private static final Instant YESTERDAY = NOW.minus(1, ChronoUnit.DAYS);
@@ -59,6 +60,12 @@ public class GetDataAtTimeTwoStoresTest {
     // The tiny PV: the short term store holds two samples that start 40 minutes into an hour, the medium term store the rest.
     private static final Instant HOUR = NOW.minus(5, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
     private static final Instant TINY_FIRST = HOUR.plus(40, ChronoUnit.MINUTES);
+    // The one sample PV: the day file of the medium term store holds one sample, the hour file of the short term store
+    // holds one later sample, and the samples before them are in the file of the previous day.
+    private static final Instant DAY_START = NOW.truncatedTo(ChronoUnit.DAYS);
+    private static final Instant ONE_MTS = DAY_START.plusSeconds(60).plusNanos(354000000);
+    private static final Instant ONE_STS = DAY_START.plusSeconds(280).plusNanos(354000000);
+    private static final Instant ONE_OLDEST = DAY_START.minusSeconds(3600);
     private static ConfigServiceForTests configService;
 
     private static final File TEST_FOLDER = new File(ConfigServiceForTests.getDefaultPBTestFolder()
@@ -86,6 +93,10 @@ public class GetDataAtTimeTwoStoresTest {
         writeSamples(TINY_PV_NAME, MTS_STORE, YESTERDAY, TINY_FIRST.minus(1, ChronoUnit.SECONDS));
         writeSamples(TINY_PV_NAME, STS_STORE, TINY_FIRST, TINY_FIRST.plus(1, ChronoUnit.SECONDS));
         registerPV(TINY_PV_NAME);
+        writeSamples(ONE_PV_NAME, MTS_STORE, ONE_OLDEST, ONE_OLDEST.plus(5, ChronoUnit.SECONDS));
+        writeOneSample(ONE_PV_NAME, MTS_STORE, ONE_MTS);
+        writeOneSample(ONE_PV_NAME, STS_STORE, ONE_STS);
+        registerPV(ONE_PV_NAME);
     }
 
     @AfterAll
@@ -103,6 +114,17 @@ public class GetDataAtTimeTwoStoresTest {
             for (Instant ts = first; !ts.isAfter(last); ts = ts.plus(1, ChronoUnit.SECONDS)) {
                 events.add((DBRTimeEvent) new POJOEvent(DBR_TYPE, ts, new ScalarValue<Long>(ts.getEpochSecond()), 0, 0).makeClone());
             }
+            plugin.appendData(context, pvName, events);
+        }
+    }
+
+    private static void writeOneSample(String pvName, String store, Instant ts) throws IOException {
+        PlainPBStoragePlugin plugin = (PlainPBStoragePlugin) StoragePluginURLParser.parseStoragePlugin(store, configService);
+        short year = TimeUtils.getCurrentYear();
+        try (BasicContext context = new BasicContext()) {
+            ArrayListEventStream events = new ArrayListEventStream(
+                    year, new RemotableEventStreamDesc(DBR_TYPE, pvName, year));
+            events.add((DBRTimeEvent) new POJOEvent(DBR_TYPE, ts, new ScalarValue<Long>(ts.getEpochSecond()), 0, 0).makeClone());
             plugin.appendData(context, pvName, events);
         }
     }
@@ -143,6 +165,25 @@ public class GetDataAtTimeTwoStoresTest {
                 Arguments.of(TINY_FIRST),
                 Arguments.of(TINY_FIRST.plus(1, ChronoUnit.SECONDS)),
                 Arguments.of(TINY_FIRST.plus(30, ChronoUnit.SECONDS)));
+    }
+
+    public static Stream<Arguments> provideInstantsOfTheOneSamplePV() {
+        return Stream.of(
+                // Before the sample of the medium term store: the sample comes from the file of the previous day.
+                Arguments.of(DAY_START.plusSeconds(30), ONE_OLDEST.plus(5, ChronoUnit.SECONDS)),
+                // The only sample of the day file of the medium term store, which the short term store does not hold at or before the instant.
+                Arguments.of(ONE_MTS, ONE_MTS),
+                Arguments.of(ONE_MTS.plusSeconds(1), ONE_MTS),
+                Arguments.of(ONE_STS.minusSeconds(1), ONE_MTS),
+                // The only sample of the hour file of the short term store.
+                Arguments.of(ONE_STS, ONE_STS),
+                Arguments.of(ONE_STS.plusSeconds(10), ONE_STS));
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInstantsOfTheOneSamplePV")
+    public void testNewestSampleWhenTheFilesHoldOneSample(Instant when, Instant expected) throws Exception {
+        assertNewestSample(ONE_PV_NAME, when, expected);
     }
 
     @ParameterizedTest

@@ -79,7 +79,9 @@ public class ReverseLineByteStream implements Closeable {
 			return false;
 		}
 
-		if(chReadUntil + currentBufferPos < stopAtPosition) {
+		// A line that is already buffered has been read from the file at or after the stop position and is always returned;
+		// the stop position only prevents reading a further line before it.
+		if(!lineBuffered && chReadUntil + currentBufferPos < stopAtPosition) {
 			// logger.info("Reached the stopAtPosition {}", stopAtPosition);
 			return false;
 		}

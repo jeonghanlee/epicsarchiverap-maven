@@ -188,6 +188,35 @@ public class ReverseLineByteStreamTest {
     }
 
 
+    /*
+     * A file with a header line and one to four sample lines, read from the start position of the first sample line to the end of the file,
+     * returns every sample line, the last one first. The file with one sample line has the first sample line as its only line.
+     */
+    @Test
+    public void testStartPositionAtTheFirstLine() throws Exception {
+        String header = "HEADER";
+        for (int numLines = 1; numLines <= 4; numLines++) {
+            File f = new File(ConfigServiceForTests.getDefaultPBTestFolder() + "/" + "ReverseLineByteStreamStartTest.txt");
+            try (PrintStream fos = new PrintStream(new BufferedOutputStream(new FileOutputStream(f, false)))) {
+                fos.print(header + LineEscaper.NEWLINE_CHAR_STR);
+                for (int i = 1; i <= numLines; i++) {
+                    fos.print("LINE" + i + LineEscaper.NEWLINE_CHAR_STR);
+                }
+            }
+            long startPosition = header.length() + 1;
+            ByteArray bar = new ByteArray(LineByteStream.MAX_LINE_SIZE);
+            try (ReverseLineByteStream lis = new ReverseLineByteStream(f.toPath(), startPosition, f.length())) {
+                for (int i = numLines; i >= 1; i--) {
+                    Assertions.assertTrue(lis.readLine(bar), "No line left for LINE" + i + " in a file with " + numLines + " lines");
+                    Assertions.assertEquals("LINE" + i, new String(bar.toBytes()), "Mismatch in a file with " + numLines + " lines");
+                }
+                Assertions.assertFalse(lis.readLine(bar), "The header must not be read in a file with " + numLines + " lines");
+            }
+            f.delete();
+        }
+    }
+
+
     private static void seekandCheck(File f, long position, String expectedNumberStr) throws IOException {
         logger.info("Seeking to " + position + " and checking for " + expectedNumberStr);
         ByteArray bar = new ByteArray(LineByteStream.MAX_LINE_SIZE);
