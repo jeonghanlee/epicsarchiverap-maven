@@ -6094,7 +6094,7 @@ epicsarchiverap-env runs its installation checks of a MariaDB-backed appliance o
 | Verification | M66 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | M46, G8 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m66---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
 | Interface console | M69 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes |  | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of the same record does; [detail](#m69---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
 | Interface console | M70 | Epoch seconds beside the text of a time in the management calls | Milestone | Not started | Yes |  | The management calls that write a time as text (`getPVStatus`, `getPVDetails` and the reports) also send the same instant as epoch seconds, so that a client can write it in another time zone; the existing fields stay; [detail](#m70---epoch-seconds-beside-the-text-of-a-time-in-the-management-calls) |
-| Interface console | M71 | Backward read of a small PB file | Milestone | In progress | No |  | A backward read of a PB file with one sample returns the sample, and a search for a time earlier than every sample of a small file returns not found and does not throw `Max iterations reached`; [detail](#m71---backward-read-of-a-small-pb-file) |
+| Interface console | M71 | Backward read of a small PB file | Milestone | Complete | No |  | A backward read of a PB file with one sample returns the sample, and a search for a time earlier than every sample of a small file returns not found and does not throw `Max iterations reached`; [detail](#m71---backward-read-of-a-small-pb-file) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Backlog Details
@@ -6598,7 +6598,7 @@ Superseded Plan Artifacts: none
 Origin: daff1b7 / M71
 Identity History: none
 GitHub Issue: #43 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/43)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -6681,21 +6681,22 @@ Not tried: files of four or more samples for end times before the first sample (
 | --- | --- | --- | --- | --- |
 | T1 | 2026-10-16 | JDK 21; working tree | Pass | On the code before the change `ReverseLineByteStreamTest.testStartPositionAtTheFirstLine` failed for the file of one line, `BackwardIterationOfSmallFileTest` failed in 5 cases of the file with one sample, and `GetDataAtTimeTwoStoresTest` failed in 5 cases of the PV with one sample per file; 4 more cases of `BackwardIterationOfSmallFileTest` (files of 2 and 3 samples, end time before the first sample) ended with `Max iterations reached`, which T2 closes; after the changes of both steps all pass, as do `FileBackedPBEventStreamTest` and `FileBackedIteratorTest` |
 | T2 | 2026-10-16 | JDK 21; working tree | Pass | On the code before the change `FileEventStreamSearchSmallFileTest` failed with `Max iterations reached`; a trace of the loop showed `min=0 mid=0 max=-1` repeating, because `(max - min) / 2` is 0 when `max` is `min - 1`, so `mid` and the window do not change; the plan named files written by the storage plugin, and the search itself is tested on files of numbered lines with and without a header line in `FileEventStreamSearchSmallFileTest`, while the files written by the storage plugin are covered by the cases of `BackwardIterationOfSmallFileTest` named under T1; after the change that test, `FileEventStreamSearchTest` and `SearchInPBFileTest` pass |
-| T3 | 2026-10-16 | JDK 21; working tree | Partial | `./mvnw -B -ntp clean verify` passes with 1006 tests and no failure; the Maven and Pages workflows have not run |
+| T3 | 2026-10-16 | JDK 21; GitHub Actions | Pass | `./mvnw -B -ntp clean verify` passes with 1006 tests and no failure; the Maven workflow run 38935735299 on f1335a97 (which contains c72337a0) succeeded with the job `Build and test on JDK 21`; the Pages workflow did not run for these commits, which change no documentation source it builds |
 
 ##### Closure Evidence
 
-- none
+- Complete on 2026-10-16. Code and tests in c72337a0, register record in f1335a97, both on `modernize`. T1 and T2 passed on the working tree and T3 on f1335a97, with the cases of Cases observed before and after the change, and a comparison of `getDataAtTime` with `getData` that agrees in 80 of 80 cases on a local appliance of the working tree.
+- Issue #43 and issue #42 were closed as completed on 2026-10-16 with a comment that lists the cases fixed.
 
 ##### GitHub Projection
 
 Title: A backward read of a small PB file fails: Max iterations reached, and no sample from a one-sample file
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: CLOSED
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-16; `gh issue view 43` shows the title and the body of this detail, open, assignee jeonghanlee
+Last Compared: 2026-10-16; `gh issue view 43` shows the title and the body of this detail, closed as completed with one comment, assignee jeonghanlee
 
 ## Assignment History
 
