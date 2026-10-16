@@ -5207,7 +5207,7 @@ The Browse PVs page of D38 and D40; the analyzer it opens is M62, and the chart 
   - Table columns: Plot, PV, Protocol (CA or PVA, empty for a PV that is not archived), State (the state word of the PV with a mark and the number of lost events when it is above zero, the sum of `eventsDropped` of the three reports; a PV is in its normal state when its status is `Being archived` and none of the three reports lists it; the column is shown only while a PV is not in its normal state), Trend (a small line of the chosen range, as the Scan list of today draws it, for every PV of the table whether or not its Plot box is on), Value (aligned on the decimal point, with its unit; an array PV reads `array of N`), Last event (the date and time of the sample that Value shows, which is the time of the data, written in the zone chosen for the page, which is the time zone of the browser until M67 gives the choice), Std dev (only while the standard deviation band of the chart is on), Actions and a Details button.
   - The bulk actions of today's page stay under the table, for the ticked PVs: Pause all selected…, Resume all selected… and Stop archiving all selected…, each asking first, and the link Open all selected in the analyzer, which opens every ticked PV (not only the plotted ones) in the analyzer through `analyzer.html`, as the link of the chart does.
   - Actions in the row, by the state of the PV: Pause (Resume when paused) and a More menu with Change sampling, Maintenance and Stop archiving for a PV that is archived or paused; Cancel request for a pending request; a link to the Archive PVs page for a PV that is not archived. Stop archiving and Maintenance open a window that states the consequence before they act (a stop pauses the PV, removes it from the archiver, and keeps the stored data unless the user also chooses to delete it; a change of type asks for a confirmation that a backup exists). The calls are those of the Browse PVs page today.
-  - The Details window, in groups, from `getPVStatus`, `getPVTypeInfo` and `getPVDetails`: how it is stored (appliance, sampling, policy, event and storage rate, growth, the time at which the archiver last passed the data to the short term store), amount, connection (with the time at which the archiver last received an event and the time of the data of the last event), lost events by cause, who reads it, the PV itself (data type, units, precision, display, control, warning and alarm limits, record type, archived fields, creation), and the moves between stores STS, MTS and LTS with the last and next run. A name the calls do not hold reads "not provided" (the unit and the host of a PVA PV); a value that is present and empty (the unit of a CA record without EGU), a pair of display, control, warning or alarm limits that are both 0 and a limit that is NaN read "not set", for a PVA PV and a CA PV alike. A time is shown as the server writes it, a string in the time zone of the server with its abbreviation (`Never` when there is no time, and `N/A` for the time of the data of an event that has not arrived), and is not converted before M67; each time is shown with the name that `getPVDetails` gives it (for example "When did we receive the last event?") under the heading of its kind as `docs/time-handling.md` defines it: the time of the data of the last event, the time at which the archiver received the last event, the time at which it last passed the data to the short term store, the last and the next run of the moves between stores, and the times of the connection, of the settings of the PV and of the last request for its data; the fields `Last monitor received at`, `Last monitor event timestamp` and `Daily metadata last saved at` are not shown.
+  - The Details window, in groups, from `getPVStatus`, `getPVTypeInfo` and `getPVDetails`: how it is stored (appliance, sampling, policy, event and storage rate, growth, the time at which the archiver last passed the data to the short term store), amount, connection (with the time at which the archiver last received an event and the time of the data of the last event), lost events by cause, who reads it, the PV itself (data type, units, precision, display, control, warning and alarm limits, record type, archived fields, creation), and the moves between stores STS, MTS and LTS with the last and next run. A name the calls do not hold reads "not provided" (the unit and the host of a PVA PV); a value that is present and empty (the unit of a CA record without EGU), a pair of display, control, warning or alarm limits that are both 0 and a limit that is NaN read "not set", for a PVA PV and a CA PV alike. A time is shown as the server writes it, a string in the time zone of the server with its abbreviation (`Never` when there is no time, and `N/A` for the time of the data of an event that has not arrived), and is not converted before M67 and M70 (the epoch seconds of the server); each time is shown with the name that `getPVDetails` gives it (for example "When did we receive the last event?") under the heading of its kind as `docs/time-handling.md` defines it: the time of the data of the last event, the time at which the archiver received the last event, the time at which it last passed the data to the short term store, the last and the next run of the moves between stores, and the times of the connection, of the settings of the PV and of the last request for its data; the fields `Last monitor received at`, `Last monitor event timestamp` and `Daily metadata last saved at` are not shown.
   - The chart, built by M59 in its simple form and drawn on this page above the table: one Y axis per unit with its own automatic range, a drag along an axis choosing that axis's range, a drag over the plot choosing the time range, a double-click returning, the axes split between the left and the right of the plot (the first half on the left), a legend under the chart that names each PV with its line style and unit and whose items hide and show a line, a hover tooltip with the date and time and the value of each PV with its unit, a Y projection with its mean line and a table of basic statistics, and a Chart options panel for the line (step, straight, smooth, points only), the Y scale (linear, symmetric log, log, square root), sample marks, a running average and a standard deviation band over a window of samples; an Enlarge chart button opens the chart with its options in a large window.
   - The information card closes with Esc, its Close button and a click outside; the Details window and the windows of the actions close with Esc, their Close button and a click outside; the Enlarge chart window, which fills the browser window, closes with Esc and its Close button; the Options panel opens and closes with its Options button; the focus returns to the control that opened each.
   - The range strip above every chart, built in the chart component (`staticcontent/js/aa/chart.js`, `css/chart.css`) so that the Browse PVs page and the System charts share it: a line that is always there, holding the time window written as an interval with its date and time, `[from, to]` (a bracket includes the data at that end and a parenthesis leaves it out), the controls Earlier and Later (Earlier also works before a window is chosen, from the window of the range buttons `10m` to `7d`, so that a window can be walked back) and Back to the selected range as icons with a tooltip that stays inside the chart box, one control for each value axis that names its unit, shows the range chosen on it and returns it to the automatic range, a control that resets the window and every range, and an information control; the explanations are in its card.
@@ -5807,6 +5807,7 @@ Out of scope: the drawing of the charts of these pages (M59); the judgement rule
 - The summary table of the Overview has the columns Item, Now, Status, Detail and Open, and its three top lines rest only on measures that are reported.
 - Every item of the four pages has an information card that says what the item is, and the pages Operations, Retrieval performance and External servers show a state in words beside the one-word status.
 - A measure that is not reported is never Normal, in a row or in a line at the top of the Overview.
+- The comment at the head of `js/system/judge.js` names no decision that the register does not hold.
 - The book describes the System pages item by item and the default suite passes.
 
 ##### Dependencies And Decisions
@@ -5815,7 +5816,7 @@ Out of scope: the drawing of the charts of these pages (M59); the judgement rule
 - D38: explanations open on demand, not as standing text; the System pages provide status monitoring.
 - Decision Date 2026-10-14: the explanation of the items of the System pages is a milestone of its own; it was placed in M59 first and moved here on the owner's direction.
 - Decision Date 2026-10-14: the cards, the tables and the heap and floor cards of the System charts are this item's; the drawing of the charts through the component (the legend, its quiet look, the tooltip) stays in M59.
-- Open item 2026-10-14: the comment at the head of `js/system/judge.js` names the decision D51 for the reasons of the rules, and this register holds no D51; the owner decides whether the reasons are recorded here as a decision or the comment is corrected.
+- Decision Date 2026-10-16: the comment at the head of `js/system/judge.js` is corrected so that it names no decision that the register does not hold; the reasons of the rules stay in the comments of each threshold (the owner chose to correct the comment over recording the decision D51).
 
 ##### Implementation Plan
 
@@ -5828,7 +5829,8 @@ Superseded Plan Artifacts: none
 2. Operations (`js/operations.js`): a card for every measure and a state in words beside the status, in the same form. Check: T1, T2.
 3. Retrieval performance (`js/retrieval.js`, `retrieval.html`): the same form, with the heap and floor card. Check: T1, T2.
 4. External servers (`external.html`, `js/external.js`): the same form. Check: T1, T2.
-5. The book (`docs/book/src/interface.md`, `operating.md`) describes the pages item by item. Check: T3.
+5. `js/system/judge.js`: the comment at its head states that the values are starting values and names no decision of the register; the sources hold no mention of `D51`. Check: T1.
+6. The book (`docs/book/src/interface.md`, `operating.md`) describes the pages item by item. Check: T3.
 
 Progress on 2026-10-14 at 16:55 PDT, observed state and not a change of the plan: step 1 is built in the working tree and not committed (`js/system.js`, `system.html`, `css/system.css`); of steps 2 and 3 only the heap and floor cards exist (`js/operations.js`, `js/retrieval.js`, `retrieval.html`, `js/system/view.js`, working tree). The Overview was read on a local appliance at 500 pixels without a sideways scroll of the page, and `bash scripts/ui-static-checks.bash` passes 366 checks. The rest is not started.
 
@@ -5836,7 +5838,7 @@ Progress on 2026-10-14 at 16:55 PDT, observed state and not a change of the plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the System pages pass |
+| T1 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the System pages pass, and a search of `src` for `D51` finds nothing |
 | T2 | Browser | Open each System page on a local appliance, press the information control of every item and read the card, read the Status and the Detail of every row of a table, and look at a measure that is not reported (the write time of a new appliance) | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | Each card says what the item is; the Detail agrees with the Status; a measure that is not reported is never Normal, and the lines at the top of the Overview agree with the table |
 | T3 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
 
@@ -5895,7 +5897,7 @@ Out of scope: the zone of the server as an item; the time handling fixes of the 
 - Decision Date 2026-10-15: the items are Browser, UTC, Berkeley, Chicago, NYC, Seoul and Berlin (the owner chose the cities; Berkeley is `America/Los_Angeles`, and of the European cities only Berlin).
 - Decision Date 2026-10-15: the work is built in two steps, Browser and UTC first and the five cities after, because the five cities need ticks computed with `Intl`.
 - Decision Date 2026-10-15: the analyzer is an independent service with its own box and its own browser store; the console hands over `tz` in the address (see M62).
-- Open item 2026-10-15: a time that the server writes as text is read in the chosen zone only when the server sends the same instant as epoch seconds; the owner decides whether the server sends it (a change of the interface of `getPVStatus`, `getPVDetails` and the reports).
+- Decision Date 2026-10-16: a time that the server writes as text is read in the chosen zone when the server sends the same instant as epoch seconds, which M70 builds; until then the time stays as the server writes it.
 
 ##### Implementation Plan
 
@@ -5947,7 +5949,7 @@ Status: Not started
 
 ##### Summary
 
-The review of the code of 2026-10-15 (`docs/time-handling.md` is its result) found that the storage, the partitions and the machine readable responses write UTC consistently, and that the edges do not: `getData.jplot` writes a value that is not JSON (an unquoted `ZonedDateTime` with a region identifier in the zone of the server); the text of a time depends on the locale of the server; `getPreviousPartitionLastSecond` keeps the nanoseconds for the 5, 15 and 30 minute partitions; `getDataAtTime` answers a time without a zone with HTTP 500 where `getData` answers 400; `getStartOfYearInSeconds(short)` throws for a year before 1970; `getDataAtTime` for an instant in the recent past returns an older sample when a longer-term store already holds an older one and a shorter-term store holds the newer samples (it returns from the first store that holds any sample, the longest-term store first); and the book states that the appliance returns UTC, which these responses do not.
+The review of the code of 2026-10-15 (`docs/time-handling.md` is its result) found that the storage, the partitions and the machine readable responses write UTC consistently, and that the edges do not: `getData.jplot` writes a value that is not JSON (an unquoted `ZonedDateTime` with a region identifier in the zone of the server); the text of a time depends on the locale of the server; `getPreviousPartitionLastSecond` keeps the nanoseconds for the 5, 15 and 30 minute partitions; `getDataAtTime` answers a time without a zone with HTTP 500 where `getData` answers 400; `getStartOfYearInSeconds(short)` throws for a year before 1970; `getDataAtTime` for an instant in the recent past returns an older sample when a longer-term store already holds an older one and a shorter-term store holds the newer samples (it returns from the first store that holds any sample, the longest-term store first); an elapsed time, such as the event rate, is the difference of two readings of the wall clock, so a step of the clock changes it; and the book states that the appliance returns UTC, which these responses do not.
 
 ##### Scope
 
@@ -5958,9 +5960,10 @@ The review of the code of 2026-10-15 (`docs/time-handling.md` is its result) fou
 - `getStartOfYearInSeconds(short)` returns the start of a year before 1970 as the `int` overload does.
 - `getDataAtTime` returns the newest sample at or before the instant across the stores of the PV: `GetDataAtTime.getDataAtTimeForPVFromStores` searches the shortest-term store first.
 - The fallback of `fromString` that cannot be reached on the JDK of the project and the stale comments are corrected (`TimeUtils.java`, `JPlotResponse.java`); `convertToLocalEpochMillis`, which has no caller, is removed.
-- The book: the page of the times (`docs/time-handling.md` moved under `docs/book/src` and listed in `SUMMARY.md`), the sentences of `faq.md` and `retrieval.md` about time zones, the keys `server_ioc_drift_seconds` and the cutoff of 1991-01-01 in `configuration.md`, and the two meanings of `lastEvent` and the zone of `isDST` in the pages that describe the calls.
+- Elapsed times are measured with `System.nanoTime`: the stopwatch sites, the elapsed seconds of the event rate and the storage rate (`PVMetrics`, `MetaInfo`, `MetaGet`), and the uptime (`MgmtMetrics`); a time written as a moment keeps the wall clock.
+- The book: the page of the times (`docs/book/src/time-handling.md`, moved from `docs` and listed in `SUMMARY.md`), the sentences of `faq.md` and `retrieval.md` about time zones, the keys `server_ioc_drift_seconds` and the cutoff of 1991-01-01 in `configuration.md`, and the two meanings of `lastEvent` and the zone of `isDST` in the pages that describe the calls.
 
-Out of scope: the format and the zone of the times that the consoles write (M67, M65); a time without a zone read by the viewer (M62); a time that the server sends together with its epoch seconds (open item below); a setting of the time zone of the server.
+Out of scope: the format and the zone of the times that the consoles write (M67, M65); a time without a zone read by the viewer (M62); a time that the server sends together with its epoch seconds (M70); a setting of the time zone of the server.
 
 ##### Completion Criteria
 
@@ -5971,14 +5974,16 @@ Out of scope: the format and the zone of the times that the consoles write (M67,
 - `getStartOfYearInSeconds` of a short year before 1970 equals the `int` overload.
 - With the samples of a PV split between the medium term store (older) and the short term store (newer), `getDataAtTime` for an instant after the first sample of the short term store returns the last sample at or before that instant, and for an instant inside the range of the medium term store it returns the sample of that store.
 - The book builds, lists the page of the times, and states no sentence that the appliance returns only UTC.
+- No elapsed time is the difference of two readings of `System.currentTimeMillis` in the sources of the Scope, and a time written as a moment is unchanged (T3).
+- The event rate of a PV sampled at 1 Hz still reads 1 per second within 1 percent after the change; this checks that the values stay right and is not a proof of the fix (T2).
 - The default suite passes.
 
 ##### Dependencies And Decisions
 
 - `docs/time-handling.md`: the definitions this work makes the code and the book agree with.
 - M67: the time zone choice; this item changes nothing in the consoles.
-- Open item 2026-10-15: the owner decides whether the server sends the epoch seconds together with the text of a time in `getPVStatus`, `getPVDetails` and the reports (an interface change; M67 and M58 read it).
-- Open item 2026-10-15: elapsed times are measured with the wall clock in 70 places (4 use `nanoTime`); the owner decides whether this is left as it is and recorded in `docs/CLOSED_DOORS.md`.
+- Decision Date 2026-10-16: the epoch seconds beside the text of a time are a row of their own (M70), not a step of this item, because they change the answer of public calls (the owner chose a separate row over a step of this item or of M67).
+- Decision Date 2026-10-16: an elapsed time is measured with the monotonic clock (`System.nanoTime`) and a time that is written as a moment keeps the wall clock (the owner chose to fix the measurements over leaving them as they are). Of the 70 uses of `System.currentTimeMillis`, the stopwatch sites (`PvaGetPVData`, `DataRetrievalServlet`, `GetEngineDataAction`, `WriterRunnable`, `ETLJob`, `PoorMansProfiler`, `ScannedArchiveChannel`, `Throttle`), the elapsed seconds of the event rate and the storage rate (`PVMetrics`, `MetaInfo`, and the start of the timer that measures them in `MetaGet`), and the uptime of `MgmtMetrics` change; the others write a moment (the times of a connection, of the last event and of the last write, the expiry of a static file, the distant future of `ReshardPV` and `AppendAndAliasPV`, the timing text of `DeletePV`) and stay.
 
 ##### Implementation Plan
 
@@ -5990,16 +5995,17 @@ Superseded Plan Artifacts: none
 1. `GetDataAtTime.java` (`getDataAtTimeForPVFromStores`): the stores are searched from the shortest term to the longest and the search stops at the first store that holds a sample at or before the instant (issue #42); the case of two stores that hold different ranges first, in `GetDataAtTimeForPVFromStoresTest`. Check: T1.
 2. `TimeUtils.java`: the nanoseconds of the three minute partitions, the year before 1970, the locale of the text, the fallback and the stale comments, the removal of `convertToLocalEpochMillis`; the tests first in `TimeUtilsTest`. Check: T1.
 3. `JPlotResponse.java` and the callers of `convertFromISO8601String` (`GetDataAtTime.java`, `GetEngineDataAction.java`, `SlicePBFile.java`): the response of `jplot` and the answer to a time that cannot be read. Check: T2.
-4. The book (`docs/book/src`): the page of the times, `SUMMARY.md`, `faq.md`, `retrieval.md`, `configuration.md`. Check: T3.
-5. The default suite and the workflows. Check: T4.
+4. The stopwatch sites and the rates (`PvaGetPVData.java`, `DataRetrievalServlet.java`, `GetEngineDataAction.java`, `WriterRunnable.java`, `ETLJob.java`, `PoorMansProfiler.java`, `ScannedArchiveChannel.java`, `Throttle.java`, `PVMetrics.java`, `MetaInfo.java`, `MetaGet.java`, `MgmtMetrics.java`): `System.nanoTime` for the elapsed time, the epoch seconds that are shown unchanged. Check: T2 and T3.
+5. The book (`docs/book/src`): the page of the times, `SUMMARY.md`, `faq.md`, `retrieval.md`, `configuration.md`. Check: T3.
+6. The default suite and the workflows. Check: T4.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
 | T1 | Unit | The tests of `TimeUtilsTest` call `getPreviousPartitionLastSecond` with an instant of non-zero nanoseconds for each granularity, `getStartOfYearInSeconds((short) 1969)`, `convertToHumanReadableString` with `Locale.KOREA` as the default, and `GetDataAtTimeForPVFromStoresTest` with a case of two stores that hold different ranges; they fail on the code before the change and pass after it | JDK 21 | The three minute partitions return a whole second, the short overload returns -31536000, and the text of the month is English; for two stores that hold different ranges, an instant after the first sample of the short term store returns the last sample at or before it, and an instant inside the range of the medium term store returns the sample of that store |
-| T2 | Integration | On the WARs of the same UTC day, request `getData.jplot` and `getData.json` for one PV and one window, parse the first as JSON, and request `getDataAtTime` and `getData` with a time without a zone | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | The jplot points parse and equal the instants of the json response in milliseconds; both calls answer 400 with a message that names the time |
-| T3 | Static | the mdBook build that the Pages workflow runs on `docs/book`, and a search of the book for the sentences of the Scope | Local | The build passes, the page is in `SUMMARY.md`, and no sentence says that the appliance returns only UTC |
+| T2 | Integration | On the WARs of the same UTC day, request `getData.jplot` and `getData.json` for one PV and one window, parse the first as JSON, and request `getDataAtTime` and `getData` with a time without a zone, and read `Estimated event rate (events/sec)` in `getPVDetails` of a PV sampled at 1 Hz after ten minutes | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | The jplot points parse and equal the instants of the json response in milliseconds; both calls answer 400 with a message that names the time; the event rate reads 1 per second within 1 percent |
+| T3 | Static | the mdBook build that the Pages workflow runs on `docs/book`, and a search of the book for the sentences of the Scope, and a search of the sources named in the Scope for a difference of two readings of `System.currentTimeMillis` | Local | The build passes and the page is in `SUMMARY.md`. No sentence says that the appliance returns only UTC, and no stopwatch site reads the wall clock |
 | T4 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
 
 ##### Verification Results
@@ -6085,6 +6091,7 @@ epicsarchiverap-env runs its installation checks of a MariaDB-backed appliance o
 | Interface console | M61 | Appliance status as PVA PVs | Milestone | Not started | Yes |  | The appliance publishes its status measures as PVA PVs through its own PVA server and archives them, so the analyzer plots them like any archived PV; [detail](#m61---appliance-status-as-pva-pvs) |
 | Verification | M66 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | M46, G8 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m66---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
 | Interface console | M69 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes |  | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of the same record does; [detail](#m69---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
+| Interface console | M70 | Epoch seconds beside the text of a time in the management calls | Milestone | Not started | Yes |  | The management calls that write a time as text (`getPVStatus`, `getPVDetails` and the reports) also send the same instant as epoch seconds, so that a client can write it in another time zone; the existing fields stay; [detail](#m70---epoch-seconds-beside-the-text-of-a-time-in-the-management-calls) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Backlog Details
@@ -6520,6 +6527,68 @@ Observed State: OPEN
 Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-10-15; `gh issue view 41` shows the drafted body, open, assignee jeonghanlee
+
+#### M70 - Epoch seconds beside the text of a time in the management calls
+
+Origin: daff1b7 / M70
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The management calls write a time as text in the time zone of the server with its abbreviation, such as `Oct/16/2026 01:04:19 PDT`: the 17 time values of `getPVDetails` (each an element with `name`, `source` and `value`), `lastEvent` of `getPVStatus`, `creationTime` of the reports. `TimeUtils.convertToHumanReadableString`, which writes the text, is called from about fifty files; the ones that put a time into the answer of a call include `PVMetrics`, `EPICS_V3_PV`, `EngineChannelStatus`, `ETLMetrics`, `ETLDetails`, `RetrievalMetrics`, `PVDetails` and the reports that write a time (`PausedPVsReport`, `RecentlyAddedPVsforThisInstance`, `NeverConnectedPVsForThisAppliance`). A client cannot write such a time in another time zone, because an abbreviation such as `CST` names several zones and the text holds no offset. The time zone choice of the viewer (M67) needs the same instant as epoch seconds.
+
+##### Scope
+
+Each time that these calls write as text is accompanied by the same instant as epoch seconds (UTC), added as a field beside the text. The existing fields stay as they are, so that a client that ignores an unknown field keeps working.
+
+- `getPVDetails`: an element that holds a time gets `epochSeconds` (an integer); the text `Never` and `N/A` have none.
+- `getPVStatus`: `lastEventEpochSeconds` beside `lastEvent`, and the same for the other times of the answer; `PvaGetPVStatus` carries the same.
+- The reports that write `creationTime`, `modificationTime` and the like: `<name>EpochSeconds` beside each.
+
+Out of scope: removing or changing the text; the zone of the text, which stays that of the server; the retrieval responses, which carry epoch seconds already; the consoles (M67, M58).
+
+##### Completion Criteria
+
+- Every time value of `getPVDetails` has `epochSeconds` equal to the instant of its text, and an element without a time has none.
+- `getPVStatus` and the reports named in the Scope carry the epoch seconds beside each time text.
+- A client that reads only the old fields gets the same answer as before: the existing fields and their text are unchanged.
+- The book names the new fields and the default suite passes.
+
+##### Dependencies And Decisions
+
+- Origin: recorded on 2026-10-16 at the owner's direction as a row of its own, from the open decision of the time review (the owner chose a separate row over a step of M68 or of M67).
+- M67 reads these fields to write the times of Details in the chosen zone; M58 shows them as the server writes them until then.
+- Open item 2026-10-16: the names of the fields (`epochSeconds`, `<name>EpochSeconds`) and the list of the reports are settled with the owner in step 1.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Settle with the owner the names of the fields and the list of the calls and reports, found by reading every caller of `convertToHumanReadableString` that puts a time into an answer.
+2. Add the fields in the code that writes each time (the files that step 1 lists), the test first. Closes with T1 and T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | On a running appliance with the fixture, read `getPVDetails`, `getPVStatus` and the reports for one archived PV; write each epoch seconds in the zone of the server and compare it with its text; read the same calls with the code before the change | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | Every time text equals its epoch seconds; an element without a time has no field; the old fields and their text are the same as before |
+| T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | Pending | none |
+| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
 
 ## Assignment History
 
