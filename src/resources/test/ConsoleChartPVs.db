@@ -1,5 +1,6 @@
 # Soft IOC database for browser checks of the chart of the Browse PVs page: a storage ring in top-up operation.
 # Run it with the softIoc of EPICS 7.0.10:  softIoc -S -d src/resources/test/ConsoleChartPVs.db
+# softIocPVX with the same arguments serves the records over PVAccess as well as over Channel Access.
 # SR:TICK counts seconds; the other calc records are functions of it (RNDM is a uniform number, so noise is a sum of three).
 #   SR:BEAM:CURRENT    mA  500 mA, falls with an 8 h lifetime and is topped up every 90 s, 0.03 mA noise, alarms below 490 and 450
 #   SR:BEAM:LIFETIME   h   8 h with a slow drift and noise
@@ -8,6 +9,9 @@
 #   SR:RF:CAV1:TEMP, SR:RF:CAV2:TEMP  C  water regulated near 35 C, rising a little with the power, 0.03 C noise
 #   SR:BPM:01..04:X, Y mm  micrometre noise, a slow drift of tens of micrometres and a kick at each injection
 # The other records (SR:RF:CAV2:POWER, BL:01:..., FAST:SIG:...) are signals of other shapes and rates, for lists and filters.
+# SR:DIAG:BADTIME is stamped with an undefined time (TSE -2 and no source of time), so the engine drops every event of it
+#   as a time stamp it refuses and getPVsByDroppedEventsTimestamp lists it; it has no unit and no limit.
+# FAST:WAVE:1 is a waveform of 16 elements, for the check of an array PV in a list.
 
 record(calc, "SR:TICK") {
     field(SCAN, "1 second")
@@ -172,4 +176,17 @@ record(calc, "FAST:SIG:2") {
     field(INPB, "SR:TICK")
     field(PREC, "3")
     field(DESC, "fast signal at 10 Hz")
+}
+record(calc, "SR:DIAG:BADTIME") {
+    field(SCAN, "1 second")
+    field(CALC, "A")
+    field(INPA, "SR:TICK")
+    field(TSE, "-2")
+    field(DESC, "time stamp the engine refuses")
+}
+record(waveform, "FAST:WAVE:1") {
+    field(SCAN, "1 second")
+    field(NELM, "16")
+    field(FTVL, "DOUBLE")
+    field(DESC, "waveform of 16 elements")
 }
