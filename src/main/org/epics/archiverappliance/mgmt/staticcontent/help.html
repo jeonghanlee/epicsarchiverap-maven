@@ -84,38 +84,40 @@
 
       <section id="browse" aria-labelledby="browse-heading">
         <h2 id="browse-heading">Browse PVs</h2>
-        <p>This entry opens the Browse PVs page: <b>Find</b> on the left, the PVs you selected on the right, their detail at the bottom. To add PVs, use <a href="#archive">Archive PVs</a>; the link under <b>Find</b> opens it with the name you typed.</p>
+        <p>This entry opens the Browse PVs page: <b>Find</b> on the left, the chart and the table of the PVs you selected on the right. To add PVs, use <a href="#archive">Archive PVs</a>; the link under <b>Find</b> opens it with the name you typed.</p>
 
         <h3 id="browse-find">Find a PV</h3>
         <ol>
           <li>Type in <b>Find</b>. The list below shows the archived PVs that match as you type.</li>
-          <li>Choose how the text matches: <b>Contains</b> (words in any order, such as <code>bpm 02 x</code>), <b>Glob</b> (the whole name with <code>*</code> and <code>?</code>, such as <code>SR:BPM:0?:X</code>) or <b>Regex</b> (a regular expression, such as <code>CAV[12]:TEMP</code>).</li>
+          <li>Choose how the text matches: <b>Contains</b> (words in any order, such as <code>bpm 02 x</code>), <b>Glob</b> (the whole name with <code>*</code> and <code>?</code>, such as <code>SR:BPM:0?:X</code>) or <b>Regex</b> (a regular expression, such as <code>CAV[12]:TEMP</code>). The <b>i</b> button beside the three modes explains each.</li>
           <li>To narrow further, pick a list in <b>Show</b> (for example <i>Disconnected now</i>) or tap a name group under it.</li>
         </ol>
 
         <h3 id="browse-select">Select PVs</h3>
         <ol>
           <li>Click a name in the list to select it; click again to clear it. With the keyboard: arrow keys to move, <kbd>Space</kbd> or <kbd>Enter</kbd> to select.</li>
-          <li>Selected PVs appear in <b>Scan</b> (up to 100) and in the chart (up to 5).</li>
-          <li>Click a row of <b>Scan</b> to bring that PV to the front: the chart highlights it and <b>Detail</b> shows it.</li>
+          <li>Each selected PV gets a row in the table (up to 100) with its protocol, state, trend, value and the time of its last event.</li>
+          <li>Turn on <b>Plot</b> in a row to draw that PV in the chart (up to 5 at a time). When 5 are on, the other <b>Plot</b> boxes are disabled until you turn one off.</li>
+          <li>Click <b>Details</b> in a row to see what the archiver reports about the PV, in groups.</li>
         </ol>
 
         <h3 id="browse-time">Look at another time window</h3>
         <ol>
-          <li>Click <b>10m</b>, <b>1h</b>, <b>6h</b>, <b>24h</b> or <b>7d</b> above <b>Scan</b>.</li>
-          <li>Drag across the chart to look at that part only. In the line above the chart, <b>Earlier</b> and <b>Later</b> move the window, also before you drag, and <b>Back to the selected range</b> returns.</li>
+          <li>Click <b>10m</b>, <b>1h</b>, <b>6h</b>, <b>24h</b> or <b>7d</b> above the chart.</li>
+          <li>Drag across the chart to look at that part only. In the line above the chart, <b>Earlier</b> and <b>Later</b> move the window, also before you drag, and <b>Back to the selected range</b> returns. <b>Value</b> and <b>Last event</b> in the table then show the newest sample at or before the end of the window.</li>
           <li>Hover over the chart to read the values at a time.</li>
+          <li>Beside the range buttons, <b>Refresh</b> chooses how often the page reads again: <b>Off</b>, <b>10 s</b>, <b>30 s</b> or <b>1 min</b>. <b>Refresh now</b> reads once, and <b>Updated</b> gives the time of the last read. A window that ends earlier than now is not refreshed.</li>
         </ol>
 
         <h3 id="browse-act">Pause, resume or stop a PV</h3>
         <ol>
-          <li>Click the PV in <b>Scan</b> and go to <b>Detail</b>. Only the buttons that fit its state appear: <b>Pause</b> or <b>Resume</b>, <b>Change sampling…</b>, <b>Stop archiving…</b>, or <b>Abort the request</b> for a request that has not started.</li>
-          <li>Rename, type change and consolidation are under <b>Maintenance</b>; everything the archiver knows about the PV is under <b>All details</b>.</li>
-          <li>To act on every selected PV at once, use <b>Pause all selected…</b>, <b>Resume all selected…</b> or <b>Stop archiving all selected…</b> under <b>Scan</b>. Each asks before it acts.</li>
+          <li>Use the buttons in the row of the PV. Only the buttons that fit its state appear: <b>Pause</b> or <b>Resume</b>, <b>More</b>, <b>Cancel request</b> for a request that has not started, or a link to <a href="#archive">Archive PVs</a> for a PV that is not archived.</li>
+          <li><b>More</b> holds <b>Change sampling…</b>, <b>Maintenance…</b> (rename, type change and consolidation) and <b>Stop archiving…</b>. Each says what it does before it acts.</li>
+          <li>To act on every PV of the table at once, use <b>Pause all selected…</b>, <b>Resume all selected…</b> or <b>Stop archiving all selected…</b> under the table. Each asks before it acts.</li>
         </ol>
 
         <h3 id="browse-viewer">Open PVs in the Analyzer</h3>
-        <p>Click <b>Open all selected in the viewer</b> under <b>Scan</b>, or <b>Open in the viewer</b> in <b>Detail</b>. The viewer opens with the same PVs and window.</p>
+        <p>Click <b>Open in the analyzer</b> above the chart to open the plotted PVs, or <b>Open all selected in the analyzer</b> under the table to open every PV of the table. The analyzer opens with the same PVs and window.</p>
       </section>
 
       <section id="system" aria-labelledby="system-heading">

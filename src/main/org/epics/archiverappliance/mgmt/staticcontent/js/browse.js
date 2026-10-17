@@ -4,9 +4,11 @@ import { CHART_OPTIONS, buildChartOptions, drawTimeSeries } from "../comm/js/aa/
 import { infoButton } from "./system/view.js";
 import { sparkline } from "../comm/js/aa/spark.js";
 import { drawHistogram, drawScatter } from "../comm/js/aa/plots.js";
+import { valueParts, dateTimeText, instantTitle } from "./browse/format.js";
+import { buildDetails } from "./browse/details.js";
 
 // Initial limits (D47). They are configuration; measurement and use adjust them.
-const LIMITS = { scan: 100, chart: 5, concurrentRequests: 6, indexed: 500000 };
+const LIMITS = { table: 100, chart: 5, concurrentRequests: 6, indexed: 500000 };
 // A row of the result list is as high as a touch target on a narrow screen.
 function rowHeight() {
     return window.matchMedia("(max-width: 600px)").matches ? 44 : 30;
@@ -15,6 +17,12 @@ function rowHeight() {
 const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 // Up to this span the server answer is not reduced (bin = ceil(seconds / 600)).
 const BIN_FREE_MINUTES = 10;
+// The automatic refresh of the page: the choices in seconds (0 is off), the default, and the key under which the browser keeps the choice.
+const REFRESH_KEY = "aa.browse.refresh";
+const REFRESH_CHOICES = [0, 10, 30, 60];
+const REFRESH_DEFAULT = 30;
+// The Trend and the chart are read again when the data is older than this, so a refresh every 10 s reads them every 30 s.
+const TREND_MIN_MS = 25000;
 
 const STATES = {
     "Being archived": "The engine is sampling this PV and its samples are being stored.",
@@ -120,9 +128,21 @@ const state = {
     total: 0,
     groups: {},
     selected: [],
+    // The PVs whose Plot box is on, at most LIMITS.chart, in the order they were turned on.
+    plotted: [],
     active: 0,
     focus: null,
     status: new Map(),
+    // The newest sample at or before the end of the window of each PV of the table (getDataAtTime); null when the PV has
+    // none in the 30 days before it, absent while it is not read yet.
+    latest: new Map(),
+    // getPVTypeInfo of each PV of the table, which tells its protocol; null when it could not be read.
+    typeInfo: new Map(),
+    // The events dropped for each PV: the sum of the three getPVsByDroppedEvents reports.
+    dropped: new Map(),
+    // The seconds between two refreshes of the page (0 is off), as the person chose them, and the time of the last refresh.
+    refreshSeconds: savedRefresh(),
+    refreshedAt: 0,
     data: new Map(),
     rangeMinutes: 60,
     // The Options panel: whether it is open and which tab shows. The histograms of the chart at its right edge and the
@@ -134,8 +154,6 @@ const state = {
     chartOptions: { ...CHART_OPTIONS },
     // True while the chart is shown in its large window.
     enlarged: false,
-    // The address of the data retrieval application, known after the first answer of the appliance information.
-    retrievalBase: "",
     // A window the person dragged out of the chart, or null while the range button decides.
     window: null,
     minimumSamplingPeriod: 0.1,
@@ -425,21 +443,23 @@ function toggle(name) {
         if (state.focus === name) {
             state.focus = state.selected[0] || null;
         }
-    } else if (state.selected.length < LIMITS.scan) {
+    } else if (state.selected.length < LIMITS.table) {
         state.selected.push(name);
         state.focus = name;
     } else {
-        $("limitNote").textContent = `The scan list holds at most ${LIMITS.scan} PVs.`;
+        $("limitNote").textContent = `The table holds at most ${LIMITS.table} PVs.`;
     }
     afterSelection();
 }
 
 function afterSelection() {
+    state.plotted = state.plotted.filter((name) => state.selected.includes(name));
     renderResults();
-    renderScan();
-    renderDetail();
+    renderTable();
     refreshStatus();
     refreshData();
+    refreshLatest();
+    readDropped();
     // Data already read is not read again, so nothing else would draw the chart for a PV that was only unchecked.
     scheduleRender();
     writeAddress();
@@ -467,9 +487,9 @@ async function readStatus() {
         for (const row of rows) {
             state.status.set(row.pvName, row);
         }
-        renderScan();
-        renderDetail();
+        renderTable();
         renderResults();
+        readProtocols();
     } catch (error) {
         $("limitNote").textContent = `Could not read the status: ${error.message}`;
     }
@@ -477,6 +497,10 @@ async function readStatus() {
         const word = stateOf(name);
         return !word || PENDING.has(word);
     });
+    // With the refresh off the state is read again only while a request is unfinished or after an action.
+    if (state.refreshSeconds === 0 && !unfinished && Date.now() >= fastUntil) {
+        return;
+    }
     refreshStatus(unfinished || Date.now() < fastUntil ? STATUS_FAST_MS : STATUS_SLOW_MS);
 }
 
@@ -489,7 +513,7 @@ function scheduleRender() {
     }
     renderTimer = window.setTimeout(() => {
         renderTimer = 0;
-        renderScan();
+        renderTable();
         renderChart();
     }, 60);
 }
@@ -508,8 +532,8 @@ async function refreshData() {
     const key = state.window ? `${from.getTime()}-${to.getTime()}` : `last-${state.rangeMinutes}`;
     const wanted = state.selected.filter((name) => {
         const cached = state.data.get(name);
-        // A fixed window does not age; a window that ends now is read again after half a minute.
-        return !cached || cached.key !== key || (!state.window && Date.now() - cached.loaded > 30000);
+        // A fixed window does not age; a window that ends now is read again when its data is older than the Trend interval.
+        return !cached || cached.key !== key || (!state.window && Date.now() - cached.loaded > TREND_MIN_MS);
     });
     let next = 0;
     const pump = async () => {
@@ -539,11 +563,166 @@ async function refreshData() {
     await Promise.all(Array.from({ length: LIMITS.concurrentRequests }, pump));
 }
 
+// ---- refresh --------------------------------------------------------------------------------
+
+function savedRefresh() {
+    try {
+        const text = window.localStorage.getItem(REFRESH_KEY);
+        return text !== null && REFRESH_CHOICES.includes(Number(text)) ? Number(text) : REFRESH_DEFAULT;
+    } catch (error) {
+        return REFRESH_DEFAULT;
+    }
+}
+
+function saveRefresh() {
+    try {
+        window.localStorage.setItem(REFRESH_KEY, String(state.refreshSeconds));
+    } catch (error) {
+        // The choice is kept for this visit only.
+    }
+}
+
+/** True while the window of the chart ends now, so that a refresh has something new to read. */
+function windowEndsNow() {
+    return !state.window || Date.now() - state.window.to.getTime() < 2000;
+}
+
+/** The choice of the control, whether it is dim, and the time of the last refresh. */
+function renderRefresh() {
+    const dim = !windowEndsNow();
+    $("refresh").setAttribute("data-dim", String(dim));
+    $("refresh").title = dim ? "The window ends earlier than now, so there is nothing new to read." : "";
+    for (const button of document.querySelectorAll("#refreshSet button")) {
+        button.setAttribute("aria-pressed", String(Number(button.dataset.seconds) === state.refreshSeconds));
+        button.disabled = dim;
+    }
+    $("refreshNow").disabled = dim;
+    $("updated").textContent = state.refreshedAt ? `Updated ${new Date(state.refreshedAt).toLocaleTimeString([], { hour12: false })}` : "";
+}
+
+let refreshTimer = 0;
+/** Plans the next automatic refresh; nothing is planned when it is off, the window is in the past or the tab is hidden. */
+function scheduleRefresh() {
+    window.clearTimeout(refreshTimer);
+    refreshTimer = 0;
+    if (state.refreshSeconds > 0 && windowEndsNow() && !document.hidden) {
+        refreshTimer = window.setTimeout(() => {
+            refreshPage(false);
+            scheduleRefresh();
+        }, state.refreshSeconds * 1000);
+    }
+}
+
+/**
+ * Reads again what the page shows: Value and Last event, the lost events, and the Trend and the chart when their data is older
+ * than TREND_MIN_MS. now forces the data to be read (the button of the control).
+ */
+function refreshPage(now) {
+    if (now) {
+        for (const entry of state.data.values()) {
+            entry.loaded = 0;
+        }
+        refreshStatus(0);
+    }
+    refreshData();
+    refreshLatest();
+    readDropped(now);
+}
+
+// ---- Value and Last event, protocol and lost events of the rows --------------------------------
+
+let latestController = null;
+/**
+ * Reads the newest sample at or before the end of the window of every PV of the table in one call. While the window ends
+ * now the instant is left out, which the server answers with the newest sample; the end of a window in the past is sent.
+ */
+async function refreshLatest() {
+    if (latestController) {
+        latestController.abort();
+    }
+    if (!state.selected.length) {
+        return;
+    }
+    latestController = new AbortController();
+    const { signal } = latestController;
+    const names = state.selected.slice();
+    try {
+        const answer = await api.dataAtTime(names, state.window ? state.window.to : null, signal);
+        for (const name of names) {
+            state.latest.set(name, answer[name] || null);
+        }
+        state.refreshedAt = Date.now();
+        renderRefresh();
+        renderTable();
+    } catch (error) {
+        if (error.name !== "AbortError") {
+            $("limitNote").textContent = `Could not read the values: ${error.message}`;
+        }
+    }
+}
+
+let protocolBusy = false;
+/** Reads the settings of the archived PVs of the table that have none yet; the protocol of a PV is among them. */
+async function readProtocols() {
+    if (protocolBusy) {
+        return;
+    }
+    protocolBusy = true;
+    try {
+        for (;;) {
+            const names = state.selected.filter((name) => !state.typeInfo.has(name) && stateOf(name) && stateOf(name) !== "Not being archived");
+            if (!names.length) {
+                break;
+            }
+            await Promise.all(
+                names.slice(0, 4).map(async (name) => {
+                    try {
+                        state.typeInfo.set(name, await api.typeInfo(name));
+                    } catch (error) {
+                        state.typeInfo.set(name, null);
+                    }
+                })
+            );
+            renderTable();
+        }
+    } finally {
+        protocolBusy = false;
+    }
+}
+
+// The reports list every PV of the appliance, so a PV added to the table is already in what was read a moment ago.
+const DROPPED_FRESH_MS = 5000;
+let droppedAt = 0;
+
+/** Reads the events dropped of every PV from the three reports of the server, called without a limit; again only after a few seconds unless forced. */
+async function readDropped(force) {
+    if (document.hidden || (!force && Date.now() - droppedAt < DROPPED_FRESH_MS)) {
+        return;
+    }
+    droppedAt = Date.now();
+    try {
+        const endpoints = [REPORTS.droppedtime.endpoint, REPORTS.droppedbuffer.endpoint, REPORTS.droppedtype.endpoint];
+        const sums = new Map();
+        for (const rows of await Promise.all(endpoints.map((endpoint) => api.reportRows(endpoint)))) {
+            for (const row of rows) {
+                const lost = Number(row.eventsDropped);
+                if (lost > 0) {
+                    sums.set(row.pvName, (sums.get(row.pvName) || 0) + lost);
+                }
+            }
+        }
+        state.dropped = sums;
+        renderTable();
+    } catch (error) {
+        // The mark stays as it was; the next read tries again.
+    }
+}
+
 // ---- rendering of scan, chart, detail ------------------------------------------------------
 
-/** The address of the data viewer for some PVs, over the window of the chart; empty until the retrieval address is known. */
-function viewerHref(names) {
-    if (!/^https?:\/\//i.test(state.retrievalBase) || !names.length) {
+/** The address of the analyzer for some PVs, over the window of the chart; empty for no PV. */
+function analyzerHref(names) {
+    if (!names.length) {
         return "";
     }
     const to = state.window ? state.window.to : new Date();
@@ -554,70 +733,375 @@ function viewerHref(names) {
     }
     query.set("from", from.toISOString());
     query.set("to", to.toISOString());
-    return `${state.retrievalBase}/ui/viewer/archViewer.html?${query}`;
+    return `analyzer.html?${query}`;
 }
 
-function renderScan() {
+function plotCell(name) {
+    const on = state.plotted.includes(name);
+    const full = !on && state.plotted.length >= LIMITS.chart;
+    const box = node("input", {
+        type: "checkbox",
+        "data-key": "plot",
+        "aria-label": `Plot ${name}`,
+        title: full ? `At most ${LIMITS.chart} PVs are plotted at a time. Turn another Plot box off first.` : null,
+    });
+    box.checked = on;
+    box.disabled = full;
+    box.addEventListener("change", () => setPlot(name, box.checked));
+    box.addEventListener("click", (event) => event.stopPropagation());
+    return node("td", { class: "plot" }, box);
+}
+
+/** Turns the Plot box of a PV on or off; at most LIMITS.chart PVs are plotted. */
+function setPlot(name, on) {
+    const at = state.plotted.indexOf(name);
+    if (on && at < 0 && state.plotted.length < LIMITS.chart) {
+        state.plotted.push(name);
+    } else if (!on && at >= 0) {
+        state.plotted.splice(at, 1);
+    }
+    renderTable();
+    renderChart();
+    writeAddress();
+}
+
+/** CA or PVA, from the settings of the PV; empty for a PV that is not archived or whose settings are not read yet. */
+function protocolCell(name) {
+    const info = state.typeInfo.get(name);
+    const cell = node("td", { class: "proto" });
+    if (info && stateOf(name) !== "Not being archived") {
+        cell.append(node("span", { class: "proto-tag" }, String(info.usePVAccess) === "true" ? "PVA" : "CA"));
+    }
+    return cell;
+}
+
+/** The events lost for a PV: the sum of eventsDropped of the three reports. */
+function lostOf(name) {
+    return state.dropped.get(name) || 0;
+}
+
+/** A PV is in its normal state when it is being archived and none of the reports lists it. */
+function isNormal(name) {
+    const word = stateOf(name);
+    return (!word || word === "Being archived") && !lostOf(name);
+}
+
+function stateCell(name, shown) {
+    const word = stateOf(name);
+    const cell = node("td", { class: "state", hidden: shown ? null : "" });
+    if (word) {
+        cell.append(node("span", { class: word === "Being archived" ? "state-word" : `state-word ${word === "Disconnected" ? "warn" : "paused"}`, title: STATES[word] || "State reported by the archiver." }, word));
+    }
+    const lost = lostOf(name);
+    if (lost) {
+        cell.append(node("span", { class: "lost", title: `${lost} events were dropped (wrong time stamp, buffer overflow or type change).` }, `${lost} lost`));
+    }
+    return cell;
+}
+
+/** The value of the newest sample at or before the end of the window, its integer part and the rest in their own columns. */
+function valueCell(name) {
+    const cell = node("td", { class: "r value" });
+    const sample = state.latest.get(name);
+    if (sample === undefined) {
+        return cell;
+    }
+    if (sample === null) {
+        cell.title = "no sample in 30 days";
+        return cell;
+    }
+    const parts = valueParts(sample.val, sample.meta && sample.meta.DBRType);
+    const unit = sample.meta && sample.meta.EGU ? sample.meta.EGU : "";
+    const inner = node("div", { class: "v" });
+    if (parts.text !== undefined) {
+        inner.append(node("span", { class: "vtext" }, parts.text));
+    } else {
+        inner.append(node("span", { class: "whole" }, parts.whole), node("span", { class: "rest" }, parts.rest));
+    }
+    if (unit) {
+        inner.append(node("span", { class: "unit" }, unit));
+    }
+    cell.append(inner);
+    return cell;
+}
+
+/** The date and time of the sample that Value shows, which is the time of the data. */
+function lastEventCell(name) {
+    const sample = state.latest.get(name);
+    const cell = node("td", { class: "r num last" });
+    if (sample) {
+        cell.textContent = dateTimeText(sample.secs);
+        cell.title = instantTitle(sample.secs, sample.nanos);
+    } else if (sample === null) {
+        cell.title = "no sample in 30 days";
+    }
+    return cell;
+}
+
+/** The standard deviation of the points of the Trend of a PV, as the Summary of the chart computes it. */
+function deviationCell(name, shown) {
+    const cell = node("td", { class: "r num sdev", hidden: shown ? null : "" });
+    const data = state.data.get(name);
+    const sample = state.latest.get(name);
+    if (shown && data && data.points.length && !(sample && Array.isArray(sample.val))) {
+        const values = data.points.map((p) => p.v);
+        const mean = values.reduce((a, b) => a + b, 0) / values.length;
+        cell.textContent = formatValue(Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length), data.egu);
+    }
+    return cell;
+}
+
+/** The control of a row that carries the key, for the focus to return to; false when the row or the control is gone. */
+function focusControl(name, key) {
+    const row = Array.from($("pvTable").querySelectorAll("tbody tr")).find((tr) => tr.dataset.name === name);
+    const control = row && (row.querySelector(`[data-key="${key}"]`) || row.querySelector("[data-key]"));
+    if (control) {
+        control.focus();
+        return true;
+    }
+    return false;
+}
+
+function actionButton(label, key, handler) {
+    const button = node("button", { type: "button", class: "act", "data-key": key }, label);
+    button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        handler(button);
+    });
+    return button;
+}
+
+/** The actions of a row for the state of its PV, read from getPVStatus; none before the archiver has told the state. */
+function actionsCell(name) {
+    const cell = node("td", { class: "actions-cell" });
+    if (!state.status.get(name)) {
+        return cell;
+    }
+    const word = stateOf(name);
+    if (PENDING.has(word)) {
+        cell.append(actionButton("Cancel request", "cancel", () => doAction("../bpl/abortArchivingPV", name)));
+    } else if (word === "Not being archived") {
+        cell.append(node("a", { class: "plain-link", "data-key": "archive", href: `archive.html#pv=${encodeURIComponent(name)}` }, "Archive…"));
+    } else {
+        const paused = word === "Paused";
+        cell.append(actionButton(paused ? "Resume" : "Pause", "pause", () => doAction(paused ? "../bpl/resumeArchivingPV" : "../bpl/pauseArchivingPV", name)));
+        const more = actionButton("More", "more", (button) => openRowMenu(name, button));
+        more.setAttribute("aria-haspopup", "menu");
+        more.setAttribute("aria-expanded", String(menuFor === name));
+        cell.append(more);
+    }
+    return cell;
+}
+
+// The More menu is one element of the page, placed under the button of the row it was opened for, so that it survives the
+// table being drawn again.
+let menuFor = null;
+
+function openRowMenu(name, button) {
+    if (menuFor === name) {
+        closeRowMenu(true);
+        return;
+    }
+    menuFor = name;
+    const menu = $("rowMenu");
+    menu.hidden = false;
+    const box = button.getBoundingClientRect();
+    const left = Math.min(Math.max(8, box.right - menu.offsetWidth), window.innerWidth - menu.offsetWidth - 8);
+    menu.style.left = `${left + window.scrollX}px`;
+    menu.style.top = `${box.bottom + window.scrollY + 4}px`;
+    button.setAttribute("aria-expanded", "true");
+    $("menuSampling").focus();
+}
+
+/** Closes the More menu; the focus goes back to the button of its row when asked (Esc), and stays where the person clicked otherwise. */
+function closeRowMenu(returnFocus) {
+    if (menuFor === null) {
+        return;
+    }
+    const name = menuFor;
+    menuFor = null;
+    $("rowMenu").hidden = true;
+    document.querySelectorAll('#pvTable [data-key="more"]').forEach((button) => button.setAttribute("aria-expanded", "false"));
+    if (returnFocus) {
+        focusControl(name, "more");
+    }
+}
+
+// The control a window was opened from, so that the focus returns to it when the window closes, although the table was drawn again meanwhile.
+let opener = null;
+
+function restoreOpener() {
+    if (document.querySelector("dialog[open]") || !opener) {
+        return;
+    }
+    const { name, key } = opener;
+    opener = null;
+    if (!focusControl(name, key)) {
+        $("results").focus();
+    }
+}
+
+/** A click on the dark backdrop, which is the dialog element itself outside its box, closes the window; Esc closes it natively. */
+function closeOnBackdrop(dialog) {
+    dialog.addEventListener("click", (event) => {
+        const box = dialog.getBoundingClientRect();
+        const outside = event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom;
+        if (event.target === dialog && outside) {
+            dialog.close();
+        }
+    });
+    dialog.addEventListener("close", restoreOpener);
+}
+
+function openMaintenance(name) {
+    $("maintenanceName").textContent = name;
+    const hand = (id, handler) => {
+        $(id).onclick = () => {
+            $("maintenanceDialog").close();
+            handler(name);
+        };
+    };
+    hand("maintenanceRename", openRename);
+    hand("maintenanceType", openChangeType);
+    hand("maintenanceConsolidate", openConsolidate);
+    $("maintenanceDialog").showModal();
+}
+
+/** The Details button of a row; a PV that is not archived has nothing to show. */
+function detailsCell(name) {
+    const cell = node("td", { class: "details-cell" });
+    if (state.status.get(name) && stateOf(name) !== "Not being archived") {
+        cell.append(actionButton("Details", "details", () => openDetails(name)));
+    }
+    return cell;
+}
+
+// The PV whose Details window is open; an answer for another PV, read before this one was opened, is dropped.
+let detailsFor = null;
+
+/** Reads what the three calls hold about a PV and shows it in groups in the Details window. */
+async function openDetails(name) {
+    detailsFor = name;
+    opener = { name, key: "details" };
+    $("detailsName").textContent = name;
+    $("detailsState").textContent = stateOf(name) || "";
+    $("detailsBody").textContent = "Reading…";
+    $("detailsDialog").showModal();
+    try {
+        const [statusRows, typeInfo, rows] = await Promise.all([api.pvStatus([name]), api.typeInfo(name), api.details(name)]);
+        if (detailsFor !== name) {
+            return;
+        }
+        const named = new Map();
+        for (const entry of rows) {
+            if (!named.has(entry.name)) {
+                named.set(entry.name, entry.value);
+            }
+        }
+        $("detailsBody").replaceChildren(buildDetails({ status: statusRows[0] || {}, info: typeInfo, details: named }));
+    } catch (error) {
+        if (detailsFor === name) {
+            $("detailsBody").textContent = `The details could not be read: ${error.message}`;
+        }
+    }
+}
+
+function renderTable() {
+    // The focus stays on the control it was on when the rows are drawn again.
+    const active = document.activeElement;
+    const home = active && active.closest ? active.closest("#pvTable tbody tr[data-name]") : null;
+    const restore = home ? { name: home.dataset.name, key: active.dataset ? active.dataset.key : undefined, row: active === home } : null;
     $("bulk").hidden = !state.selected.length;
-    const all = viewerHref(state.selected);
-    $("viewerAll").hidden = !all;
+    const all = analyzerHref(state.selected);
+    $("analyzerAll").hidden = !all;
     if (all) {
-        $("viewerAll").setAttribute("href", all);
+        $("analyzerAll").setAttribute("href", all);
     }
     $("selN").textContent = String(state.selected.length);
     $("limScan").textContent = String(state.selected.length);
-    $("limScanMax").textContent = String(LIMITS.scan);
-    const body = $("scan").querySelector("tbody");
+    $("limScanMax").textContent = String(LIMITS.table);
+    $("limChart").textContent = String(state.plotted.length);
+    $("limChartMax").textContent = String(LIMITS.chart);
+    // The State column is there while a PV is not in its normal state; the Std dev column while the band of the chart is on.
+    const showState = state.selected.some((name) => !isNormal(name));
+    const showDeviation = Boolean(state.chartOptions.band);
+    $("pvTable").querySelector("th.statecol").hidden = !showState;
+    $("pvTable").querySelector("th.sdcol").hidden = !showDeviation;
+    // The widest whole part and rest of the values set the two columns of Value, so that every row has its decimal point in the same place.
+    let whole = 3;
+    let rest = 3;
+    let unit = 0;
+    for (const name of state.selected) {
+        const sample = state.latest.get(name);
+        if (sample) {
+            unit = Math.max(unit, sample.meta && sample.meta.EGU ? sample.meta.EGU.length : 0);
+            const parts = valueParts(sample.val, sample.meta && sample.meta.DBRType);
+            if (parts.text !== undefined) {
+                rest = Math.max(rest, parts.text.length - whole);
+            } else {
+                whole = Math.max(whole, parts.whole.length);
+                rest = Math.max(rest, parts.rest.length);
+            }
+        }
+    }
+    $("pvTable").style.setProperty("--whole", `${whole}ch`);
+    $("pvTable").style.setProperty("--rest", `${rest}ch`);
+    $("pvTable").style.setProperty("--unit", `${unit}ch`);
+    const body = $("pvTable").querySelector("tbody");
     body.textContent = "";
     if (!state.selected.length) {
-        const row = node("tr", null, node("td", { colspan: "5", class: "empty" }, "Pick PVs in the list to see their last hour here."));
-        body.append(row);
+        body.append(node("tr", null, node("td", { colspan: "10", class: "empty" }, "Pick PVs in the list to add them to this table.")));
     }
     for (const name of state.selected) {
-        const word = stateOf(name);
         const data = state.data.get(name);
-        const status = state.status.get(name);
-        const row = node("tr", { "data-focus": String(state.focus === name), tabindex: "0" });
-        row.append(node("td", { class: word && word !== "Being archived" ? "state state-word warn" : "state state-word" }, word && word !== "Being archived" ? word : ""));
+        const row = node("tr", { "data-name": name, "data-focus": String(state.focus === name), tabindex: "0" });
+        row.append(plotCell(name));
         row.append(node("td", { class: "pv" }, name));
-        const spark = node("td", { class: "spark-cell" });
-        if (data && data.points.length) {
-            spark.append(sparkline(data.points, data.points.some((p) => p.s > 0)));
+        row.append(protocolCell(name));
+        row.append(stateCell(name, showState));
+        const trend = node("td", { class: "spark-cell" });
+        // An array PV has no Trend line: its Value reads "array of N".
+        const sample = state.latest.get(name);
+        if (data && data.points.length && !(sample && Array.isArray(sample.val))) {
+            trend.append(sparkline(data.points, data.points.some((p) => p.s > 0)));
+        } else if (data && data.failed) {
+            trend.title = data.error || "";
         }
-        row.append(spark);
-        const last = data && data.points.length ? data.points[data.points.length - 1] : null;
-        const now = node("td", { class: "r num now", title: data && data.error ? data.error : null }, last ? formatValue(last.v, data.egu) : data && data.failed ? "no data" : data && !data.points.length ? "no samples" : "");
-        row.append(now);
-        row.append(node("td", { class: "r num faint last" }, status ? status.lastEvent || "" : ""));
+        row.append(trend);
+        row.append(valueCell(name));
+        row.append(lastEventCell(name));
+        row.append(deviationCell(name, showDeviation));
+        row.append(actionsCell(name));
+        row.append(detailsCell(name));
         const focusRow = () => {
             state.focus = name;
-            renderScan();
+            renderTable();
             renderChart();
-            renderDetail();
         };
         row.addEventListener("click", focusRow);
         row.addEventListener("keydown", (event) => {
-            if (event.key === "Enter" || event.key === " ") {
+            if (event.target === row && (event.key === "Enter" || event.key === " ")) {
                 event.preventDefault();
                 focusRow();
             }
         });
         body.append(row);
     }
+    if (restore) {
+        if (restore.key) {
+            focusControl(restore.name, restore.key);
+        } else if (restore.row) {
+            const again = Array.from(body.querySelectorAll("tr")).find((tr) => tr.dataset.name === restore.name);
+            if (again) {
+                again.focus();
+            }
+        }
+    }
 }
 
 function chartList() {
-    const focus = state.focus && state.data.get(state.focus);
-    if (!focus || !focus.points.length) {
-        return { list: [], over: 0 };
-    }
-    // The PVs of every unit are drawn, each unit on an axis of its own.
-    const loaded = state.selected.map((name) => state.data.get(name)).filter((d) => d && d.points.length);
-    const list = loaded.slice(0, LIMITS.chart);
-    if (!list.includes(focus)) {
-        list.splice(LIMITS.chart - 1, 1, focus);
-    }
-    return { list, over: loaded.length - list.length };
+    // The PVs whose Plot box is on and that have samples in the window; the PVs of every unit are drawn, each unit on an axis of its own.
+    return { list: state.plotted.map((name) => state.data.get(name)).filter((d) => d && d.points.length), over: 0 };
 }
 
 /** The note of the chart: the window shown and what is left out, on the row of the buttons that move the window. */
@@ -659,6 +1143,7 @@ function chartCard() {
     return [
         "Reading the chart",
         [
+            ["Plot boxes", `The Plot box of a row in the table draws that PV here. At most ${LIMITS.chart} PVs are drawn at a time; when ${LIMITS.chart} are on, the other boxes are disabled until one is turned off.`],
             ["Ranges", "The line above the chart holds the time window and the value range of each axis; its information control explains them."],
             [
                 "Values",
@@ -670,6 +1155,22 @@ function chartCard() {
         HELP_PAGE,
     ];
 }
+// What each search mode matches; every mode ignores case. The hint under Find names the chosen mode in one line.
+const MODE_HINTS = {
+    contains: "Words in any order, case ignored",
+    glob: "The whole name; * is any characters, ? is one",
+    regex: "Any part of the name; ^ and $ anchor it",
+};
+const MODES_CARD = [
+    "Search modes",
+    [
+        ["Contains", "Every word you type must appear in the name, in any order and in any place. The text bpm c02 x finds SR:BPM:C02:X and BPM:X:C02."],
+        ["Glob", "The whole name must match. * stands for any characters and ? for exactly one, so SR:BPM:*:X finds every X of SR:BPM and SR:BPM:0?:X finds SR:BPM:01:X to SR:BPM:09:X."],
+        ["Regex", "A regular expression that may match any part of the name; ^ anchors it to the start and $ to the end, so ^SR:BPM:0[1-4]:X$ finds the first four X."],
+    ],
+    null,
+    HELP_PAGE,
+];
 const RANGE_CARD = [
     "Time and value range",
     [
@@ -730,7 +1231,10 @@ function zoomTo(from, to) {
     state.window = { from, to };
     state.data.clear();
     refreshData();
+    refreshLatest();
     writeAddress();
+    renderRefresh();
+    scheduleRefresh();
 }
 
 /** Returns from a chosen time window to the range of the buttons; nothing changes when no window was chosen. */
@@ -741,7 +1245,10 @@ function resetWindow() {
     state.window = null;
     state.data.clear();
     refreshData();
+    refreshLatest();
     writeAddress();
+    renderRefresh();
+    scheduleRefresh();
     renderChart();
 }
 
@@ -758,21 +1265,26 @@ function panBy(direction) {
     state.window = { from: new Date(to - span), to: new Date(to) };
     state.data.clear();
     refreshData();
+    refreshLatest();
     writeAddress();
+    renderRefresh();
+    scheduleRefresh();
 }
 
 function renderChart() {
     const host = $("chart");
-    const { list, over } = chartList();
-    $("limChart").textContent = String(list.length);
+    const { list } = chartList();
+    $("limChart").textContent = String(state.plotted.length);
     $("limChartMax").textContent = String(LIMITS.chart);
     if (!list.length) {
-        const answered = state.selected.length > 0 && state.selected.every((name) => state.data.has(name));
+        const answered = state.plotted.length > 0 && state.plotted.every((name) => state.data.has(name));
         host.textContent = !state.selected.length
-            ? "Select PVs to plot them here."
-            : answered
-              ? "No samples in this time range. A PV that did not change has none; try a wider range."
-              : "Loading samples…";
+            ? "Pick PVs in the list, then turn on their Plot box to draw them here."
+            : !state.plotted.length
+              ? "Turn on the Plot box of a PV in the table to draw it here."
+              : answered
+                ? "No samples in this time range. A PV that did not change has none; try a wider range."
+                : "Loading samples…";
         setChartHead("");
         setAnalyzerLinks("");
         renderStats([]);
@@ -780,12 +1292,8 @@ function renderChart() {
         return;
     }
     const first = list[0];
-    // Only the state of the window and what is left out is said here; how to read and use the chart is in the information card.
-    const notes = [];
-    if (over > 0) {
-        notes.push(`${over} more PVs are not drawn (limit ${LIMITS.chart}).`);
-    }
-    setChartHead(notes.join(" "));
+    // How to read and use the chart is in the information card.
+    setChartHead("");
     const analyzer = new URLSearchParams();
     for (const d of list) {
         analyzer.append("pv", d.name);
@@ -855,129 +1363,23 @@ function renderStats(list) {
     }
 }
 
-function renderDetail() {
-    const host = $("detail");
-    host.textContent = "";
-    const name = state.focus;
-    if (!name) {
-        host.append(node("p", { class: "muted" }, "Select a PV to see its state and the actions that apply."));
-        return;
-    }
-    const row = state.status.get(name);
-    const word = stateOf(name) || "Reading state…";
-    const left = node("div");
-    left.append(node("p", { class: `status-big ${word === "Disconnected" ? "warn" : ""}` }, word));
-    left.append(node("p", { class: "pv" }, name));
-    left.append(node("p", { class: "muted explain" }, STATES[word] || "State reported by the archiver."));
-    if (row) {
-        const facts = node("dl", { class: "facts" });
-        const add = (label, value) => {
-            if (value !== undefined && value !== null && value !== "") {
-                facts.append(node("dt", null, label), node("dd", { class: "num" }, String(value)));
-            }
-        };
-        add("Appliance", row.appliance);
-        add("Connected", row.connectionState);
-        add("Sampling", row.isMonitored === "true" || row.isMonitored === true ? `monitored, period ${row.samplingPeriod}` : row.samplingPeriod);
-        add("Last event", row.lastEvent);
-        left.append(facts);
-    }
-    const actions = node("div", { class: "actions" });
-    const paused = word === "Paused";
-    const archived = word !== "Not being archived";
-    const add = (label, handler, className) => {
-        const button = node("button", { type: "button", class: className }, label);
-        button.addEventListener("click", handler);
-        actions.append(button);
-    };
-    if (!row) {
-        // No action is offered before the archiver has told the state.
-    } else if (PENDING.has(word)) {
-        add("Abort the request", () => doAction("../bpl/abortArchivingPV", name), "danger");
-    } else if (archived) {
-        add(paused ? "Resume" : "Pause", () => doAction(paused ? "../bpl/resumeArchivingPV" : "../bpl/pauseArchivingPV", name));
-        add("Change sampling…", () => openChangeSampling(name));
-        add("Stop archiving…", () => openStopDialog(name), "danger");
-    } else {
-        add("Archive…", () => openArchiveDialog([name]));
-    }
-    left.append(actions);
-    const viewer = viewerHref([name]);
-    if (viewer && archived) {
-        left.append(node("a", { class: "plain-link", href: viewer }, "Open in the viewer"));
-    }
-    if (row && archived && !PENDING.has(word)) {
-        left.append(maintenanceSection(name), detailsSection(name));
-    }
-
-    const right = node("div");
-    right.append(node("h2", null, "What the states mean"));
-    const glossary = node("dl", { class: "glossary" });
-    for (const [key, text] of Object.entries(STATES)) {
-        glossary.append(node("dt", null, key), node("dd", null, text));
-    }
-    right.append(glossary);
-    host.append(left, right);
-}
-
 async function doAction(kind, name, params) {
     fastUntil = Date.now() + AFTER_ACTION_MS;
     try {
         await api.pvAction(kind, name, params);
         state.status.delete(name);
         refreshStatus();
-        renderDetail();
         return true;
     } catch (error) {
         $("limitNote").textContent = `${kind.split("/").pop()} failed for ${name}: ${error.message}`;
         // An action can change part of the state before it fails; show what the archiver holds now.
         state.status.delete(name);
         refreshStatus();
-        renderDetail();
         return false;
     }
 }
 
 // ---- dialogs -------------------------------------------------------------------------------
-
-function openArchiveDialog(names) {
-    const dialog = $("archiveDialog");
-    $("archiveNames").textContent = names.join(", ");
-    $("archivePeriod").min = String(state.minimumSamplingPeriod);
-    $("archivePeriod").value = "1";
-    $("archiveError").textContent = "";
-    $("archiveForm").onsubmit = async (event) => {
-        event.preventDefault();
-        const items = names.map((pv) => ({
-            pv,
-            samplingperiod: $("archivePeriod").value,
-            samplingmethod: $("archiveMethod").value,
-        }));
-        try {
-            await api.archivePVs(items);
-            dialog.close();
-            let refused = 0;
-            for (const name of names) {
-                if (state.selected.includes(name)) {
-                    continue;
-                }
-                if (state.selected.length < LIMITS.scan) {
-                    state.selected.push(name);
-                } else {
-                    refused += 1;
-                }
-            }
-            state.focus = state.selected.includes(names[0]) ? names[0] : state.focus;
-            if (refused) {
-                $("limitNote").textContent = `The scan list holds at most ${LIMITS.scan} PVs; ${refused} archived PV${refused > 1 ? "s were" : " was"} not added to it.`;
-            }
-            afterSelection();
-        } catch (error) {
-            $("archiveError").textContent = `The archive request failed: ${error.message}`;
-        }
-    };
-    dialog.showModal();
-}
 
 function openStopDialog(name) {
     const dialog = $("stopDialog");
@@ -1110,7 +1512,6 @@ function afterOperation(name) {
     fastUntil = Date.now() + AFTER_ACTION_MS;
     state.status.delete(name);
     refreshStatus();
-    renderDetail();
 }
 
 async function openChangeSampling(name) {
@@ -1154,6 +1555,7 @@ function openRename(name) {
             }
             await whilePaused(name, () => api.operate("../bpl/renamePV", { pv: name, newname: values.newname }));
             state.selected = state.selected.map((pv) => (pv === name ? values.newname : pv));
+            state.plotted = state.plotted.map((pv) => (pv === name ? values.newname : pv));
             state.focus = values.newname;
             state.status.delete(name);
             afterSelection();
@@ -1207,50 +1609,6 @@ async function openConsolidate(name) {
     });
 }
 
-function maintenanceSection(name) {
-    const section = node("details", { class: "maintenance" }, node("summary", null, "Maintenance"));
-    section.append(node("p", { class: "sub" }, "These change the PV or its data. Each says what it does before it asks."));
-    const buttons = node("div", { class: "actions" });
-    for (const [label, handler] of [
-        ["Rename…", openRename],
-        ["Change type…", openChangeType],
-        ["Consolidate data…", openConsolidate],
-    ]) {
-        const button = node("button", { type: "button", class: "plain" }, label);
-        button.addEventListener("click", () => handler(name));
-        buttons.append(button);
-    }
-    section.append(buttons);
-    return section;
-}
-
-/** Everything the archiver reports about one PV, read when the section is opened. */
-function detailsSection(name) {
-    const section = node("details", { class: "maintenance" }, node("summary", null, "All details"));
-    const body = node("div");
-    section.append(body);
-    let loaded = false;
-    section.addEventListener("toggle", async () => {
-        if (!section.open || loaded) {
-            return;
-        }
-        loaded = true;
-        body.textContent = "Reading…";
-        try {
-            const rows = await api.details(name);
-            const list = node("dl", { class: "facts all" });
-            for (const row of rows) {
-                list.append(node("dt", null, String(row.name)), node("dd", { class: "num" }, String(row.value)));
-            }
-            body.replaceChildren(list);
-        } catch (error) {
-            loaded = false;
-            body.textContent = `The details could not be read: ${error.message}`;
-        }
-    });
-    return section;
-}
-
 /** One sentence for the per-PV answers of a bulk call. A PV that was already in the wanted state is no failure. */
 function summarizeBulk(rows, verb) {
     const unchanged = (row) => /already paused|is not paused/i.test(String(row.validation || ""));
@@ -1296,7 +1654,11 @@ function bulkAction(kind) {
         danger: true,
         run: async (values) => {
             await api.bulk("../bpl/pauseArchivingPV", names);
-            const rows = await api.bulk("../bpl/deletePV", names, { deleteData: values.data });
+            let rows = await api.bulk("../bpl/deletePV", names, { deleteData: values.data });
+            // deletePV answers one result for all the PVs, without their names: its status tells whether they were removed.
+            if (rows.length === 1 && !rows[0].pvName) {
+                rows = names.map((pvName) => ({ ...rows[0], pvName }));
+            }
             const removed = new Set(rows.filter((row) => row.status === "ok").map((row) => row.pvName));
             state.selected = state.selected.filter((pv) => !removed.has(pv));
             state.focus = state.selected[0] || null;
@@ -1330,6 +1692,9 @@ function writeAddress() {
     for (const name of state.selected) {
         parameters.append("pv", name);
     }
+    for (const name of state.plotted) {
+        parameters.append("plot", name);
+    }
     const text = parameters.toString();
     window.history.replaceState(null, "", text ? `#${text}` : window.location.pathname);
 }
@@ -1343,10 +1708,11 @@ function readAddress() {
     const to = Number(parameters.get("to"));
     state.window = from > 0 && to > from ? { from: new Date(from), to: new Date(to) } : null;
     const named = parameters.getAll("pv");
-    state.selected = named.slice(0, LIMITS.scan);
-    if (named.length > LIMITS.scan) {
-        addressNote = `The address names ${named.length} PVs; the scan list holds at most ${LIMITS.scan}, so the first ${LIMITS.scan} are shown.`;
+    state.selected = named.slice(0, LIMITS.table);
+    if (named.length > LIMITS.table) {
+        addressNote = `The address names ${named.length} PVs; the table holds at most ${LIMITS.table}, so the first ${LIMITS.table} are shown.`;
     }
+    state.plotted = [...new Set(parameters.getAll("plot"))].filter((name) => state.selected.includes(name)).slice(0, LIMITS.chart);
     state.focus = state.selected[0] || null;
     $("q").value = state.query;
     pendingReport = REPORTS[parameters.get("report")] ? parameters.get("report") : null;
@@ -1361,10 +1727,13 @@ function wire() {
         window.clearTimeout(debounce);
         debounce = window.setTimeout(runSearch, 150);
     });
+    $("modesInfo").append(infoButton(...MODES_CARD));
+    $("queryHint").textContent = MODE_HINTS[state.mode] || MODE_HINTS.contains;
     document.querySelectorAll("#modes button").forEach((button) => {
         button.setAttribute("aria-pressed", String(button.dataset.mode === state.mode));
         button.addEventListener("click", () => {
             state.mode = button.dataset.mode;
+            $("queryHint").textContent = MODE_HINTS[state.mode];
             document.querySelectorAll("#modes button").forEach((other) => other.setAttribute("aria-pressed", String(other === button)));
             runSearch();
         });
@@ -1377,8 +1746,26 @@ function wire() {
             document.querySelectorAll("#ranges button").forEach((other) => other.setAttribute("aria-pressed", String(other === button)));
             state.data.clear();
             refreshData();
+            refreshLatest();
             writeAddress();
+            renderRefresh();
+            scheduleRefresh();
         });
+    });
+    document.querySelectorAll("#refreshSet button").forEach((button) => {
+        button.addEventListener("click", () => {
+            state.refreshSeconds = Number(button.dataset.seconds);
+            saveRefresh();
+            renderRefresh();
+            scheduleRefresh();
+        });
+    });
+    $("refreshNow").addEventListener("click", () => refreshPage(true));
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && state.refreshSeconds > 0 && windowEndsNow()) {
+            refreshPage(false);
+        }
+        scheduleRefresh();
     });
     $("report").addEventListener("change", (event) => setReport(event.target.value));
     $("results").addEventListener("scroll", renderResults);
@@ -1423,6 +1810,7 @@ function wire() {
             state.chartOptions,
             (next) => {
                 state.chartOptions = next;
+                renderTable();
                 renderChart();
             },
             infoButton(...OPTIONS_CARD)
@@ -1432,8 +1820,43 @@ function wire() {
     $("bulkResume").addEventListener("click", () => bulkAction("resume"));
     $("bulkStop").addEventListener("click", () => bulkAction("stop"));
     $("maintainCancel").addEventListener("click", () => $("maintainDialog").close());
-    $("archiveCancel").addEventListener("click", () => $("archiveDialog").close());
     $("stopCancel").addEventListener("click", () => $("stopDialog").close());
+    $("maintenanceClose").addEventListener("click", () => $("maintenanceDialog").close());
+    $("detailsClose").addEventListener("click", () => $("detailsDialog").close());
+    for (const id of ["maintainDialog", "stopDialog", "maintenanceDialog", "detailsDialog"]) {
+        closeOnBackdrop($(id));
+    }
+    // The More menu: its items open the windows of the row, Esc closes it and returns to its button, a click outside closes it.
+    const fromMenu = (open) => () => {
+        const name = menuFor;
+        closeRowMenu(false);
+        opener = { name, key: "more" };
+        open(name);
+    };
+    $("menuSampling").addEventListener("click", fromMenu(openChangeSampling));
+    $("menuMaintenance").addEventListener("click", fromMenu(openMaintenance));
+    $("menuStop").addEventListener("click", fromMenu(openStopDialog));
+    $("rowMenu").addEventListener("keydown", (event) => {
+        const items = Array.from($("rowMenu").querySelectorAll("button"));
+        const at = items.indexOf(document.activeElement);
+        if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+            closeRowMenu(true);
+        } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            items[(at + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length].focus();
+        } else if (event.key === "Tab") {
+            closeRowMenu(false);
+        }
+    });
+    document.addEventListener("click", (event) => {
+        if (menuFor !== null && !$("rowMenu").contains(event.target) && !event.target.closest('[data-key="more"]')) {
+            closeRowMenu(false);
+        }
+    });
+    window.addEventListener("resize", () => closeRowMenu(false));
+    document.querySelector(".scroll").addEventListener("scroll", () => closeRowMenu(false));
     let resize = 0;
     window.addEventListener("resize", () => {
         window.clearTimeout(resize);
@@ -1458,19 +1881,13 @@ async function readMinimumSamplingPeriod() {
 readAddress();
 $("limitNote").textContent = addressNote;
 wire();
+renderRefresh();
+scheduleRefresh();
 renderFinder();
-renderScan();
+renderTable();
 renderChart();
-renderDetail();
 readMinimumSamplingPeriod();
 startNames();
-api.applianceInfo().then((info) => {
-    state.retrievalBase = String(info.dataRetrievalURL || "");
-    renderScan();
-    renderDetail();
-}).catch(() => {
-    // Without the address the links to the viewer stay hidden.
-});
 namesLoaded.then(async () => {
     if (pendingReport) {
         $("report").value = pendingReport;

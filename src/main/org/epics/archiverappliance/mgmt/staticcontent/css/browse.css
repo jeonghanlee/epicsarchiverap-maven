@@ -74,7 +74,7 @@
 }
 
 /* A PV name stays on one line inside a table; the table scrolls instead of breaking it. */
-.scan td.pv,
+.pvs td.pv,
 .stats td.pv {
     overflow-wrap: normal;
     white-space: nowrap;
@@ -112,10 +112,19 @@
     margin: 8px 0;
 }
 
+.modes-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modes-row .modes {
+    margin: 8px 0;
+}
+
 .modes button,
 .ranges button,
-.chips button,
-.actions button {
+.chips button {
     background: none;
     border: 0;
     border-bottom: 1px solid transparent;
@@ -225,7 +234,7 @@
     outline-offset: -2px;
 }
 
-.scan tbody tr:focus-visible {
+.pvs tbody tr:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: -2px;
 }
@@ -260,6 +269,32 @@ li[aria-selected="true"] .tick {
 
 /* board */
 
+/* The refresh control acts on the whole page; it is dim while the window of the chart does not end now. */
+.refresh {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    font-size: 0.875rem;
+    color: var(--ink-2);
+}
+
+.refresh .ranges {
+    margin: 0;
+}
+
+.refresh button.plain {
+    font-size: 0.875rem;
+}
+
+.refresh[data-dim="true"] {
+    opacity: 0.45;
+}
+
+.refresh[data-dim="true"] button {
+    cursor: default;
+}
+
 .bar {
     display: flex;
     flex-wrap: wrap;
@@ -274,24 +309,29 @@ li[aria-selected="true"] .tick {
 }
 
 .limits {
-    margin-left: auto;
+    margin-left: 12px;
     font-size: 0.875rem;
+    font-weight: 400;
     color: var(--ink-2);
+}
+
+.table-head {
+    margin-bottom: 6px;
 }
 
 .scroll {
     overflow-x: auto;
 }
 
-.scan,
+.pvs,
 .stats {
     width: 100%;
     border-collapse: collapse;
 }
 
-.scan th,
+.pvs th,
 .stats th {
-    padding: 4px 8px 4px 0;
+    padding: 4px 6px 4px 0;
     text-align: left;
     font-size: 0.875rem;
     font-weight: 500;
@@ -299,30 +339,283 @@ li[aria-selected="true"] .tick {
     border-bottom: 1px solid var(--rule);
 }
 
-.scan td,
+.pvs td,
 .stats td {
-    padding: 4px 8px 4px 0;
+    padding: 4px 6px 4px 0;
     border-bottom: 1px solid var(--grid);
     vertical-align: middle;
 }
 
-.scan .r,
+.pvs .r,
 .stats th:not(:first-child),
 .stats td:not(:first-child) {
     text-align: right;
 }
 
-.scan tbody tr {
+.pvs tbody tr {
     cursor: pointer;
 }
 
-.scan tr[data-focus="true"] td {
+.pvs tr[data-focus="true"] td {
     background: var(--focus-bg);
 }
 
-.scan .empty {
+.pvs .empty {
     color: var(--ink-2);
     padding: 12px 0;
+}
+
+.pvs th.plot,
+.pvs td.plot {
+    width: 40px;
+    text-align: center;
+    padding-right: 0;
+}
+
+.pvs td.plot input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.pvs td.plot input:disabled {
+    cursor: not-allowed;
+}
+
+.pvs .proto-tag {
+    display: inline-block;
+    padding: 0 8px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+}
+
+.pvs td.state .state-word {
+    display: block;
+    white-space: nowrap;
+}
+
+.pvs td.state .lost {
+    display: inline-block;
+    margin: 2px 0 0;
+}
+
+.pvs td.actions-cell,
+.pvs td.details-cell {
+    white-space: nowrap;
+}
+
+.pvs thead th:nth-child(2),
+.pvs td.pv {
+    padding-left: 8px;
+}
+
+/* The Trend line is drawn in a box of 150 by 22; the table shows it a little smaller so that nine columns fit. */
+.pvs td.spark-cell svg {
+    width: 100px;
+    height: auto;
+}
+
+.pvs button.act {
+    margin-right: 3px;
+    padding: 2px 6px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.pvs button.act:hover,
+.pvs button.act[aria-expanded="true"] {
+    background: var(--focus-bg);
+}
+
+.menu {
+    position: absolute;
+    z-index: 300;
+    min-width: 200px;
+    padding: 4px 0;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    background: var(--c-surface);
+    box-shadow: var(--shadow-md);
+}
+
+.menu[hidden] {
+    display: none;
+}
+
+.menu button {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.9375rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.menu button:hover,
+.menu button:focus-visible {
+    background: var(--focus-bg);
+}
+
+.menu button.danger {
+    color: var(--alarm);
+}
+
+/* The Details window: its groups, the kinds of time inside them, and the values that a call does not hold. */
+dialog.details {
+    width: min(760px, calc(100vw - 32px));
+    max-width: none;
+    max-height: calc(100vh - 48px);
+    padding: 0;
+}
+
+dialog.details .dialog-box {
+    max-height: calc(100vh - 48px);
+    padding: 20px;
+    overflow: auto;
+}
+
+.details-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.details-head h2 {
+    margin: 0;
+}
+
+.details-head button.quiet {
+    color: var(--ink-2);
+    background: none;
+    border-color: transparent;
+}
+
+.details-group h3 {
+    margin: 18px 0 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+    font-size: 1rem;
+}
+
+.details-group h4 {
+    margin: 12px 0 2px;
+    font-size: 0.9375rem;
+}
+
+.details-group h5 {
+    margin: 10px 0 2px;
+    color: var(--ink-2);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.details-group .facts {
+    grid-template-columns: minmax(10rem, 3fr) minmax(0, 2fr);
+    margin: 2px 0 6px;
+}
+
+.details-group .facts dt,
+.details-group .facts dd {
+    overflow-wrap: anywhere;
+}
+
+.details-group .facts dd.none,
+.details-group p.none {
+    color: var(--ink-3);
+    font-style: italic;
+}
+
+.maintenance-list dt {
+    margin-top: 12px;
+}
+
+.maintenance-list dd {
+    margin: 2px 0 0;
+    color: var(--ink-2);
+    font-size: 0.9375rem;
+}
+
+.maintenance-list button.plain {
+    padding: 4px 0;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.maintenance-list button.plain:hover {
+    border-bottom-color: currentColor;
+}
+
+.pvs td.last,
+.pvs td.sdev {
+    font-size: 0.875rem;
+}
+
+.pvs .state-word.paused {
+    color: var(--ink-2);
+    font-weight: 600;
+}
+
+.pvs .lost {
+    margin-left: 8px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--focus-bg);
+    color: var(--warn);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+/* Value: the whole part is right-aligned and the rest left-aligned at the middle of the cell, so the decimal points of the rows line up. */
+.pvs td.value {
+    white-space: nowrap;
+}
+
+.pvs .v {
+    display: grid;
+    grid-template-columns: var(--whole, 4ch) var(--rest, 4ch) calc(var(--unit, 0ch) + 6px);
+    justify-content: end;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 0.875rem;
+}
+
+.pvs .v .whole {
+    text-align: right;
+}
+
+.pvs .v .rest {
+    text-align: left;
+}
+
+.pvs .v .unit {
+    padding-left: 6px;
+    color: var(--ink-2);
+}
+
+.pvs .v .vtext {
+    grid-column: 1 / 3;
+    text-align: right;
 }
 
 .stats td {
@@ -345,28 +638,6 @@ li[aria-selected="true"] .tick {
 
 /* detail */
 
-.detail {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-    gap: 20px 28px;
-}
-
-@media (max-width: 1100px) {
-    .detail {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-
-.status-big {
-    margin: 0 0 2px;
-    font-size: 1.375rem;
-    font-weight: 600;
-}
-
-.explain {
-    max-width: 60ch;
-}
-
 .facts {
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr);
@@ -383,42 +654,8 @@ li[aria-selected="true"] .tick {
     font-size: 0.875rem;
 }
 
-.actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 18px;
-    margin-top: 10px;
-}
-
-.actions button {
-    color: var(--accent);
-    font-size: 1rem;
-    padding: 4px 0;
-}
-
-.actions button:hover {
-    border-bottom-color: var(--accent);
-}
-
-.actions .danger,
 button.danger {
     color: var(--alarm);
-}
-
-.glossary {
-    font-size: 0.9375rem;
-    color: var(--ink-2);
-    margin: 0;
-}
-
-.glossary dt {
-    margin-top: 6px;
-    font-weight: 600;
-    color: var(--ink);
-}
-
-.glossary dd {
-    margin: 0;
 }
 
 /* dialogs */
@@ -490,27 +727,6 @@ dialog input[type="number"] {
     border-color: transparent;
 }
 
-.maintenance {
-    margin: 12px 0 0;
-}
-
-.maintenance summary {
-    cursor: pointer;
-    color: var(--ink-2);
-    font-size: 0.9375rem;
-}
-
-.facts.all {
-    max-height: 22rem;
-    overflow: auto;
-    grid-template-columns: minmax(10rem, 2fr) minmax(0, 3fr);
-}
-
-.facts.all dt,
-.facts.all dd {
-    overflow-wrap: anywhere;
-}
-
 .bulk {
     display: flex;
     flex-wrap: wrap;
@@ -519,10 +735,10 @@ dialog input[type="number"] {
     margin: 8px 0 0;
 }
 
-/* The bulk, zoom and maintenance buttons read as the actions of the detail do: text, not a filled button. */
+/* The bulk, zoom and refresh buttons read as text, not as filled buttons. */
 .bulk button.plain,
 .zoombar button.plain,
-.maintenance button.plain {
+.refresh button.plain {
     background: none;
     border: 0;
     border-bottom: 1px solid transparent;
@@ -537,7 +753,7 @@ dialog input[type="number"] {
 
 .bulk button.plain:hover,
 .zoombar button.plain:hover,
-.maintenance button.plain:hover {
+.refresh button.plain:hover {
     border-bottom-color: currentColor;
 }
 
@@ -546,7 +762,8 @@ dialog input[type="number"] {
     background: none;
 }
 
-.zoombar button.plain:disabled {
+.zoombar button.plain:disabled,
+.refresh button.plain:disabled {
     color: var(--ink-3);
     cursor: default;
     border-bottom-color: transparent;
@@ -572,14 +789,8 @@ dialog input[type="number"] {
 }
 
 @media (max-width: 600px) {
-    .maintenance summary {
-        display: list-item;
-        line-height: 44px;
-    }
-
     .bulk button.plain,
-    .zoombar button.plain,
-    .maintenance button.plain {
+    .zoombar button.plain {
         min-height: 44px;
     }
 
@@ -601,73 +812,101 @@ dialog input[type="number"] {
         height: 44px;
     }
 
-    /* A scan row becomes two lines: the name and the current value, then the trend and the state. */
-    .scan thead {
+    /* A row of the table becomes three lines: the Plot box, the name and the value; the protocol, the trend and the state; the last event. */
+    .pvs thead {
         display: none;
     }
 
-    .scan,
-    .scan tbody {
+    .pvs,
+    .pvs tbody {
         display: block;
     }
 
-    .scan tr {
+    .pvs tr {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-areas: "pv now" "spark state";
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        grid-template-areas: "plot pv value" "proto spark state" ". last sdev" ". actions details";
         align-items: center;
         gap: 2px 12px;
         padding: 8px 4px;
         border-bottom: 1px solid var(--grid);
     }
 
-    .scan tr[data-focus="true"] {
+    .pvs tr[data-focus="true"] {
         background: var(--focus-bg);
     }
 
-    .scan tr[data-focus="true"] td {
+    .pvs tr[data-focus="true"] td {
         background: transparent;
     }
 
-    .scan td {
+    .pvs td {
         display: block;
         padding: 0;
         border: 0;
     }
 
-    .scan td.pv {
+    .pvs td[hidden] {
+        display: none;
+    }
+
+    .pvs td.plot {
+        grid-area: plot;
+        text-align: center;
+    }
+
+    .pvs td.pv {
         grid-area: pv;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .scan td.now {
-        grid-area: now;
-        font-size: 1.25rem;
-        text-align: right;
+    .pvs td.value {
+        grid-area: value;
+        font-size: 1.125rem;
+        min-width: 0;
     }
 
-    .scan td.spark-cell {
+    .pvs td.proto {
+        grid-area: proto;
+        text-align: center;
+    }
+
+    .pvs td.spark-cell {
         grid-area: spark;
     }
 
-    .scan td.state {
+    .pvs td.state {
         grid-area: state;
         text-align: right;
     }
 
-    .scan td.last {
-        display: none;
+    .pvs td.last {
+        grid-area: last;
+        text-align: left;
     }
 
-    .scan td.empty {
+    .pvs td.sdev {
+        grid-area: sdev;
+        text-align: right;
+    }
+
+    .pvs td.actions-cell {
+        grid-area: actions;
+    }
+
+    .pvs td.details-cell {
+        grid-area: details;
+        text-align: right;
+    }
+
+    .pvs td.empty {
         grid-column: 1 / -1;
     }
 
     .modes button,
     .ranges button,
-    .chips button,
-    .actions button {
+    .chips button {
         min-height: 44px;
     }
 }

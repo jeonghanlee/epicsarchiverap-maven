@@ -40,15 +40,6 @@ export async function pvAction(kind, pv, params = {}) {
     }
 }
 
-/** items: [{pv, samplingperiod?, samplingmethod?}] */
-export function archivePVs(items) {
-    return request("../bpl/archivePV", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(items),
-    });
-}
-
 /** True when the archiver recorded a lost connection or an engine start before this sample (also in a reduced bin). */
 function connectionLost(sample) {
     const fields = sample.fields;
@@ -86,6 +77,25 @@ export async function series(pv, from, to, binSeconds, signal) {
         waveform: Boolean(first.meta?.waveform),
         points,
     };
+}
+
+/**
+ * The newest sample at or before an instant of each PV, in one call to the retrieval server: at null asks for now, which
+ * the engine answers from its buffers. A PV without a sample in the 30 days before the instant is absent from the answer.
+ * Returns {name: {secs, nanos, val, severity, status, meta}}.
+ */
+export async function dataAtTime(names, at, signal) {
+    const info = await applianceInfo();
+    const query = new URLSearchParams({ searchPeriod: "P30D" });
+    if (at) {
+        query.set("at", at.toISOString());
+    }
+    return request(`${info.dataRetrievalURL}/data/getDataAtTime?${query}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(names),
+        signal,
+    });
 }
 
 /** The reason a result gives for a refusal, or null when the result carries none. */

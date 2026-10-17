@@ -383,7 +383,7 @@ button.opt-tab[aria-selected="true"]:hover {
 .strip-window,
 .strip-range {
     font-family: var(--mono);
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 500;
     white-space: nowrap;
 }
@@ -440,7 +440,7 @@ button.opt-tab[aria-selected="true"]:hover {
 
 .strip-label {
     color: var(--ink);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 600;
 }
 
@@ -474,7 +474,7 @@ button.opt-tab[aria-selected="true"]:hover {
     background: var(--c-brand);
     color: #fff;
     font-family: var(--sans);
-    font-size: 0.76rem;
+    font-size: 0.875rem;
     font-weight: 500;
     white-space: nowrap;
     box-shadow: var(--shadow-md);
