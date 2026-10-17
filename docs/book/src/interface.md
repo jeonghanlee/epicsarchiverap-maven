@@ -14,7 +14,7 @@ carries a content security policy, and the charts are drawn with D3.
 | Page | Address | For | Content |
 | :--- | :--- | :--- | :--- |
 | Archive PVs | `archive.html` | Everyone | Add one PV or a list of names, follow each request to the state Being archived, cancel, pause, resume or stop from its row |
-| Browse PVs | `index.html` | Everyone | Find PVs, scan the selected ones, inspect them, act on them |
+| Browse PVs | `index.html` | Everyone | Find PVs, list the selected ones with their value and last event, plot up to five of them, act on them |
 | System: Overview | `system.html` | Everyone | Three verdict lines and one row per measure with its value, its status and a link to the detail; the **i** button of a measure opens its meaning |
 | System: Operations | `operations.html` | The person who looks after the appliance | Samples, dropped samples, write path, stores and ETL, processes, configuration |
 | System: Retrieval performance | `retrieval.html` | A person whose data requests are slow | What the server reports and a request measured in the browser |
@@ -40,17 +40,17 @@ and its state, and the actions of that state:
 
 ## Browse PVs page
 
-The Browse PVs page, with three PVs selected:
+The Browse PVs page, with five PVs in the table and two of them plotted:
 
 ![The Browse PVs page](images/browse-page.png)
 
 | Part | Behavior |
 | :--- | :--- |
-| Find | Words in any order with case ignored, glob, or regular expression; chips group the matches by the first two `:` segments; the rows in view show the state of a PV that is not in the scan list (paused, not archived), read in one call for at most 60 rows |
+| Find | Words in any order with case ignored, glob, or regular expression; the **i** button beside the three modes explains each; chips group the matches by the first two `:` segments; the rows in view show the state of a PV that is not in the table (paused, not archived), read in one call for at most 60 rows |
 | Show | A selection of the list by one of the server reports: disconnected now, paused, never connected, waiting for the first connection, recently added, recently changed, highest event rate, highest storage rate, most storage used, most connection drops, silent for the longest time, most events dropped for a wrong time stamp, by buffer overflow and by a type change |
-| Scan | One row per selected PV with its state, a trend of the chosen range, the value now and the last event; at most 100 PVs. The link Open all selected in the viewer opens the selected PVs in the data viewer over the window of the chart |
-| Inspect | Time series of at most 5 PVs with one value axis for each unit and a legend, then distribution, scatter and statistics; Options, Enlarge chart and Open in the analyzer on the row of the Inspect heading; the line above the chart with the time window and the value ranges. The gestures and options are listed under [Chart controls](#chart-controls) |
-| Detail | State with its explanation, the actions that apply, a link that opens the PV in the data viewer, and the full details list |
+| Chart | The PVs whose Plot box is on, at most 5, with one value axis for each unit and a legend. Above it are the range buttons and the Refresh control; the line above the chart holds the time window and the value ranges; Options, Enlarge chart and Open in the analyzer are on the row of the Inspect heading. The gestures and options are listed under [Chart controls](#chart-controls) |
+| Table of PVs | One row per PV selected in the list, at most 100, under the chart; the columns are listed under [The table of PVs](#the-table-of-pvs) |
+| Distribution, scatter and statistics | Below the table: the distribution of the PV in front, the scatter of two PVs of the same unit, and the Summary of the chart |
 
 A PV name is a base name with an optional field (`X:Y` or `X:Y.RBV`); a
 name with a field is a PV of its own and the Browse PVs page and the viewer
@@ -66,20 +66,26 @@ has no sample has no value, and the line is not extended through it. The
 viewer's CSV download holds the values as drawn, with the column
 `interval_seconds` (1 for a stored sample, N for a mean over N seconds).
 
-The state of a PV and the actions that apply:
+The state of a PV and the actions in its row:
 
-| State | Actions |
+| State | Actions in the row |
 | :--- | :--- |
-| Being archived | Pause, Change sampling, Stop archiving, Maintenance |
-| Paused | Resume, Change sampling, Stop archiving, Maintenance |
-| Initial sampling, Appliance assigned | Abort the request |
-| Not being archived | Archive |
+| Being archived, Disconnected | Pause; More, which holds Change sampling, Maintenance and Stop archiving; Details |
+| Paused | Resume; More; Details |
+| Initial sampling, Appliance assigned | Cancel request; Details |
+| Not being archived | A link to the Archive PVs page with the name of the PV in its address |
 
 Stop archiving pauses the PV first, because the archiver removes only a
-paused PV. Change sampling applies at once to a running PV. Maintenance
-holds rename, change of type and consolidation; each of them pauses the PV
-first, and a change of type asks for a confirmation that a backup exists.
-Pause, Resume and Stop archiving also work on all selected PVs at once.
+paused PV, and says so before it acts. Change sampling applies at once to
+a running PV. Maintenance opens a window that explains rename, change of
+type and consolidation; each of them pauses the PV first, and a change of
+type asks for a confirmation that a backup exists. The More menu closes with
+Esc and with a click outside it; each window closes with Esc, its Close
+button and a click outside it, and the focus returns to the control that
+opened it. Under the table, Pause all selected, Resume all selected and
+Stop archiving all selected ask first and act on every PV of the table, and
+Open all selected in the analyzer opens every PV of the table in the
+analyzer over the window of the chart.
 
 The state is kept in the fragment of the address, the part after `#`
 (`index.html#q=bpm&range=10&pv=SR:BPM:01:X`), so a link reproduces the view:
@@ -91,7 +97,48 @@ The state is kept in the fragment of the address, the part after `#`
 | `report` | The selection of the Show list: `disconnected`, `paused`, `never`, `metagets`, `recent`, `modified`, `eventrate`, `storagerate`, `consumed`, `lost`, `silent`, `droppedtime`, `droppedbuffer` or `droppedtype`; none selects all archived PVs |
 | `range` | The range in minutes (default 60) |
 | `from`, `to` | A zoomed window, in milliseconds since the epoch |
-| `pv` (repeated) | The selected PVs |
+| `pv` (repeated) | The PVs of the table |
+| `plot` (repeated) | The PVs whose Plot box is on, at most 5, among the `pv` names |
+
+## The table of PVs
+
+Each PV selected in the list has one row:
+
+| Column | Content |
+| :--- | :--- |
+| Plot | The box that draws the PV in the chart. It is off when the row appears. At most 5 boxes are on; at 5 the other boxes are disabled and say why in their title |
+| PV | The name |
+| Protocol | CA or PVA, read from `usePVAccess` of `getPVTypeInfo`; empty for a PV that is not archived |
+| State | The state word of the PV and, when events were lost, `N lost`, where N is the sum of `eventsDropped` of the reports `getPVsByDroppedEventsTimestamp`, `getPVsByDroppedEventsBuffer` and `getPVsByDroppedEventsTypeChange`. The column is shown only while a PV is not in its normal state, which is Being archived with no lost event |
+| Trend | A small line of the chosen range, for every PV of the table whether or not its Plot box is on; none for an array PV |
+| Value | The value of the newest sample at or before the end of the chart window, with its unit, aligned on the decimal point. An array reads `array of N`. A PV with no sample in the 30 days before the end of the window has an empty cell with `no sample in 30 days` as its title |
+| Last event | The date and time of that sample, which is the time of the data and not the time at which the archiver received it, written in the time zone of the browser; the title holds the instant in UTC to the millisecond |
+| Std dev | The standard deviation of the points of the Trend; shown only while the Standard deviation band of the chart options is on |
+| Actions and Details | The buttons of the state of the PV, listed under [Browse PVs page](#browse-pvs-page) |
+
+Value and Last event come from one call of `getDataAtTime` for all the PVs of the table. While the window ends now the page leaves the instant out and the server answers with the newest sample; for a window that ends earlier the page sends the end of the window. A window of 10 minutes or less shows the same sample as the last one that `getData` returns for it; a longer window draws a mean in its last interval, which is not a sample.
+
+The **Details** button opens a window with the groups below. A value is read by the exact name of the call that holds it, `getPVStatus`, `getPVTypeInfo` or `getPVDetails`. A name that the call does not hold reads *not provided*; for a PVA PV these are the unit and the host. A value that is present and empty, a pair of limits that are both 0 or both NaN, and a limit that is NaN read *not set*; for a CA record without a unit the call returns an empty string, so its unit reads *not set*. A time is written as the server writes it, in the time zone of the server, under the heading of its kind: the time of the data, received, recorded, moved, and the times of the connection, of the settings of the PV and of the last request for its data.
+
+![The Details window of a PV](images/browse-details.png)
+
+| Group | Content |
+| :--- | :--- |
+| How it is stored | The appliance, the sampling, the policy, the estimated event rate, storage rate and growth, and the time at which the archiver last passed the data to the short term store |
+| Amount | The events so far, the raw scan events, the bytes per event and the elements per event |
+| Connection | Whether the PV is connected, its connection state and the connection drops, with the time of the data of the last event, the time at which the archiver received the last event, and the times of the connection |
+| Lost events | The events lost for a wrong time stamp, for a full sample buffer and for a change of type, and their sum |
+| Who reads it | The number of retrieval requests and of users, and the time of the last request |
+| The PV itself | The data type, the unit, the precision, the display, control, warning and alarm limits, the record type, the archived fields and the host, with the times at which its settings were created and last changed |
+| Moves between stores | For each move, for example from the short term store to the medium term store, the granularity of the source and of the destination, the duration of the last job, the number of runs, and the times of the last and the next run |
+
+A paused PV has no connection, no lost events and no moves between stores to report; its Details window says so for those groups.
+
+## Refreshing the page
+
+The control beside the range buttons offers Off, 10 s, 30 s and 1 min; 30 s is the default and the choice is kept in the browser. At each period the page reads Value and Last event again with one `getDataAtTime` call and the lost events from the three reports. The Trend and the chart are read again when their data is older than 25 seconds, so no more often than every 30 seconds. **Refresh now** reads everything once, and the time of the last read is written beside the control as Updated.
+
+With Off nothing changes until Refresh now is pressed; the state of a PV is read again only after an action on it and while its request is unfinished. A window that ends earlier than now has nothing new to read, so the control is dim and nothing is refreshed. A hidden browser tab pauses the refresh and a visible one reads again at once.
 
 ## Chart controls
 
@@ -200,10 +247,11 @@ type are not in the interface; their calls remain
 
 | Item | Value |
 | :--- | :--- |
-| PVs in the scan list | 100 |
+| PVs in the table | 100 |
 | PVs in a chart | 5; each unit has its own value axis |
 | Concurrent data requests | 6 |
-| Status of the selected PVs | Every 3 s while a request is unfinished or an action is recent, every 20 s otherwise |
+| Status of the PVs of the table | Every 3 s while a request is unfinished or an action is recent, every 20 s otherwise; with the Refresh control on Off, only in the first two cases |
+| Value, Last event and lost events of the table | At the period of the Refresh control (10 s, 30 s or 1 min); the Trend and the chart no more often than every 30 s |
 | System: Overview, Operations, Retrieval performance | Every 20 s, 30 s and 30 s while the page is visible |
 | A request measured on the Retrieval performance page | The whole answer is read into the page, about 100 bytes per sample (a week of a PV at 1 Hz is about 60 MB); the page says so next to the form |
 

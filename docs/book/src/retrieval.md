@@ -137,7 +137,8 @@ A window of up to 11 minutes shows the stored samples. A longer window
 shows means over equal intervals, requested as `meanSample_N`, and the
 chart says so. An interval without a sample has no value and the line
 stops there, so a lost connection is never drawn as a held value. The
-Browse PVs page of the web interface opens the selected PVs in the viewer
+Browse PVs page of the web interface opens the plotted PVs, or all the PVs of its
+table, in the viewer through the Analyzer entry
 ([Operating](operating.md#the-web-interface)).
 
 ## Phoebus Data Browser

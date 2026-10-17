@@ -21,7 +21,7 @@ bar, named by task; the entry of the page in view is marked:
 | Menu entry | Opens | Purpose |
 | --- | --- | --- |
 | Archive PVs | the Archive PVs page | archive a PV and pause, resume or stop it |
-| Browse PVs | the Browse PVs page | find PVs, scan them, inspect their data; the reports are the **Show** list of the Find panel |
+| Browse PVs | the Browse PVs page | find PVs, list them with their value and last event, plot them, act on them; the reports are the **Show** list of the Find panel |
 | System | System: Overview | status monitoring: the verdict on the appliance, then Operations and Retrieval performance |
 | Help | the help page | how to use each page, the PV states, the management API reference ([Scripting](scripting.md)) and a link to this manual |
 | Analyzer | the data viewer | the data viewer of the retrieval web application ([Retrieving data](retrieval.md#the-data-viewer)) |
@@ -34,18 +34,22 @@ addresses of the earlier pages (`reports.html`, `metrics.html`,
 place.
 
 The Browse PVs page is the page of daily use. The next figure shows it with
-three PVs selected: the Find panel on the left, the scan list with a
-trend of each PV, the chart with its distribution, scatter plot and
-statistics, and the detail of the first PV.
+five PVs in the table and two of them plotted: the Find panel on the left,
+the chart, and the table with the protocol, the trend, the value and the
+time of the last event of each PV, and the buttons of its state.
 
-![The Browse PVs page with three PVs selected](images/browse-page.png)
+![The Browse PVs page with five PVs selected](images/browse-page.png)
 
-The controls of the chart (the time window, the value range of each unit, the
-Options panel, Enlarge chart) are listed in
-[Chart controls](interface.md#chart-controls). The link **Open in the
-analyzer** above the chart opens the PVs of the chart in the data viewer,
+Turn on the **Plot** box of a row to draw that PV in the chart; at most five
+PVs are drawn at a time. The controls of the chart (the time window, the
+value range of each unit, the Options panel, Enlarge chart) are listed in
+[Chart controls](interface.md#chart-controls), the columns of the table and
+the **Refresh** control in [The table of PVs](interface.md#the-table-of-pvs)
+and [Refreshing the page](interface.md#refreshing-the-page). The link **Open
+in the analyzer** above the chart opens the plotted PVs in the data viewer,
 which shows PVs as charts per unit, over the window of the chart
-([Retrieving data](retrieval.md#the-data-viewer)).
+([Retrieving data](retrieval.md#the-data-viewer)); **Open all selected in the
+analyzer** under the table opens every PV of the table.
 
 ## Adding PVs
 
@@ -89,29 +93,32 @@ instead.
 | Not being archived | the archiver has no request for the PV |
 | Appliance Down | the appliance that holds the PV does not answer, so its state cannot be read |
 
-A PV that never connects stays in Initial sampling. Its detail offers
-**Abort the request**.
+A PV that never connects stays in Initial sampling. Its row offers
+**Cancel request**.
 
 ## Managing a PV
 
-Select a PV in the list; its detail appears at the bottom of the Browse PVs
-page with the actions that apply to its state.
+Use the buttons in the row of the PV in the table of the Browse PVs page.
+Only the actions that fit its state appear. **More** holds Change sampling,
+Maintenance and Stop archiving; **Maintenance** opens a window that
+explains rename, change of type and consolidation before it asks.
 
-![The detail of an archived PV with its Maintenance actions opened](images/browse-maintenance.png)
+![The Maintenance window of an archived PV](images/browse-maintenance.png)
 
 | Action | Condition | Effect |
 | --- | --- | --- |
 | Pause, Resume | the PV is archived | stops or restarts sampling; the configuration and the stored data stay |
 | Change sampling | the PV is archived or paused | sets the method and the period; a running PV takes them at once and the stored data does not change |
 | Stop archiving | the PV is archived or paused | pauses the PV, removes it from the archiver and, when ticked, deletes its stored data |
-| Abort the request | the PV is in Initial sampling or Appliance assigned | cancels the archive request |
+| Cancel request | the PV is in Initial sampling or Appliance assigned | cancels the archive request |
 | Rename | none; the PV is paused first | copies the settings and the data to the new name; both names stay paused until each is checked and resumed |
 | Change type | none; the PV is paused first | converts the stored data of every store to the new type, in place; it asks for the confirmation that a backup exists |
 | Consolidate data | none; the PV is paused first | moves the data of the earlier stores up to the chosen store |
 
 **Pause all selected**, **Resume all selected** and **Stop archiving all
-selected** apply an action to every PV of the scan list. **All details**
-lists everything the archiver reports about the PV.
+selected** under the table apply an action to every PV of the table and ask
+first. **Details** in a row shows in groups what the archiver reports about
+the PV.
 
 ## Reports and System pages
 
@@ -224,7 +231,7 @@ tcpdump -i <interface> 'host <ioc> and host <appliance>' -w capture.pcap
 ```
 
 The [cashark](https://github.com/mdavidsaver/cashark/) plugin decodes CA
-and PVA in Wireshark and `tshark`. **All details** of a PV on the Browse PVs
-page lists the CA channel ID, the server channel ID and the subscription
-ID of its channel, and pausing and resuming the PV during the capture
-shows the channel's whole life cycle.
+and PVA in Wireshark and `tshark`. The call `getPVDetails` of a PV lists the
+CA channel ID, the server channel ID and the subscription ID of its channel,
+and pausing and resuming the PV during the capture shows the channel's whole
+life cycle.
