@@ -1,8 +1,10 @@
 // The Retrieval performance page: what the server says about reading, and a request measured in this browser.
-import { drawTimeSeries } from "../comm/js/aa/chart.js";
-import { appliances, get, node, number, settled } from "./system/api.js";
+import { createChart } from "../comm/js/aa/chart.js";
+import { infoButton } from "../comm/js/aa/card.js";
+import { node } from "../comm/js/aa/dom.js";
+import { appliances, get, number, settled } from "./system/api.js";
 import { etlTiers, heapFloor, measureMap } from "./system/judge.js";
-import { HEAP_WORDS, chooseAppliance, infoButton, statusNode } from "./system/view.js";
+import { HEAP_WORDS, chooseAppliance, statusNode } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_MS = 30000;
@@ -10,6 +12,8 @@ let list = [];
 let current = null;
 let info = null;
 const measurements = [];
+// The chart of the heap, built when the first trend is drawn.
+let heapChart = null;
 
 // ---- the cards of the sections ---------------------------------------------------------------------
 
@@ -93,13 +97,15 @@ async function renderServer() {
         row("Load average now / highest in 24 h", loads.length ? `${loads[loads.length - 1].toFixed(1)} / ${Math.max(...loads).toFixed(1)}` : "not reported"),
         row("ETL pass running now", running ? `${running} tier${running > 1 ? "s" : ""}` : "no"),
     );
-    const host = $("heapChart");
-    host.textContent = "";
+    if (!heapChart) {
+        heapChart = createChart($("heapChart"), { id: "retrieval-heap", idPrefix: "heap", dialogTitle: "Retrieval heap", helpHref: HELP, legend: true });
+    }
     if (!floor) {
+        heapChart.message("");
         $("heapNote").textContent = "The trend appears when the appliance has collected two hours of values.";
         return;
     }
-    drawTimeSeries(host, {
+    heapChart.draw({
         series: [
             { name: "heap", egu: "%", points: floor.data.map(([t, v]) => ({ t, v, s: 0 })), focus: false, quiet: true },
             { name: "floor", egu: "%", points: floor.floor.map(([t, v]) => ({ t, v, s: 0 })), focus: true },
@@ -107,7 +113,6 @@ async function renderServer() {
         from: new Date(floor.data[0][0]),
         to: new Date(floor.data[floor.data.length - 1][0]),
         gapMs: 600000,
-        legend: true,
     });
     $("heapNote").textContent = `Lowest after a collection: ${floor.first.toFixed(0)} % at the start of the day, ${floor.last.toFixed(0)} % now. ${floor.text}`.trim();
 }

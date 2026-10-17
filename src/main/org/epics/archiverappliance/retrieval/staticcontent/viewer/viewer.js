@@ -1,6 +1,7 @@
 // The archived data viewer. The address keeps the parameters of the previous viewer:
 // pv (repeatable), from and to (ISO 8601). Data comes from this retrieval server only.
 import { axisRoom, drawTimeSeries, labelRoom } from "../comm/js/aa/chart.js";
+import { node } from "../comm/js/aa/dom.js";
 
 const DATA = "../../data/getData.json";
 const MATCHING = "../../bpl/getMatchingPVs";
@@ -11,17 +12,6 @@ const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 
 const state = { pvs: [], from: null, to: null, data: new Map(), failures: new Map() };
 const $ = (id) => document.getElementById(id);
-
-function node(tag, attributes, ...children) {
-    const element = document.createElement(tag);
-    for (const [key, value] of Object.entries(attributes || {})) {
-        if (value !== undefined && value !== null) {
-            element.setAttribute(key, value);
-        }
-    }
-    element.append(...children);
-    return element;
-}
 
 function parseDate(text) {
     // new Date(null) is the year 1970, so a missing parameter must not reach the constructor.

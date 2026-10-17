@@ -1,7 +1,8 @@
 // The Browse PVs page: find PVs, scan the selected ones, inspect a few in detail, and act on them.
 import * as api from "./browse/api.js";
-import { CHART_OPTIONS, buildChartOptions, drawTimeSeries } from "../comm/js/aa/chart.js";
-import { infoButton } from "./system/view.js";
+import { createChart } from "../comm/js/aa/chart.js";
+import { infoButton } from "../comm/js/aa/card.js";
+import { node } from "../comm/js/aa/dom.js";
 import { sparkline } from "../comm/js/aa/spark.js";
 import { drawHistogram, drawScatter } from "../comm/js/aa/plots.js";
 import { valueParts, dateTimeText, instantTitle } from "./browse/format.js";
@@ -112,6 +113,9 @@ function reportValue(raw) {
     return { text: short ?? full, title: short ? full : "" };
 }
 
+// The chart widget of the page, built when the page is wired.
+let chart = null;
+
 const state = {
     count: 0,
     asOf: 0,
@@ -145,15 +149,6 @@ const state = {
     refreshedAt: 0,
     data: new Map(),
     rangeMinutes: 60,
-    // The Options panel: whether it is open and which tab shows. The histograms of the chart at its right edge and the
-    // table of statistics are on while the panel is open on its Projection tab.
-    optionsOpen: false,
-    optionsTab: "projection",
-    projection: false,
-    // The line shape, value scale, sample marks, running average and band the person chose (see buildChartOptions).
-    chartOptions: { ...CHART_OPTIONS },
-    // True while the chart is shown in its large window.
-    enlarged: false,
     // A window the person dragged out of the chart, or null while the range button decides.
     window: null,
     minimumSamplingPeriod: 0.1,
@@ -162,17 +157,6 @@ const state = {
 const $ = (id) => document.getElementById(id);
 let pendingReport = null;
 let addressNote = "";
-
-function node(tag, attributes, ...children) {
-    const element = document.createElement(tag);
-    for (const [key, value] of Object.entries(attributes || {})) {
-        if (value !== undefined && value !== null) {
-            element.setAttribute(key, value);
-        }
-    }
-    element.append(...children.filter((child) => child !== null && child !== undefined));
-    return element;
-}
 
 function stateOf(name) {
     const row = state.status.get(name);
@@ -1024,7 +1008,7 @@ function renderTable() {
     $("limChartMax").textContent = String(LIMITS.chart);
     // The State column is there while a PV is not in its normal state; the Std dev column while the band of the chart is on.
     const showState = state.selected.some((name) => !isNormal(name));
-    const showDeviation = Boolean(state.chartOptions.band);
+    const showDeviation = Boolean(chart && chart.options.band);
     $("pvTable").querySelector("th.statecol").hidden = !showState;
     $("pvTable").querySelector("th.sdcol").hidden = !showDeviation;
     // The widest whole part and rest of the values set the two columns of Value, so that every row has its decimal point in the same place.
@@ -1104,40 +1088,7 @@ function chartList() {
     return { list: state.plotted.map((name) => state.data.get(name)).filter((d) => d && d.points.length), over: 0 };
 }
 
-/** The note of the chart: the window shown and what is left out, on the row of the buttons that move the window. */
-function setChartHead(note) {
-    $("chartNote").textContent = note;
-}
-
-/**
- * The links that open the PVs of the chart, over its window, in the analyzer. The address is that of the Analyzer entry of the
- * menu with the PVs and the window as parameters; an empty href hides the links.
- */
-function setAnalyzerLinks(href) {
-    for (const id of ["openAnalyzer", "openAnalyzerBig"]) {
-        $(id).hidden = !href;
-        $(id).setAttribute("href", href || "#");
-    }
-}
-
-/** Shows or hides the Options panel and its tabs, and draws the chart with or without the Y projection. */
-function showOptions() {
-    const projection = state.optionsTab === "projection";
-    $("optionsPanel").hidden = !state.optionsOpen;
-    for (const id of ["optionsToggle", "optionsToggleBig"]) {
-        $(id).setAttribute("aria-expanded", String(state.optionsOpen));
-    }
-    $("tabProjection").setAttribute("aria-selected", String(projection));
-    $("tabProjection").tabIndex = projection ? 0 : -1;
-    $("tabChart").setAttribute("aria-selected", String(!projection));
-    $("tabChart").tabIndex = projection ? -1 : 0;
-    $("panelProjection").hidden = !projection;
-    $("panelChart").hidden = projection;
-    state.projection = state.optionsOpen && projection;
-    renderChart();
-}
-
-// The information cards of the chart: how to use it, and what its table of statistics counts.
+// The card of how to read the chart, which the chart widget shows beside its heading.
 const HELP_PAGE = "help.html#browse";
 function chartCard() {
     return [
@@ -1171,62 +1122,6 @@ const MODES_CARD = [
     null,
     HELP_PAGE,
 ];
-const RANGE_CARD = [
-    "Time and value range",
-    [
-        ["Time window", "Drag across the plot to look at that window. Earlier and Later move it by half its span, from the range of the buttons too; Back to the selected range, or a double-click, returns to that range. The date and hour both ends share are written once, before the brackets."],
-        ["Value range", "Drag along an axis, or Tab to it and use the arrow keys, + and -, to choose the range of that unit. The control of its unit returns it to the automatic range; so does Home or a double-click, and All resets the window and every range. The statistics follow it."],
-        ["Notation", "A bracket includes the data at that end and a parenthesis leaves it out: [a, b] includes both ends, (a, b] leaves the start out."],
-    ],
-    null,
-    HELP_PAGE,
-];
-const OPTIONS_CARD = [
-    "Chart options",
-    [
-        ["Line", "Step holds a value until the next sample, Straight joins the samples, Smooth curves between them, Points draws the samples only."],
-        ["Y scale", "Symmetric log and Log compress large values. Log needs values above zero and Square root values not below zero; otherwise Symmetric log is shown, with the reason."],
-        ["Marks", "Auto marks the samples when few are in view, On marks every sample, Off hides them."],
-        ["Window", "How many samples the running average and the band use."],
-        ["Running average", "The mean of the last samples of the window, at each point."],
-        ["Standard deviation band", "One standard deviation around that mean."],
-    ],
-    null,
-    HELP_PAGE,
-];
-const STATISTICS_CARD = [
-    "Statistics",
-    "Computed from the samples now inside the chart: the time window shown and any value range dragged on an axis. " +
-        "The histogram at the right edge shows how they spread over the value axis; its line is the mean.",
-    null,
-    HELP_PAGE,
-];
-
-// Where the chart area sits on the page while it is shown in the large window.
-let plotHome = null;
-
-/** Moves the chart, its options and its table into the large window and draws them at its size. */
-function enlargeChart() {
-    const area = $("plotArea");
-    plotHome = { parent: area.parentNode, next: area.nextSibling };
-    $("chartDialogBody").append(area);
-    state.enlarged = true;
-    $("chartDialog").showModal();
-    renderChart();
-}
-
-/** Puts the chart area back on the page, draws it at the page size and returns the focus to its button. */
-function restoreChart() {
-    if (!plotHome) {
-        return;
-    }
-    plotHome.parent.insertBefore($("plotArea"), plotHome.next);
-    plotHome = null;
-    state.enlarged = false;
-    renderChart();
-    $("enlarge").focus();
-}
-
 function zoomTo(from, to) {
     state.window = { from, to };
     state.data.clear();
@@ -1272,52 +1167,39 @@ function panBy(direction) {
 }
 
 function renderChart() {
-    const host = $("chart");
     const { list } = chartList();
     $("limChart").textContent = String(state.plotted.length);
     $("limChartMax").textContent = String(LIMITS.chart);
     if (!list.length) {
         const answered = state.plotted.length > 0 && state.plotted.every((name) => state.data.has(name));
-        host.textContent = !state.selected.length
-            ? "Pick PVs in the list, then turn on their Plot box to draw them here."
-            : !state.plotted.length
-              ? "Turn on the Plot box of a PV in the table to draw it here."
-              : answered
-                ? "No samples in this time range. A PV that did not change has none; try a wider range."
-                : "Loading samples…";
-        setChartHead("");
-        setAnalyzerLinks("");
+        chart.message(
+            !state.selected.length
+                ? "Pick PVs in the list, then turn on their Plot box to draw them here."
+                : !state.plotted.length
+                  ? "Turn on the Plot box of a PV in the table to draw it here."
+                  : answered
+                    ? "No samples in this time range. A PV that did not change has none; try a wider range."
+                    : "Loading samples…",
+        );
         renderStats([]);
         renderPlots([]);
         return;
     }
     const first = list[0];
-    // How to read and use the chart is in the information card.
-    setChartHead("");
     const analyzer = new URLSearchParams();
     for (const d of list) {
         analyzer.append("pv", d.name);
     }
     analyzer.set("from", first.from.toISOString());
     analyzer.set("to", first.to.toISOString());
-    setAnalyzerLinks(`analyzer.html?${analyzer}`);
-    drawTimeSeries(host, {
+    chart.draw({
         series: list.map((d) => ({ name: d.name, egu: d.egu, points: d.points, focus: d.name === state.focus })),
         from: first.from,
         to: first.to,
         gapMs: Infinity,
-        legend: true,
-        projection: state.projection,
-        // The table of the Y projection is in the Projection tab above the chart, on the page and in the large window alike.
-        statisticsHost: $("projectionStats"),
-        info: (topic) => (topic === "statistics" ? infoButton(...STATISTICS_CARD) : topic === "range" ? infoButton(...RANGE_CARD) : null),
         windowChosen: Boolean(state.window),
         canPanLater: Boolean(state.window) && Date.now() - state.window.to.getTime() >= 2000,
-        onPan: panBy,
-        height: state.enlarged ? Math.max(380, window.innerHeight - 320) : undefined,
-        options: state.chartOptions,
-        onZoom: zoomTo,
-        onReset: resetWindow,
+        analyzerHref: `analyzer.html?${analyzer}`,
     });
     renderStats(list);
     renderPlots(list);
@@ -1773,49 +1655,18 @@ function wire() {
     $("results").addEventListener("focus", () => {
         $("results").setAttribute("aria-activedescendant", `row-${state.active}`);
     });
-    $("chartInfo").append(infoButton(...chartCard()));
-    $("chartDialogInfo").append(infoButton(...chartCard()));
-    $("enlarge").addEventListener("click", enlargeChart);
-    $("chartDialogClose").addEventListener("click", () => $("chartDialog").close());
-    $("chartDialog").addEventListener("close", restoreChart);
-    // A click on the dark backdrop, which is the dialog element itself, closes the window; Esc closes it natively.
-    $("chartDialog").addEventListener("click", (event) => {
-        if (event.target === $("chartDialog")) {
-            $("chartDialog").close();
-        }
+    chart = createChart($("chartHost"), {
+        id: "browse",
+        title: "Inspect",
+        dialogTitle: "Chart",
+        help: chartCard(),
+        helpHref: HELP_PAGE,
+        legend: true,
+        onZoom: zoomTo,
+        onPan: panBy,
+        onReset: resetWindow,
+        onOptionsChange: () => renderTable(),
     });
-    // The Options toggle (on the page and in the large window) opens the panel; its tabs are Projection and Chart.
-    for (const id of ["optionsToggle", "optionsToggleBig"]) {
-        $(id).addEventListener("click", () => {
-            state.optionsOpen = !state.optionsOpen;
-            showOptions();
-        });
-    }
-    for (const [id, tab] of [["tabProjection", "projection"], ["tabChart", "chart"]]) {
-        $(id).addEventListener("click", () => {
-            state.optionsTab = tab;
-            showOptions();
-            $(id).focus();
-        });
-        $(id).addEventListener("keydown", (event) => {
-            if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-                state.optionsTab = state.optionsTab === "projection" ? "chart" : "projection";
-                showOptions();
-                $(state.optionsTab === "projection" ? "tabProjection" : "tabChart").focus();
-            }
-        });
-    }
-    $("panelChart").append(
-        buildChartOptions(
-            state.chartOptions,
-            (next) => {
-                state.chartOptions = next;
-                renderTable();
-                renderChart();
-            },
-            infoButton(...OPTIONS_CARD)
-        )
-    );
     $("bulkPause").addEventListener("click", () => bulkAction("pause"));
     $("bulkResume").addEventListener("click", () => bulkAction("resume"));
     $("bulkStop").addEventListener("click", () => bulkAction("stop"));

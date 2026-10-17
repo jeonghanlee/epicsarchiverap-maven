@@ -911,130 +911,15 @@ dialog input[type="number"] {
     }
 }
 
-.zoombar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 18px;
-    margin: 0 0 4px;
-}
-
-a.plain-link {
-    display: inline-block;
-    margin: 8px 0 0;
-    color: var(--accent);
-    font-size: 0.9375rem;
-}
-
-@media (max-width: 600px) {
-    a.plain-link {
-        display: inline-flex;
-        align-items: center;
-        min-height: 44px;
-    }
-}
-
-
-.inspect-head,
-.chart-dialog-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 2px 16px;
-}
-
-.inspect-head h2,
-.chart-dialog-head h2 {
-    margin: 0;
-}
-
-.head-note {
-    color: var(--ink-3);
-    font-size: 0.875rem;
-}
-
-button.opt-toggle,
-button.opt-toggle:hover {
-    margin: 0 auto;
-    padding: 4px 8px;
-    background: none;
-    border: 0;
-    border-radius: var(--radius);
-    color: var(--accent);
-    font: inherit;
-    font-size: 0.875rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    cursor: pointer;
-}
-
-button.opt-toggle:hover {
-    background: var(--c-accent-soft);
-}
-
-/* The mark of a collapsed and of an open panel is a small triangle drawn with borders. */
-.opt-toggle::after {
-    content: "";
-    display: inline-block;
-    margin-left: 8px;
-    border: 5px solid transparent;
-    border-left-color: currentColor;
-    vertical-align: middle;
-}
-
-.opt-toggle[aria-expanded="true"]::after {
-    margin-bottom: -5px;
-    border-left-color: transparent;
-    border-top-color: currentColor;
-}
-
-.chart-tools button.plain,
-.chart-dialog-head button.plain {
-    background: none;
-    border: 0;
-    border-bottom: 1px solid transparent;
-    border-radius: 0;
-    padding: 4px 0;
-    margin: 0;
-    color: var(--accent);
-    cursor: pointer;
-}
-
-.chart-tools button.plain:hover,
-.chart-dialog-head button.plain:hover {
-    border-bottom-color: currentColor;
-}
-
-#chartDialog {
-    width: 100vw;
-    height: 100vh;
-    max-width: none;
-    max-height: none;
-    margin: 0;
-    padding: 0;
-    overflow: auto;
-    border: 0;
-    border-radius: 0;
-}
-
-
-.chart-dialog-box {
-    padding: 14px 20px 20px;
-}
-
-.chart-dialog-head {
-    margin-bottom: 8px;
-}
-
-.chart-tools a.plain-link,
-.chart-dialog-head a.plain-link {
-    margin-right: 18px;
-    font-weight: 600;
-}
-
 /* The two notes under the Selected row take no room while they hold no text. */
 #limitNote:empty,
 #actionNote:empty {
     margin: 0;
     padding: 0;
+}
+
+/* The headings of the chart row and of the large window sit flush with their buttons. */
+.inspect-head h2,
+.chart-dialog-head h2 {
+    margin: 0;
 }

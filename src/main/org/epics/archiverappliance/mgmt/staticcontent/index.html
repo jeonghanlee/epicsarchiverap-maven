@@ -125,30 +125,7 @@
         <p id="limitNote" class="error" role="status"></p>
         <p id="actionNote" class="sub" role="status"></p>
 
-        <div class="inspect-head">
-          <h2 class="area">Inspect <span id="chartInfo"></span></h2>
-          <button type="button" id="optionsToggle" class="opt-toggle" aria-expanded="false" aria-controls="optionsPanel">Options</button>
-          <span class="chart-tools">
-            <a id="openAnalyzer" class="plain-link" href="#" target="_blank" rel="noopener" hidden>Open in the analyzer</a>
-            <button type="button" id="enlarge" class="plain">Enlarge chart</button>
-          </span>
-        </div>
-        <div id="plotArea">
-        <div class="zoombar">
-          <span id="chartNote" class="head-note"></span>
-        </div>
-        <div class="opt-panel" id="optionsPanel" hidden>
-          <div class="opt-tabs" role="tablist" aria-label="Options">
-            <button type="button" role="tab" class="opt-tab" id="tabProjection" aria-controls="panelProjection" aria-selected="true">Projection</button>
-            <button type="button" role="tab" class="opt-tab" id="tabChart" aria-controls="panelChart" aria-selected="false" tabindex="-1">Chart</button>
-          </div>
-          <div class="opt-body" id="panelProjection" role="tabpanel" aria-labelledby="tabProjection">
-            <div id="projectionStats"></div>
-          </div>
-          <div class="opt-body" id="panelChart" role="tabpanel" aria-labelledby="tabChart" hidden></div>
-        </div>
-        <div id="chart" class="chart"></div>
-        </div>
+        <div id="chartHost"></div>
         <h2 class="area table-head">PVs <span id="selN" class="num">0</span> <span class="limits num">table <span id="limScan">0</span>/<span id="limScanMax">100</span></span></h2>
         <div class="scroll">
           <table class="pvs" id="pvTable" aria-label="Table of PVs">
@@ -215,18 +192,6 @@
       <button type="button" role="menuitem" id="menuMaintenance">Maintenance…</button>
       <button type="button" role="menuitem" id="menuStop" class="danger">Stop archiving…</button>
     </div>
-
-    <dialog id="chartDialog" aria-labelledby="chartDialogTitle">
-      <div class="chart-dialog-box">
-        <div class="chart-dialog-head">
-          <h2 id="chartDialogTitle">Chart <span id="chartDialogInfo"></span></h2>
-          <button type="button" id="optionsToggleBig" class="opt-toggle" aria-expanded="false" aria-controls="optionsPanel">Options</button>
-          <a id="openAnalyzerBig" class="plain-link" href="#" target="_blank" rel="noopener" hidden>Open in the analyzer</a>
-          <button type="button" id="chartDialogClose" class="plain">Close</button>
-        </div>
-        <div id="chartDialogBody"></div>
-      </div>
-    </dialog>
 
     <dialog id="detailsDialog" class="details" aria-labelledby="detailsTitle">
       <div class="dialog-box">

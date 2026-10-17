@@ -1,8 +1,9 @@
 // The Archive PVs page: names are typed or pasted, requested in one call, and followed until each one is archived.
 // The table lists the PVs requested in this visit, with the answer of the request, the state read back from the
 // appliance and the actions of that state.
+import { infoButton } from "../comm/js/aa/card.js";
+import { node } from "../comm/js/aa/dom.js";
 import * as api from "./browse/api.js";
-import { infoButton } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -41,17 +42,6 @@ let minimumPeriod = 0.1;
 let pollTimer = 0;
 let fastUntil = 0;
 let stopTargets = [];
-
-function node(tag, attributes, ...children) {
-    const element = document.createElement(tag);
-    for (const [key, value] of Object.entries(attributes || {})) {
-        if (value !== undefined && value !== null) {
-            element.setAttribute(key, value);
-        }
-    }
-    element.append(...children.filter((child) => child !== null && child !== undefined));
-    return element;
-}
 
 function say(text, isError) {
     const outcome = $("outcome");

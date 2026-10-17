@@ -1,8 +1,10 @@
 // The Operations page: for the person who looks after the appliance. Each section has a card that says when its
 // numbers are an attention or a problem and what to do; the judgements are made in system/judge.js and the thresholds
 // are listed at the end of the page.
-import { drawTimeSeries } from "../comm/js/aa/chart.js";
-import { appliances, get, node, number, pauseResume, settled } from "./system/api.js";
+import { createChart } from "../comm/js/aa/chart.js";
+import { infoButton } from "../comm/js/aa/card.js";
+import { node } from "../comm/js/aa/dom.js";
+import { appliances, get, number, pauseResume, settled } from "./system/api.js";
 import {
     DROPPED_REPORTS,
     THRESHOLDS,
@@ -18,7 +20,7 @@ import {
     groupByHost,
 } from "./system/judge.js";
 import { drawUsage, usageGroups } from "./system/treemap.js";
-import { HEAP_WORDS, chooseAppliance, infoButton, statusNode, timeText } from "./system/view.js";
+import { HEAP_WORDS, chooseAppliance, statusNode, timeText } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_MS = 30000;
@@ -495,6 +497,11 @@ function seriesByLabel(series, label) {
     return found ? found.data : null;
 }
 
+/** The id of a chart of this page: the widget keeps the options of the chart under it and prefixes its controls with it. */
+function chartId(title) {
+    return `ops-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+}
+
 function floorChart(host, title, floor) {
     const points = floor.data.map(([t, v]) => ({ t, v, s: 0 }));
     const lowest = floor.floor.map(([t, v]) => ({ t, v, s: 0 }));
@@ -504,10 +511,10 @@ function floorChart(host, title, floor) {
         node("h3", null, title, " ", infoButton("Heap and floor", HEAP_WORDS, null, HELP)),
         statusNode(floor.kind, floor.text)
     );
-    const chart = node("div", { class: "chart" });
-    section.append(chart);
+    const chartHost = node("div");
+    section.append(chartHost);
     host.append(section);
-    drawTimeSeries(chart, {
+    createChart(chartHost, { id: chartId(title), idPrefix: chartId(title), dialogTitle: title, helpHref: HELP, legend: true }).draw({
         series: [
             { name: "heap", egu: "%", points, focus: false, quiet: true },
             { name: "floor", egu: "%", points: lowest, focus: true },
@@ -515,7 +522,6 @@ function floorChart(host, title, floor) {
         from: new Date(points[0].t),
         to: new Date(points[points.length - 1].t),
         gapMs: 600000,
-        legend: true,
     });
     const rhythm = floor.rhythm === null ? "" : ` A collection runs about every ${floor.rhythm.toFixed(0)} minutes.`;
     section.append(node("p", { class: "sub" }, `Lowest after a collection: ${floor.first.toFixed(0)} % at the start of the day, ${floor.last.toFixed(0)} % now.${rhythm}`));
@@ -568,10 +574,15 @@ function renderProcesses(data) {
     if (load && load.length > 1) {
         const points = load.map(([t, v]) => ({ t, v: Number(v), s: 0 })).filter((p) => Number.isFinite(p.v));
         const section = node("div", { class: "process-chart" }, node("h3", null, "Load average of the host"));
-        const chart = node("div", { class: "chart" });
-        section.append(chart);
+        const chartHost = node("div");
+        section.append(chartHost);
         host.append(section);
-        drawTimeSeries(chart, { series: [{ name: "load", egu: "", points, focus: true }], from: new Date(points[0].t), to: new Date(points[points.length - 1].t), gapMs: 600000, labelNames: false });
+        createChart(chartHost, { id: chartId("load"), idPrefix: chartId("load"), dialogTitle: "Load average of the host", helpHref: HELP, labelNames: false }).draw({
+            series: [{ name: "load", egu: "", points, focus: true }],
+            from: new Date(points[0].t),
+            to: new Date(points[points.length - 1].t),
+            gapMs: 600000,
+        });
         const high = Math.max(...points.map((p) => p.v));
         section.append(
             node("p", { class: "sub" }, `One-minute load average of the host: now ${points[points.length - 1].v.toFixed(1)}, highest ${high.toFixed(1)}. The appliance does not report the number of cores, so no judgement is made; a load above the number of cores means processes wait for a processor.`),

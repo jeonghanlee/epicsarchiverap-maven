@@ -12,6 +12,8 @@
 # SR:DIAG:BADTIME is stamped with an undefined time (TSE -2 and no source of time), so the engine drops every event of it
 #   as a time stamp it refuses and getPVsByDroppedEventsTimestamp lists it; it has no unit and no limit.
 # FAST:WAVE:1 is a waveform of 16 elements, for the check of an array PV in a list.
+# SR:OP:MODE is an enum, SR:OP:MESSAGE a string and SR:INJ:COUNT an integer, for the check of the value of each data type in a list;
+# SR:OP:MODECODE is the number that drives the enum and is not archived.
 
 record(calc, "SR:TICK") {
     field(SCAN, "1 second")
@@ -189,4 +191,34 @@ record(waveform, "FAST:WAVE:1") {
     field(NELM, "16")
     field(FTVL, "DOUBLE")
     field(DESC, "waveform of 16 elements")
+}
+record(calc, "SR:OP:MODECODE") {
+    field(SCAN, "5 second")
+    field(CALC, "FLOOR(A/60)%3")
+    field(INPA, "SR:TICK")
+    field(DESC, "helper: mode number, not archived")
+}
+record(mbbi, "SR:OP:MODE") {
+    field(DTYP, "Soft Channel")
+    field(SCAN, "5 second")
+    field(INP, "SR:OP:MODECODE")
+    field(ZRVL, "0")
+    field(ZRST, "Top-up")
+    field(ONVL, "1")
+    field(ONST, "Decay")
+    field(TWVL, "2")
+    field(TWST, "Maintenance")
+    field(DESC, "operating mode as an enum")
+}
+record(stringin, "SR:OP:MESSAGE") {
+    field(DTYP, "Soft Channel")
+    field(SCAN, "5 second")
+    field(INP, "SR:OP:MODE")
+    field(DESC, "operating mode as a string")
+}
+record(longin, "SR:INJ:COUNT") {
+    field(DTYP, "Soft Channel")
+    field(SCAN, "1 second")
+    field(INP, "SR:TICK")
+    field(DESC, "injection counter as an integer")
 }

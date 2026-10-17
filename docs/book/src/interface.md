@@ -157,6 +157,8 @@ The chart of the Browse PVs page draws up to 5 PVs. Each unit has its own value 
 | Enlarge chart | Draws the chart again in a window as large as the browser window; Esc or Close returns |
 | Open in the analyzer | Opens the PVs and the time window of the chart in the analyzer, in a new tab; the link is hidden until the chart has PVs |
 
+The charts of the System pages Operations and Retrieval performance carry the same Options (the Projection and Chart tabs) and Enlarge chart as the chart of the Browse PVs page, and the same drawing controls on the plot. They have no Open in the analyzer link and no Earlier, Later or Back to the selected range, because the appliance keeps only the last 24 hours of its own measures in memory, one point a minute, and stores nothing older. The options chosen on a chart are kept while the page is open and stay after the page refreshes itself every 30 seconds; they are not kept when you leave the page.
+
 ## The list of PV names
 
 Archived names do not leave the list when their IOC stops, so a change of

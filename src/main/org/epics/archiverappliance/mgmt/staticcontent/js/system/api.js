@@ -20,17 +20,6 @@ export function plain(text) {
     return String(text).replace(/&raquo;/g, ">").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 }
 
-export function node(tag, attributes, ...children) {
-    const element = document.createElement(tag);
-    for (const [key, value] of Object.entries(attributes || {})) {
-        if (value !== undefined && value !== null) {
-            element.setAttribute(key, value);
-        }
-    }
-    element.append(...children.filter((child) => child !== null && child !== undefined));
-    return element;
-}
-
 /** The appliances of the cluster with their headline metrics and the management uptime. */
 export async function appliances() {
     const [load, instances] = await Promise.all([get("../bpl/getApplianceMetrics"), get("../bpl/getInstanceMetrics")]);

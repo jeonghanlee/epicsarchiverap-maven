@@ -3,19 +3,10 @@
 // are both 0 and a limit that is NaN read "not set". A time is shown as the call writes it, under the heading of its kind
 // (docs/time-handling.md): the time of the data, received, recorded, moved, and the times of the connection, of the settings and of
 // the last request.
+import { node } from "../../comm/js/aa/dom.js";
+
 const NOT_PROVIDED = "not provided";
 const NOT_SET = "not set";
-
-function node(tag, attributes, ...children) {
-    const element = document.createElement(tag);
-    for (const [key, value] of Object.entries(attributes || {})) {
-        if (value !== undefined && value !== null) {
-            element.setAttribute(key, value);
-        }
-    }
-    element.append(...children.filter((child) => child !== null && child !== undefined));
-    return element;
-}
 
 /** The text of a value: undefined is a name the call does not hold, an empty value or NaN is not set. */
 function written(value) {

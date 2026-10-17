@@ -1,6 +1,8 @@
 // The System overview: three questions answered first, then one row per measure with what it means and where the
 // detail is. The judgements are made in system/judge.js.
-import { appliances, get, node, number, settled } from "./system/api.js";
+import { infoButton } from "../comm/js/aa/card.js";
+import { node } from "../comm/js/aa/dom.js";
+import { appliances, get, number, settled } from "./system/api.js";
 import {
     DROPPED_REPORTS,
     THRESHOLDS,
@@ -14,7 +16,7 @@ import {
     measureMap,
     worst,
 } from "./system/judge.js";
-import { chooseAppliance, clock, infoButton, pageHref, statusNode } from "./system/view.js";
+import { chooseAppliance, clock, pageHref, statusNode } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_MS = 20000;

@@ -1,16 +1,7 @@
 // The External servers tab of System: the other EPICS Archiver Appliance clusters this appliance serves data for.
-const $ = (id) => document.getElementById(id);
+import { node } from "../comm/js/aa/dom.js";
 
-function node(tag, attributes, ...children) {
-    const element = document.createElement(tag);
-    for (const [key, value] of Object.entries(attributes || {})) {
-        if (value !== undefined && value !== null) {
-            element.setAttribute(key, value);
-        }
-    }
-    element.append(...children);
-    return element;
-}
+const $ = (id) => document.getElementById(id);
 
 async function getJSON(path, parameters) {
     const query = parameters ? `?${new URLSearchParams(parameters)}` : "";
