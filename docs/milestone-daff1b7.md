@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: Prepare G6's real-path delay and measurement preflight in `docs/milestone-daff1b7.md` under M46 / T5. Remaining acceptance is one four-hour stress observation under T6-T7 after successful preflight and execution authorization. M66 is separate Backlog work waiting on G8.
+Next session entry point: M46 and G6 are Complete; #29 records the passed preflight, four-hour stress observation and native PB comparison and is closed as completed. Preserve originals. For the separate later campaign, resume M66 in this document only after G8 records readiness of the required Ansible tools; M66 remains Blocked in Backlog. Ansible test-tool maintenance is independent of this product fix.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46 and G6 are complete; M48 still waits on G7 from its responsible session.
 
@@ -67,7 +67,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M43 | One engine CA context never receives search replies | Milestone | Complete | No | | The shared UDP search port is reproduced with real CAJ contexts on Rocky 8.10 and Debian 13; the engine compares its command threads' search ports and recreates the earlier-bound context of a sharing pair (7adc7d5a); the new test fails without the check and passes with it, 901 default tests, 26 engine CA tests and the Maven workflow pass, and 30 restarts on a Rocky 8.10 guest were clean; issue #26 closed as completed on 2026-10-05; why the field rate exceeds the probe rate stays open; [detail](#m43---one-engine-ca-context-never-receives-search-replies) |
 | Phase 2 | M44 | Preserve ETL source data when append fails | Milestone | Complete | No | | A failed append retains its source partition, is excluded from moved totals and is reported as a failed job; recovery and ordinary transfers preserve the required samples; landed in f8fa719d, Maven run 37551730326 succeeded, issue #27 closed on 2026-10-07; [detail](#m44---preserve-etl-source-data-when-append-fails) |
 | Phase 2 | M45 | Use a full-cadence deadline for ETL startup and scheduled passes | Milestone | Complete | No | G5 | Overrun means endedAt is strictly later than plannedAt plus cadence; real-job regressions cover startup wait, scheduled delay and deadline boundaries, with scheduling and physical transfer preserved; landed in 120d53fe, Maven run 37698987276 succeeded, issue #28 closed on 2026-10-07; [detail](#m45---use-a-full-cadence-deadline-for-etl-startup-and-scheduled-passes) |
-| Phase 2 | M46 | Sample buffers sized with a time margin | Milestone | Blocked | No | G6 | Every PV's sample buffer holds one write period of samples plus `sampleBufferMarginSeconds` (default and minimum 1.0 s) instead of one extra sample (6c6b973a); capacity, property and real-IOC tests pass, and a 500 ms write-pass delay loses nothing; the preflight and one four-hour stress run are G6; [detail](#m46---sample-buffers-sized-with-a-time-margin) |
+| Phase 2 | M46 | Sample buffers sized with a time margin | Milestone | Complete | No | G6 | Time-margin correction 6c6b973a; capacity/property/real-IOC tests, bounded preflight and one 14400-second stress observation pass; zero buffer-full losses across 903 PVs and 15840000 exact fast-input/PB matches; #29 closed as completed on 2026-10-16; [detail](#m46---sample-buffers-sized-with-a-time-margin) |
 | Phase 2 | M47 | Management interface and data viewer replacement | Milestone | Complete | No | | The 35 interface files of jeonghanlee/epicsarchiverap-env@3353b74 land in d0932d1b with the jQuery, flot and viewer archive assets removed; 254 static checks run in the CI as scripts/ui-static-checks.bash and the book describes the pages (696117bc); issue #30 closed as completed on 2026-10-11; [detail](#m47---management-interface-and-data-viewer-replacement) |
 | Phase 2 | M48 | MariaDB JDBC driver 3.5.10 | Milestone | Blocked | No | G7 | `mariadb-java-client` 3.5.10 in every WAR (61e1b4c5), LICENCES/NOTICE lists the 43 runtime jars, the CI run passes; the socket and TCP installation checks of aa-env at a pin at or after 61e1b4c5 are G7; [detail](#m48---mariadb-jdbc-driver-3510) |
 | Phase 2 | M49 | Engine shutdown polls the CA command queue at its own cadence | Milestone | Complete | No | | `JCACommandThread.shutdown()` checks the queue before sleeping and polls every 100 ms under the 30 s cap (9a0c9677); `shutdownNow()` 1.3 s instead of 10.4 s, the default unit set 12 min 47 s instead of 34 min 52 s; issue #32 closed as completed on 2026-10-11; [detail](#m49---engine-shutdown-polls-the-ca-command-queue-at-its-own-cadence) |
@@ -92,7 +92,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Tracking | G3 | Journald layout observed on a deployed host | External gate | Complete | No | | epicsarchiverap-env reports its logging item's check at or after the M18 layout commit: per identifier, ERROR lines at PRIORITY 3 and INFO lines at 6 on a deployed host; [detail](#g3---journald-layout-observed-on-a-deployed-host) |
 | Tracking | G4 | ansible-provision deploy path for aa-env with SQLite | External gate | Complete | No | | ansible-provision deploys aa-env at or past bbe0968 with the MariaDB and the SQLite backend on a lab VM, and LAB-ansible-provision reports it; [detail](#g4---ansible-provision-deploy-path-for-aa-env-with-sqlite) |
 | Tracking | G5 | ETL pass deadline plan authorization and issue creation | External gate | Complete | No | | The current M45 plan is accepted and explicitly authorized, and its prepared bug issue exists on GitHub before implementation; [detail](#g5---etl-pass-deadline-plan-authorization-and-issue-creation) |
-| Tracking | G6 | Four-hour appliance stress run at or after 6c6b973a with zero sample-buffer-full losses | External gate | Open | No | | ansible-provision supplies successful real-path preflight and four-hour 903-PV stress evidence under M46 / T5-T7; [detail](#g6---four-hour-appliance-stress-run-at-or-after-6c6b973a-with-zero-sample-buffer-full-losses) |
+| Tracking | G6 | Four-hour appliance stress run at or after 6c6b973a with zero sample-buffer-full losses | External gate | Complete | No | | M46 / T5-T7 passed on corrected-build source 629533a3; complete measured exposure coverage and zero losses; results recorded in #29 and authorized closure observed on 2026-10-16; [detail](#g6---four-hour-appliance-stress-run-at-or-after-6c6b973a-with-zero-sample-buffer-full-losses) |
 | Tracking | G7 | aa-env installation checks of the MariaDB socket and TCP paths at 61e1b4c5 or later | External gate | Open | No | | epicsarchiverap-env reports both MariaDB installation checks passing at a pin at or after 61e1b4c5; [detail](#g7---aa-env-installation-checks-of-the-mariadb-socket-and-tcp-paths-at-61e1b4c5-or-later) |
 
 ### Decisions
@@ -4303,7 +4303,7 @@ The repository owner accepts and explicitly authorizes the current M45 implement
 Origin: daff1b7 / M46
 Identity History: none
 GitHub Issue: #29 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/29)
-Status: Blocked
+Status: Complete
 
 ##### Summary
 
@@ -4352,17 +4352,17 @@ Out of scope: finding the source of the write-pass delay; the write scheduler an
 
 ##### Dependencies And Decisions
 
-- G6 is Open: ansible-provision supplies the corrected-build deployment, real-path delay/measurement preparation and four-hour result; resume as In progress when G6 completes. Completed ETL/journal observations retain their original builds and records.
+- G6 completed on 2026-10-16: T5-T7 passed through the real deployment path, results were recorded in #29 and authorized closure was observed. The previously blocked work resumed as In progress and completed with all required checks satisfied. Completed ETL/journal observations retain their original builds and records.
 - Decision Date: 2026-10-15. The remaining deployment acceptance is one four-hour stress run after short preflight. Repeat the 10-minute schedule 24 times; inspect cumulative results after one, two and three hours and decide at four hours. Preparation, warm-up and final comparison are outside the observation. No automatic extension or rerun.
 - Decision Date: 2026-10-15. The later integrated 24-hour campaign is Backlog M66 after G8 confirms the required Ansible tools are ready. It does not block closure after G6 succeeds.
-- The completed production scope retains its acceptance and implementation authorization of 2026-10-11. New stress-harness implementation and VM execution have not been authorized.
+- The completed production scope retains its acceptance and implementation authorization of 2026-10-11. Decision Date: 2026-10-15. Direct execution of the accepted stress preparation, bounded preflight and conditional four-hour run is authorized. Preserve existing guests and evidence; no automatic retry or extension.
 - Decision Date: 2026-10-11. The margin is a time with a floor of 1.0 s, not a multiplier of the expected sample count; the old multiplier key is dropped rather than kept as an alias.
 
 ##### Implementation Plan
 
 Plan Status: accepted
 Plan Acceptance: 2026-10-15; owner selected one four-hour run and accepted measured-stress and bounded-preflight corrections
-Implementation Authorization: none for the revised stress harness or VM execution
+Implementation Authorization: 2026-10-15; owner requested this session to prepare and directly execute the accepted bounded preflight and, only after Passed, the four-hour observation
 Superseded Plan Artifacts: the unspecified multi-hour criterion at 0a501025caec8b107c956617e2b10b56b0779ef9; completed T1-T4 evidence is retained
 
 1. Compute the capacity from a time margin in `ArchiveEngine` and read the property in `EngineContext`; remove `sampleBufferCapacityAdjustment` from code, properties files and the book. Closes with T1 and T2.
@@ -4427,23 +4427,24 @@ After Passed, start the main observation in a fresh engine execution with the sa
 | T2 | 2026-10-11 | JDK 21, wrapper Maven, tree 6c6b973a | Pass | 3 tests pass |
 | T3 | 2026-10-11 | Local soft IOC, tree 6c6b973a | Pass | 500 ms delay: 0 lost events on 0.1 s, 1 s and 10 s PVs; 1.5 s delay: losses on the 0.1 s PVs only. At 162269e7 the same harness lost one sample on 17 of 39 fast PVs at 130 ms and on all 39 at 200 ms |
 | T4 | 2026-10-11T09:16:02Z | GitHub Actions, run 38125132721 on 1f099b2f (the next commit, which changes only the CI timeout) | Pass | The run on 6c6b973a itself was cancelled by the push of 1f099b2f under the workflow's cancel-in-progress rule |
-| T5 | Not run | Corrected-build appliance and shipped fixture | Pending | Injection/measurement mechanism is unverified; plan preparation only |
-| T6 | Not run | T5 deployment | Pending | Four-hour observation has not started |
-| T7 | Not run | T6 originals and native readers | Pending | No new input/PB comparison |
+| T5 | 2026-10-15 (America/Los_Angeles) | Separate Rocky 8.10 appliance, source 629533a3, shipped 903-PV fixture | Incomplete | Initial tool omitted the delay in six alternating last-write passes; stopped after 403.80 s; all 903 recorded loss counters were zero; originals retained; no main observation started from this attempt |
+| T5 | 2026-10-15 (America/Los_Angeles) | Fresh separate appliance, same source and fixture; corrected observer and native write-delay tool | Pass | One explicitly authorized corrected-tool attempt finished in 575.05 s; readiness in 152.56 s; effective write period 10 s, margin 1 s and capacities 110/11/2; all 110 targets met both measured levels; 24 first/last alternating passes each had exactly one delay; all 903 normal counters zero; native PB matched 396000 fast inputs with no missing/conflicting events; separate 1500 ms control lost five events per fast PV, 550 total, exactly matching every fast PV's counter and PB gaps |
+| T6 | 2026-10-15T20:34:17-07:00 to 2026-10-16T00:34:17-07:00 | Source 629533a3, same verified configuration and shipped 903-PV fixture; fresh continuous engine execution | Pass | Exactly 14400 monotonic seconds, 24 cycles, 1152 native delays and all four hourly checkpoints; zero losses across 903 counters; all 110 frozen targets met both measured levels in every cycle, 5280 combinations, at least 12 qualifying exposures each; no missing coverage or tool findings |
+| T7 | 2026-10-16 | T6 retained independent inputs and unreduced physical PB; shipped native decoder | Pass | Final real writes/flush and native comparison completed after the observation cutoff; all 15840000 fast inputs across 110 PVs matched timestamps/nanoseconds, values, status, severity, order and multiplicity; missing/conflicting events zero; final verdict Passed; originals retained |
 
 ##### Closure Evidence
 
-- 6c6b973a is on origin/modernize. Issue #29 body carries the measurements, the change and two checked criteria; its third criterion awaits four-hour evidence under G6, so M46 stays Blocked. No new stress result is claimed.
+- T1-T4 retain the implementation and CI verification of the time-margin correction in 6c6b973a. Deployed source 629533a3 passed T5-T7, including the bounded preflight, complete four-hour positive observation and native PB reconciliation. Both commits are ancestors of observed origin/modernize at 43cb5572ca4c1f74e821462981b593eb6a962e7e on 2026-10-16; recheck with `git merge-base --is-ancestor <commit> origin/modernize`. G6 is Complete. Issue #29's final body and closure comment exactly matched the prepared files on readback; all three acceptance criteria are checked. Authorized closure was observed with state CLOSED, reason completed and closedAt 2026-10-16T08:07:11Z. Originals remain retained; M66 and Ansible test-tool maintenance are independent follow-up work.
 
 ##### GitHub Projection
 
 Title: Sample buffer overflow loses samples of 0.1 s PVs
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: CLOSED
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-15T21:25:56Z; live #29 is OPEN with label bug, no milestone and two criteria checked; its unspecified multi-hour criterion differs from the prepared four-hour body update
+Last Compared: 2026-10-16; live #29 is CLOSED with reason completed, label bug, assignee jeonghanlee, no milestone and all three criteria checked. Body and closure comment matched their prepared files exactly; updatedAt and closedAt are 2026-10-16T08:07:11Z. Recheck with `gh issue view 29 --repo jeonghanlee/epicsarchiverap-maven` and GET `repos/jeonghanlee/epicsarchiverap-maven/issues/29` for state_reason.
 
 #### M47 - Management interface and data viewer replacement
 
@@ -6035,7 +6036,7 @@ GitHub Milestone: none
 
 Origin: daff1b7 / G6
 GitHub Issue: #29 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/29)
-Status: Open
+Status: Complete
 
 ##### Summary
 
@@ -6053,11 +6054,12 @@ ansible-provision prepares a separate corrected-build deployment of its 903-PV f
 | Observed At | Result | Evidence |
 | --- | --- | --- |
 | Not run | Pending | The ansible-provision session was told of 6c6b973a on 2026-10-11; no corrected-build run reported |
-| 2026-10-15 | Pending | Four-hour scope selected; design review identified unverified injection/measurement and required comparison coverage; M46 / T5-T7 remain unexecuted |
+| 2026-10-15 | In progress | M46 / T5 passed one explicitly authorized corrected-tool attempt in 575.05 s with complete 110-PV stress coverage, zero normal loss and reconciled expected loss; T6 started at 2026-10-15T20:34:17-07:00 in a fresh engine process; the four-hour result and T7 remain unverified |
+| 2026-10-16 | Pass | M46 / T6-T7 completed: 14400 seconds, 24 cycles, 1152 native delays, all 110 targets meeting both levels in every cycle, zero losses on 903 PVs and 15840000 exact fast-input/PB matches. Results are recorded in #29; exact body/comment readback and authorized closure as completed were verified at closedAt 2026-10-16T08:07:11Z. |
 
 ##### Closure Evidence
 
-- none
+- Complete on 2026-10-16. M46 / T5-T7 establish all required real-path preflight, continuous four-hour stress, measured per-target/per-cycle exposures, all-PV counters and exact fast-input/native PB comparisons. Issue #29 records the result with all three criteria checked and is CLOSED as completed at 2026-10-16T08:07:11Z; body and closure comment matched their prepared files on readback. Original runtime evidence is retained.
 
 #### G7 - aa-env installation checks of the MariaDB socket and TCP paths at 61e1b4c5 or later
 
