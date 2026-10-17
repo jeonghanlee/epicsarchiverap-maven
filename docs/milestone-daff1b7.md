@@ -10,7 +10,7 @@ Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f58
 
 Next session entry point: M46 and G6 are Complete; #29 records the passed preflight, four-hour stress observation and native PB comparison and is closed as completed. Preserve originals. For the separate later campaign, resume M66 in this document only after G8 records readiness of the required Ansible tools; M66 remains Blocked in Backlog. Ansible test-tool maintenance is independent of this product fix.
 
-Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed.
+Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is implemented and verified locally on 2026-10-17; it waits for the owner's commit and push and for the Maven and Pages workflows.
 
 Other open work: M28 (issue #12) resumes in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07, both startup transfers and the shortened STS repeat preserved the expected old interval, and a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. M28 stays In progress until the revised focused checks and soak criteria have execution evidence. M36's reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02; do not resend it. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) owns full VM revalidation.
 
@@ -5322,7 +5322,7 @@ Progress on 2026-10-16 at 14:26 PDT, observed state and not a change of the plan
 | T2 | 2026-10-16 | Same appliance | Pass | Details of `SR:BPM:02:X` and `FAST:SIG:1` (CA), `SR:BPM:01:X` and `SR:TICK` (PVA) and a paused PV: every value equals the three calls read before and after opening the window, each time equals the string of `getPVDetails` and sits under its kind, the three fields of the book are not shown; the unit of `FAST:SIG:1` reads `not set` (the call returns an empty string), the unit and the host of a PVA PV read `not provided` and their display, warning and alarm limits `not set`; the paused PV names the groups it cannot show; Esc, Close and a click outside close the window and return the focus to Details |
 | T3 | 2026-10-16 | Same appliance | Pass, with the observation in Progress | Five PVs of five units: one axis for each, three on the left and two on the right; the strip keeps 38 px before and after a drag over the plot and along an axis, its controls light, the ranges are intervals, the unit control and Back to the selected range return; the Projection tab and the Summary follow the time window, the Projection tab follows a value range and the Summary does not; a double-click returns; the legend hides and shows a line; the tooltip names each PV with its unit; Enlarge chart returns with Esc and Close; Line Straight and Y scale Log redraw; no sideways scroll and text of at least 14 px at 720 and 500 px; the strip above the Operations chart has no Earlier, Later and Back, as the criterion says |
 | T4 | 2026-10-16 | Local, JDK 21, Tomcat 9.0.121 | Pass | `bash scripts/ui-static-checks.bash` passes 372 checks; `MgmtPageLinksTest`, `IPApplianceXMLTest`, `LocalhostApplianceXMLTest` and `FQDNApplianceXMLTest` pass through the `integration` profile (4 tests) on the WARs of the working tree; the book builds and its links and figures resolve; every control the Help page and the book name for the page is on it (53 names, read from the Help section and the book tables and looked up on the page with the Details window open) |
-| T5 | 2026-10-16 | JDK 21 | Partial | `./mvnw -B -ntp clean verify` passes with 1006 tests and no failure on the working tree; the Maven and Pages workflows have not run |
+| T5 | 2026-10-17T00:00:51Z | JDK 21; GitHub Actions | Pass | `./mvnw -B -ntp clean verify` passed with 1006 tests on the working tree (2026-10-16); the Maven run 38984346243 and the Deploy docs to GitHub Pages run 38984346234 on a1747759 completed with success |
 
 ##### Closure Evidence
 
@@ -6103,6 +6103,8 @@ epicsarchiverap-env runs its installation checks of a MariaDB-backed appliance o
 | Interface console | M69 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes |  | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of the same record does; [detail](#m69---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
 | Interface console | M70 | Epoch seconds beside the text of a time in the management calls | Milestone | Not started | Yes |  | The management calls that write a time as text (`getPVStatus`, `getPVDetails` and the reports) also send the same instant as epoch seconds, so that a client can write it in another time zone; the existing fields stay; [detail](#m70---epoch-seconds-beside-the-text-of-a-time-in-the-management-calls) |
 | Interface console | M71 | Backward read of a small PB file | Milestone | Complete | No |  | A backward read of a PB file with one sample returns the sample, and a search for a time earlier than every sample of a small file returns not found and does not throw `Max iterations reached`; [detail](#m71---backward-read-of-a-small-pb-file) |
+| Interface analyzer | M72 | One chart widget with its controls | Milestone | In progress | No | M59, M58, D38 | Every page that plots draws through one widget, split into modules by role, that builds and keeps its controls: the Options panel with its state, Enlarge chart, the cards, the range strip, the legend and the tooltip; the Operations and Retrieval performance charts have the Options and Enlarge chart that the Browse PVs page has, and `browse.js` no longer builds any of them; [detail](#m72---one-chart-widget-with-its-controls) |
+| Verification | M73 | Reaction of the archiver to a record that changes while it is archived | Milestone | Not started | Yes |  | On a local appliance with a soft IOC, a change of the scan rate, of the unit, precision and limits, and of the record type of an archived PV is made while the PV is archived, and what the engine and the stores do with the samples before and after it is observed and recorded: which samples are kept, which are dropped and counted, and what the type information, the Details window and the data show; [detail](#m73---reaction-of-the-archiver-to-a-record-that-changes-while-it-is-archived) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Backlog Details
@@ -6705,6 +6707,185 @@ Observed State: CLOSED
 Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-10-16; `gh issue view 43` shows the title and the body of this detail, closed as completed with one comment, assignee jeonghanlee
+
+
+#### M72 - One chart widget with its controls
+
+Origin: daff1b7 / M72
+Identity History: none
+GitHub Issue: none
+Status: In progress
+
+##### Summary
+
+The chart component of M59 is a drawing function, `drawTimeSeries` in `staticcontent/js/aa/chart.js` (1122 lines), with the parts it draws; each page adds the controls itself. Read on 2026-10-16: `js/browse.js` holds the state of the options (`chartOptions`, `optionsOpen`, `optionsTab`, `projection`), the markup of the Options panel and its tabs, the Enlarge chart window (it moves the chart into a dialog and back), the link into the analyzer, the text of the four information cards of the chart, and the time window with its pan, zoom and return; the pages `js/operations.js` and `js/retrieval.js` pass the series, the window and a few drawing choices (the legend, the gap, whether the lines carry names) and nothing else, so their charts have no Options panel and no Enlarge chart; the data viewer (`retrieval/staticcontent/viewer/viewer.js`) draws one chart for each unit with the range strip turned off. The decision of 2026-10-14 in M59 says that the pages that plot carry the simple form with its options, and the Scope of M59 lists the Options panel and Enlarge chart in it; the completion criteria and step 3 of M59 narrowed the System pages to the legend and the tooltip, and M59 was closed against them. The owner's intent is one component that holds everything and that the pages only place.
+
+Also read on 2026-10-16: the helper `node` is defined in six places, not three (`js/system/api.js`, which three System pages import, `js/archive.js`, `js/browse.js` and `js/browse/details.js` with the same body, and `viewer/viewer.js` and `js/external.js` with a body that does not skip a null child). The first of the four information cards ("Reading the chart") is written for the Browse PVs table (the Plot boxes and the limit of PVs); only the cards of the range, the options and the statistics are generic. The information control and its card (`infoButton` in `js/system/view.js`, `button.info` and `.card` in `css/system.css`) belong to the management folder, which a widget in the shared folder cannot import; the Options CSS (`opt-*`) is already in the shared `css/chart.css`. The pages are all ES modules, and the build serves the whole shared folder as `ui/comm`, so a subfolder `js/aa/chart/` needs no change of the build. Operations and Retrieval performance build their chart host again at a refresh, so options kept in the host element would be lost. `drawTimeSeries` is 523 lines: the geometry and axes, the lines and marks, the Y projection (834 to 876), the direct labels, and the gestures and keys (942 to 1100).
+
+##### Scope
+
+One widget, `createChart(host, config)`, in the shared component (`staticcontent/js/aa/`), that builds and keeps what a chart needs and that every page places.
+
+What the widget holds:
+
+- The row of the chart with the Options button, the Enlarge chart button and the link into the analyzer when the page gives its address.
+- The Options panel with the tabs Projection and Chart and the state of the options (line, Y scale, marks, window, running average and band).
+- The Enlarge chart window, built by the widget, which closes with Esc and its Close button and returns the focus to its button; it covers the browser window, so there is no backdrop to click.
+- The cards of the chart: the range, the options and the statistics, written once with their link to the help page. The first card, how to read this chart, is given by the page, because its text names the controls of the page.
+- The range strip, the legend, the tooltip, the Y projection with its statistics and the gestures that `drawTimeSeries` has today.
+- A place for the display time zone in the configuration (`config.timeZone`), which M67 fills; this item sets no zone.
+
+The configuration of the widget:
+
+- `config`, given once: `id` (a string; the options and the open tab are kept in the module under it, so a page that builds its host again at each refresh keeps them), `idPrefix` (a prefix for the id of each control, for a page with more than one chart; without it the ids are `optionsToggle`, `enlarge`, `chart` and so on), `title` and `dialogTitle` (the headings of the row and of the large window; optional), `help` (the first card as `[title, rows, action, helpHref]`; optional), `helpHref` (the help page of the cards of the widget), `legend`, `labelNames`, `strip` (default true), `timeZone` (reserved for M67; the widget does not read it) and the optional callbacks `onZoom(from, to)`, `onPan(direction)`, `onReset()` and `onOptionsChange(options)`. The large window is built the first time Enlarge chart is pressed and is left in the page when it closes.
+- With no `onZoom` there is no drag over the plot; with no `onPan` and no `onReset` the strip has no Earlier, Later and Back to the selected range, as the System charts have today.
+- `draw(data)`, called at each refresh: `series`, `from`, `to`, `gapMs`, `windowChosen`, `canPanLater` and `analyzerHref` (a string, or null for no link). `options` reads the options chosen; Browse PVs reads `band` to show the column of the standard deviation and gives `onOptionsChange` to redraw its table.
+
+The modules. `staticcontent/js/aa/chart.js` stays as the entry that the pages import and exports `createChart`, `drawTimeSeries`, `axisRoom`, `labelRoom` and `CHART_OPTIONS`; its code moves, without a change of behavior, into `staticcontent/js/aa/chart/`:
+
+- `text.js`: `format`, `intervalText`, `windowLabel`, `shortNames`.
+- `series.js`: `finiteSeries`, `splitOnGaps`, `movingStats`, `lineLook`, `PALETTE`, `DASHES`.
+- `scales.js`: `makeValueScale`, `axisWidthOf`.
+- `layout.js`: `labelWidth`, `labelLayout`, `labelRoom`, `axisRoom` (the viewer imports the last two).
+- `strip.js`: `stripIcon`, `keepTipInside`, `stripControl`, `buildRangeStrip`.
+- `legend.js`: `buildLegend`. `statistics.js`: `buildStatistics`.
+- `options.js`: `CHART_OPTIONS` and `buildChartOptions`, the form of the Chart tab.
+- `projection.js`: from `drawTimeSeries`, the samples in view of each line, the rows of statistics and the bars and mean line of the Y projection; it takes the SVG, the drawn series, the scales, the ranges, the margins and the axis width as parameters and returns the rows.
+- `gestures.js`: from `drawTimeSeries`, the drag across the plot, the drag along an axis, the keys of an axis and the double-click; it takes the SVG, the geometry (`width`, `height`, `margin`, `plotTop`, `plotBottom`, `axisWidth`, `onLeft`, `onRight`, `axisAt`), the time scale, the value scales, the units, the ranges, the callbacks of the page and a `redraw` function.
+- `draw.js`: `drawTimeSeries`, which keeps the geometry, the axes, the lines, the marks and the direct labels and assembles the parts above.
+- `widget.js`: `createChart`.
+
+Beside them, in `staticcontent/js/aa/`: `dom.js` with the one `node` helper (the version that skips a null or undefined child), which replaces the six definitions, and `card.js` with the information control and its card.
+
+Pages that move onto the widget: the Browse PVs page, which keeps the Distribution panel, the scatter plot and the Summary of the chart for M62, and the System pages Operations and Retrieval performance. The viewer keeps `drawTimeSeries`, `axisRoom` and `labelRoom` through `chart.js` and takes `node` from `dom.js`; Archive and External take `node` from `dom.js` and nothing else changes in them.
+
+Out of scope: the analyzer and its viewer (M62); the words of the information cards of the System pages (M65); the analysis tools (M63, M64); the selection of the time zone (M67); the server calls.
+
+##### Completion Criteria
+
+- A chart of Operations and of Retrieval performance has the Options button with its panel (Line, Y scale, Marks, Window, Running average, Standard deviation band and the Projection tab) and the Enlarge chart button, and no link into the analyzer and no Earlier, Later or Back to the selected range.
+- The Browse PVs page behaves as it does at the commit d17b269e of M58: the checks of its T3 (axes and their sides, the strip, the gestures, the Projection tab, the legend, the tooltip, Enlarge chart, the options Line and Y scale) give the same results.
+- The options chosen on a chart are kept by the widget, under the `id` of the chart, while the page is open, and survive the refresh that draws the chart again, on the System pages that build their host again as well.
+- `staticcontent/js/aa/chart.js` is the entry and its code is in the modules `text`, `series`, `scales`, `layout`, `strip`, `legend`, `statistics`, `options`, `projection`, `gestures`, `draw` and `widget` of `staticcontent/js/aa/chart/`; the pages, `js/browse.js`, `js/operations.js`, `js/retrieval.js` and `viewer.js`, import `chart.js` without a change of what they draw.
+- The helper `node` is defined once, in `staticcontent/js/aa/dom.js`; `js/system/api.js`, `js/archive.js`, `js/external.js`, `js/browse.js`, `js/browse/details.js` and `viewer/viewer.js` hold no definition, and the calls of `viewer.js` and `external.js`, whose copies did not skip a null child, are read for a null or undefined child.
+- The information control and its card are defined once in the shared folder (`js/aa/card.js`), and the System pages and the Archive page show the same cards as before.
+- `js/browse.js` builds no Options panel, no Enlarge chart window, no card of the range, the options or the statistics and no link into the analyzer, and passes its first card as `help`; the controls are created by the widget and the checks of `scripts/ui-static-checks.bash` pass.
+- The book and the Help page describe the controls of the charts of the System pages, and the default suite passes.
+
+##### Dependencies And Decisions
+
+- M59 (Complete): the component and its simple form; this item completes what its decision of 2026-10-14 says and its criteria left out. M59 stays Complete and its record is not changed.
+- M58: the Browse PVs page is moved by this item, so the work follows the commit and the verification of M58 (work ordering). The ordering is met: the commits d17b269e, f0b31a72 and a1747759 are on origin/modernize and M58 / T1 to T5 pass; M58 stays In progress only for the closure of its issue.
+- D38: explanations open on demand, in cards.
+- Decision Date: 2026-10-16. The owner directed that the chart is one component that contains everything and that the pages place it, and that this is a new item and not a reopening of M59.
+- Decision Date: 2026-10-16. A System chart has no time controls, because its process holds only the last 24 hours in memory, one point a minute, and stores nothing older; this is the decision recorded in M58.
+- Decision Date: 2026-10-16. The owner directed that `chart.js` is split into modules by role and that the repeated DOM helper becomes one shared function, in this item; the plan keeps the split apart from the change of behavior (step 2 and step 3).
+- Decision Date: 2026-10-16. The options of a chart are kept while the page is open and not in the browser between visits: the right line shape and scale depend on the PVs shown (the log scale needs values above zero), so an old choice would misread the next visit.
+- Decision Date: 2026-10-16. The information control with its card moves into the shared folder (`js/aa/card.js`, `css/chart.css`): the state of the open card and the CSS of `button.info` and `.card` go with it, and `js/system/view.js` and the pages import it from there and keep no copy. The other way, a function given by the page in `config`, was rejected because the viewer in the retrieval web application imports nothing from the management folder and could not show cards.
+- Decision Date: 2026-10-17. The browser checks use one fixed list of the records of `src/resources/test/ConsoleChartPVs.db` (25 records: 20 scalar doubles, the double waveform `FAST:WAVE:1`, the enum `SR:OP:MODE`, the string `SR:OP:MESSAGE`, the integer `SR:INJ:COUNT`, the helper `SR:OP:MODECODE` that is not archived, and `SR:DIAG:BADTIME`, which the engine refuses). Checks that change nothing run on the kept appliance, which archives `SR:TICK`, `SR:BPM:01:X`, `SR:BPM:01:Y`, `SR:BEAM:CURRENT`, `SR:BEAM:LIFETIME`, `SR:RF:CAV1:TEMP`, `SR:RF:CAV1:POWER`, `SR:VAC:01:PRESSURE`, `BL:01:MOTOR:POS`, `BL:01:SHUTTER:STATE`, `SR:DIAG:BADTIME`, `FAST:WAVE:1`, `SR:OP:MODE`, `SR:OP:MESSAGE` and `SR:INJ:COUNT`, so that earlier and present data are read together. Checks that pause, stop, rename, change the type or consolidate run only on a temporary appliance on `SR:BPM:02:X`, `SR:BPM:02:Y`, `SR:BPM:03:X`, `SR:BPM:03:Y`, `SR:BPM:04:X`, `SR:BPM:04:Y`, `SR:RF:CAV2:TEMP`, `SR:RF:CAV2:POWER`, `FAST:SIG:1` and `FAST:SIG:2`, which a check archives or resumes at its start. No other name is added to either appliance; the one exception is the check of the limit of 100 rows, which needs 101 known names and uses 105 generated names on the temporary appliance only.
+- Decision Date: 2026-10-17. The check of the Help page asks for a row with the action Cancel request, which exists only while a request is pending; it requests `NO:SUCH:PV:HELP`, a name that no IOC serves and that stays in Initial sampling, and adds no other name.
+- No owner decision is open; the plan can be accepted.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-16; owner accepted the plan with the decision to move the information control into the shared folder
+Implementation Authorization: 2026-10-16; owner directed the implementation of this plan on `modernize`; commits and pushes need their own authority
+Superseded Plan Artifacts: none
+
+1. The modules, the configuration of the widget and the places of the shared helpers are written in Scope above. No code. Done (2026-10-16).
+2. `staticcontent/js/aa/dom.js` with `node`, and the six definitions removed (their calls and imports changed), with no change of behavior. Check: T3 (every page loads without an error) and T1. Done (2026-10-17).
+3. The split of `chart.js` into the modules of Scope, `chart.js` kept as the entry, with no change of behavior: every page imports what it used before. Check: T1 on the Browse PVs page and T3. Done (2026-10-17).
+4. The information control and its card in `js/aa/card.js` with its CSS in `css/chart.css`, and `js/system/view.js` and the pages that import `infoButton` changed to use it. Check: T2 (the cards of the System pages open and look as before) and T3. Done (2026-10-17).
+5. The widget in `js/aa/chart/widget.js`, with the Enlarge window, the Options panel, the cards and the analyzer link moved out of `js/browse.js` and `index.html`; the drawing keeps its behavior. Check: T1. Done (2026-10-17).
+6. The Browse PVs page placed on the widget, with the code that built the controls removed and its first card given as `help`. Check: T1. Done (2026-10-17).
+7. The Operations and Retrieval performance charts placed on the widget. Check: T2. Done (2026-10-17).
+8. The book and the Help page, the static checks, the integration tests and the suite. Check: T3 and T4. Done (2026-10-17) except the Maven and Pages workflows of the pushed commit.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser | On a local appliance with the fixture, run the checks of M58 T3 on the Browse PVs page with five PVs of five units (the axes and their sides, the strip before and after a drag over the plot and along an axis, the Projection tab, the Distribution panel and the Summary before and after each drag, a double-click, a legend click, the tooltip, Enlarge chart returned with Esc and with Close, Options with Line Straight and Y scale Log), and check that the options survive the refresh of the page | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | Every result equals the result at d17b269e; the options chosen stay after the refresh |
+| T2 | Browser | Open Operations and Retrieval performance, which have charts once the appliance has collected their series, press Options and choose each option, open the Projection tab, press Enlarge chart and close it with Esc and with Close, wait for the refresh of the page and look at the options again, look for a link into the analyzer and for Earlier, Later and Back to the selected range, and look at the page at 720 and 500 px | Local appliance running long enough for the heap and load charts (two hours) | Each option redraws the chart and stays chosen after the refresh of the page; the Projection tab holds statistics; Enlarge chart returns with Esc and Close and the focus returns to its button; no link into the analyzer and no time controls; no sideways scroll and text of at least 14 px |
+| T3 | Static | `bash scripts/ui-static-checks.bash`; then `MgmtPageLinksTest`, `IPApplianceXMLTest`, `LocalhostApplianceXMLTest` and `FQDNApplianceXMLTest` through the `integration` profile; open every page that imports a changed module (Browse PVs, Archive, External, System, Operations, Retrieval performance and the viewer through the analyzer link) and read the console; read the Help page and the book against the charts | Local, JDK 21, Tomcat 9.0.121 | The ids, the links and the markers pass; no page reports an error in the console; every control that the book and the Help page name for a chart is on it |
+| T4 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-17 | Packaged WARs of build aa-20261017-aa6ca27f, fresh temporary appliance with the soft IOC of `ConsoleChartPVs.db` (the static files of the WARs equal the source files); also the kept appliance for the checks that change nothing | Pass | The checks of Browse PVs, unchanged from the earlier change, pass: page load, find, table with the PVA protocol, limit of 100 rows, refresh, links, analyzer, chart (axes, strip, gestures, Projection tab, legend, tooltip, Enlarge chart, Line and Y scale), more, details, bulk, actions, help, probe and race. The options survive the refresh. Drawing: the committed `chart.js` and the modules produced the same DOM and the same reactions to drags, keys, clicks and callbacks in 377 comparisons (four injected defects were each found). Layout: the boxes of the chart controls are the same in the closed, Projection, Chart tab, enlarged and returned states; the computed styles of the information control and its card are the same in 23281 properties on five pages. The Details window once showed `Estimated event rate` 1.01 against 1 and a row button once met the main menu in a batch; neither came back |
+| T2 | 2026-10-17 | Kept appliance (days of values; WARs of the earlier change with the current static files) and the temporary appliance | Pass | On Operations and Retrieval performance each option redraws the chart, the Projection tab holds the statistics, the standard deviation band is drawn, Enlarge chart closes with Esc and with Close and returns the focus to its button, the options and the open panel stay after the refresh of the page (34 s), there is no link into the analyzer and no Earlier, Later or Back to the selected range, and the page has no sideways scroll and no text below 14 px at 720 and 500 px. A click outside does not close the large window, which covers the browser window; the earlier window of the Browse PVs page behaved so too. Not run on the packaged appliance, which holds less than two hours of values |
+| T3 | 2026-10-17 | Local, JDK 21, Tomcat 9.0.121 (`TOMCAT_HOME`) | Pass | `scripts/ui-static-checks.bash` 415 passed, 0 failed; `MgmtPageLinksTest`, `IPApplianceXMLTest`, `LocalhostApplianceXMLTest` and `FQDNApplianceXMLTest` through the `integration` profile: 4 run, 0 failed; the controls named by the Help page and the book are on the page; the book and the Help page describe the charts of the System pages |
+| T4 | 2026-10-17 | JDK 21; local `./mvnw -B -ntp clean verify`; GitHub Actions not yet | Partial | The local suite ran 1006 tests with no failure and no error; the Maven and Pages workflows of the pushed commit are pending |
+
+##### Closure Evidence
+
+- none
+
+#### M73 - Reaction of the archiver to a record that changes while it is archived
+
+Origin: daff1b7 / M73
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The browser checks of the Browse PVs page and the integration tests run against PVs that do not change. A record of a control system changes while it is archived: its scan rate is set to another value, its unit, precision or limits are edited, or the IOC is started with the same name on a record of another type. The engine has code for the last case (`EPICS_V3_PV` drops a sample whose DBR type differs from the type of the PV, `PVMetrics` counts it, and `getPVsByDroppedEventsTypeChange` and the `N lost` of the State column report it), and no recorded check runs the three changes against the real appliance. Read on 2026-10-16: the sample script `listTypeChanges.bash` selects its PVs with the same report.
+
+##### Scope
+
+- Test PVs: the fixed list of M72 (decision of 2026-10-17). The checks that change a record use `FAST:SIG:1` and `FAST:SIG:2` and the second IOC database with the same record names on another type, on a temporary appliance only; the kept appliance and its IOC are not changed by this item.
+- The scan rate: a periodic record of a soft IOC has its scan period changed with `caput` on `.SCAN` while the PV is archived by monitor and by scan; the spacing of the stored samples is read back.
+- The unit, the precision and the limits: `.EGU`, `.PREC` and the limit fields are changed with `caput`; the type information, the Details window and the meta fields of `getData` are read back.
+- The record type: the IOC is restarted with the same record name on a record of another DBR type (a scalar double to a scalar integer, to a string and to a waveform); the dropped samples, the counter, the State column and the data before and after are read back.
+- The expected reaction of each change is fixed in step 1 by reading the code of the engine and the documentation, and the result of each check is compared with it; a deviation is a finding and gets an issue, and no code is changed in this item.
+
+Out of scope: the repair of any deviation found; a change of the PV name (rename); the loss of the connection and the IOC restart without a change, which the existing connection checks cover; the Browse PVs page itself.
+
+##### Completion Criteria
+
+- For each of the three changes (scan rate, unit with precision and limits, record type) the check and its observed result are recorded in this detail, with the data window, the counters and the reading of the type information before and after.
+- Every deviation from the expected reaction is filed as an issue with the steps that reproduce it.
+- The checks run through the real shipped path, on packaged WARs with a soft IOC, and each check returns the test PVs to their first state.
+
+##### Dependencies And Decisions
+
+- No M or G dependency.
+- Decision Date: 2026-10-16. The owner asked for this check as an item of its own, apart from the chart widget, and remarked that the checks should use PVs that are already archived and keep their earlier data.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Read the engine code and the documentation for each of the three changes and write the expected reaction into the Test Plan. No code.
+2. Prepare the test PVs and the IOC databases that change a record: the soft IOC database with the periodic records, the second database with the other record type, and the start and return steps of a check. Check: the PVs are archived and return to their first state.
+3. Run T1 to T3 on packaged WARs and record the results; file the issues for the deviations. Check: T1, T2, T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Scan rate | Archive a periodic record by monitor and by scan, change `.SCAN` with `caput` to a faster and a slower period, read the stored samples with `getData` | Packaged WARs, soft IOC | To be fixed in step 1: the spacing of the samples follows the period for the monitor, and the sampling period for the scan |
+| T2 | Meta fields | Change `.EGU`, `.PREC` and the limit fields with `caput` while the PV is archived; read `getPVTypeInfo`, the Details window and the meta of `getData` | Packaged WARs, soft IOC | To be fixed in step 1: which of the fields the archiver reads again, and when |
+| T3 | Record type | Restart the IOC with the record name on a record of another DBR type; read the counter of `getPVsByDroppedEventsTypeChange`, the State column, `listTypeChanges` and the data before and after | Packaged WARs, soft IOC, second database | To be fixed in step 1: the samples of the new type are dropped and counted, the earlier data stay readable, and the State column shows the loss |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Packaged WARs, soft IOC | Pending | none |
+| T2 | Not run | Packaged WARs, soft IOC | Pending | none |
+| T3 | Not run | Packaged WARs, soft IOC, second database | Pending | none |
+
+##### Closure Evidence
+
+- none
 
 ## Assignment History
 
