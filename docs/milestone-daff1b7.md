@@ -10,7 +10,7 @@ Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f58
 
 Next session entry point: M46 and G6 are Complete; #29 records the passed preflight, four-hour stress observation and native PB comparison and is closed as completed. Preserve originals. For the separate later campaign, resume M66 in this document only after G8 records readiness of the required Ansible tools; M66 remains Blocked in Backlog. Ansible test-tool maintenance is independent of this product fix.
 
-Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46 and G6 are complete; M48 still waits on G7 from its responsible session.
+Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed.
 
 Other open work: M28 (issue #12) resumes in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07, both startup transfers and the shortened STS repeat preserved the expected old interval, and a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. M28 stays In progress until the revised focused checks and soak criteria have execution evidence. M36's reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02; do not resend it. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) owns full VM revalidation.
 
@@ -69,7 +69,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M45 | Use a full-cadence deadline for ETL startup and scheduled passes | Milestone | Complete | No | G5 | Overrun means endedAt is strictly later than plannedAt plus cadence; real-job regressions cover startup wait, scheduled delay and deadline boundaries, with scheduling and physical transfer preserved; landed in 120d53fe, Maven run 37698987276 succeeded, issue #28 closed on 2026-10-07; [detail](#m45---use-a-full-cadence-deadline-for-etl-startup-and-scheduled-passes) |
 | Phase 2 | M46 | Sample buffers sized with a time margin | Milestone | Complete | No | G6 | Time-margin correction 6c6b973a; capacity/property/real-IOC tests, bounded preflight and one 14400-second stress observation pass; zero buffer-full losses across 903 PVs and 15840000 exact fast-input/PB matches; #29 closed as completed on 2026-10-16; [detail](#m46---sample-buffers-sized-with-a-time-margin) |
 | Phase 2 | M47 | Management interface and data viewer replacement | Milestone | Complete | No | | The 35 interface files of jeonghanlee/epicsarchiverap-env@3353b74 land in d0932d1b with the jQuery, flot and viewer archive assets removed; 254 static checks run in the CI as scripts/ui-static-checks.bash and the book describes the pages (696117bc); issue #30 closed as completed on 2026-10-11; [detail](#m47---management-interface-and-data-viewer-replacement) |
-| Phase 2 | M48 | MariaDB JDBC driver 3.5.10 | Milestone | Blocked | No | G7 | `mariadb-java-client` 3.5.10 in every WAR (61e1b4c5), LICENCES/NOTICE lists the 43 runtime jars, the CI run passes; the socket and TCP installation checks of aa-env at a pin at or after 61e1b4c5 are G7; [detail](#m48---mariadb-jdbc-driver-3510) |
+| Phase 2 | M48 | MariaDB JDBC driver 3.5.10 | Milestone | Complete | No | G7 | `mariadb-java-client` 3.5.10 in every WAR (61e1b4c5), LICENCES/NOTICE lists the 43 runtime jars, the CI run passes; the socket and TCP installation checks of aa-env pass at 3de600d9 (G7, 2026-10-16); issue #31 closed; [detail](#m48---mariadb-jdbc-driver-3510) |
 | Phase 2 | M49 | Engine shutdown polls the CA command queue at its own cadence | Milestone | Complete | No | | `JCACommandThread.shutdown()` checks the queue before sleeping and polls every 100 ms under the 30 s cap (9a0c9677); `shutdownNow()` 1.3 s instead of 10.4 s, the default unit set 12 min 47 s instead of 34 min 52 s; issue #32 closed as completed on 2026-10-11; [detail](#m49---engine-shutdown-polls-the-ca-command-queue-at-its-own-cadence) |
 | Phase 2 | M50 | Fixed waits removed from the PV Access and zip store tests | Milestone | Complete | No | M49 | The PV Access tests flush the engine's buffers instead of sleeping a write period and the zip store tests simulate a year at one sample per 10 s (0097bc2d); 963 default tests in 9 min 54 s locally and a 16 min 29 s CI job; issue #33 closed as completed on 2026-10-11; [detail](#m50---fixed-waits-removed-from-the-pv-access-and-zip-store-tests) |
 | Phase 2 | M51 | Removal of what the old interface left behind | Milestone | Complete | No | M47, D34 | 833ddd6a removes the unreferenced interface files, the dead servlet paths, the Sphinx-era licence records, seven unreferenced classes and three replaced PB tools; the WARs ship only referenced files besides entry pages and licence records, LICENCES/ matches the 43 jars, kept candidates are CD-11 to CD-13; 963 tests and the CI run at 992d8ac4 pass; issue #34 closed as completed on 2026-10-12; [detail](#m51---removal-of-what-the-old-interface-left-behind) |
@@ -93,7 +93,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Tracking | G4 | ansible-provision deploy path for aa-env with SQLite | External gate | Complete | No | | ansible-provision deploys aa-env at or past bbe0968 with the MariaDB and the SQLite backend on a lab VM, and LAB-ansible-provision reports it; [detail](#g4---ansible-provision-deploy-path-for-aa-env-with-sqlite) |
 | Tracking | G5 | ETL pass deadline plan authorization and issue creation | External gate | Complete | No | | The current M45 plan is accepted and explicitly authorized, and its prepared bug issue exists on GitHub before implementation; [detail](#g5---etl-pass-deadline-plan-authorization-and-issue-creation) |
 | Tracking | G6 | Four-hour appliance stress run at or after 6c6b973a with zero sample-buffer-full losses | External gate | Complete | No | | M46 / T5-T7 passed on corrected-build source 629533a3; complete measured exposure coverage and zero losses; results recorded in #29 and authorized closure observed on 2026-10-16; [detail](#g6---four-hour-appliance-stress-run-at-or-after-6c6b973a-with-zero-sample-buffer-full-losses) |
-| Tracking | G7 | aa-env installation checks of the MariaDB socket and TCP paths at 61e1b4c5 or later | External gate | Open | No | | epicsarchiverap-env reports both MariaDB installation checks passing at a pin at or after 61e1b4c5; [detail](#g7---aa-env-installation-checks-of-the-mariadb-socket-and-tcp-paths-at-61e1b4c5-or-later) |
+| Tracking | G7 | aa-env installation checks of the MariaDB socket and TCP paths at 61e1b4c5 or later | External gate | Complete | No | | epicsarchiverap-env reported both MariaDB installation checks passing at pin 3de600d9, which contains 61e1b4c5 (2026-10-16); [detail](#g7---aa-env-installation-checks-of-the-mariadb-socket-and-tcp-paths-at-61e1b4c5-or-later) |
 
 ### Decisions
 
@@ -4521,7 +4521,7 @@ Last Compared: 2026-10-12T03:36Z; `gh issue view 30` shows closed at 2026-10-11T
 Origin: daff1b7 / M48
 Identity History: none
 GitHub Issue: #31 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/31)
-Status: Blocked
+Status: Complete
 
 ##### Summary
 
@@ -4542,7 +4542,7 @@ Out of scope: the SQLite driver and path; connection settings of an appliance.
 
 ##### Dependencies And Decisions
 
-- G7 is Open: the installation checks belong to epicsarchiverap-env at a pin at or after 61e1b4c5; resume as In progress when G7 completes.
+- G7 is Complete (2026-10-16): the installation checks belong to epicsarchiverap-env and passed at pin 3de600d9, which contains 61e1b4c5. M48 resumed as In progress and closed on that evidence.
 - Decision Date: 2026-10-11. The current release 3.5.10 is taken rather than the minimum 3.3.5.
 
 ##### Implementation Plan
@@ -4554,6 +4554,7 @@ Superseded Plan Artifacts: none
 
 1. Set the version, rebuild, list the jars of the WARs and update `LICENCES/NOTICE`. Closes with T1 and T2.
 2. Run the default suite and the CI. Closes with T3.
+3. Read the installation checks of epicsarchiverap-env at a pin at or after 61e1b4c5. Closes with T4. Step 3 and T4 were added on 2026-10-16 to carry the completion criterion that waited on G7; the criteria are unchanged.
 
 ##### Test Plan
 
@@ -4562,6 +4563,7 @@ Superseded Plan Artifacts: none
 | T1 | Build | List `WEB-INF/lib` of the four WARs | JDK 21, `ARCHAPPL_SITEID=default` | `mariadb-java-client-3.5.10.jar` only; 43 runtime jars matching NOTICE |
 | T2 | Licence record | Compare the licence text at tag 3.5.10 with `mariadb_license.txt` | Repository | Equal |
 | T3 | Default suite and CI | Maven workflow | GitHub Actions | Pass |
+| T4 | Installation | Installation checks of epicsarchiverap-env over a Unix domain socket and over TCP, after install and after forced reinstall | Debian 13 and Rocky Linux 8.10 guests, source pin at or after 61e1b4c5 | Start, tables, archive a PV, history survives; `WEB-INF/lib` holds exactly the MariaDB and SQLite drivers and the MariaDB jar version equals its file name and `pom.xml` |
 
 ##### Verification Results
 
@@ -4570,20 +4572,21 @@ Superseded Plan Artifacts: none
 | T1 | 2026-10-11 | JDK 21, tree 61e1b4c5 | Pass | Each WAR carries `mariadb-java-client-3.5.10.jar` and no other driver jar; `waffle-jna`, `caffeine` and `checker-qual` gone |
 | T2 | 2026-10-11 | Repository | Pass | Licence text equal |
 | T3 | 2026-10-11T10:21:38Z | GitHub Actions, run 38128971435 on 61e1b4c5 | Pass | 963 tests |
+| T4 | Reported 2026-10-16 | epicsarchiverap-env checks at source pin 3de600d9; environment commits 9b7851c and 54dc6b5; debian13-socket, debian13-tcp, rocky8-socket, rocky8-tcp | Pass | Eight runs (four cases, install and forced reinstall) passed; each WAR holds 43 jars with `mariadb-java-client-3.5.10.jar`. The first `rocky8-tcp` attempt failed in the checking program (a read wait after a restart was not retried under Python 3.6) and passed on a new guest after 54dc6b5; that cause is inferred from the code. Not a full-matrix run: the SQLite and build-failure cases were not repeated. An earlier run at 84ae8a83 (2026-10-12) passed the same four cases without the driver listing check. The evidence is held privately by epicsarchiverap-env |
 
 ##### Closure Evidence
 
-- 61e1b4c5 is on origin/modernize. Issue #31 body carries three checked criteria; the installation checks wait on G7, so M48 stays Blocked.
+- Complete on 2026-10-16. 61e1b4c5 is on origin/modernize and 3de600d9 contains it; T1 to T4 pass and G7 is Complete. Issue #31 carries all four criteria checked and is CLOSED as completed on 2026-10-16; body and closure comment matched their prepared files on readback.
 
 ##### GitHub Projection
 
 Title: Raise the MariaDB JDBC driver to a version that fixes four advisories
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: CLOSED
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-12T03:36Z; `gh issue view 31` shows three criteria checked and the installation checks unchecked
+Last Compared: 2026-10-16; `gh issue view 31` shows state CLOSED and all four criteria checked
 
 #### M49 - Engine shutdown polls the CA command queue at its own cadence
 
@@ -6065,7 +6068,7 @@ ansible-provision prepares a separate corrected-build deployment of its 903-PV f
 
 Origin: daff1b7 / G7
 GitHub Issue: #31 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/31)
-Status: Open
+Status: Complete
 
 ##### Summary
 
@@ -6080,10 +6083,11 @@ epicsarchiverap-env runs its installation checks of a MariaDB-backed appliance o
 | Observed At | Result | Evidence |
 | --- | --- | --- |
 | Not run | Pending | The epicsarchiverap-env session was told of 61e1b4c5 on 2026-10-11; its pin was 1f099b2f at that time |
+| Reported 2026-10-16 | Pass | Both checks passed at pin 3de600d9 (contains 61e1b4c5), on Debian 13 and Rocky Linux 8.10, after install and forced reinstall; details in M48 / T4. An earlier pass at 84ae8a83 was recorded in issue #31 on 2026-10-12 |
 
 ##### Closure Evidence
 
-- none
+- Complete on 2026-10-16. The criterion is met by the passes at 3de600d9 and the result is recorded in issue #31 (comment of 2026-10-16). The runs are four cases on two environment commits, not a full-matrix acceptance run.
 
 ## Backlog
 
