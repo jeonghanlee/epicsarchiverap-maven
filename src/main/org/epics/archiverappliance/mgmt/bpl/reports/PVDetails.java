@@ -98,14 +98,10 @@ public class PVDetails implements BPLAction {
             addDetailedStatus(result, "Instance archiving PV", info.getIdentity());
             PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
             if (typeInfo != null) {
-                addDetailedStatus(
-                        result,
-                        "Archival params creation time:",
-                        TimeUtils.convertToHumanReadableString(typeInfo.getCreationTime()));
-                addDetailedStatus(
-                        result,
-                        "Archival params modification time:",
-                        TimeUtils.convertToHumanReadableString(typeInfo.getModificationTime()));
+                result.add(Details.timeDetail("mgmt", "Archival params creation time:",
+                        typeInfo.getCreationTime() == null ? 0 : typeInfo.getCreationTime().getEpochSecond()));
+                result.add(Details.timeDetail("mgmt", "Archival params modification time:",
+                        typeInfo.getModificationTime() == null ? 0 : typeInfo.getModificationTime().getEpochSecond()));
                 addDetailedStatus(
                         result,
                         "Archiver DBR type (from typeinfo):",

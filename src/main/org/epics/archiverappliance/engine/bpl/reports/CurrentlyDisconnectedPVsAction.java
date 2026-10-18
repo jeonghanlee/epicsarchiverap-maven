@@ -41,9 +41,9 @@ public class CurrentlyDisconnectedPVsAction implements BPLAction {
 					result.add(pvStatus);
 					pvStatus.put("pvName", pvName);
 					pvStatus.put("instance", identity);
-					pvStatus.put("lastKnownEvent", TimeUtils.convertToHumanReadableString(pvMetrics.getSecondsOfLastEvent()));
+					TimeUtils.putTime(pvStatus, "lastKnownEvent", pvMetrics.getSecondsOfLastEvent());
 					long connectionLastLostEpochSeconds = pvMetrics.getConnectionLastLostEpochSeconds();
-					pvStatus.put("connectionLostAt", connectionLastLostEpochSeconds > 0 ? TimeUtils.convertToHumanReadableString(connectionLastLostEpochSeconds) : TimeUtils.convertToHumanReadableString(configService.getTimeOfAppserverStartup()));
+					TimeUtils.putTime(pvStatus, "connectionLostAt", connectionLastLostEpochSeconds > 0 ? connectionLastLostEpochSeconds : configService.getTimeOfAppserverStartup());
 					pvStatus.put("noConnectionAsOfEpochSecs", Long.toString(connectionLastLostEpochSeconds > 0 ? connectionLastLostEpochSeconds : configService.getTimeOfAppserverStartup()));
 					String hostName = channel.getHostName();
 					pvStatus.put("hostName", hostName != null ? hostName : "N/A");

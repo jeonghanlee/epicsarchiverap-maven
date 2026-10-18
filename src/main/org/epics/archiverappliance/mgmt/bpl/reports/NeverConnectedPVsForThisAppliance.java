@@ -37,8 +37,12 @@ public class NeverConnectedPVsForThisAppliance implements BPLAction {
 				HashMap<String, String> pvStatus = new HashMap<String, String>();
 				result.add(pvStatus);
 				pvStatus.put("pvName", neverConnectedPV.getPvName());
-				pvStatus.put("requestTime", (neverConnectedPV.getMetInfoRequestSubmitted() != null) ? TimeUtils.convertToHumanReadableString(neverConnectedPV.getMetInfoRequestSubmitted()) : "N/A");
-				pvStatus.put("startOfWorkflow", TimeUtils.convertToHumanReadableString(neverConnectedPV.getStartOfWorkflow()));
+				if (neverConnectedPV.getMetInfoRequestSubmitted() != null) {
+					TimeUtils.putTime(pvStatus, "requestTime", neverConnectedPV.getMetInfoRequestSubmitted());
+				} else {
+					pvStatus.put("requestTime", "N/A");
+				}
+				TimeUtils.putTime(pvStatus, "startOfWorkflow", neverConnectedPV.getStartOfWorkflow());
 				pvStatus.put("currentState", neverConnectedPV.getCurrentState().toString());
 				pvStatus.put("appliance", myIdentity);
 			}

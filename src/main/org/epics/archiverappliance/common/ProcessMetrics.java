@@ -71,7 +71,7 @@ public class ProcessMetrics {
 		try {
 			HashMap<String, Object> ret = new HashMap<String, Object>();
 			ret.put(header + "uptime", ManagementFactory.getRuntimeMXBean().getUptime()/1000);
-			ret.put(header + "start", TimeUtils.convertToHumanReadableString(ManagementFactory.getRuntimeMXBean().getStartTime()/1000));
+			TimeUtils.putTime(ret, header + "start", ManagementFactory.getRuntimeMXBean().getStartTime()/1000);
 			JSONEncoder<ProcessMetric> processMetricEnc = JSONEncoder.getEncoder(ProcessMetric.class);
 			LinkedList<JSONObject> mets = new LinkedList<JSONObject>();
 			for(ProcessMetric processMetric : processMetrics) {

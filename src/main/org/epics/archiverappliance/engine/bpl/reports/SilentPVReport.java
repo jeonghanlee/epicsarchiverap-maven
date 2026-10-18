@@ -50,7 +50,7 @@ public class SilentPVReport implements BPLAction {
 				result.add(pvStatus);
 				pvStatus.put("pvName", silentPV.pvName);
 				pvStatus.put("instance", identity);
-				pvStatus.put("lastKnownEvent", TimeUtils.convertToHumanReadableString(silentPV.epochSecondsOflastKnownEvent));
+				TimeUtils.putTime(pvStatus, "lastKnownEvent", silentPV.epochSecondsOflastKnownEvent);
 			}
 			out.println(JSONValue.toJSONString(result));
 		}

@@ -486,6 +486,22 @@ public class PVMetrics {
         this.connectionLossRegainCount = connectionLossRegainCount;
     }
 
+    /** A detail that holds a time: the text as its value and, when the time is set, the same instant as epochSeconds. */
+    private static void addTimeStatus(LinkedList<Map<String, String>> statuses, String name, long epochSeconds) {
+        addTimeStatus(statuses, name, TimeUtils.convertToHumanReadableString(epochSeconds), epochSeconds);
+    }
+
+    private static void addTimeStatus(LinkedList<Map<String, String>> statuses, String name, String text, long epochSeconds) {
+        Map<String, String> obj = new LinkedHashMap<String, String>();
+        obj.put("name", name);
+        obj.put("value", text);
+        obj.put("source", "pv");
+        if (epochSeconds > 0) {
+            obj.put("epochSeconds", Long.toString(epochSeconds));
+        }
+        statuses.add(obj);
+    }
+
     private static void addDetailedStatus(LinkedList<Map<String, String>> statuses, String name, String value) {
         Map<String, String> obj = new LinkedHashMap<String, String>();
         obj.put("name", name);
@@ -523,30 +539,12 @@ public class PVMetrics {
                 statuses,
                 "Connection state at last connection changed event",
                 String.valueOf(this.lastConnectionEventState));
-        addDetailedStatus(
-                statuses,
-                "When did we receive the last event?",
-                TimeUtils.convertToHumanReadableString(this.secondsOfLastEvent));
-        addDetailedStatus(
-                statuses,
-                "What did we last push the data to the short term store?",
-                TimeUtils.convertToHumanReadableString(this.lastRotateLogsEpochSeconds));
-        addDetailedStatus(
-                statuses,
-                "When did we request CA to make a connection to this PV?",
-                TimeUtils.convertToHumanReadableString(connectionRequestMadeEpochSeconds));
-        addDetailedStatus(
-                statuses,
-                "When did we first establish a connection to this PV?",
-                TimeUtils.convertToHumanReadableString(connectionFirstEstablishedEpochSeconds));
-        addDetailedStatus(
-                statuses,
-                "When did we last lose and reestablish a connection to this PV?",
-                TimeUtils.convertToHumanReadableString(connectionLastRestablishedEpochSeconds));
-        addDetailedStatus(
-                statuses,
-                "When did we last lose a connection to this PV?",
-                TimeUtils.convertToHumanReadableString(this.connectionLastLostEpochSeconds));
+        addTimeStatus(statuses, "When did we receive the last event?", this.secondsOfLastEvent);
+        addTimeStatus(statuses, "What did we last push the data to the short term store?", this.lastRotateLogsEpochSeconds);
+        addTimeStatus(statuses, "When did we request CA to make a connection to this PV?", connectionRequestMadeEpochSeconds);
+        addTimeStatus(statuses, "When did we first establish a connection to this PV?", connectionFirstEstablishedEpochSeconds);
+        addTimeStatus(statuses, "When did we last lose and reestablish a connection to this PV?", connectionLastRestablishedEpochSeconds);
+        addTimeStatus(statuses, "When did we last lose a connection to this PV?", this.connectionLastLostEpochSeconds);
         addDetailedStatus(
                 statuses,
                 "How many times have we lost and regained the connection to this PV?",
@@ -557,10 +555,8 @@ public class PVMetrics {
                 statuses,
                 "How many events lost because the timestamp is in the far future or past so far?",
                 Long.toString(this.timestampWrongEventCount));
-        addDetailedStatus(
-                statuses,
-                "Instant of last event from the IOC - correct or not.",
-                this.getLastEventFromIOCTimeStampStr());
+        addTimeStatus(statuses, "Instant of last event from the IOC - correct or not.", this.getLastEventFromIOCTimeStampStr(),
+                lastEventFromIOCTimeStamp == null ? 0 : lastEventFromIOCTimeStamp.getEpochSecond());
         addDetailedStatus(
                 statuses,
                 "How many events lost because the sample buffer is full so far?",

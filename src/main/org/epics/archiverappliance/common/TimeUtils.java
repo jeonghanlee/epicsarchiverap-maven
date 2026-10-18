@@ -26,6 +26,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Locale;
+import java.util.Map;
 import java.util.List;
 
 /**
@@ -164,6 +165,30 @@ public class TimeUtils {
 
     public static String convertToHumanReadableString(long epochSeconds) {
         return convertToHumanReadableString(Instant.ofEpochSecond(epochSeconds));
+    }
+
+    /**
+     * Puts the text of a time under the key and, when the time is set, the same instant as epoch seconds under the key with
+     * EpochSeconds appended, so that a client can write the time in another time zone; a time that reads Never has no epoch seconds.
+     * @param map The answer being built
+     * @param key The name of the time
+     * @param epochSeconds The instant; 0 or less reads Never
+     */
+    public static void putTime(Map<String, ? super String> map, String key, long epochSeconds) {
+        map.put(key, convertToHumanReadableString(epochSeconds));
+        if (epochSeconds > 0) {
+            map.put(key + "EpochSeconds", Long.toString(epochSeconds));
+        }
+    }
+
+    /**
+     * The same for an instant; null reads Never.
+     * @param map The answer being built
+     * @param key The name of the time
+     * @param instant The instant, or null
+     */
+    public static void putTime(Map<String, ? super String> map, String key, Instant instant) {
+        putTime(map, key, instant == null ? 0 : instant.getEpochSecond());
     }
 
     public static long getStartOfCurrentYearInSeconds() {

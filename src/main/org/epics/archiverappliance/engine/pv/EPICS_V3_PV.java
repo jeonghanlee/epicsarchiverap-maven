@@ -883,16 +883,26 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
                 h.put("source", "CA");
                 this.statuses.add(h);
             }
+
+            /** A detail that holds a time: the text and, when the time is set, the same instant as epochSeconds. */
+            void addTime(String k, long epochSeconds) {
+                HashMap<String, String> h = new HashMap<String, String>();
+                h.put("name", k);
+                h.put("value", TimeUtils.convertToHumanReadableString(epochSeconds));
+                h.put("source", "CA");
+                if (epochSeconds > 0) {
+                    h.put("epochSeconds", Long.toString(epochSeconds));
+                }
+                this.statuses.add(h);
+            }
         }
 
         AddDetail ad = new AddDetail(statuses);
         ad.addKV("PV connection state machine state", state.toString());
-        ad.addKV("Last monitor received at", TimeUtils.convertToHumanReadableString(this.lastMonitorSecs));
+        ad.addTime("Last monitor received at", this.lastMonitorSecs);
         ad.addKV("Last monitor had a valid DBR?", Boolean.toString(this.dbrtimeevent != null));
         if (this.dbrtimeevent != null) {
-            ad.addKV(
-                    "Last monitor event timestamp",
-                    TimeUtils.convertToHumanReadableString(this.dbrtimeevent.getEventTimeStamp()));
+            ad.addTime("Last monitor event timestamp", this.dbrtimeevent.getEventTimeStamp().getEpochSecond());
         }
         ad.addKV("Various transient errors", Long.toString(transientErrorCount));
 
@@ -907,7 +917,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
             }
             ad.addKV("CAJ connection state", cajChannel.getConnectionState().getName());
         }
-        ad.addKV("Daily metadata last saved at", TimeUtils.convertToHumanReadableString(archiveFieldsSavedAtEpSec));
+        ad.addTime("Daily metadata last saved at", archiveFieldsSavedAtEpSec);
         ad.addKV("Do we use DBE_Properties?", Boolean.toString(isDBEProperties));
         ad.addKV("Do we have a DBE Properties subscription?", Boolean.toString(this.dbePropertiesSubscription != null));
         ad.addKV("The internal connected bool", Boolean.toString(this.connected));

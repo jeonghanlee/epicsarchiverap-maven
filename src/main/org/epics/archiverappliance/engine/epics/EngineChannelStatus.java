@@ -121,10 +121,10 @@ public class EngineChannelStatus implements JSONAware {
 		obj.put("isMonitored", Boolean.toString(isMonitored));
 		obj.put("samplingPeriod", Float.toString((float)samplingPeriod));
 		obj.put("connectionState", Boolean.toString(connectionState));
-		obj.put("lastEvent", TimeUtils.convertToHumanReadableString(epochSecondsOfLastEvent));
-		obj.put("lastRotateLogs", TimeUtils.convertToHumanReadableString(lastRotateLogsEpochSeconds));
-		obj.put("connectionFirstEstablished", TimeUtils.convertToHumanReadableString(connectionFirstEstablishedEpochSeconds));
-		obj.put("connectionLastRestablished", TimeUtils.convertToHumanReadableString(connectionLastRestablishedEpochSeconds));
+		TimeUtils.putTime(obj, "lastEvent", epochSecondsOfLastEvent);
+		TimeUtils.putTime(obj, "lastRotateLogs", lastRotateLogsEpochSeconds);
+		TimeUtils.putTime(obj, "connectionFirstEstablished", connectionFirstEstablishedEpochSeconds);
+		TimeUtils.putTime(obj, "connectionLastRestablished", connectionLastRestablishedEpochSeconds);
 		obj.put("connectionLossRegainCount", Long.toString(connectionLossRegainCount));
 		return JSONValue.toJSONString(obj);
 	}

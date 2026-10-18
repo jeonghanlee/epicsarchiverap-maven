@@ -347,7 +347,7 @@ public class MetaGet implements Runnable {
 			st.put("pvName", pvNm);
 			st.put("appliance", appliance);
 			st.put("isScheduled", Boolean.toString(mg.isScheduled));
-			st.put("scheduleStart", TimeUtils.convertToHumanReadableString(mg.scheduleStartEpochSecs));
+			TimeUtils.putTime(st, "scheduleStart", mg.scheduleStartEpochSecs);
 			st.put("usePVAccess", Boolean.toString(mg.usePVAccess));
 			PV pvMain = mg.pvList.get("main");
 			if(pvMain != null) {

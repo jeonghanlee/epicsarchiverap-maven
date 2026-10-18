@@ -36,20 +36,16 @@ public class ETLDetails implements Details {
                     "ETL " + lookupItem.getLifetimeorder() + " partition granularity of dest",
                     lookupItem.getETLDest().getPartitionGranularity().toString()));
             if (lookupItem.getLastETLCompleteEpochSeconds() != 0) {
-                statuses.add(metricDetail(
-                        "ETL " + lookupItem.getLifetimeorder() + " last completed",
-                        TimeUtils.convertToHumanReadableString(lookupItem.getLastETLCompleteEpochSeconds())));
+                statuses.add(timeDetail("ETL " + lookupItem.getLifetimeorder() + " last completed", lookupItem.getLastETLCompleteEpochSeconds()));
                 statuses.add(metricDetail(
                         "ETL " + lookupItem.getLifetimeorder() + " last job took (ms)",
                         Long.toString(lookupItem.getLastETLTimeWeSpentInETLInMilliSeconds())));
             }
             ETLPassDriver driver = configService.getETLLookup().getDriverFor(lookupItem);
             Instant nextPlannedAt = driver == null ? null : driver.getNextPlannedAt();
-            statuses.add(metricDetail(
-                    "ETL " + lookupItem.getLifetimeorder() + " next job runs at",
-                    nextPlannedAt == null
-                            ? "not scheduled"
-                            : TimeUtils.convertToHumanReadableString(nextPlannedAt.getEpochSecond())));
+            statuses.add(nextPlannedAt == null
+                    ? metricDetail("ETL " + lookupItem.getLifetimeorder() + " next job runs at", "not scheduled")
+                    : timeDetail("ETL " + lookupItem.getLifetimeorder() + " next job runs at", nextPlannedAt.getEpochSecond()));
             if (lookupItem.getNumberofTimesWeETLed() != 0) {
                 statuses.add(metricDetail(
                         "ETL " + lookupItem.getLifetimeorder() + " total time performing ETL(ms)",

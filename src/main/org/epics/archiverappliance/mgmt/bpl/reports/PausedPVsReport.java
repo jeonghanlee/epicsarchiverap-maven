@@ -58,7 +58,7 @@ public class PausedPVsReport implements BPLAction {
 			pvDetails.put("pvName", pvName);
 			PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
 			pvDetails.put("instance", typeInfo.getApplianceIdentity());
-			pvDetails.put("modificationTime", TimeUtils.convertToHumanReadableString(typeInfo.getModificationTime()));
+			TimeUtils.putTime(pvDetails, "modificationTime", typeInfo.getModificationTime());
 			retVal.add(pvDetails);
 		}
 		

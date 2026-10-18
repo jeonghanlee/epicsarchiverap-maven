@@ -54,7 +54,7 @@ public class RecentlyChangedPVsforThisInstance implements BPLAction {
 				HashMap<String, String> jsonObj = new HashMap<String, String>();
 				jsonObj.put("pvName", pvName);
 				jsonObj.put("instance", identity);
-				jsonObj.put("modificationTime", TimeUtils.convertToHumanReadableString(this.modificationTimeStamp));
+				TimeUtils.putTime(jsonObj, "modificationTime", this.modificationTimeStamp);
 				return JSONValue.toJSONString(jsonObj);
 			}
 		}

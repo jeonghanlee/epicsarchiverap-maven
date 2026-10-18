@@ -97,9 +97,7 @@ public class ETLMetrics implements Details {
                 details.add(metricDetail("Passes so far in " + id, Long.toString(driver.getCompletedPasses())));
                 ETLPassRecord last = driver.getLastCompleted();
                 if (last != null) {
-                    details.add(metricDetail(
-                            "Last pass in " + id + " started at",
-                            TimeUtils.convertToHumanReadableString(last.startedAt().getEpochSecond())));
+                    details.add(timeDetail("Last pass in " + id + " started at", last.startedAt().getEpochSecond()));
                     details.add(metricDetail(
                             "Last pass in " + id + " duration (s)",
                             TWO_DIGITS.format((last.endedAt().toEpochMilli() - last.startedAt().toEpochMilli())
@@ -140,9 +138,7 @@ public class ETLMetrics implements Details {
                 }
                 ETLPassRecord current = driver.getInProgress();
                 if (current != null) {
-                    details.add(metricDetail(
-                            "Current pass in " + id + " started at",
-                            TimeUtils.convertToHumanReadableString(current.startedAt().getEpochSecond())));
+                    details.add(timeDetail("Current pass in " + id + " started at", current.startedAt().getEpochSecond()));
                     details.add(metricDetail(
                             "Current pass in " + id + " elapsed (s)",
                             TWO_DIGITS.format((now.toEpochMilli() - current.startedAt().toEpochMilli()) / 1000.0)));

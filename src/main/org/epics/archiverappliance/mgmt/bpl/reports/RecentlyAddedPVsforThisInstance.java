@@ -59,7 +59,7 @@ public class RecentlyAddedPVsforThisInstance implements BPLAction {
 				HashMap<String, String> jsonObj = new HashMap<String, String>();
 				jsonObj.put("pvName", pvName);
 				jsonObj.put("instance", identity);
-				jsonObj.put("creationTime", TimeUtils.convertToHumanReadableString(this.creationTimeStamp));
+				TimeUtils.putTime(jsonObj, "creationTime", this.creationTimeStamp);
 				return JSONValue.toJSONString(jsonObj);
 			}
 		}
