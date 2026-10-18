@@ -1,4 +1,4 @@
-# The four records of the checks of a record that changes, as the console checks normally use them: scalar doubles. st.cmd loads this file by default.
+# The four records of the checks of a record that changes, as the console checks normally use them: scalar doubles. st.cmd loads this file by default (RECORD_CHANGE empty in consolechart.conf).
 record(calc, "SR:BPM:03:X") {
     field(SCAN, "1 second")
     field(CALC, "0.003*((RNDM+RNDM+RNDM-1.5)*2)+0.02*SIN(A/1800+2.1)+0.004*SIN(A/90)+0.05*((A%90)<2)")

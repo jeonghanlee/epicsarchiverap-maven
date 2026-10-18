@@ -1,5 +1,6 @@
 # Soft IOC database for browser checks of the chart of the Browse PVs page: a storage ring in top-up operation.
-# Run it with st.cmd of this folder under softIocPVX of EPICS 7.0.10 (ioc-runner starts it); st.cmd loads this file and one of the files of the four
+# Run it with st.cmd of this folder under softIocPVX of EPICS 7.0.10 (ioc-runner starts it from consolechart.conf; the developer guide of the book,
+#   section "Run the test IOC of the console checks", gives the steps); st.cmd loads this file and one of the files of the four
 # records SR:BPM:03:X, SR:BPM:03:Y, SR:BPM:04:X and SR:BPM:04:Y, which the checks of a record that changes replace by records of other types.
 # SR:TICK counts seconds; the other calc records are functions of it (RNDM is a uniform number, so noise is a sum of three).
 #   SR:BEAM:CURRENT    mA  500 mA, falls with an 8 h lifetime and is topped up every 90 s, 0.03 mA noise, alarms below 490 and 450

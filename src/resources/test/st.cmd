@@ -1,5 +1,6 @@
 #!/usr/bin/env softIocPVX
-# The one soft IOC of the console checks. ioc-runner starts it; it serves Channel Access and PVAccess.
+# The one soft IOC of the console checks. ioc-runner starts it from consolechart.conf of this folder; it serves Channel Access and PVAccess.
+# The developer guide of the book, section "Run the test IOC of the console checks", gives the steps.
 # softIocPVX (EPICS 7.0.10 with pvxs) has to be on PATH: a shell gets it from setEpicsEnv.bash of the EPICS installation, the IOC configuration
 # of ioc-runner from its PATH line.
 # The databases it loads: ConsoleChartPVs.db (all the records of the checks), then the four records that the checks of a record that changes replace.

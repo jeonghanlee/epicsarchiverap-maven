@@ -127,6 +127,122 @@ folder while that process remains alive. Inspect the retained logs and
 process before restarting. The launcher does not manage production
 services or systemd units.
 
+## Run the test IOC of the console checks
+
+The browser checks of the console read the records of one soft IOC, which
+`ioc-runner` runs as a user service from `src/resources/test/st.cmd`.
+`st.cmd` loads `ConsoleChartPVs.db` and one of two files for the four
+records `SR:BPM:03:X`, `SR:BPM:03:Y`, `SR:BPM:04:X` and `SR:BPM:04:Y`:
+`ConsoleChartPVsRecordChange.db` (scalar doubles, the default) or
+`ConsoleChartPVsRecordChangeTypes.db` (the same names as an integer, a
+string, a waveform and an integer), chosen by the `RECORD_CHANGE` variable
+of the IOC configuration. The `CAV2_*` variables of the same file give
+`SR:RF:CAV2:TEMP` and `SR:RF:CAV2:POWER` another unit, precision and limits.
+
+Prerequisites:
+
+- EPICS 7.0.10 with the pvxs module, which provides `softIocPVX`,
+  `caget`, `cainfo` and `pvget`. A shell gets them on `PATH` from
+  `setEpicsEnv.bash` of the installation.
+- `ioc-runner` from the `epics-ioc-runner` repository, on `PATH`, with
+  its local mode set up (`~/.config/procServ.d`).
+- A free Channel Access server port for the IOC. The local appliance has to
+  use the same port, so start it with `EPICS_CA_SERVER_PORT` set to that
+  value.
+
+1. Copy the configuration file out of the repository:
+
+   ```bash
+   cp src/resources/test/consolechart.conf <work_dir>/consolechart.conf
+   ```
+
+   Replace `<work_dir>` with a folder of your own; the installed copy is
+   named after the file, so keep the name `consolechart.conf`.
+
+2. In the copy, replace each placeholder:
+
+   | Placeholder | Value |
+   | --- | --- |
+   | `<user>`, `<group>` | The user and the group the IOC runs as |
+   | `<repository>` | The absolute path of this repository |
+   | `<epics_pvxs_bin>` | The folder of `softIocPVX`, such as `<epics_base>/../modules/pvxs/bin/linux-x86_64` |
+   | `<ca_port>` | The Channel Access server port of the IOC; 5064 is the EPICS default |
+   | `<ca_repeater_port>` | The repeater port, usually `<ca_port>` plus one |
+
+3. To install the IOC, validate the file with `ioc-runner`:
+
+   ```bash
+   ioc-runner --local install <work_dir>/consolechart.conf
+   ```
+
+   ```text
+   Validation passed successfully.
+   IOC consolechart installed in local mode. Use 'start' command to run it.
+   ```
+
+4. Start the IOC and list it:
+
+   ```bash
+   ioc-runner --local start consolechart
+   ```
+
+   ```bash
+   ioc-runner --local list
+   ```
+
+   ```text
+   IOC NAME             | STATUS   | STARTED           | UDS PATH
+   consolechart         | active   | 2026-10-17 23:48  | /run/user/1000/procserv/consolechart/control
+   ```
+
+5. To give the four records their other types, set `RECORD_CHANGE=Types` in
+   the copy, then stop the IOC, install the file again and start it; a
+   running IOC refuses another installation:
+
+   ```bash
+   ioc-runner --local stop consolechart
+   ```
+
+   ```bash
+   ioc-runner --local -f install <work_dir>/consolechart.conf
+   ```
+
+   ```bash
+   ioc-runner --local start consolechart
+   ```
+
+   An empty `RECORD_CHANGE=` and the same three commands put the scalar
+   doubles back. The `CAV2_*` variables change the same way.
+
+6. To stop the IOC, stop its service:
+
+   ```bash
+   ioc-runner --local stop consolechart
+   ```
+
+   `ioc-runner --local remove consolechart` also removes the installed
+   configuration.
+
+Verification: read one record over Channel Access and over PVAccess with
+the port and the loopback address of the IOC.
+
+```bash
+EPICS_CA_SERVER_PORT=<ca_port> EPICS_CA_ADDR_LIST=127.0.0.1 EPICS_CA_AUTO_ADDR_LIST=NO caget SR:TICK
+```
+
+```bash
+EPICS_PVA_ADDR_LIST=127.0.0.1 EPICS_PVA_AUTO_ADDR_LIST=NO pvget SR:TICK
+```
+
+```text
+SR:TICK                        7
+SR:TICK 2026-10-17 23:48:49.779  7
+```
+
+`SR:TICK` counts the seconds since the IOC started. After step 5,
+`cainfo SR:BPM:04:X` with the same variables reports `DBF_LONG` as the
+native data type, and `DBF_DOUBLE` after the change back.
+
 ## Tools
 
 ```bash
