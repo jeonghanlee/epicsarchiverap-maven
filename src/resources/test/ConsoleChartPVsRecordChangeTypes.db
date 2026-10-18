@@ -1,0 +1,25 @@
+# The same four records on other types, for the checks of a record that changes: st.cmd loads this file instead of ConsoleChartPVsRecordChange.db
+# when the environment variable RECORD_CHANGE is Types. The names stay, the types change: an integer, a string, a waveform and an integer.
+record(longin, "SR:BPM:04:X") {
+    field(DTYP, "Soft Channel")
+    field(SCAN, "1 second")
+    field(INP, "SR:TICK")
+    field(EGU, "mm")
+}
+record(stringin, "SR:BPM:04:Y") {
+    field(DTYP, "Soft Channel")
+    field(SCAN, "1 second")
+    field(INP, "SR:OP:MODE")
+}
+record(waveform, "SR:BPM:03:X") {
+    field(SCAN, "1 second")
+    field(NELM, "16")
+    field(FTVL, "DOUBLE")
+    field(EGU, "mm")
+}
+record(longin, "SR:BPM:03:Y") {
+    field(DTYP, "Soft Channel")
+    field(SCAN, "1 second")
+    field(INP, "SR:TICK")
+    field(EGU, "mm")
+}

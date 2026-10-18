@@ -1,6 +1,6 @@
 # Soft IOC database for browser checks of the chart of the Browse PVs page: a storage ring in top-up operation.
-# Run it with the softIoc of EPICS 7.0.10:  softIoc -S -d src/resources/test/ConsoleChartPVs.db
-# softIocPVX with the same arguments serves the records over PVAccess as well as over Channel Access.
+# Run it with st.cmd of this folder under softIocPVX of EPICS 7.0.10 (ioc-runner starts it); st.cmd loads this file and one of the files of the four
+# records SR:BPM:03:X, SR:BPM:03:Y, SR:BPM:04:X and SR:BPM:04:Y, which the checks of a record that changes replace by records of other types.
 # SR:TICK counts seconds; the other calc records are functions of it (RNDM is a uniform number, so noise is a sum of three).
 #   SR:BEAM:CURRENT    mA  500 mA, falls with an 8 h lifetime and is topped up every 90 s, 0.03 mA noise, alarms below 490 and 450
 #   SR:BEAM:LIFETIME   h   8 h with a slow drift and noise
@@ -13,7 +13,10 @@
 #   as a time stamp it refuses and getPVsByDroppedEventsTimestamp lists it; it has no unit and no limit.
 # FAST:WAVE:1 is a waveform of 16 elements, for the check of an array PV in a list.
 # SR:OP:MODE is an enum, SR:OP:MESSAGE a string and SR:INJ:COUNT an integer, for the check of the value of each data type in a list;
-# SR:OP:MODECODE is the number that drives the enum and is not archived.
+# SR:OP:MODECODE is the number that drives the enum; it and FAST:SIG:1 are the two names the checks archive over PVAccess (pva://).
+# The unit, precision, display limits and alarm limits of SR:RF:CAV2:TEMP and SR:RF:CAV2:POWER are macros (CAV2_TEMP_EGU, CAV2_TEMP_PREC, CAV2_TEMP_HOPR,
+#   CAV2_TEMP_LOPR, CAV2_TEMP_HIGH, CAV2_TEMP_LOW and the same for CAV2_POWER) with the values below as defaults; st.cmd passes them from the environment.
+# LIM:PV:001 to LIM:PV:105 are 105 counters that add 1 every second, for the check of the limit of 100 rows of the table of PVs; no other check uses them.
 
 record(calc, "SR:TICK") {
     field(SCAN, "1 second")
@@ -48,38 +51,6 @@ record(calc, "SR:BPM:02:X") {
 record(calc, "SR:BPM:02:Y") {
     field(SCAN, "1 second")
     field(CALC, "0.002*((RNDM+RNDM+RNDM-1.5)*2)+0.012*COS(A/2400+1.4)+0.003*SIN(A/70)+0.02*((A%90)<2)")
-    field(INPA, "SR:TICK")
-    field(EGU, "mm")
-    field(PREC, "3")
-    field(DESC, "beam position Y")
-}
-record(calc, "SR:BPM:03:X") {
-    field(SCAN, "1 second")
-    field(CALC, "0.003*((RNDM+RNDM+RNDM-1.5)*2)+0.02*SIN(A/1800+2.1)+0.004*SIN(A/90)+0.05*((A%90)<2)")
-    field(INPA, "SR:TICK")
-    field(EGU, "mm")
-    field(PREC, "3")
-    field(DESC, "beam position X")
-}
-record(calc, "SR:BPM:03:Y") {
-    field(SCAN, "1 second")
-    field(CALC, "0.002*((RNDM+RNDM+RNDM-1.5)*2)+0.012*COS(A/2400+2.1)+0.003*SIN(A/70)+0.02*((A%90)<2)")
-    field(INPA, "SR:TICK")
-    field(EGU, "mm")
-    field(PREC, "3")
-    field(DESC, "beam position Y")
-}
-record(calc, "SR:BPM:04:X") {
-    field(SCAN, "1 second")
-    field(CALC, "0.003*((RNDM+RNDM+RNDM-1.5)*2)+0.02*SIN(A/1800+2.8)+0.004*SIN(A/90)+0.05*((A%90)<2)")
-    field(INPA, "SR:TICK")
-    field(EGU, "mm")
-    field(PREC, "3")
-    field(DESC, "beam position X")
-}
-record(calc, "SR:BPM:04:Y") {
-    field(SCAN, "1 second")
-    field(CALC, "0.002*((RNDM+RNDM+RNDM-1.5)*2)+0.012*COS(A/2400+2.8)+0.003*SIN(A/70)+0.02*((A%90)<2)")
     field(INPA, "SR:TICK")
     field(EGU, "mm")
     field(PREC, "3")
@@ -128,17 +99,25 @@ record(calc, "SR:RF:CAV2:TEMP") {
     field(CALC, "34.4+0.0075*B+0.12*SIN(A/3000)+0.03*((RNDM+RNDM+RNDM-1.5)*2)")
     field(INPA, "SR:TICK")
     field(INPB, "SR:RF:CAV1:POWER")
-    field(EGU, "C")
-    field(PREC, "2")
+    field(EGU, "$(CAV2_TEMP_EGU=C)")
+    field(PREC, "$(CAV2_TEMP_PREC=2)")
     field(DESC, "cavity temperature")
+    field(HOPR, "$(CAV2_TEMP_HOPR=0)")
+    field(LOPR, "$(CAV2_TEMP_LOPR=0)")
+    field(HIGH, "$(CAV2_TEMP_HIGH=0)")
+    field(LOW, "$(CAV2_TEMP_LOW=0)")
 }
 record(calc, "SR:RF:CAV2:POWER") {
     field(SCAN, "2 second")
     field(CALC, "120-10+8*SIN(A/40)")
     field(INPA, "SR:TICK")
-    field(EGU, "kW")
-    field(PREC, "1")
+    field(EGU, "$(CAV2_POWER_EGU=kW)")
+    field(PREC, "$(CAV2_POWER_PREC=1)")
     field(DESC, "cavity forward power")
+    field(HOPR, "$(CAV2_POWER_HOPR=0)")
+    field(LOPR, "$(CAV2_POWER_LOPR=0)")
+    field(HIGH, "$(CAV2_POWER_HIGH=0)")
+    field(LOW, "$(CAV2_POWER_LOW=0)")
 }
 record(calc, "SR:VAC:01:PRESSURE") {
     field(SCAN, "2 second")
@@ -221,4 +200,634 @@ record(longin, "SR:INJ:COUNT") {
     field(SCAN, "1 second")
     field(INP, "SR:TICK")
     field(DESC, "injection counter as an integer")
+}
+record(calc, "LIM:PV:001") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:001")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:002") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:002")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:003") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:003")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:004") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:004")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:005") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:005")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:006") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:006")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:007") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:007")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:008") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:008")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:009") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:009")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:010") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:010")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:011") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:011")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:012") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:012")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:013") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:013")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:014") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:014")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:015") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:015")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:016") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:016")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:017") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:017")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:018") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:018")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:019") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:019")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:020") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:020")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:021") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:021")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:022") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:022")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:023") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:023")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:024") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:024")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:025") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:025")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:026") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:026")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:027") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:027")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:028") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:028")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:029") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:029")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:030") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:030")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:031") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:031")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:032") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:032")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:033") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:033")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:034") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:034")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:035") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:035")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:036") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:036")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:037") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:037")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:038") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:038")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:039") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:039")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:040") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:040")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:041") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:041")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:042") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:042")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:043") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:043")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:044") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:044")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:045") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:045")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:046") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:046")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:047") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:047")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:048") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:048")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:049") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:049")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:050") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:050")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:051") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:051")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:052") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:052")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:053") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:053")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:054") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:054")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:055") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:055")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:056") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:056")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:057") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:057")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:058") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:058")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:059") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:059")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:060") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:060")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:061") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:061")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:062") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:062")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:063") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:063")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:064") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:064")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:065") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:065")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:066") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:066")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:067") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:067")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:068") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:068")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:069") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:069")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:070") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:070")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:071") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:071")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:072") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:072")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:073") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:073")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:074") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:074")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:075") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:075")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:076") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:076")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:077") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:077")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:078") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:078")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:079") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:079")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:080") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:080")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:081") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:081")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:082") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:082")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:083") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:083")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:084") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:084")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:085") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:085")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:086") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:086")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:087") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:087")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:088") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:088")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:089") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:089")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:090") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:090")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:091") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:091")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:092") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:092")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:093") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:093")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:094") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:094")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:095") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:095")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:096") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:096")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:097") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:097")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:098") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:098")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:099") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:099")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:100") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:100")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:101") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:101")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:102") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:102")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:103") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:103")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:104") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:104")
+    field(CALC, "A+1")
+    field(EGU, "u")
+}
+record(calc, "LIM:PV:105") {
+    field(SCAN, "1 second")
+    field(INPA, "LIM:PV:105")
+    field(CALC, "A+1")
+    field(EGU, "u")
 }
