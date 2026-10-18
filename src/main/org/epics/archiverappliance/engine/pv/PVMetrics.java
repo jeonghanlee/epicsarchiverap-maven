@@ -172,9 +172,15 @@ public class PVMetrics {
         sampleBufferFullLostEventCount++;
     }
 
-    public void incrementInvalidTypeLostEventCount(ArchDBRTypes newCADBRType) {
+    /**
+     * Counts an event dropped because its type differs from the type of the PV.
+     * @param newCADBRType the type of the dropped event
+     * @return true for the first dropped event of a changed type
+     */
+    public boolean incrementInvalidTypeLostEventCount(ArchDBRTypes newCADBRType) {
         invalidTypeLostEventCount++;
         this.newCADBRType = newCADBRType;
+        return invalidTypeLostEventCount == 1;
     }
 
     public void incrementScanRawEventCount() {

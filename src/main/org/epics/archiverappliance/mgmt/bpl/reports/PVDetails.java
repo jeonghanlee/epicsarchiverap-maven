@@ -115,6 +115,9 @@ public class PVDetails implements BPLAction {
                 addDetailedStatus(result, "Precision:", Double.toString(typeInfo.getPrecision()));
                 addDetailedStatus(result, "Units:", typeInfo.getUnits());
                 addDetailedStatus(result, "Is this PV paused:", typeInfo.isPaused() ? "Yes" : "No");
+                if (typeInfo.isPaused() && typeInfo.getPauseReason() != null && !typeInfo.getPauseReason().isEmpty()) {
+                    addDetailedStatus(result, "Reason for the pause:", typeInfo.getPauseReason());
+                }
                 addDetailedStatus(
                         result, "Sampling method:", typeInfo.getSamplingMethod().toString());
                 addDetailedStatus(result, "Sampling period:", Float.toString(typeInfo.getSamplingPeriod()));

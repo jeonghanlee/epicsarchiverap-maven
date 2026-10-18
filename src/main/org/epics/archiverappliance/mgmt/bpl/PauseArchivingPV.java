@@ -92,6 +92,7 @@ public class PauseArchivingPV implements BPLAction {
 				return;
 			}
 			typeInfo.setPaused(true);
+			typeInfo.setPauseReason("");
 			typeInfo.setModificationTime(TimeUtils.now());
 			configService.updateTypeInfoForPV(pvName, typeInfo);
 			

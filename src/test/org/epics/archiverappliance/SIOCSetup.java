@@ -42,7 +42,15 @@ public class SIOCSetup {
 	 * This assumption can be changed; please let me know if this behavior is needed.
 	 */
 	public void startSIOCWithDefaultDB() throws Exception {
-		String path = "src/resources/test/UnitTestPVs.db";
+		startSIOCWithDB("src/resources/test/UnitTestPVs.db");
+	}
+
+	/**
+	 * Start the SIOC with the given database file; the prefix macro applies as for the default database.
+	 * @param path the database file, relative to the root folder of the workspace
+	 * @throws Exception when the file is missing or the process does not start
+	 */
+	public void startSIOCWithDB(String path) throws Exception {
 		File f = new File(path);
 		if(!f.exists()) throw new IOException("Cannot find SIOC database file " + path);
 		

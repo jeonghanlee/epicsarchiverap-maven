@@ -99,6 +99,8 @@ function groups(ctx) {
             rows: [
                 row("Appliance", status("appliance")),
                 row("Sampling", sampling),
+                // The engine says why it paused a PV on its own; an operator's pause has no reason.
+                ...(String(ctx.info.paused) === "true" && ctx.info.pauseReason ? [row("Paused because", info("pauseReason"))] : []),
                 row("Policy", info("policyName")),
                 row("Estimated event rate (events/sec)", details("Estimated event rate (events/sec)")),
                 row("Estimated storage rate (MB/day)", details("Estimated storage rate (MB/day)")),

@@ -138,6 +138,8 @@ public class PVTypeInfo implements Serializable {
 	private String[] archiveFields = new String[0];
 	private boolean usePVAccess = false;
 	private boolean useDBEProperties = false;
+	// Why the engine paused the PV on its own (a changed type); empty for a pause made by an operator.
+	private String pauseReason = "";
 	
 	public PVTypeInfo() {
 		
@@ -174,6 +176,7 @@ public class PVTypeInfo implements Serializable {
 		this.computedBytesPerEvent = srcTypeInfo.computedBytesPerEvent;
 		this.userSpecifiedEventRate = srcTypeInfo.userSpecifiedEventRate;
 		this.paused = srcTypeInfo.paused;
+		this.pauseReason = srcTypeInfo.pauseReason;
 		this.samplingMethod = srcTypeInfo.samplingMethod;
 		this.samplingPeriod = srcTypeInfo.samplingPeriod;
 		this.policyName = srcTypeInfo.policyName;
@@ -242,6 +245,14 @@ public class PVTypeInfo implements Serializable {
 
 	public void setPaused(boolean paused) {
 		this.paused = paused;
+	}
+
+	public String getPauseReason() {
+		return pauseReason;
+	}
+
+	public void setPauseReason(String pauseReason) {
+		this.pauseReason = pauseReason == null ? "" : pauseReason;
 	}
 
 	public void setPvName(String pvName) {

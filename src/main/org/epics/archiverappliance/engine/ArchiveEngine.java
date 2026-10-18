@@ -329,6 +329,27 @@ public class ArchiveEngine {
 	 * @param configservice  ConfigService
 	 * @throws Exception error in pausing the channel .
 	 */
+	/**
+	 * Pause a PV on the engine's own decision: the reason is saved in the type information with the paused flag, so that the
+	 * management reads Paused and the Details window shows why; then the channel is paused as for an operator's request.
+	 * The ETL is not told, as it is by the management; it goes on moving the stored data, which stays valid.
+	 *
+	 * @param pvName        Name of the channel (PV)
+	 * @param reason        why the engine pauses it
+	 * @param configservice ConfigService
+	 * @throws Exception when the channel cannot be paused
+	 */
+	public static void pauseArchivingPV(final String pvName, final String reason, ConfigService configservice) throws Exception {
+		PVTypeInfo typeInfo = configservice.getTypeInfoForPV(pvName);
+		if (typeInfo != null && !typeInfo.isPaused()) {
+			typeInfo.setPaused(true);
+			typeInfo.setPauseReason(reason);
+			typeInfo.setModificationTime(TimeUtils.now());
+			configservice.updateTypeInfoForPV(pvName, typeInfo);
+		}
+		pauseArchivingPV(pvName, configservice);
+	}
+
 	public static void pauseArchivingPV(final String pvName, ConfigService configservice) throws Exception {
 		EngineContext engineContext = configservice.getEngineContext();
        // pause the pv

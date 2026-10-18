@@ -69,6 +69,10 @@ public class SampleBuffer {
 	 * pVMetrics kept for this sample buffer
 	 */
 	private final PVMetrics pVMetrics;
+	/**
+	 * True once a full buffer dropped a sample in the current write period; one WARN line per period, cleared when the buffer is written.
+	 */
+	private boolean bufferFullLogged = false;
 
 	/** Create sample buffer of given capacity 
 	 *
@@ -136,7 +140,7 @@ public class SampleBuffer {
 		synchronized (this) {
 			previousSamples = currentSamples;
 			currentSamples = new ArrayListEventStream(capacity, desc);
-
+			bufferFullLogged = false;
 		}
 	}
 
@@ -228,6 +232,12 @@ public class SampleBuffer {
 					// The buffer is full, drop the first sample and increment the bufferFull lost event count. 
 					currentSamples.removeFirst();
 					pVMetrics.addSampleBufferFullLostEventCount();
+					if (!bufferFullLogged) {
+						bufferFullLogged = true;
+						logger.warn("The sample buffer of PV " + channel_name + " is full: capacity " + capacity + " samples for a sampling period of "
+							+ pVMetrics.getSamplingPeriod() + " s, measured event rate " + pVMetrics.getEventRate()
+							+ " events/s; the events that arrive before the next write are dropped and counted");
+					}
 				}
 
 				currentSamples.add(value);

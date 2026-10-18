@@ -93,6 +93,7 @@ public class ResumeArchivingPV implements BPLAction {
 				return;
 			}
 			typeInfo.setPaused(false);
+			typeInfo.setPauseReason("");
 			typeInfo.setModificationTime(TimeUtils.now());
 			configService.updateTypeInfoForPV(pvName, typeInfo);
 

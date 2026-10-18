@@ -88,7 +88,7 @@ instead.
 | Initial sampling | the archiver looks up the type and settings of the PV before it stores samples |
 | Appliance assigned | the request is accepted and the PV is assigned to an appliance; sampling has not started |
 | Being archived | the engine samples the PV and stores its samples |
-| Paused | the archiver knows the PV but does not sample it |
+| Paused | the archiver knows the PV but does not sample it; the engine pauses a PV by itself when its record comes back under the same name with another type, and the Details window then says why |
 | Disconnected | the archiver cannot reach the PV on the control system network; no samples are stored until it returns |
 | Not being archived | the archiver has no request for the PV |
 | Appliance Down | the appliance that holds the PV does not answer, so its state cannot be read |
@@ -134,7 +134,9 @@ reports are:
   the PVs that use the most storage;
 - recently added and recently changed PVs;
 - PVs that dropped events because of a wrong time stamp, a buffer
-  overflow or a type change.
+  overflow or a type change. The engine log also holds one WARN line
+  per write period for a PV whose buffer is full and one line for a PV
+  whose type changed, which the engine then pauses.
 
 ![The Browse PVs page with the PVs that are disconnected now](images/browse-disconnected.png)
 
