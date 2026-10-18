@@ -104,8 +104,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | Interface console | M71 | Backward read of a small PB file | Milestone | Complete | No |  | A backward read of a PB file with one sample returns the sample, and a search for a time earlier than every sample of a small file returns not found and does not throw `Max iterations reached`; [detail](#m71---backward-read-of-a-small-pb-file) |
 | Interface analyzer | M72 | One chart widget with its controls | Milestone | Complete | No | M59, M58, D38 | Every page that plots draws through one widget, split into modules by role, that builds and keeps its controls: the Options panel with its state, Enlarge chart, the cards, the range strip, the legend and the tooltip; the Operations and Retrieval performance charts have the Options and Enlarge chart that the Browse PVs page has, and `browse.js` no longer builds any of them; complete on 2026-10-17 at 0ccc2ba3; [detail](#m72---one-chart-widget-with-its-controls) |
 | Verification | M73 | Reaction of the archiver to a record that changes while it is archived | Milestone | In progress | No |  | On a local appliance with a soft IOC, a change of the scan rate, of the unit, precision and limits, and of the record type of an archived PV is made while the PV is archived, and what the engine and the stores do with the samples before and after it is observed and recorded: which samples are kept, which are dropped and counted, and what the type information, the Details window and the data show; [detail](#m73---reaction-of-the-archiver-to-a-record-that-changes-while-it-is-archived) |
-| Interface console | M74 | Plot limit note and bulk Plot controls in the PV table | Milestone | In progress | No |  | The Plot boxes over the limit of 5 give a stronger message, on a pointer and on a tap, as a tooltip on their cell and as a note beside the counters of the table; the table heading offers First 5, which turns the Plot boxes of the first five rows on and the others off, and Deselect all, which turns every Plot box off; verified in the browser on the Browse PVs page; [detail](#m74---plot-limit-note-and-bulk-plot-controls-in-the-pv-table) |
-| Verification | M75 | Procedure for the test IOC of the console checks in the book | Milestone | Not started | Yes |  | The developer page of the book has a procedure that installs, starts, lists, switches the mode of and stops the one soft IOC of the console checks with `ioc-runner` from `src/resources/test/st.cmd`, with the configuration file it needs carried in the repository and every command run as shown; [detail](#m75---procedure-for-the-test-ioc-of-the-console-checks-in-the-book) |
+| Interface console | M74 | Plot limit note and bulk Plot controls in the PV table | Milestone | In progress | No |  | The Plot boxes over the limit of 5 give a stronger message, on a pointer and on a tap, as a tooltip on their cell and as a note beside the counters of the table; the table heading offers First 5, which turns the Plot boxes of the first five rows on and the others off, Deselect all, which turns every Plot box off, Plotted only, which shows only the plotted rows, and Clear selection, which unticks every chosen PV; verified in the browser on the Browse PVs page; [detail](#m74---plot-limit-note-and-bulk-plot-controls-in-the-pv-table) |
+| Verification | M75 | Procedure for the test IOC of the console checks in the book | Milestone | In progress | No |  | The developer page of the book has a procedure that installs, starts, lists, switches the mode of and stops the one soft IOC of the console checks with `ioc-runner` from `src/resources/test/st.cmd`, with the configuration file it needs carried in the repository and every command run as shown; [detail](#m75---procedure-for-the-test-ioc-of-the-console-checks-in-the-book) |
 | Verification | M76 | Archiving continues across a change of the record | Milestone | Deferred | No | M73, D45 | The engine detects a change of the archived record (type, rate, unit, precision or limits) on its own and goes on storing the signal under the new condition from the instant of the change, with the earlier samples readable as they were stored; deferred to the next major release by D45; the GitHub issue that holds the direction is filed; [detail](#m76---archiving-continues-across-a-change-of-the-record) |
 | Verification | M77 | Log and pause on a record that changes | Milestone | Not started | Yes | M73 | For each change of M73 that the engine can detect, it writes one log line that names the PV and what changed, and where storing has to stop (a changed type) it pauses the PV instead of dropping on without a word; nothing else changes until M76; verified on the one IOC and the one appliance of D44; [detail](#m77---log-and-pause-on-a-record-that-changes) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
@@ -5838,7 +5838,7 @@ Every item of every page of the console is readable by itself through an informa
 
 - The title is a question. The first row, In short, answers it in one sentence. The rows that follow are What it shows, Normal, Attention, Problem and What to do, and a row is left out when it does not apply, so that a card has five rows or fewer. A sentence has fewer than 40 words, and a term is explained where it first appears in the card.
 - The pages are all the pages of the console that hold content, and all of them get the same form. Read on 2026-10-17, they are:
-  - Browse PVs (`index.html`): has cards (Find, how to read the chart); gets a card for the table with a row for each column, among them State with `N lost`, its three causes and what to do about each, and Protocol, Trend, Value and Last event.
+  - Browse PVs (`index.html`): has cards (Find, how to read the chart); gets a card for the table with a row for each column, among them State with `N lost`, its three causes and what to do about each, and Protocol, Trend, Value and Last event. Added on 2026-10-17 at the owner's request: the prefix buttons of the Find panel, which show the PVs of one prefix when pressed and every PV again when pressed a second time, say so in a title on each button and in the Find card, because the second press reads as a reset and is not explained anywhere.
   - The chart widget (`js/aa/chart/widget.js`), which Browse PVs, Operations and Retrieval performance show: has the range, options and statistics cards; gets them in the form.
   - Archive PVs (`archive.html`): has one card; gets it in the form.
   - System (`system.html`), Operations (`operations.html`), Retrieval performance (`retrieval.html`): have cards in their own forms; get the one form.
@@ -6939,11 +6939,11 @@ Superseded Plan Artifacts: none
 
 Rerun on the one IOC and the one appliance of D44, 2026-10-18T04:31Z to 05:04Z (build aa-20261018-0ccc2ba3, port base 27665; the `consolechart` IOC of `ioc-runner` switched between its record sets by `work/exp/m73/lib.py restart_ioc`, which rewrites the configuration file and runs `ioc-runner --local stop`, `-f install`, `start`; `restore.py` put the IOC and the type information back afterwards). Every result of the first run was reproduced. T1: 58 samples in 46 s at 0.1 s (median spacing 0.1 s, longest gap 9.1 s, 445 events lost to the full buffer, `getPVsByDroppedEventsBuffer`); 72 in 71 s at 1 s; 15 in 136 s at 10 s; the scan PV 47, 72, 15; the estimate 1 to 0.49 and `Not enough info` to 0.47. T2: nothing moved for 100 s after the change; after the restart with the `CAV2_*` macros the type information and the meta read K and 4, MW and 3; the display limits stayed 0.0 and the warning limits NaN (HIGH and LOW are macros of the database since this run). T3: 121 samples before the change and none after for all four; dropped 104 (integer), 3 (string), 104 (waveform); the page read `N lost` 111, 7, 111 with Protocol CA. T4: the integer PV converted (100 samples in the next 100 s, the window reads integers); string and waveform answered HTTP 500 and dropped on (101 in 100 s). T5, in a second pass 05:00Z to 05:04Z after `SR:BPM:03:Y` was archived again over `pva://` (the first pass of this rerun had it over Channel Access, so its T5 does not count): the PVAccess PV dropped and counted 101 events in 100 s, `listTypeChanges.bash` listed it, the page read `104 lost` with Protocol PVA, the way out to an integer worked (100 samples after the resume, integers), and the meta of the PVA PV holds PREC 0 and no EGU. Results in the job folder `tmp/m73/results-full-0442` (first pass) and `tmp/m73/results` (second pass).
 
-Deviations from the expected reaction, to be filed as issues:
+Deviations from the expected reaction, filed as issues on 2026-10-17 (#45, #46, #47, label bug, assignee jeonghanlee, observed OPEN at filing):
 
-1. `changeTypeForPV` cannot convert a numeric PV to a string or to a waveform: it answers HTTP 500, leaves the PV Paused, and the PV keeps dropping when resumed; no route for the operator remains in the console (T4).
-2. A monitored PV whose record posts faster than the rate estimated at the archive request loses most events to the full sample buffer (capacity 11 for a 10 s write period at 1 s); the loss shows only in the counters and the State column, and the manual does not describe it (T1).
-3. The type information keeps the display limits of the archive request after a reconnect, so the Details window reads Display limits as not set while the IOC reports them; the unit and the precision are read again (T2).
+1. #45: `changeTypeForPV` cannot convert a numeric PV to a string or to a waveform: it answers HTTP 500, leaves the PV Paused, and the PV keeps dropping when resumed; no route for the operator remains in the console (T4).
+2. #46: A monitored PV whose record posts faster than the rate estimated at the archive request loses most events to the full sample buffer (capacity 11 for a 10 s write period at 1 s); the loss shows only in the counters and the State column, and the manual does not describe it (T1).
+3. #47: The type information keeps the display limits of the archive request after a reconnect, so the Details window reads Display limits as not set while the IOC reports them; the unit and the precision are read again (T2).
 
 Observations that need no issue unless the owner decides so: with the property subscription the changed fields travel with the samples but the type information follows only after a reconnect (T2); `changeTypeForPV` truncates the stored history when it converts a double to an integer (T4); the Browse PVs page keeps showing the last stored value of a PV that drops, with `N lost` as the only sign (T3); the meta of a PVA PV lacks EGU after a change of type (T5); `FAST:SIG:1` and `FAST:SIG:2` change once a second although their description says 10 Hz.
 
@@ -6976,10 +6976,12 @@ Read on 2026-10-17 in `js/browse.js` and `css/browse.css`: when 5 PVs are plotte
 
 - The message of the Plot boxes that are over the limit is made stronger and stays where it is: the boxes remain `disabled` with the not-allowed cursor. The words say that at most 5 PVs are drawn and that a Plot box has to be turned off first. A disabled box takes neither the pointer nor a tap, so the box over the limit is made transparent to them (`pointer-events: none`) and the cell under it takes them. The tooltip is on the whole cell, the cell has the not-allowed cursor, and the same words are shown as a visible note beside the counters of the heading of the table, as a status for assistive technology: while the pointer is over the cell, and, on a touch screen, from a tap on the cell until the next tap elsewhere or until a Plot box is turned off. The note floats in the top margin above the heading and takes no room, because a note that took room moved the table down under the pointer, the pointer then stood on the cell of the row above, the note went and the table moved back (seen on 2026-10-17 with a note in the line of the heading). The boxes under the limit show nothing.
 - Two controls beside "table x/100", for the Plot boxes only: First 5 turns the Plot boxes of the first five rows of the table, in the order of the table, on and every other Plot box off (with fewer than five rows, every row); Deselect all turns every Plot box off. Each is disabled while it has nothing to do (First 5 with an empty table, Deselect all with no Plot box on).
-- The address of the page keeps the plotted PVs as it does for one Plot box, so a link reproduces the choice.
-- The manual and the Help page name the two controls and the note.
+- Two more controls in the same place, added on 2026-10-17 at the owner's request: Plotted only, a toggle that shows only the rows whose Plot box is on and hides the others until it is pressed again (the counter reads the shown rows of the total); and Clear selection, which unticks every chosen PV so that the table is empty and the chart shows the message for no plotted PV. Each is disabled while it has nothing to do, and each has a title that says what it does.
+- The address of the page keeps the plotted PVs as it does for one Plot box, so a link reproduces the choice; the Plotted only toggle is not kept in the address.
+- Two controls under the count of the Find panel, added on 2026-10-17 at the owner's request, which was about this panel: Selected only, a toggle that shows in the list only the selected PVs instead of the matches until it is pressed again (the count line then reads the selected PVs shown); and Clear selection, which clears every selection as the control of the table does. Each is disabled while nothing is selected, each has a title, and the toggle is not kept in the address. The two controls of the table stay.
+- The manual and the Help page name the six controls and the note.
 
-Out of scope: a change of the limit of 5 or 100; the chart; the selection of the rows of the table; the other pages.
+Out of scope: a change of the limit of 5 or 100; the chart; the prefix buttons of the Find panel (their explanation is M65); the other pages.
 
 ##### Completion Criteria
 
@@ -6987,6 +6989,8 @@ Out of scope: a change of the limit of 5 or 100; the chart; the selection of the
 - First 5 turns on exactly the Plot boxes of the first five rows in table order and turns off the others, and the chart draws those PVs; with three rows it turns on three.
 - Deselect all turns every Plot box off, the chart shows the message for no plotted PV, and the address holds no `plot` parameter.
 - The controls work with the keyboard, are at least 44 px high on a narrow screen, have text of at least 14 px, and the page has no sideways scroll at 720 and 500 px.
+- Plotted only shows exactly the rows whose Plot box is on, the counter reads the shown rows, a second press shows every row again, and turning a Plot box off while the toggle is on hides that row; Clear selection leaves no chosen PV, an empty table and no `plot` in the address; both are disabled when idle and have a title.
+- In the Find panel, Selected only shows exactly the selected PVs in the list, in the order they were selected, with the count line reading their number, the keys move and select among them, a second press shows the matches again, and clearing a selection while the toggle is on removes that row; Clear selection of the panel clears every selection; both are disabled when nothing is selected and have a title.
 - The manual and the Help page describe them, the static checks and the default suite pass.
 
 ##### Dependencies And Decisions
@@ -6994,19 +6998,23 @@ Out of scope: a change of the limit of 5 or 100; the chart; the selection of the
 - No M or G dependency.
 - Decision Date: 2026-10-17. The owner asked for the note and the two controls and chose First 5 for the control that selects, because all rows cannot be plotted under the limit of 5.
 - Decision Date: 2026-10-17. The owner chose that the message belongs to the disabled boxes, from the sixth on, and that the work is to make that message stronger: the boxes stay `disabled`. The owner asked that a touch screen gets the message too, which the cell under the box gives through the tap.
-- No owner decision is open; the plan can be accepted.
+- Decision Date: 2026-10-17. The owner asked for a filter that shows only the plotted rows and a control that resets the selection, and chose to add them to this row rather than open a new one; the explanation of the prefix buttons of the Find panel went to M65. The owner confirmed on 2026-10-17 that the reset unticks every chosen PV (the table empties); it does not touch the prefix filter.
+- Decision Date: 2026-10-17. On seeing step 5, the owner said the request had been about the Find panel (the list of found PVs with its prefix chips and ticks), not the table; the owner kept the two controls of the table and asked for the two of the panel, and kept the explanation of the prefix chips in M65 for later. That is step 6.
+- Steps 1 to 4 are implemented and verified under the acceptance of 2026-10-17 (commit 7c1fe8a8); step 5 and step 6 were each accepted and authorized on 2026-10-17.
 
 ##### Implementation Plan
 
 Plan Status: accepted
-Plan Acceptance: 2026-10-17; owner accepted the plan with the message on the pointer and on the tap
-Implementation Authorization: 2026-10-17; owner directed the implementation of this plan; commits, pushes and issue changes need their own authority
+Plan Acceptance: 2026-10-17 for steps 1 to 4 (the message on the pointer and on the tap, First 5, Deselect all); 2026-10-17 for step 5 (Plotted only, Clear selection as the full reset of the chosen PVs); 2026-10-17 for step 6 (the same two in the Find panel, the owner's words "내가 넣어달라는 곳에 넣어줘")
+Implementation Authorization: 2026-10-17 for steps 1 to 4; 2026-10-17 for step 5; 2026-10-17 for step 6; commits, pushes and issue changes need their own authority
 Superseded Plan Artifacts: none
 
 1. The note and the two controls in the markup of `index.html` and their rules in `css/browse.css`. Check: T1.
 2. The functions in `js/browse.js` that turn the Plot boxes on and off together, the stronger message on the cell of a box over the limit, the note beside the counters while the pointer is over such a cell or after a tap on it, the state of the controls, and the address. Check: T1.
 3. The manual and the Help page. Check: T2.
 4. The static checks and the suite. Check: T2.
+5. Plotted only and Clear selection in the heading of the table (`index.html`, `css/browse.css`, `js/browse.js`: a filter on the rendering of the rows, the counter, the clearing of the chosen PVs and of the address), their titles, the manual and the Help page, then T1 and T2 again. Check: T3.
+6. Selected only and Clear selection under the count of the Find panel (`index.html`, `css/browse.css`, `js/browse.js`: the list draws the selected PVs instead of the matches while the toggle is on, the keys follow, the count line reads the selected PVs), their titles, the manual and the Help page, then T3, T1 and T2 again. Check: T4.
 
 ##### Test Plan
 
@@ -7014,13 +7022,17 @@ Superseded Plan Artifacts: none
 | --- | --- | --- | --- | --- |
 | T1 | Browser | On the Browse PVs page with eight PVs of the fixed list in the table, turn Plot boxes on one by one to five, then put the pointer over the cell of a sixth box and read the tooltip and the note, move away, tap the cell and read the note, tap elsewhere, turn one off, press Deselect all, press First 5, press First 5 again with three rows, use the keys, and look at the page at 720 and 500 px | Packaged WARs, fresh temporary appliance, soft IOC of `ConsoleChartPVs.db` | The message is absent up to five boxes, appears with the pointer over, or a tap on, a cell of a box over the limit, which stays off, and goes when the pointer leaves, at the next tap elsewhere or when a box is turned off; Deselect all leaves no Plot box on and no `plot` in the address; First 5 turns on rows 1 to 5 only; three rows give three; the controls are disabled when idle; no sideways scroll, text of at least 14 px |
 | T2 | Static and suite | `bash scripts/ui-static-checks.bash`; `./mvnw -B -ntp clean verify`; the Maven and Pages workflows; the Help page and the book read against the page | Local, JDK 21; GitHub Actions | The checks and the suite pass; the controls named by the Help page and the book are on the page |
+| T3 | Browser | On the Browse PVs page with eight PVs of the fixed list in the table and three Plot boxes on, press Plotted only and count the rows and read the counter, turn one Plot box off, press it again, press Clear selection and read the table, the chart and the address; read the titles; use the keys; look at 720 and 500 px; then T1 and T2 again | The one local appliance and the one IOC of D44 | Plotted only shows three rows and the counter reads 3 of 8, two after the box is turned off, eight again after the second press; Clear selection leaves no chosen PV, an empty table, the chart message for no plotted PV and no `plot` in the address; the controls are disabled when idle; T1 and T2 pass again |
+| T4 | Browser | On the Browse PVs page with the list of all archived PVs and three PVs selected, press Selected only and read the list and the count line, clear one with a click and one with the keys, press it again, press Clear selection and read the list, the table and the address; read the titles; look at 720 and 500 px; then T3, T1 and T2 again | The one local appliance and the one IOC of D44 | Selected only shows the three selected PVs and the count line reads 3 selected PVs shown, two after one is cleared, one after the keys clear another, the matches again after the second press; Clear selection leaves nothing selected, an empty table and no `pv` in the address; the controls are disabled when idle; no sideways scroll, text of at least 14 px, 44 px high at 500 px; T3, T1 and T2 pass again |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | 2026-10-17 21:18 PDT | The one local appliance of D44 (port base 27665, build aa-20261018-0ccc2ba3 with the uncommitted change of this row, 131 names of the fixed list archived) and the `consolechart` IOC of `ioc-runner` | Pass | `work/exp/m58/t_m74_plot.py` (28 checks: no note up to five boxes; with five on, the three others are over the limit and disabled, the pointer over such a cell and a tap on it show the tooltip and the note, the note goes on leaving, on the next tap elsewhere and when a box is turned off, the table does not move; Deselect all leaves no box on and no `plot` in the address; First 5 turns on rows 1 to 5 only and three rows give three; the controls are disabled when idle and work with the keys; no sideways scroll at 720 and 500 px, text of at least 14 px), `t1_table.py` (the Plot boxes and the cell title) and `t1_limit.py` (the 100-row limit with the LIM names) all end with ALL OK; rerun with `AA_UI=http://127.0.0.1:27665/mgmt/ui AA_RET=http://127.0.0.1:27668/retrieval/data python3 work/exp/m58/t_m74_plot.py` |
-| T2 | 2026-10-17 21:35 PDT (local part) | Local, JDK 21, Tomcat 9.0.121 for the integration tests; GitHub Actions pending | Local part Pass; workflows Pending | `bash scripts/ui-static-checks.bash` passed at 21:19 PDT (415 checks); `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS at 21:35 PDT (1006 tests, 0 failures, 0 errors, 0 skipped, 10 min 36 s; log `tmp/m74-mvn-2.log` of the job folder); the Help page and the book name First 5, Deselect all and the note (read against `index.html`); the Maven and Pages workflows run after the push and are recorded then |
+| T2 | 2026-10-17 21:35 PDT (local), 23:10 PDT (GitHub Actions) | Local, JDK 21, Tomcat 9.0.121 for the integration tests; GitHub Actions on commit 87490922 | Pass | `bash scripts/ui-static-checks.bash` passed at 21:19 PDT (415 checks); `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS at 21:35 PDT (1006 tests, 0 failures, 0 errors, 0 skipped, 10 min 36 s); the Help page and the book name First 5, Deselect all and the note (read against `index.html`); after the push of 7c1fe8a8, dacf5315 and 87490922 the Maven workflow (run 39102228124) and the Pages workflow both ended success. Rerun for steps 5 and 6: `./mvnw -B -ntp clean verify` BUILD SUCCESS at 23:36 PDT (step 5) and at 23:54 PDT (steps 5 and 6; 1006 tests, 0 failures, 10 min 29 s), the static checks 415 each time; the workflows of their push are recorded then |
+| T3 | 2026-10-17 23:26 PDT | The one local appliance of D44 restarted on build aa-20261018-87490922 plus the uncommitted change of step 5 (WAR copies in the kept WAR folder), the `consolechart` IOC, 131 names archived and connected | Pass | `work/exp/m58/t_m74_tools.py` (18 checks: Plotted only disabled with no box on and enabled with three; pressed, it shows the three plotted rows and the counter reads 3 of 8 while the address keeps every chosen PV and nothing for the toggle; turning a box off hides its row (2 of 8); the second press shows all eight; with the last box off the toggle goes off by itself and is disabled; both controls work with the keys and have a title; Clear selection leaves no chosen PV, an empty table, no `pv` or `plot` in the address, the chart message for no PV and every control disabled; no sideways scroll and text of at least 14 px at 720 and 500 px, the four controls 44 px high at 500 px), then `t_m74_plot.py` (28) and `t1_table.py` again, all ALL OK; `bash scripts/ui-static-checks.bash` passed (415) |
+| T4 | 2026-10-17 23:44 PDT | The one local appliance of D44 restarted on build aa-20261018-87490922 plus the uncommitted change of steps 5 and 6 (WAR copies in the kept WAR folder), the `consolechart` IOC, 131 names archived and connected | Pass | `work/exp/m58/t_m74_list.py` (15 checks: with three PVs selected both controls are enabled and have a title; Selected only shows the three selected PVs in their order with the count line reading 3 selected PVs shown; clearing one with a click and one with the keys removes each row and the table follows; the second press shows the 131 matches again; Clear selection leaves nothing selected, an empty table, no `pv` in the address and both controls disabled, with the mouse and with the keys; no sideways scroll, text of at least 14 px, 44 px high at 500 px), then `t_m74_tools.py` (18), `t_m74_plot.py` (28) and `t1_table.py` again, all ALL OK; `bash scripts/ui-static-checks.bash` passed (415). A first run found the count line of the list not updated after a selection change while the toggle was on; fixed before this run |
 
 ##### Closure Evidence
 
@@ -7057,16 +7069,17 @@ Out of scope: the launcher of the appliance and its section; the Java test fixtu
 
 - No M or G dependency. D44 places the row in stage 1 of D43 after M73, because the procedure records the commands the M73 checks ran; D20 is unchanged.
 - Decision Date: 2026-10-17. The owner asked for one IOC and one appliance for every console check, with every record the checks need loaded by `st.cmd` from the database files, and asked that the way the IOC is operated is recorded (D44).
-- Open for the owner at plan review: whether the configuration file in the repository keeps the CA port 25064 and the PVA address list of the kept appliance as defaults, or placeholders for them too.
+- Decision Date: 2026-10-17. The configuration file in the repository carries the CA server port as a placeholder (`<ca_port>`, with the EPICS default 5064 as the example value), and the procedure says that the appliance is started with `EPICS_CA_SERVER_PORT` set to the same value; the address lists stay `127.0.0.1`, which is loopback on every host. The port of this host (25064) is not written into the repository.
+- The prerequisites of the procedure name where `ioc-runner` comes from (the `epics-ioc-runner` repository) and that `softIocPVX` is on `PATH` through `setEpicsEnv.bash` for a shell and through the `PATH` line of the configuration file for the service.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-17; the owner chose the placeholder for the CA port (option 1 of the review)
+Implementation Authorization: 2026-10-17; the owner authorized the implementation of this plan; commits, pushes and issue changes need their own authority
 Superseded Plan Artifacts: none
 
-1. The configuration file `src/resources/test/consolechart.conf` with placeholders, and the head comments of `st.cmd` and the databases. Check: T1.
+1. The configuration file `src/resources/test/consolechart.conf` with placeholders for the user, the group, the repository path, the `PATH` to `softIocPVX` and the CA server port, and the head comments of `st.cmd` and the databases. Check: T1.
 2. The procedure section of `docs/book/src/developer.md` and the glossary entry, written from the commands of step 1 run on this host. Check: T1, T2.
 3. The book build and the Pages workflow. Check: T2.
 
@@ -7081,8 +7094,8 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | This host, EPICS 7.0.10, `ioc-runner` local mode | Pending | none |
-| T2 | Not run | Local; GitHub Actions | Pending | none |
+| T1 | 2026-10-17 23:48 to 23:49 PDT | This host, EPICS 7.0.10 with pvxs 1.5.2 (`setEpicsEnv.bash` sourced), `ioc-runner` 1.4.1 local mode, the IOC removed first (`ioc-runner --local remove consolechart`) | Pass | A script ran every command of the section as shown with the placeholders replaced (user, group, repository, the pvxs bin folder, the port of this host and its repeater port): the install validated the file, the IOC started and was listed active, `caget SR:TICK` read 7 and `pvget SR:TICK` the same value with its time, the switch to `RECORD_CHANGE=Types` (stop, `-f install`, start) gave `cainfo SR:BPM:04:X` DBF_LONG and the switch back DBF_DOUBLE, the stop left no active socket; the outputs on the page are these; the IOC was started again afterwards and the appliance reconnected its 131 names. The script and its log are in the job folder `tmp/m75/`; rerun with the same script |
+| T2 | 2026-10-17 23:50 PDT (local part) | Local, mdbook 0.4.48 (the `admonish` preprocessor is in the Pages image, not on this host); GitHub Actions pending | Local part Pass; Pages workflow Pending | `mdbook build docs/book` built with the section rendered in `developer.html`; `bash scripts/ui-static-checks.bash` passed (415); the section read against the review checklist of the technical-writing skill: one procedure with an introduction, Prerequisites, six numbered steps with the location before the action, a Verification section with the command and its output, no history words, every command run as shown in T1; the book has no glossary page, so `ioc-runner` is explained at its first use in the section. The Pages workflow runs after the push and is recorded then |
 
 ##### Closure Evidence
 
@@ -7092,7 +7105,7 @@ Superseded Plan Artifacts: none
 
 Origin: daff1b7 / M76
 Identity History: none
-GitHub Issue: none (to be filed; the projection below is its content)
+GitHub Issue: #48 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/48)
 Status: Deferred
 
 ##### Summary
@@ -7151,6 +7164,11 @@ Title: Archiving continues across a change of the record
 Body: The engine detects a change of an archived record but stops at counting, so a change on the IOC side ends the recording of the signal until an operator acts. Observed on a local appliance with a soft IOC: a record that posts faster than the rate estimated at the archive request loses most events to a sample buffer of 11 (58 samples and 445 lost in 46 s at 10 Hz); a changed unit, precision or limit reaches the archiver only through the property subscription or at a reconnect, and the display limits are never read again; a record that comes back under the same name with another type has every event dropped and counted while the type information keeps the old type; the way out, pause, `changeTypeForPV`, resume, converts the history (a double 0.0057 becomes the integer 0) and answers HTTP 500 for a string or a waveform (`UnsupportedOperationException` in `ThruNumberAndStringConversion`). The archiver should keep the signal without a gap: detect the change and go on storing under the new condition from the instant of the change, with the earlier samples readable as they were stored, which needs a type boundary on the time axis of a PV that the stores and the retrieval know. Planned for the next major release; in the current release the engine logs the change and pauses a PV whose type changed.
 
 Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Assignee: jeonghanlee
+Last Compared: 2026-10-17; filed from the body above with `gh issue create`
 
 #### M77 - Log and pause on a record that changes
 
@@ -7179,7 +7197,7 @@ Out of scope: following the change (M76); a change of the buffer, the sampling o
 
 ##### Dependencies And Decisions
 
-- Depends on M73 (the observations and the checks). D45 (Decision Date: 2026-10-17) limits the reaction in this release to the log line and the pause.
+- Depends on M73 (the observations and the checks). D45 (Decision Date: 2026-10-17) limits the reaction in this release to the log line and the pause. Issue #46 asks for the log line of the buffer loss and the manual text; this row delivers them, and #48 holds the full reaction of M76.
 - Open for the owner at plan review: whether a PV whose events are lost to the full buffer (T1) is also paused, or only logged; the row assumes only logged, because the signal still arrives in part.
 
 ##### Implementation Plan
