@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D43. M74, M75, M77, M73 and M68 are Complete (#44 and #46 closed, #42 closed). M70 is In progress: its code, unit test and appliance check are done, the suite and the push remain, then the row closes. M76 is Deferred by D45 with issue #48. Then M68 steps 2 to 6. M66 stays Blocked until G8 records readiness of the required Ansible tools.
+Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D43. M74, M75, M77, M73 and M68 are Complete (#44 and #46 closed, #42 closed). M70 is Complete. M67 is In progress: its code and browser checks are done, the suite, the commit and the push remain; its step 5 (the analyzer) waits for M62. M76 is Deferred by D45 with issue #48. Then M68 steps 2 to 6. M66 stays Blocked until G8 records readiness of the required Ansible tools.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -85,7 +85,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Interface analyzer | M64 | Waveform and image analysis in the analyzer | Milestone | Not started | No | M63, M62, D40 | The analyzer draws an array at a time, over time and as a heatmap, computes its summary values and spectrum, and analyses an image by region, projections, centroid and size; [detail](#m64---waveform-and-image-analysis-in-the-analyzer) |
 | Interface console | M60 | Name check on the network and hold of a pending request | Milestone | Not started | Yes | M57 | The appliance reports whether a complete PV name answers on the network before it is archived, and a pending archive request can be paused and held as well as cancelled; [detail](#m60---name-check-on-the-network-and-hold-of-a-pending-request) |
 | Interface console | M65 | Information cards answer on every page | Milestone | Not started | Yes | M56, M72, D38 | Every item of every page of the console (Browse PVs with its table columns and chart, Archive PVs, System, Operations, Retrieval performance, External servers and the Details and Maintenance windows) has an information card in one form, which answers what the item shows, when it is normal, needs attention or is a problem, and what to do, in plain words with the terms explained where they first appear; the System pages show a state in words beside a one-word status, and a measure that is not reported never reads Normal; [detail](#m65---information-cards-answer-on-every-page) |
-| Interface analyzer | M67 | Time zone choice for charts and times | Milestone | Not started | Yes | M59, D38 | One selection box in the header of the console and in that of the analyzer (Browser, UTC, Berkeley, Chicago, NYC, Seoul, Berlin) decides the time zone of every chart and time text, the range strip names the zone, and the choice passes from the console to the analyzer in the address; [detail](#m67---time-zone-choice-for-charts-and-times) |
+| Interface analyzer | M67 | Time zone choice for charts and times | Milestone | In progress | No | M59, D38 | One selection box in the header of the console and in that of the analyzer (Browser, UTC, Berkeley, Chicago, NYC, Seoul, Berlin) decides the time zone of every chart and time text, the range strip names the zone, and the choice passes from the console to the analyzer in the address; [detail](#m67---time-zone-choice-for-charts-and-times) |
 | Interface console | M68 | Time handling of the server and the time page in the book | Milestone | Complete | No |  | The server writes the same instant the same way in every response (a valid `getData.jplot`, a `getDataAtTime` that returns the newest sample at or before an instant in the recent past, a response to a time without a zone that is HTTP 400 in every call, a fixed locale in the text of a time, nanoseconds cleared in every partition boundary), the code and comments agree with `docs/time-handling.md`, and the book has the page of the times; [detail](#m68---time-handling-of-the-server-and-the-time-page-in-the-book) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
 | Tracking | G2 | aa-env SQLite deploy path | External gate | Complete | No | | aa-env deploys the appliance with the SQLite backend in a landed commit (jeonghanlee/epicsarchiverap-env bbe0968); [detail](#g2---aa-env-sqlite-deploy-path) |
@@ -100,7 +100,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Interface console | M61 | Appliance status as PVA PVs | Milestone | Not started | Yes |  | The appliance publishes its status measures as PVA PVs through its own PVA server and archives them, so the analyzer plots them like any archived PV; [detail](#m61---appliance-status-as-pva-pvs) |
 | Verification | M66 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | M46, G8 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m66---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
 | Interface console | M69 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes |  | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of the same record does; [detail](#m69---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
-| Interface console | M70 | Epoch seconds beside the text of a time in the management calls | Milestone | In progress | No |  | The management calls that write a time as text (`getPVStatus`, `getPVDetails` and the reports) also send the same instant as epoch seconds, so that a client can write it in another time zone; the existing fields stay; [detail](#m70---epoch-seconds-beside-the-text-of-a-time-in-the-management-calls) |
+| Interface console | M70 | Epoch seconds beside the text of a time in the management calls | Milestone | Complete | No |  | The management calls that write a time as text (`getPVStatus`, `getPVDetails` and the reports) also send the same instant as epoch seconds, so that a client can write it in another time zone; the existing fields stay; [detail](#m70---epoch-seconds-beside-the-text-of-a-time-in-the-management-calls) |
 | Interface console | M71 | Backward read of a small PB file | Milestone | Complete | No |  | A backward read of a PB file with one sample returns the sample, and a search for a time earlier than every sample of a small file returns not found and does not throw `Max iterations reached`; [detail](#m71---backward-read-of-a-small-pb-file) |
 | Interface analyzer | M72 | One chart widget with its controls | Milestone | Complete | No | M59, M58, D38 | Every page that plots draws through one widget, split into modules by role, that builds and keeps its controls: the Options panel with its state, Enlarge chart, the cards, the range strip, the legend and the tooltip; the Operations and Retrieval performance charts have the Options and Enlarge chart that the Browse PVs page has, and `browse.js` no longer builds any of them; complete on 2026-10-17 at 0ccc2ba3; [detail](#m72---one-chart-widget-with-its-controls) |
 | Verification | M73 | Reaction of the archiver to a record that changes while it is archived | Milestone | Complete | No |  | On a local appliance with a soft IOC, a change of the scan rate, of the unit, precision and limits, and of the record type of an archived PV is made while the PV is archived, and what the engine and the stores do with the samples before and after it is observed and recorded: which samples are kept, which are dropped and counted, and what the type information, the Details window and the data show; [detail](#m73---reaction-of-the-archiver-to-a-record-that-changes-while-it-is-archived) |
@@ -5928,7 +5928,7 @@ GitHub Milestone: none
 Origin: daff1b7 / M67
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -5962,25 +5962,27 @@ Out of scope: the zone of the server as an item; the time handling fixes of the 
 - Decision Date 2026-10-15: the work is built in two steps, Browser and UTC first and the five cities after, because the five cities need ticks computed with `Intl`.
 - Decision Date 2026-10-15: the analyzer is an independent service with its own box and its own browser store; the console hands over `tz` in the address (see M62).
 - Decision Date 2026-10-16: a time that the server writes as text is read in the chosen zone when the server sends the same instant as epoch seconds, which M70 builds; until then the time stays as the server writes it.
+- Decision Date: 2026-10-18. Plan review against the code after M72 and M70. The selection box sits at the right end of the menu bar (`navbar`) of every page, in the markup of each page, so that the site skin markers of the page header stay untouched. The Last event cell of the PV table and the time rows of the Details window follow the chosen zone too, the latter through the `epochSeconds` that M70 added (`lastEventEpochSeconds` and the `epochSeconds` of the time elements); a time the server sends without epoch seconds stays as the server writes it. The zone logic joins the modules of the split chart (`aa/chart/draw.js`, `strip.js`, `widget.js`) instead of the former `aa/chart.js`. The owner chose both as recommended ("네가 권장하는 대로 해").
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-18; the owner accepted the plan with the two decisions of the review of 2026-10-18
+Implementation Authorization: 2026-10-18; the owner authorized the implementation ("구현승인"); commits, pushes and issue changes need their own authority
 Superseded Plan Artifacts: none
 
-1. The zone logic of the component (`staticcontent/js/aa/chart.js`): Browser and UTC with the scales of D3, the zone named in the strip. Check: T1, T2.
+1. The zone logic of the component (`aa/chart/draw.js` for the axis labels and the tooltip heading, `aa/chart/strip.js` for the strip, `aa/chart/widget.js` for the `timeZone` option): Browser and UTC with the scales of D3, the zone named in the strip. Check: T1, T2.
 2. The five cities by `Intl` for the ticks, the tooltip and the strip. Check: T1, T2.
-3. The selection box and its storage in the header of the console (`js/menu.js` and the pages), and the reading of `tz` from the address. Check: T1.
-4. The header of the analyzer with its own box and the hand-over of `tz` (after M62). Check: T3.
-5. The book (`interface.md`) describes the choice. Check: T4.
+3. The selection box at the right end of the menu bar of every page of the console and its storage in the browser (`js/menu.js` reads and keeps the choice, the pages carry the markup), and the reading of `tz` from the address. Check: T1.
+4. The Last event cell of the PV table (`js/browse.js`) and the time rows of the Details window (`js/browse/details.js`, from the epoch seconds of M70) written in the chosen zone. Check: T1.
+5. The header of the analyzer with its own box and the hand-over of `tz` (after M62). Check: T3.
+6. The book (`interface.md`) describes the choice. Check: T4.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Browser | On a local appliance choose each item in turn on the Browse PVs page and read the axis labels, the tooltip and the range strip of one chart; reload; open another page of the console | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | The three texts agree with each other for each item; the zone is named in the strip; the choice survives the reload and is the same on the other page |
+| T1 | Browser | On the one appliance of D44 choose each item in turn on the Browse PVs page and read the axis labels, the tooltip and the range strip of one chart, the Last event cell of a row and a time row of the Details window; reload; open another page of the console | The one local appliance and the one IOC of D44 | The texts agree with each other and with `Intl.DateTimeFormat` for each item; the zone is named in the strip; the Last event cell and the Details row show the same instant in the chosen zone; the choice survives the reload and is the same on the other page |
 | T2 | Browser | Open the Browse PVs page with `#pv=SR:BEAM:CURRENT&from=1793448000000&to=1793620800000` (2026-10-31T12:00Z to 2026-11-02T12:00Z), choose Berkeley and then NYC, and open it with `#pv=SR:BEAM:CURRENT&from=1792843200000&to=1793016000000` (2026-10-24T12:00Z to 2026-10-26T12:00Z) and choose Berlin; read the labels of the axis against `Intl.DateTimeFormat` for the same instants | Local appliance, the same fixture | Every label equals the `Intl` text of its instant and no hour is repeated or missing |
 | T3 | Browser | Choose Seoul on the Browse PVs page, open the analyzer, read its box, choose Berlin there and reload | Local appliance | The analyzer shows Seoul on opening, then Berlin after the choice and after the reload |
 | T4 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
@@ -5989,10 +5991,10 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | Pending | none |
-| T2 | Not run | Local appliance, the same fixture | Pending | none |
-| T3 | Not run | Local appliance | Pending | none |
-| T4 | Not run | JDK 21; GitHub Actions | Pending | none |
+| T1 | 2026-10-18 10:27 PDT | The one local appliance of D44 restarted on build aa-20261018-fb93026a plus the uncommitted change of this row, the `consolechart` IOC | Pass | `work/exp/m58/t_m67_zone.py` (49 checks, ALL OK): the selection box is at the right end of the menu bar with Browser chosen and lists the seven items in order; for each of the seven zones, chosen in turn on the Browse PVs page with a window of twenty minutes, the four axis labels equal the `Intl.DateTimeFormat` text of their instants, the range strip writes the window in the zone and names it (PDT, UTC, PDT, CDT, EDT, and the city for Seoul and Berlin, for which Intl has only GMT+9 and GMT+2), the tooltip heading at the instant of the first label is written in the zone, and the Last event cell equals the Intl text of the instant its title holds; in Seoul the Details window writes the creation time of the settings from its epoch seconds as `Oct/14/2026 … Seoul`; the analyzer link carries `tz=Asia/Seoul`; the choice survives a reload and reads the same on the System page; no sideways scroll at 720 and 500 px with the box visible. The earlier checks `t1_table.py`, `t2_details.py`, `t_m74_plot.py` ran ALL OK after it; `t3_chart.py` found the zone name of the strip at 13 px, below the 14 px floor, which was corrected to 0.875 rem, and after a rebuild and restart at 10:44 PDT `t3_chart.py`, `t_m72_pages.py` and `t_m67_zone.py` all ran ALL OK. `bash scripts/ui-static-checks.bash` passed (425) |
+| T2 | 2026-10-18 10:27 PDT | The same appliance | Pass | In the same run: with `#pv=SR:BEAM:CURRENT&from=1793448000000&to=1793620800000&tz=America/Los_Angeles` the labels read `10-31 05:00, 10-31 21:00, 11-01 12:00, 11-02 04:00`, with NYC `10-31 08:00, 11-01 00:00, 11-01 15:00, 11-02 07:00`, and with `from=1792843200000&to=1793016000000&tz=Europe/Berlin` `10-24 14:00, 10-25 05:00, 10-25 21:00, 10-26 13:00`, each equal to the Intl text of its instant across the end of daylight saving time; `tz` of the address chose the zone in each case |
+| T3 | Not run | Local appliance | Pending | waits for M62, which builds the header of the analyzer (step 5) |
+| T4 | 2026-10-18 10:42 PDT (suite) | JDK 21, Tomcat 9.0.121 for the integration tests; GitHub Actions pending | Local part Pass; workflows Pending | `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS (1012 tests, 0 failures, 0 errors, 0 skipped, 10 min 35 s); the Maven and Pages workflows run after the push and are recorded then |
 
 ##### Closure Evidence
 
@@ -6587,7 +6589,7 @@ Last Compared: 2026-10-15; `gh issue view 41` shows the drafted body, open, assi
 Origin: daff1b7 / M70
 Identity History: none
 GitHub Issue: none
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -6638,11 +6640,14 @@ Superseded Plan Artifacts: none
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | 2026-10-18 09:21 PDT (unit, before and after), 09:31 PDT (appliance) | JDK 21; the one local appliance of D44 restarted on build aa-20261018-565385d9 plus the uncommitted change of this row, the `consolechart` IOC, 131 names archived | Pass | Unit: `TimeTextEpochSecondsTest` (2 tests) written first failed on the code before the change (`epochSeconds` and `lastEventEpochSeconds` null) and passes after it: a `getPVDetails` element of `PVMetrics` carries `epochSeconds` equal to its instant and the text unchanged, a Never time and an element without a time carry none; `EngineChannelStatus` writes `lastEventEpochSeconds` and `lastRotateLogsEpochSeconds` beside the unchanged texts and nothing for a Never time. Appliance (`work/exp/m73/m70_check.py`, ALL OK): of the 17 time elements of `getPVDetails` for `SR:TICK`, the 13 whose value is a time text carry `epochSeconds` and each text equals the epoch seconds written in the zone of the server (the 4 others read Never and carry none); the elements without a time carry none; the 115 element names are the same in the same order as the answer saved before the restart (the ETL bytes element names its unit only above 0 KB, as before) and the fixed values are unchanged; `getPVStatus` carries `lastEventEpochSeconds` and `connectionFirstEstablishedEpochSeconds` equal to their texts, no epoch seconds for its Never time, and every key of the answer before the change; `getRecentlyAddedPVs` and `getRecentlyModifiedPVs` carry `creationTimeEpochSeconds` and `modificationTimeEpochSeconds` equal to their texts (3 rows each); `getPausedPVsReport` had no row. The epoch seconds are written as a string of digits, as every number of these answers is (`samplingPeriod`, `connectionLossRegainCount`), so a client reads them as it reads those |
-| T2 | 2026-10-18 09:42 PDT (suite) | JDK 21, Tomcat 9.0.121 for the integration tests; GitHub Actions pending | Local part Pass; workflows Pending | `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS (1012 tests, 0 failures, 0 errors, 0 skipped, 10 min 31 s); the Maven and Pages workflows run after the push and are recorded then |
+| T2 | 2026-10-18 09:42 PDT (suite), 10:20 PDT (GitHub Actions) | JDK 21, Tomcat 9.0.121 for the integration tests; GitHub Actions on commit c5b0c16c | Pass | `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS (1012 tests, 0 failures, 0 errors, 0 skipped, 10 min 31 s); after the push of c5b0c16c and fb93026a the Maven workflow (run 39148442904) and the Pages workflow (run 39148442950) both ended success |
 
 ##### Closure Evidence
 
-- none
+- Deliverable: commit c5b0c16c on `modernize` (the helpers, the time elements of `getPVDetails`, `getPVStatus` and its PVA table, the reports, the test, the book); the register in fb93026a and the commit that carries this closure.
+- Checks: T1 (unit before and after, and the appliance) and T2 (suite and workflows), both Pass as recorded above.
+- Landing: observed 2026-10-18 10:28 PDT after `git fetch origin`, `origin/modernize` at fb93026a containing c5b0c16c (`git branch -r --contains`); the Maven and Pages workflows of the push ended success. No linked issue.
+- Closed on 2026-10-18.
 
 #### M71 - Backward read of a small PB file
 
