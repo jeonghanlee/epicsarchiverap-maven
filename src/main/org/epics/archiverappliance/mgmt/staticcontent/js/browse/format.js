@@ -1,6 +1,6 @@
+import { currentZone, formatInZone } from "../../comm/js/aa/timezone.js";
+
 // How the table of PVs writes a sample value and the time of a sample.
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const pad = (value) => String(value).padStart(2, "0");
 // The record types of the archiver whose values are whole numbers.
 const WHOLE_TYPES = /(INT|SHORT|BYTE|ENUM|LONG)/;
 
@@ -33,13 +33,12 @@ export function valueParts(value, dbrType) {
 
 /** The date and time of a sample as Mon/DD/YYYY hh:mm:ss in the time zone of the browser. */
 export function dateTimeText(seconds) {
-    const date = new Date(seconds * 1000);
-    return `${MONTHS[date.getMonth()]}/${pad(date.getDate())}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    return formatInZone(new Date(seconds * 1000), "%b/%d/%Y %H:%M:%S", currentZone());
 }
 
 /** The instant of a sample written in UTC to the millisecond, with the zone the table shows it in. */
 export function instantTitle(seconds, nanos) {
     const instant = new Date(seconds * 1000 + Math.floor((nanos || 0) / 1e6)).toISOString();
-    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const zone = currentZone() === "browser" ? Intl.DateTimeFormat().resolvedOptions().timeZone : currentZone();
     return `${instant} (UTC); shown in ${zone}`;
 }

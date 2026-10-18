@@ -4,6 +4,7 @@
 import { infoButton } from "../card.js";
 import { node } from "../dom.js";
 import { drawTimeSeries } from "./draw.js";
+import { currentZone, onZoneChange } from "../timezone.js";
 import { buildChartOptions, CHART_OPTIONS } from "./options.js";
 
 // The options, the open tab and the state of the panel of each chart, by the id the page gives it. A page that builds its
@@ -65,8 +66,8 @@ function cardsOf(helpHref, timed) {
  * config, given once: id (the key of the choices the widget keeps), idPrefix (puts a prefix before the id of each control, for a
  * page with more than one chart; without it the ids are options, enlarge, chart and so on), title and dialogTitle (the headings of
  * the row and of the large window; both optional), help ([title, rows, action, helpHref] of the card of how to read this chart,
- * optional), helpHref (the help page of the cards of the widget), legend, labelNames, strip, timeZone (reserved for the choice of the
- * display time zone; not read yet), and the optional callbacks
+ * optional), helpHref (the help page of the cards of the widget), legend, labelNames, strip, timeZone (the zone the times are written
+ * in; without it the choice of the application, which the widget follows when it changes), and the optional callbacks
  * onZoom(from, to), onPan(direction), onReset() and onOptionsChange(options). A chart with none of the three time callbacks has no
  * drag over the plot and no Earlier, Later or Back to the selected range.
  * draw(data), at each refresh: series, from, to, gapMs, windowChosen, canPanLater and analyzerHref (a string, or null for no link).
@@ -126,6 +127,9 @@ export function createChart(host, config) {
     host.textContent = "";
     host.append(head, area);
 
+    // A change of the zone of the application redraws the last data in the new zone.
+    onZoneChange(() => redraw());
+
     /** The projection is on while the panel is open on its Projection tab. */
     const projectionOn = () => memory.optionsOpen && memory.optionsTab === "projection";
 
@@ -149,6 +153,7 @@ export function createChart(host, config) {
             legend: config.legend,
             labelNames: config.labelNames,
             strip: config.strip,
+            timeZone: config.timeZone || currentZone(),
             projection: projectionOn(),
             // The table of the Y projection is in the Projection tab above the chart, on the page and in the large window alike.
             statisticsHost: projectionStats,

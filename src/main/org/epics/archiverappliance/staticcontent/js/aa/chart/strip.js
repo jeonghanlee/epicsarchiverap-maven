@@ -2,6 +2,7 @@
 
 import { SVG_NS } from "../dom.js";
 import { format, intervalText, windowLabel } from "./text.js";
+import { zoneName } from "../timezone.js";
 
 // The paths of the icons of the range strip, in a drawing of 24 by 24: earlier, later, back to the chosen range, and a
 // value axis.
@@ -96,10 +97,16 @@ export function buildRangeStrip(input, ranges, units, redraw) {
     }
     const windowText = document.createElement("span");
     windowText.className = "strip-window";
-    const label = windowLabel(input.from, input.to, input.fromIncluded !== false, input.toIncluded !== false);
+    const label = windowLabel(input.from, input.to, input.fromIncluded !== false, input.toIncluded !== false, input.timeZone);
     windowText.textContent = label.text;
     windowText.title = label.full;
     time.append(windowText);
+    // The zone the window is written in, after the interval, so that a reader in another zone sees which clock it is.
+    const zone = document.createElement("span");
+    zone.className = "strip-zone";
+    zone.textContent = zoneName(input.timeZone, input.to);
+    zone.title = "The time zone of the charts and the times; chosen in the menu bar";
+    time.append(zone);
     strip.append(time);
     const values = document.createElement("span");
     values.className = "strip-group";

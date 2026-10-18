@@ -392,6 +392,14 @@ button.opt-tab[aria-selected="true"]:hover {
     margin-left: 6px;
 }
 
+/* The zone of the window, after the interval. */
+.strip-zone {
+    margin-left: 6px;
+    font-size: 0.875rem;
+    color: var(--ink-2, #555);
+    white-space: nowrap;
+}
+
 .strip-range {
     margin: 0 8px 0 2px;
 }

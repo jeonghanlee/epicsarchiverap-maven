@@ -7,6 +7,7 @@ import { sparkline } from "../comm/js/aa/spark.js";
 import { drawHistogram, drawScatter } from "../comm/js/aa/plots.js";
 import { valueParts, dateTimeText, instantTitle } from "./browse/format.js";
 import { buildDetails } from "./browse/details.js";
+import { currentZone, onZoneChange } from "../comm/js/aa/timezone.js";
 
 // Initial limits (D47). They are configuration; measurement and use adjust them.
 const LIMITS = { table: 100, chart: 5, concurrentRequests: 6, indexed: 500000 };
@@ -759,6 +760,10 @@ function analyzerHref(names) {
     }
     query.set("from", from.toISOString());
     query.set("to", to.toISOString());
+    // The analyzer, a service of its own, gets the chosen zone in the address; the browser zone needs no parameter.
+    if (currentZone() !== "browser") {
+        query.set("tz", currentZone());
+    }
     return `analyzer.html?${query}`;
 }
 
@@ -1088,12 +1093,16 @@ async function openDetails(name) {
             return;
         }
         const named = new Map();
+        const epochs = new Map();
         for (const entry of rows) {
             if (!named.has(entry.name)) {
                 named.set(entry.name, entry.value);
+                if (entry.epochSeconds) {
+                    epochs.set(entry.name, Number(entry.epochSeconds));
+                }
             }
         }
-        $("detailsBody").replaceChildren(buildDetails({ status: statusRows[0] || {}, info: typeInfo, details: named }));
+        $("detailsBody").replaceChildren(buildDetails({ status: statusRows[0] || {}, info: typeInfo, details: named, epochs }));
     } catch (error) {
         if (detailsFor === name) {
             $("detailsBody").textContent = `The details could not be read: ${error.message}`;
@@ -1794,6 +1803,8 @@ function wire() {
     $("listSelected").addEventListener("click", toggleSelectedOnly);
     $("listClear").title = "Untick every PV, so that the table is empty";
     $("listClear").addEventListener("click", clearSelection);
+    // The Last event cells are written in the chosen zone; the chart widget redraws itself.
+    onZoneChange(() => renderTable());
     // A tap that leaves the cell where the note of the Plot limit was shown hides it.
     document.addEventListener("click", () => {
         if (state.plotNoteStays) {

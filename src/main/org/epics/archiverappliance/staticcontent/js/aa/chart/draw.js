@@ -12,6 +12,7 @@ import { DASHES, finiteSeries, lineLook, movingStats, splitOnGaps } from "./seri
 import { buildStatistics } from "./statistics.js";
 import { buildRangeStrip } from "./strip.js";
 import { format } from "./text.js";
+import { formatInZone } from "../timezone.js";
 import { drawProjection, PROJECTION_WIDTH } from "./projection.js";
 
 // The lines and sample marks are clipped to the plot area; each drawing takes the next id of the page.
@@ -25,6 +26,7 @@ const MARKER_LIMIT = 200;
 const MARK_CAP = 1500;
 
 /**
+ * timeZone is the zone the labels, the tooltip and the strip are written in (an IANA identifier, UTC or browser); without it the browser zone.
  * input: {series: [{name, egu, points: [{t, v, s, g?}], focus, quiet?}], from: Date, to: Date, gapMs: number (Infinity: none), labelNames?: boolean, height?: number, axisWidth?: number}
  * axisWidth is the least width in pixels of a value axis (see axisRoom()).
  * onZoom(from, to) turns a horizontal drag over the plot into a request for that window. Exact samples are marked
@@ -181,7 +183,8 @@ export function drawTimeSeries(host, input) {
     });
     const spanHours = (to - from) / 3600000;
     // A window of ten minutes or less is labelled to the second, so that its four labels differ.
-    const timeFormat = d3.timeFormat(spanHours > 36 ? "%m-%d %H:%M" : spanHours > 1 / 6 ? "%H:%M" : "%H:%M:%S");
+    // The labels are written in the chosen zone at each instant, so a change of daylight saving time falls at its true place.
+    const timeFormat = (when) => formatInZone(when, spanHours > 36 ? "%m-%d %H:%M" : spanHours > 1 / 6 ? "%H:%M" : "%H:%M:%S", input.timeZone);
     [0, 1 / 3, 2 / 3, 1].forEach((fraction, index, all) => {
         const when = new Date(from.getTime() + fraction * (to - from));
         svg.append("text")
@@ -328,7 +331,7 @@ export function drawTimeSeries(host, input) {
         const when = x.invert(px);
         tip.textContent = "";
         const heading = document.createElement("b");
-        heading.textContent = d3.timeFormat("%Y-%m-%d %H:%M:%S")(when);
+        heading.textContent = formatInZone(when, "%Y-%m-%d %H:%M:%S", input.timeZone);
         tip.append(heading);
         let nearest = null;
         for (const s of drawn) {

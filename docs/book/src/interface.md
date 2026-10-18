@@ -23,6 +23,14 @@ carries a content security policy, and the charts are drawn with D3.
 | Help | `help.html` | Everyone | How to use each page, the PV states, the API reference and a link to this manual; it needs no network beyond the appliance |
 | Data viewer | `/retrieval/ui/viewer/archViewer.html` | Everyone | Charts per unit for the PVs of the address |
 
+The right end of the menu bar of every page holds the time zone of the
+console: Browser (the default), UTC, Berkeley, Chicago, NYC, Seoul or
+Berlin. Every chart (its axis labels, its tooltip and its range strip,
+which names the zone), the Last event column of the PV table and the
+times of the Details window are written in the chosen zone; the choice is
+kept in the browser and passed to the analyzer in the address as `tz`.
+The five cities follow their own daylight saving time at each instant.
+
 The addresses `metrics.html`, `storage.html`, `appliance.html`,
 `reports.html`, `pvdetails.html`, `integration.html` and `cacompare.html`
 forward to the page that replaced them; `pvdetails.html?pv=<name>` opens that PV on the Browse PVs

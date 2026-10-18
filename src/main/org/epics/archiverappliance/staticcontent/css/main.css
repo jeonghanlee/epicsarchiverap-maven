@@ -139,7 +139,29 @@ a:hover {
 }
 
 .nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem 1rem;
   padding: 0 1rem;
+}
+
+/* The time zone of the charts and the times, at the right end of the menu bar on every page. */
+.nav label.timezone {
+  margin-left: auto;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+
+.nav select.timezone {
+  margin-left: 0.4rem;
+  min-height: 2rem;
+  padding: 0.2rem 0.4rem;
+  font: inherit;
+  color: var(--c-brand);
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
 }
 
 /* The menu toggle of a narrow screen: a checkbox that stays focusable and a label that draws the button. */

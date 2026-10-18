@@ -1,3 +1,5 @@
+import { partsInZone } from "../timezone.js";
+
 // The texts of a chart: a value with its unit, an interval, the time window and the names of the lines.
 
 /** A value with a precision by magnitude: values below 0.001 in exponent form so that a pressure never reads as 0. */
@@ -24,9 +26,13 @@ export function intervalText(low, high, lowIncluded, highIncluded, text) {
  * written once, in front of the brackets: the date when the day is the same and the hour too when that is the same as well;
  * when only the year is the same, the end leaves it out. {text, full} where full is the whole interval for a tooltip.
  */
-export function windowLabel(from, to, fromIncluded, toIncluded) {
+export function windowLabel(from, to, fromIncluded, toIncluded, zone) {
     const pad = (number) => String(number).padStart(2, "0");
-    const fields = (date) => [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()];
+    // The fields are read in the chosen zone (Browser and UTC included), so that both ends share the same clock.
+    const fields = (date) => {
+        const p = partsInZone(date, zone);
+        return [p.year, p.month, p.day, p.hour, p.minute, p.second];
+    };
     const seconds = to.getTime() - from.getTime() <= 600000;
     const [f, t] = [fields(from), fields(to)];
     const day = (x) => `${x[0]}-${pad(x[1])}-${pad(x[2])}`;

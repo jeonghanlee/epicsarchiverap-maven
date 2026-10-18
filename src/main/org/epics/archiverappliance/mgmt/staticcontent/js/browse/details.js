@@ -4,6 +4,7 @@
 // (docs/time-handling.md): the time of the data, received, recorded, moved, and the times of the connection, of the settings and of
 // the last request.
 import { node } from "../../comm/js/aa/dom.js";
+import { currentZone, serverStyleText } from "../../comm/js/aa/timezone.js";
 
 const NOT_PROVIDED = "not provided";
 const NOT_SET = "not set";
@@ -66,7 +67,17 @@ function storeNames(ctx) {
 
 // A row is {label, read}; a time row has the name of getPVDetails as its label. A section may have a heading, the kind of its times.
 const row = (label, read) => ({ label, read });
-const time = (name) => ({ label: name, read: details(name), time: true });
+const time = (name) => ({ label: name, read: timeRead(name), time: true });
+
+/** A time of getPVDetails, written in the chosen zone when the element carries its epoch seconds, as the server wrote it otherwise. */
+function timeRead(name) {
+    return (ctx) => {
+        if (ctx.epochs && ctx.epochs.has(name)) {
+            return serverStyleText(ctx.epochs.get(name), currentZone());
+        }
+        return details(name)(ctx);
+    };
+}
 
 function groups(ctx) {
     const moves = [];
