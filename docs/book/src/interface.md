@@ -106,7 +106,7 @@ Each PV selected in the list has one row:
 
 | Column | Content |
 | :--- | :--- |
-| Plot | The box that draws the PV in the chart. It is off when the row appears. At most 5 boxes are on; at 5 the other boxes are disabled and say why in their title |
+| Plot | The box that draws the PV in the chart. It is off when the row appears. At most 5 boxes are on; at 5 the other boxes are disabled, and the pointer over one of them, or a tap on it, says why in its title and in a note beside the counters of the table. Beside the counter `table x/100`, First 5 turns on the boxes of the first five rows and turns off the others, and Deselect all turns every box off |
 | PV | The name |
 | Protocol | CA or PVA, read from `usePVAccess` of `getPVTypeInfo`; empty for a PV that is not archived |
 | State | The state word of the PV and, when events were lost, `N lost`, where N is the sum of `eventsDropped` of the reports `getPVsByDroppedEventsTimestamp`, `getPVsByDroppedEventsBuffer` and `getPVsByDroppedEventsTypeChange`. The column is shown only while a PV is not in its normal state, which is Being archived with no lost event |

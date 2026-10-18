@@ -319,6 +319,40 @@ li[aria-selected="true"] .tick {
     margin-bottom: 6px;
 }
 
+.table-head .plot-tools {
+    display: inline-flex;
+    gap: 4px 18px;
+    margin-left: 18px;
+    font-weight: 400;
+}
+
+/*
+ * The note of the Plot limit floats above the heading, in its top margin, and takes no room: a note that took room would push the
+ * table down under the pointer, and the pointer would leave the cell that shows it.
+ */
+.table-head {
+    position: relative;
+}
+
+.plot-note {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 4px);
+    max-width: 100%;
+    padding: 2px 8px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--c-surface);
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--ink-2);
+    pointer-events: none;
+}
+
+.plot-note:empty {
+    display: none;
+}
+
 .scroll {
     overflow-x: auto;
 }
@@ -382,6 +416,15 @@ li[aria-selected="true"] .tick {
 
 .pvs td.plot input:disabled {
     cursor: not-allowed;
+}
+
+/* A Plot box over the limit is disabled and takes neither the pointer nor a tap, so its cell takes them and shows the message. */
+.pvs td.plot.over {
+    cursor: not-allowed;
+}
+
+.pvs td.plot.over input {
+    pointer-events: none;
 }
 
 .pvs .proto-tag {
@@ -737,7 +780,7 @@ dialog input[type="number"] {
 
 /* The bulk, zoom and refresh buttons read as text, not as filled buttons. */
 .bulk button.plain,
-.zoombar button.plain,
+.plot-tools button.plain,
 .refresh button.plain {
     background: none;
     border: 0;
@@ -752,7 +795,7 @@ dialog input[type="number"] {
 }
 
 .bulk button.plain:hover,
-.zoombar button.plain:hover,
+.plot-tools button.plain:hover,
 .refresh button.plain:hover {
     border-bottom-color: currentColor;
 }
@@ -762,7 +805,7 @@ dialog input[type="number"] {
     background: none;
 }
 
-.zoombar button.plain:disabled,
+.plot-tools button.plain:disabled,
 .refresh button.plain:disabled {
     color: var(--ink-3);
     cursor: default;
@@ -790,7 +833,7 @@ dialog input[type="number"] {
 
 @media (max-width: 600px) {
     .bulk button.plain,
-    .zoombar button.plain {
+    .plot-tools button.plain {
         min-height: 44px;
     }
 

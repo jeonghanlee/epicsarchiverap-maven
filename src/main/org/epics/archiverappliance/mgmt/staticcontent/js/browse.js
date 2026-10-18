@@ -10,6 +10,8 @@ import { buildDetails } from "./browse/details.js";
 
 // Initial limits (D47). They are configuration; measurement and use adjust them.
 const LIMITS = { table: 100, chart: 5, concurrentRequests: 6, indexed: 500000 };
+// What a Plot box over the limit says, as the tooltip of its cell and as the note beside the counters of the table.
+const PLOT_LIMIT_MESSAGE = `Plot limit: at most ${LIMITS.chart} PVs are drawn at a time. Turn another Plot box off first.`;
 // A row of the result list is as high as a touch target on a narrow screen.
 function rowHeight() {
     return window.matchMedia("(max-width: 600px)").matches ? 44 : 30;
@@ -134,6 +136,8 @@ const state = {
     selected: [],
     // The PVs whose Plot box is on, at most LIMITS.chart, in the order they were turned on.
     plotted: [],
+    // True while the note of the Plot limit stays after a tap on a cell, until a tap elsewhere or a Plot box is turned off.
+    plotNoteStays: false,
     active: 0,
     focus: null,
     status: new Map(),
@@ -723,17 +727,64 @@ function analyzerHref(names) {
 function plotCell(name) {
     const on = state.plotted.includes(name);
     const full = !on && state.plotted.length >= LIMITS.chart;
-    const box = node("input", {
-        type: "checkbox",
-        "data-key": "plot",
-        "aria-label": `Plot ${name}`,
-        title: full ? `At most ${LIMITS.chart} PVs are plotted at a time. Turn another Plot box off first.` : null,
-    });
+    const box = node("input", { type: "checkbox", "data-key": "plot", "aria-label": `Plot ${name}` });
     box.checked = on;
     box.disabled = full;
     box.addEventListener("change", () => setPlot(name, box.checked));
     box.addEventListener("click", (event) => event.stopPropagation());
-    return node("td", { class: "plot" }, box);
+    const cell = node("td", { class: full ? "plot over" : "plot", title: full ? PLOT_LIMIT_MESSAGE : null }, box);
+    if (full) {
+        // The disabled box takes nothing, so the cell does: the pointer over it, or a tap on it, shows the note.
+        cell.addEventListener("pointerenter", () => showPlotNote(true));
+        cell.addEventListener("pointerleave", (event) => {
+            if (event.pointerType !== "touch" && !state.plotNoteStays) {
+                showPlotNote(false);
+            }
+        });
+        cell.addEventListener("click", (event) => {
+            event.stopPropagation();
+            state.plotNoteStays = true;
+            showPlotNote(true);
+        });
+    }
+    return cell;
+}
+
+/** Shows or hides the note of the Plot limit beside the counters of the table; it is shown only while the limit is reached. */
+function showPlotNote(on) {
+    const shown = on && state.plotted.length >= LIMITS.chart;
+    $("plotNote").textContent = shown ? PLOT_LIMIT_MESSAGE : "";
+    if (!shown) {
+        state.plotNoteStays = false;
+    }
+}
+
+/** The state of the two Plot controls and of the note after the table is drawn. */
+function updatePlotTools() {
+    $("plotFirst").disabled = !state.selected.length;
+    $("plotNone").disabled = !state.plotted.length;
+    if (!state.plotNoteStays) {
+        showPlotNote(false);
+    }
+}
+
+/** Turns the Plot boxes of the first LIMITS.chart rows of the table on, in the order of the table, and every other Plot box off. */
+function plotFirst() {
+    state.plotted = state.selected.slice(0, LIMITS.chart);
+    plotChanged();
+}
+
+/** Turns every Plot box off. */
+function plotNone() {
+    state.plotted = [];
+    plotChanged();
+}
+
+function plotChanged() {
+    showPlotNote(false);
+    renderTable();
+    renderChart();
+    writeAddress();
 }
 
 /** Turns the Plot box of a PV on or off; at most LIMITS.chart PVs are plotted. */
@@ -744,9 +795,7 @@ function setPlot(name, on) {
     } else if (!on && at >= 0) {
         state.plotted.splice(at, 1);
     }
-    renderTable();
-    renderChart();
-    writeAddress();
+    plotChanged();
 }
 
 /** CA or PVA, from the settings of the PV; empty for a PV that is not archived or whose settings are not read yet. */
@@ -1006,6 +1055,7 @@ function renderTable() {
     $("limScanMax").textContent = String(LIMITS.table);
     $("limChart").textContent = String(state.plotted.length);
     $("limChartMax").textContent = String(LIMITS.chart);
+    updatePlotTools();
     // The State column is there while a PV is not in its normal state; the Std dev column while the band of the chart is on.
     const showState = state.selected.some((name) => !isNormal(name));
     const showDeviation = Boolean(chart && chart.options.band);
@@ -1666,6 +1716,17 @@ function wire() {
         onPan: panBy,
         onReset: resetWindow,
         onOptionsChange: () => renderTable(),
+    });
+    $("plotFirst").textContent = `First ${LIMITS.chart}`;
+    $("plotFirst").title = `Turn on the Plot boxes of the first ${LIMITS.chart} PVs of the table and turn off the others`;
+    $("plotFirst").addEventListener("click", plotFirst);
+    $("plotNone").title = "Turn off every Plot box";
+    $("plotNone").addEventListener("click", plotNone);
+    // A tap that leaves the cell where the note of the Plot limit was shown hides it.
+    document.addEventListener("click", () => {
+        if (state.plotNoteStays) {
+            showPlotNote(false);
+        }
     });
     $("bulkPause").addEventListener("click", () => bulkAction("pause"));
     $("bulkResume").addEventListener("click", () => bulkAction("resume"));
