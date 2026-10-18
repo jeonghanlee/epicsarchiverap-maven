@@ -136,7 +136,11 @@ reports are:
 - PVs that dropped events because of a wrong time stamp, a buffer
   overflow or a type change. The engine log also holds one WARN line
   per write period for a PV whose buffer is full and one line for a PV
-  whose type changed, which the engine then pauses.
+  whose type changed, which the engine then pauses. A buffer fills when
+  the record posts faster than the sampling period of the request, because
+  the buffer holds the samples of one write period at that rate; Change
+  sampling with a shorter period rebuilds the channel with a larger
+  buffer.
 
 ![The Browse PVs page with the PVs that are disconnected now](images/browse-disconnected.png)
 
