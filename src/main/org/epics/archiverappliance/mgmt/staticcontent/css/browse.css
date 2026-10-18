@@ -591,14 +591,14 @@ dialog.details .dialog-box {
     font-style: italic;
 }
 
-.maintenance-list dt {
-    margin-top: 12px;
+.maintenance-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
-.maintenance-list dd {
-    margin: 2px 0 0;
-    color: var(--ink-2);
-    font-size: 0.9375rem;
+.maintenance-list li {
+    margin-top: 12px;
 }
 
 .maintenance-list button.plain {

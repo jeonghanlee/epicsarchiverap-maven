@@ -283,6 +283,149 @@ PY
 )
 assert_eq "${contrast}" "" "Every text color has a contrast of at least 4.5:1 on the page and on a selected row"
 
+# ---- the information cards keep one form ------------------------------------------------------------
+# A card is written in its page script as a title that is a question followed by its rows, [title?, [[name, text], ...]].
+# The first row is In short; a card has at most six rows; the rows What it shows, Normal, Attention, Problem and What to do
+# keep that order, and What to do is the last row; a sentence has fewer than 40 words; a threshold-shaped number (a count of
+# percent, days, hours, minutes, seconds or points) is written through a constant, never typed into the text; and no card
+# names a setting of a properties file. Each page script of the list holds at least one card.
+CARD_SOURCES=(
+    mgmt/staticcontent/js/system.js
+    mgmt/staticcontent/js/operations.js
+    mgmt/staticcontent/js/retrieval.js
+    mgmt/staticcontent/js/external.js
+    mgmt/staticcontent/js/browse.js
+    mgmt/staticcontent/js/archive.js
+    mgmt/staticcontent/js/system/view.js
+    staticcontent/js/aa/chart/widget.js
+)
+cards=$(python3 -I - "${UI}" "${CARD_SOURCES[@]}" <<'PY'
+import re, sys
+ORDERED = ["What it shows", "Normal", "Attention", "Problem", "What to do"]
+MOST_ROWS = 6
+MOST_WORDS = 40
+NUMBER = re.compile(r"\b\d+(?:\.\d+)?\s*(?:%|percent|points?|days?|hours?|minutes?|seconds?)\b")
+SETTING = re.compile(r"\.properties\b|PVTypeInfo\.")
+TITLE = re.compile(r'"([^"\n]*\?)"\s*,\s*\[')
+
+def scan_string(text, i):
+    """Returns (literal parts, index after the string) for the string or template that opens at text[i]."""
+    quote = text[i]
+    i += 1
+    parts, chunk = [], []
+    while i < len(text):
+        c = text[i]
+        if c == "\\":
+            chunk.append(text[i + 1])
+            i += 2
+            continue
+        if c == quote:
+            parts.append("".join(chunk))
+            return parts, i + 1
+        if quote == "`" and text.startswith("${", i):
+            parts.append("".join(chunk))
+            chunk = []
+            i = skip_code(text, i + 2, "}")
+            continue
+        chunk.append(c)
+        i += 1
+    raise ValueError("unterminated string")
+
+def skip_code(text, i, closer):
+    """Skips code up to and over the closer that matches the open bracket before i, stepping over strings and comments."""
+    depth = 1
+    while i < len(text):
+        c = text[i]
+        if c in "\"'`":
+            i = scan_string(text, i)[1]
+            continue
+        if text.startswith("//", i):
+            i = text.index("\n", i)
+            continue
+        if text.startswith("/*", i):
+            i = text.index("*/", i) + 2
+            continue
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    raise ValueError("unterminated code")
+
+def scan_rows(text, i):
+    """Walks the rows array that opens at text[i] and returns [(name, parts)], the name being the first string of a row."""
+    rows, depth, row = [], 0, None
+    while i < len(text):
+        c = text[i]
+        if c in "\"'`":
+            parts, i = scan_string(text, i)
+            if row is not None:
+                if row[0] is None and depth == 2:
+                    row[0] = parts[0]
+                else:
+                    row[1].extend(parts)
+            continue
+        if text.startswith("//", i):
+            i = text.index("\n", i)
+            continue
+        if c in "([{":
+            depth += 1
+            if c == "[" and depth == 2:
+                row = [None, []]
+        elif c in ")]}":
+            if c == "]" and depth == 2:
+                rows.append(row)
+                row = None
+            depth -= 1
+            if depth == 0:
+                return rows
+        i += 1
+    raise ValueError("unterminated rows")
+
+root = sys.argv[1]
+faults = []
+for relative in sys.argv[2:]:
+    text = open(f"{root}/{relative}", encoding="utf-8").read()
+    found = 0
+    for match in TITLE.finditer(text):
+        title = match.group(1)
+        found += 1
+        fault = lambda reason: faults.append(f"{relative}: {title}: {reason}")
+        try:
+            rows = scan_rows(text, match.end() - 1)
+        except ValueError as error:
+            fault(str(error))
+            continue
+        names = [row[0] for row in rows]
+        if not names or names[0] != "In short":
+            fault("the first row is not In short")
+        if len(rows) > MOST_ROWS:
+            fault(f"more than {MOST_ROWS} rows ({len(rows)})")
+        if None in names:
+            fault("a row without a name")
+        places = [ORDERED.index(name) for name in names if name in ORDERED]
+        if places != sorted(places):
+            fault("the rows What it shows, Normal, Attention, Problem and What to do are out of order")
+        if "What to do" in names and names[-1] != "What to do":
+            fault("a row after What to do")
+        for name, parts in rows:
+            for part in parts:
+                if NUMBER.search(part):
+                    fault(f"a typed number in the row {name}: {NUMBER.search(part).group(0)}")
+                if SETTING.search(part):
+                    fault(f"a setting of a properties file in the row {name}")
+                for sentence in re.split(r"(?<=[.!?])\s+", part):
+                    if len(sentence.split()) >= MOST_WORDS:
+                        fault(f"a sentence of {len(sentence.split())} words in the row {name}")
+    if not found:
+        faults.append(f"{relative}: no information card")
+print("; ".join(faults))
+PY
+)
+assert_eq "${cards}" "" "Every information card keeps the form: In short first, at most six rows, the fixed rows in order, no typed threshold (wrong: ${cards})"
+
 # ---- the checks reject a copy with one defect each -------------------------------------------------
 # A check that cannot fail protects nothing: each copy below holds one defect and must be refused,
 # and for the reason named, not for another one.
@@ -345,6 +488,14 @@ if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
         "${A}/staticcontent/js/vendor/d3.min.js" "printf '\\n' >> \"\$F\""
     expect_rejected "a faint text color below the contrast limit" "contrast of at least 4.5:1" \
         "${A}/staticcontent/css/main.css" "sed -i 's|--ink-3: var(--c-muted);|--ink-3: #9aa9ae;|' \"\$F\""
+    expect_rejected "an information card whose first row is not In short" "the first row is not In short" \
+        "${A}/mgmt/staticcontent/js/operations.js" "sed -i '0,/\\[\"In short\", /s//[\"Summary\", /' \"\$F\""
+    expect_rejected "an information card with a seventh row" "more than 6 rows" \
+        "${A}/mgmt/staticcontent/js/operations.js" "sed -i '0,/\\[\"What to do\", /s//[\"Also\", \"x.\"], [\"What to do\", /' \"\$F\""
+    expect_rejected "an information card that types a threshold" "a typed number" \
+        "${A}/mgmt/staticcontent/js/system.js" "sed -i 's|\${THRESHOLDS.daysLeftProblem} days|7 days|' \"\$F\""
+    expect_rejected "an information card that names a properties setting" "a setting of a properties file" \
+        "${A}/mgmt/staticcontent/js/retrieval.js" "sed -i 's|Nothing on the server changes|See archappl.properties|' \"\$F\""
 fi
 
 printf '\n[PASS] Interface files (passed=%d failed=%d)\n\n' "${PASS_COUNT}" "${FAIL_COUNT}"

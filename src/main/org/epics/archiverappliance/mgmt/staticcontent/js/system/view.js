@@ -1,6 +1,6 @@
 // Small pieces the System pages share.
 import { node } from "../../comm/js/aa/dom.js";
-import { MARKS, WORDS } from "./judge.js";
+import { MARKS, THRESHOLDS, WORDS } from "./judge.js";
 
 /** A judgement as a word with a mark, so the color is never the only carrier, and the sentence that explains it. */
 export function statusNode(kind, text) {
@@ -11,13 +11,20 @@ export function statusNode(kind, text) {
     return box;
 }
 
-/** The two words of a heap chart: the line that rises and falls and the line that matters, as rows of an information card. */
-export const HEAP_WORDS = [
-    ["heap", "The memory the process holds, in percent of its maximum. It rises and falls all the time; that is normal garbage collection."],
+/** The information card of a heap chart: the line that rises and falls and the line that matters; [title, rows, action, help]. */
+export const HEAP_CARD = [
+    "Heap and floor: which line matters?",
     [
-        "floor",
-        "The lowest point of the heap after a collection, drawn as the strong line. A floor that climbs from day to day means the heap is too small or something leaks.",
+        ["In short", "The strong line, the floor, is the lowest heap after a collection; the faint line is the heap, which rises and falls all the time."],
+        ["Heap", "The memory the process holds, in percent of its maximum. Its rise and fall is normal garbage collection."],
+        [
+            "Floor",
+            `The lowest point after a collection. A floor above ${THRESHOLDS.heapFloorAttention} % of the maximum, or a floor that climbs from day to day, means the heap is too small or something leaks.`,
+        ],
+        ["What to do", "Raise the heap size of the process, a setting of the installation, and watch whether the floor settles."],
     ],
+    null,
+    "help.html#system",
 ];
 
 export function timeText(seconds) {

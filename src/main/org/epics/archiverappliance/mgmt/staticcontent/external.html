@@ -9,6 +9,7 @@
     />
     <title>appliance archiver - External servers</title>
     <link rel="stylesheet" href="comm/css/main.css" />
+    <link rel="stylesheet" href="comm/css/chart.css" />
     <link rel="stylesheet" href="css/system.css" />
     <link rel="stylesheet" href="css/external.css" />
     <script type="module" src="js/external.js"></script>
@@ -49,7 +50,7 @@
         <a href="external.html" data-page="external.html" aria-current="page">External servers</a>
       </nav>
 
-      <h1>External archiver servers</h1>
+      <h1 id="pageHeading">External archiver servers</h1>
       <p id="message" class="message" role="status"></p>
 
       <div class="scroll">
@@ -72,7 +73,6 @@
         <h2 id="addTitle">Add an external archiver server</h2>
         <label for="serverUrl">Server URL</label>
         <input id="serverUrl" type="url" spellcheck="false" required />
-        <p class="hint">The <code>data_retrieval_url</code> of the other archiver cluster, as defined in its <code>appliances.xml</code>: its host and port, then <code>/retrieval</code>.</p>
         <p id="addError" class="error" role="status"></p>
         <div class="dialog-actions">
           <button type="submit" id="addSubmit">Connect</button>
@@ -85,7 +85,6 @@
       <form id="removeForm">
         <h2 id="removeTitle">Remove the server</h2>
         <p id="removeName" class="pv"></p>
-        <p class="hint">The archiver stops proxying this server. The cluster may have to be restarted before the change takes effect.</p>
         <div class="dialog-actions">
           <button type="submit" class="danger">Remove</button>
           <button type="button" id="removeCancel" class="quiet">Cancel</button>

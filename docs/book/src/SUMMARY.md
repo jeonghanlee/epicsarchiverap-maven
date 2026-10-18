@@ -16,4 +16,5 @@
 - [Redundancy and EPICS 7](redundancy.md)
 - [Developer guide](developer.md)
 - [FAQ](faq.md)
+- [Glossary](glossary.md)
 - [License](license.md)

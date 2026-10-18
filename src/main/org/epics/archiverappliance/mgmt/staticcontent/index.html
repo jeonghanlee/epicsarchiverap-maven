@@ -128,7 +128,7 @@
         <p id="actionNote" class="sub" role="status"></p>
 
         <div id="chartHost"></div>
-        <h2 class="area table-head">PVs <span id="selN" class="num">0</span> <span class="limits num">table <span id="limScan">0</span>/<span id="limScanMax">100</span></span>
+        <h2 class="area table-head">PVs <span id="selN" class="num">0</span> <span id="tableInfo"></span> <span class="limits num">table <span id="limScan">0</span>/<span id="limScanMax">100</span></span>
           <span class="plot-tools"><button type="button" id="plotFirst" class="plain">First 5</button><button type="button" id="plotNone" class="plain">Deselect all</button><button type="button" id="plotOnly" class="plain" aria-pressed="false">Plotted only</button><button type="button" id="selNone" class="plain">Clear selection</button></span>
           <span id="plotNote" class="plot-note" role="status"></span></h2>
         <div class="scroll">
@@ -213,15 +213,11 @@
       <div class="dialog-box">
         <h2 id="maintenanceTitle">Maintenance</h2>
         <p class="pv" id="maintenanceName"></p>
-        <p class="muted">These change the PV or its data. Each pauses the PV first and says again what it does before it asks.</p>
-        <dl class="maintenance-list">
-          <dt><button type="button" id="maintenanceRename" class="plain">Rename…</button></dt>
-          <dd>Copies the settings and the data to a new name. Both names stay paused until you resume the new one and stop the old one.</dd>
-          <dt><button type="button" id="maintenanceType" class="plain">Change the type…</button></dt>
-          <dd>Converts the stored data of every store to the new type, in place. It cannot be undone, so it asks for a confirmation that a backup exists.</dd>
-          <dt><button type="button" id="maintenanceConsolidate" class="plain">Consolidate the data…</button></dt>
-          <dd>Moves the data of the earlier stores up to the store you choose, so that one store holds it.</dd>
-        </dl>
+        <ul class="maintenance-list">
+          <li><button type="button" id="maintenanceRename" class="plain">Rename…</button></li>
+          <li><button type="button" id="maintenanceType" class="plain">Change the type…</button></li>
+          <li><button type="button" id="maintenanceConsolidate" class="plain">Consolidate the data…</button></li>
+        </ul>
         <div class="dialog-actions">
           <button type="button" id="maintenanceClose" class="quiet">Close</button>
         </div>

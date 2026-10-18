@@ -3,7 +3,7 @@
 // information cards, and it keeps the options between draws. A page gives the series and the window at each refresh.
 import { infoButton } from "../card.js";
 import { node } from "../dom.js";
-import { drawTimeSeries } from "./draw.js";
+import { MARKER_LIMIT, drawTimeSeries } from "./draw.js";
 import { currentZone, onZoneChange } from "../timezone.js";
 import { buildChartOptions, CHART_OPTIONS } from "./options.js";
 
@@ -15,16 +15,25 @@ const MEMORY = new Map();
 const ENLARGED_LEAST = 380;
 const ENLARGED_ROOM = 320;
 
-/** The information cards of the chart, with their link into the help page. A chart without time controls has no drag window. */
+/**
+ * The information cards of the chart, with their link into the help page: [title, rows, action, help], the title a question
+ * and In short the first row. A chart without time controls has no drag window.
+ */
 function cardsOf(helpHref, timed) {
     return {
         range: [
-            "Time and value range",
+            "Time and value range: how do I zoom?",
             [
+                [
+                    "In short",
+                    timed
+                        ? "Drag across the plot for a time window, or along an axis for a value range; the line above the chart writes both."
+                        : "Drag along an axis for a value range; the line above the chart writes the time window and the ranges.",
+                ],
                 [
                     "Time window",
                     timed
-                        ? "Drag across the plot to look at that window. Earlier and Later move it by half its span, from the range of the buttons too; Back to the selected range, or a double-click, returns to that range. The date and hour both ends share are written once, before the brackets."
+                        ? "Drag across the plot to look at that window. Earlier and Later move it by half its span, also before you drag; Back to the selected range, or a double-click, returns to that range. The date and hour both ends share are written once, before the brackets."
                         : "The line above the chart writes the time window of the chart. The date and hour both ends share are written once, before the brackets.",
                 ],
                 [
@@ -39,22 +48,25 @@ function cardsOf(helpHref, timed) {
             helpHref,
         ],
         options: [
-            "Chart options",
+            "Chart options: how is the line drawn?",
             [
+                ["In short", "Line, Y scale and Marks change how the samples are drawn; the running average and the band add a smoothed view over a window of samples."],
                 ["Line", "Step holds a value until the next sample, Straight joins the samples, Smooth curves between them, Points draws the samples only."],
                 ["Y scale", "Symmetric log and Log compress large values. Log needs values above zero and Square root values not below zero; otherwise Symmetric log is shown, with the reason."],
-                ["Marks", "Auto marks the samples when few are in view, On marks every sample, Off hides them."],
-                ["Window", "How many samples the running average and the band use."],
-                ["Running average", "The mean of the last samples of the window, at each point."],
-                ["Standard deviation band", "One standard deviation around that mean."],
+                ["Marks", `Auto marks the samples when at most ${MARKER_LIMIT} are in view, On marks every sample, Off hides them.`],
+                ["Window", "How many of the last samples the running average and the band use at each point."],
+                ["Running average and band", "The running average is the mean of the samples of the window at each point; the band is one standard deviation around that mean."],
             ],
             null,
             helpHref,
         ],
         statistics: [
-            "Statistics",
-            "Computed from the samples now inside the chart: the time window shown and any value range dragged on an axis. " +
-                "The histogram at the right edge shows how they spread over the value axis; its line is the mean.",
+            "Statistics: what do the columns count?",
+            [
+                ["In short", "The table counts the samples now inside the chart: the time window shown and any value range dragged on an axis."],
+                ["Columns", "Samples is their number; Min, Mean, Median and Max their smallest value, mean, median and largest value; Std dev their standard deviation; Unit the unit of the PV."],
+                ["Histogram", "The histogram at the right edge shows how the samples spread over the value axis; its line is the mean."],
+            ],
             null,
             helpHref,
         ],

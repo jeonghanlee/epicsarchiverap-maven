@@ -4,7 +4,7 @@ import { infoButton } from "../comm/js/aa/card.js";
 import { node } from "../comm/js/aa/dom.js";
 import { appliances, get, number, settled } from "./system/api.js";
 import { etlTiers, heapFloor, measureMap } from "./system/judge.js";
-import { HEAP_WORDS, chooseAppliance, statusNode } from "./system/view.js";
+import { HEAP_CARD, chooseAppliance, statusNode } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_MS = 30000;
@@ -23,28 +23,36 @@ const CARDS = [
         "measureHeading",
         "Measure: how long does a request take?",
         [
-            ["Slow is", "More than about a second for the last hour of one PV, or a time that grows with the length of the range."],
-            ["Then", "Compare with the server side below. A slow request while the retrieval heap floor is high or the ETL is running points to the server; a slow request with a quiet server points to the network or to the size of the request."],
-            ["What it does", "The measurement is one ordinary data request made by this page; nothing on the server changes. The results of this visit are kept on the page only."],
-            ["Size", "The whole answer is read into this page, at about 100 bytes per sample. For a PV that changes once a second, a day is about 9 MB, a week about 60 MB and 30 days about 250 MB; a faster PV needs proportionally more. Start with the last hour or the last day."],
+            ["In short", "One ordinary data request for a PV and a range is made from this browser and timed. More than about a second for the last hour of one PV is slow."],
+            ["What it shows", "For each measurement of this visit, the samples and the size of the answer, the time to the first byte and the time to the end. Nothing on the server changes, and the results stay on this page."],
+            ["Attention", "More than about a second for the last hour of one PV, or a time that grows faster than the range does."],
+            [
+                "What to do",
+                "Compare with What the server says below. A slow request while the retrieval heap floor is high or an ETL pass runs points to the server; a slow request with a quiet server points to the network or to the size of the request. " +
+                    "Start with the last hour or the last day. The whole answer is read into this page at about 100 bytes per sample: a day of a PV that changes once a second is about 9 MB, a week about 60 MB, the 30-day range about 250 MB.",
+            ],
         ],
     ],
     [
         "serverHeading",
         "What the server says: is reading healthy?",
         [
-            ["A problem is", "A retrieval process that is down."],
-            ["Attention when", "The heap floor climbs from day to day; the note under the heap chart says so."],
-            ["Not a problem", "An ETL pass that is running now. It is normal work and can make a request slower while it runs."],
-            ["Not recorded", "The server counts requests and users but does not record how long a request took. That is why the measurement is made in the browser."],
+            ["In short", "The retrieval process must run; its heap floor and a running ETL pass explain a slow request."],
+            ["What it shows", "The retrieval process, the requests and users counted so far, the load average, whether an ETL pass runs now, and the heap of the retrieval process over the day."],
+            ["Normal", "The retrieval process runs and the heap floor is steady. An ETL pass that runs now is normal work; it can make a request slower while it runs."],
+            ["Attention", "The heap floor climbs from day to day; the note under the heap chart says so."],
+            ["Problem", "The retrieval process is down."],
+            ["What to do", "The server counts requests and users but does not record how long a request took, which is why the measurement above is made in the browser. For the heap, see Processes on the Operations page."],
         ],
     ],
-    ["heapHeading", "Heap and floor", HEAP_WORDS],
+    ["heapHeading", HEAP_CARD[0], HEAP_CARD[1]],
     [
         "dataHeading",
-        "Data available for a PV",
+        "Data available for a PV: where is it kept?",
         [
-            ["Where data lives", "Data moves from the short term store through the medium term store to the long term store as it ages, at the cadence of the ETL. Recent data is read from the short term store; a long range reads files of several stores, and a policy may keep only reduced values in the long term store. This is why old data and long ranges are slower than recent data. The table shows the stores of the PV."],
+            ["In short", "Data moves from the short term store through the medium term store to the long term store as it ages; the table shows the stores of one PV."],
+            ["What it shows", "Each store of the PV with what it holds, and the state of the PV."],
+            ["Why a long range is slower", "Recent data is read from the short term store; a long range reads files of several stores, and a policy may keep only reduced values in the long term store, so old data and long ranges take longer."],
         ],
     ],
 ];

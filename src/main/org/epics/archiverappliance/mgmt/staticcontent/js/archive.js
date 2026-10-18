@@ -20,10 +20,14 @@ const INFO_PER_POLL = 6;
 const HELP = "help.html#archive";
 
 const CARD = [
-    ["Each name", "One name per line, or a pasted list. A name that is already archived is left as it is; the answer of the request says so."],
-    ["Sampling", "By default the policy of the site decides the method and the period of each PV. Open the sampling choice to set them yourself."],
-    ["Initial sampling", "The appliance first measures the PV, which takes a few minutes. A name that no server answers stays there until you cancel the request."],
-    ["Then", "Open an archived PV in Browse PVs to look at its data."],
+    "Archive PVs: how do I add PVs and follow them?",
+    [
+        ["In short", "Type names and click Archive, then follow each request until it reads Being archived, which takes a few minutes."],
+        ["Each name", "One name per line, or a pasted list. A name that is already archived is left as it is; the answer of the request says so."],
+        ["Sampling", "By default the policy of the site decides the method and the period of each PV. Open the sampling choice to set them yourself."],
+        ["Initial sampling", "The appliance first measures the PV, which takes a few minutes. A name that no server answers stays there until you cancel the request."],
+        ["What to do", "Open an archived PV in Browse PVs to look at its data."],
+    ],
 ];
 
 const WORDS = {
@@ -443,7 +447,7 @@ async function stopSelected() {
 // ---- start -----------------------------------------------------------------------------------------
 
 async function start() {
-    $("pageHeading").parentElement.append(" ", infoButton("Archive PVs: adding PVs and following them", CARD, null, HELP));
+    $("pageHeading").parentElement.append(" ", infoButton(CARD[0], CARD[1], null, HELP));
     for (const id of ["names", "method", "period", "policy", "controlling"]) {
         $(id).addEventListener("input", refreshInput);
     }

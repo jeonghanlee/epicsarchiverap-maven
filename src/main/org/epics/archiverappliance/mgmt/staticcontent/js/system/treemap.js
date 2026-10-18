@@ -6,8 +6,8 @@ import { prefixOf } from "./judge.js";
 const d3 = globalThis.d3;
 
 const COLORS = ["#1f6f7c", "#9a5b12", "#6b4c9a", "#3c7a39", "#a2403a", "#3f6a9e", "#6f6f1f", "#86557a", "#2c6e5a", "#8c2f6a", "#5b5b5b"];
-const GROUP_LIMIT = 24;
-const LEAF_LIMIT = 300;
+export const GROUP_LIMIT = 24;
+export const LEAF_LIMIT = 300;
 const HEADER = 22;
 const OTHER = "More prefixes";
 

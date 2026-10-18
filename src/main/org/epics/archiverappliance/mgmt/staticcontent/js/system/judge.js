@@ -1,6 +1,6 @@
 // How the System pages judge what the appliance reports. A judgement is one of ok, warn or bad, with a sentence
-// that says what it means. The reasons for each rule are in the work register decision D51; the values below are
-// starting values and are shown on the Operations page next to the measure they judge.
+// that says what it means. The values below are starting values; the reason of each rule is in the comment above
+// it, and the information cards of the pages read the values from here, so that no card types a number twice.
 import { number, plain } from "./api.js";
 
 export const THRESHOLDS = {
@@ -122,10 +122,10 @@ export function judgeConnections(appliance, disconnected, neverConnected) {
 // ---- dropped samples ----------------------------------------------------------------------------
 
 export const DROPPED_REPORTS = [
-    { endpoint: "../bpl/getPVsByDroppedEventsTimestamp", label: "Timestamp problems", action: "The IOC sends times that go backwards or far into the future: fix the clock of the IOC." },
-    { endpoint: "../bpl/getPVsByDroppedEventsBuffer", label: "Buffer overflow", action: "Samples were lost before the engine could write them: slow the PV down or raise the seconds of write delay a buffer absorbs (PVTypeInfo.sampleBufferMarginSeconds in archappl.properties, at least 1.0)." },
-    { endpoint: "../bpl/getPVsByDroppedEventsTypeChange", label: "Type change", action: "The IOC changed the type of the record: the PV needs a new archive request." },
-    { endpoint: "../bpl/getSlowChangingPVsWithDroppedEvents", label: "Slow-changing PVs with dropped events", action: "A slow PV lost more events than it sent: look at its connection and at the write thread." },
+    { endpoint: "../bpl/getPVsByDroppedEventsTimestamp", label: "Wrong time stamp", action: "The IOC sends times that go backwards or far into the future: fix the clock of the IOC." },
+    { endpoint: "../bpl/getPVsByDroppedEventsBuffer", label: "Buffer overflow", action: "The record posts faster than the rate measured at the archive request: Change sampling with a shorter period rebuilds its buffer." },
+    { endpoint: "../bpl/getPVsByDroppedEventsTypeChange", label: "Type change", action: "The record came back with another type and the engine paused the PV: in Maintenance, change the type to the new one and resume." },
+    { endpoint: "../bpl/getSlowChangingPVsWithDroppedEvents", label: "Slow PVs with dropped samples", action: "A slow PV lost more samples than it sent: look at its connection and at the write path." },
 ];
 
 export function judgeDropped(reports) {

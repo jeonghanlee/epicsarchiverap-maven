@@ -36,6 +36,43 @@ The addresses `metrics.html`, `storage.html`, `appliance.html`,
 forward to the page that replaced them; `pvdetails.html?pv=<name>` opens that PV on the Browse PVs
 page.
 
+## Information cards
+
+A page says only what changes how it reads; the explanation of an item is
+in its information card, which the **i** button beside the item opens.
+One card is open at a time; it closes with Esc, its Close button or a
+click outside it, and it ends with a link into the Help page. Every card
+has one form:
+
+- The title is a question, for example *Samples lost: is data missing?*
+- The first row, **In short**, answers it in one or two sentences.
+- A card of a measure (a row of the Overview, a section of Operations or
+  Retrieval performance, the State column of the PV table) continues with
+  **What it shows**, **Normal**, **Attention**, **Problem** and **What to
+  do**, in that order; a row that does not apply is left out.
+- A card of a control (the search modes, the chart options, the time and
+  value range, the statistics, the heap and floor, the largest users of
+  storage, Archive PVs, the external servers) has one row for each item of
+  the control, named as the control names it, and **What to do** last when
+  there is a next step.
+- A card has at most six rows, a sentence has fewer than 40 words, and a
+  term is explained where it first appears in the card. The
+  [Glossary](glossary.md) defines the same terms for the manual.
+- A threshold or a limit is read from the constant that the page judges
+  with (`THRESHOLDS` in `js/system/judge.js`, the limits of the page), so
+  that a card never types a number twice. A card names no setting of a
+  properties file; where a remedy is a setting, the card names the
+  administrator, and the setting is in [Configuration](configuration.md).
+- The word is *sample* on every page; where a field is named by the
+  server (`eventsDropped`), the card says that the server calls a sample
+  an event.
+
+The cards are written in the script of their page as a title followed by
+its rows; `scripts/ui-static-checks.bash` reads them and refuses a card
+whose first row is not In short, a card with more than six rows, the
+fixed rows out of order, a row after What to do, a sentence of 40 words or
+more, a typed threshold and a properties setting.
+
 ## Archive PVs page
 
 One input takes a PV name or a pasted list with one name per line. The
@@ -54,7 +91,7 @@ The Browse PVs page, with five PVs in the table and two of them plotted:
 
 | Part | Behavior |
 | :--- | :--- |
-| Find | Words in any order with case ignored, glob, or regular expression; the **i** button beside the three modes explains each; chips group the matches by the first two `:` segments; the rows in view show the state of a PV that is not in the table (paused, not archived), read in one call for at most 60 rows; under the count, Selected only shows only the selected PVs in the list until it is pressed again, and Clear selection clears every selection |
+| Find | Words in any order with case ignored, glob, or regular expression; the **i** button beside the three modes explains the modes, the Show list and the prefix buttons; the prefix buttons, at most 24, group the matches by the first two `:` segments, and one pressed shows the PVs of that prefix until it is pressed again, as its title says; the rows in view show the state of a PV that is not in the table (paused, not archived), read in one call for at most 60 rows; under the count, Selected only shows only the selected PVs in the list until it is pressed again, and Clear selection clears every selection |
 | Show | A selection of the list by one of the server reports: disconnected now, paused, never connected, waiting for the first connection, recently added, recently changed, highest event rate, highest storage rate, most storage used, most connection drops, silent for the longest time, most events dropped for a wrong time stamp, by buffer overflow and by a type change |
 | Chart | The PVs whose Plot box is on, at most 5, with one value axis for each unit and a legend. Above it are the range buttons and the Refresh control; the line above the chart holds the time window and the value ranges; Options, Enlarge chart and Open in the analyzer are on the row of the Inspect heading. The gestures and options are listed under [Chart controls](#chart-controls) |
 | Table of PVs | One row per PV selected in the list, at most 100, under the chart; the columns are listed under [The table of PVs](#the-table-of-pvs) |
@@ -85,9 +122,10 @@ The state of a PV and the actions in its row:
 
 Stop archiving pauses the PV first, because the archiver removes only a
 paused PV, and says so before it acts. Change sampling applies at once to
-a running PV. Maintenance opens a window that explains rename, change of
-type and consolidation; each of them pauses the PV first, and a change of
-type asks for a confirmation that a backup exists. The More menu closes with
+a running PV. Maintenance opens a window with rename, change of type and
+consolidation, explained in the card of its **i** button; each of them
+pauses the PV first, and a change of type asks for a confirmation that a
+backup exists. The More menu closes with
 Esc and with a click outside it; each window closes with Esc, its Close
 button and a click outside it, and the focus returns to the control that
 opened it. Under the table, Pause all selected, Resume all selected and
@@ -110,7 +148,9 @@ The state is kept in the fragment of the address, the part after `#`
 
 ## The table of PVs
 
-Each PV selected in the list has one row:
+Each PV selected in the list has one row. The **i** button beside the
+count of the table explains the columns, and the one in the heading of the
+State column says what a lost sample is and what to do about each cause:
 
 | Column | Content |
 | :--- | :--- |
@@ -186,15 +226,25 @@ once with the time it is current to, and then keeps it current:
 ## What the System pages judge
 
 The Overview gives three verdicts and one row per measure, with its value,
-its status and a link to the detail; the **i** button beside a measure opens
-a card with its meaning:
+its status, its Detail in words and a link to the page that shows the
+measures behind it; the **i** button beside a measure opens its card. A
+verdict line is Normal only when every measure it rests on is reported and
+fine; a measure the appliance does not report makes the line Not reported
+and names what is still unknown:
 
 ![The System overview](images/system-overview.png)
 
 The Operations page gives the reading behind each verdict, in the sections
 Samples, Samples lost, Write path, Stores, Processes and Configuration in
-effect. The **i** button beside a section heading opens a card with
-when the section needs attention, when it is a problem and what to do.
+effect. The **i** button beside a section heading opens its card, and a
+judged measure of a section shows its status word with the sentence that
+explains it. The Samples lost section lists the four reports of dropped
+samples with the cause, the number of PVs, the worst PV, the sum and the
+remedy of each: a wrong time stamp asks for the clock of the IOC; a buffer
+overflow for a shorter sampling period, which rebuilds the buffer; a type
+change, after which the engine pauses the PV, for the change of type in
+the Maintenance window and a resume, or, from a number to a string or a
+waveform, for a stop, a deletion of the data and a new archive request.
 The Stores section ends with a treemap of the stored data or the event
 rate by PV name prefix, so the prefixes that use the space show at once;
 a prefix opens its PVs in the Browse PVs page. The next figure shows the first
@@ -217,8 +267,8 @@ reported and is never shown as Normal.
 | Dropped samples | None | Any PV in the four dropped-event reports | A dropped sample is lost data |
 | Components | Different versions | A component is not running | The appliance status and version reports |
 
-The remedies in those cards name the setting to change. The
-seconds of write delay a sample buffer absorbs are
+The cards name no setting; where a remedy is one, they name the
+administrator. The seconds of write delay a sample buffer absorbs are
 `org.epics.archiverappliance.config.PVTypeInfo.sampleBufferMarginSeconds`
 in `archappl.properties`, at least 1.0 ([Configuration](configuration.md)).
 The heap size of a process is a setting of the installation that starts
@@ -237,9 +287,10 @@ end. **What the server says** shows the retrieval process, the requests
 and users counted so far, the retrieval heap, the load average and
 whether an ETL pass is running; the heap trend appears when the appliance
 has two hours of values. **Data available for a PV** looks a PV up in the
-stores. The **i** button beside each of the three headings opens a card
-with when a request is slow, what to do and, for the measurement, how
-much data a range reads.
+stores. The **i** button beside each of the three headings and beside the
+heap chart opens its card: when a request is slow, what to do and how much
+data a range reads; what the server reports; which line of the heap chart
+matters; and why a long range is slower.
 
 ![The Retrieval performance page after one measurement](images/system-retrieval.png)
 
@@ -248,7 +299,9 @@ much data a range reads.
 The tab lists the servers whose data this appliance serves, each with its
 URL and its indexes. **Add a server…** takes the `data_retrieval_url` of
 another EPICS Archiver Appliance cluster and connects it; **Remove…**
-stops serving one. The upload of Channel Archiver configuration files, the
+stops serving one. The **i** button beside the heading explains the list,
+and the one in each window says what the address is and what a removal
+changes. The upload of Channel Archiver configuration files, the
 comparison with a Channel Archiver and the Channel Archiver data server
 type are not in the interface; their calls remain
 ([Scripting](scripting.md)).
@@ -328,6 +381,7 @@ Three checks guard the interface files:
   of inline code, outside hosts, jQuery and text turned into markup, that
   the files a page names exist, that every element id a script reads
   exists in its page, that `d3.min.js` is the file whose SHA-256
-  `d3.SOURCE.txt` records, the PV name pattern, and the contrast of the
-  text colors; fifteen broken copies of the tree must each be refused for
-  their own reason. Run it locally with `bash scripts/ui-static-checks.bash`.
+  `d3.SOURCE.txt` records, the PV name pattern, the contrast of the text
+  colors, and the form of the [information cards](#information-cards);
+  twenty-three broken copies of the tree must each be refused for their
+  own reason. Run it locally with `bash scripts/ui-static-checks.bash`.

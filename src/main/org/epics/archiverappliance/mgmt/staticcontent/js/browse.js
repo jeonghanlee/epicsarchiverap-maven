@@ -21,6 +21,8 @@ function rowHeight() {
 const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 // Up to this span the server answer is not reduced (bin = ceil(seconds / 600)).
 const BIN_FREE_MINUTES = 10;
+// The Find panel offers a button for each of this many name prefixes, the largest first.
+const PREFIX_BUTTONS = 24;
 // The automatic refresh of the page: the choices in seconds (0 is off), the default, and the key under which the browser keeps the choice.
 const REFRESH_KEY = "aa.browse.refresh";
 const REFRESH_CHOICES = [0, 10, 30, 60];
@@ -271,9 +273,10 @@ function renderFinder() {
     groups.textContent = "";
     Object.keys(state.groups)
         .sort()
-        .slice(0, 24)
+        .slice(0, PREFIX_BUTTONS)
         .forEach((key) => {
-            const button = node("button", { type: "button", "aria-pressed": String(state.prefix === key) }, key);
+            const pressed = state.prefix === key;
+            const button = node("button", { type: "button", "aria-pressed": String(pressed), title: pressed ? "Press again to show every PV" : "Show only the PVs of this prefix" }, key);
             button.append(node("span", { class: "n" }, String(state.groups[key])));
             button.addEventListener("click", () => {
                 state.prefix = state.prefix === key ? null : key;
@@ -894,7 +897,7 @@ function stateCell(name, shown) {
     }
     const lost = lostOf(name);
     if (lost) {
-        cell.append(node("span", { class: "lost", title: `${lost} events were dropped (wrong time stamp, buffer overflow or type change).` }, `${lost} lost`));
+        cell.append(node("span", { class: "lost", title: `${lost} samples were dropped: wrong time stamp, buffer overflow or type change. The information control of the column says what to do.` }, `${lost} lost`));
     }
     return cell;
 }
@@ -1211,13 +1214,17 @@ function chartList() {
     return { list: state.plotted.map((name) => state.data.get(name)).filter((d) => d && d.points.length), over: 0 };
 }
 
-// The card of how to read the chart, which the chart widget shows beside its heading.
+// ---- the information cards of the page ------------------------------------------------------------
+// Each card is [title, rows, action, help]: the title a question, In short first, then the rows of the item.
 const HELP_PAGE = "help.html#browse";
+
+/** The card of how to read the chart, which the chart widget shows beside its heading. */
 function chartCard() {
     return [
-        "Reading the chart",
+        "Reading the chart: what is drawn?",
         [
-            ["Plot boxes", `The Plot box of a row in the table draws that PV here. At most ${LIMITS.chart} PVs are drawn at a time; when ${LIMITS.chart} are on, the other boxes are disabled until one is turned off.`],
+            ["In short", `The PVs whose Plot box is on, at most ${LIMITS.chart}, over the window of the range buttons, each unit on an axis of its own.`],
+            ["Plot boxes", `The Plot box of a row in the table draws that PV here. When ${LIMITS.chart} are on, the other boxes are disabled until one is turned off.`],
             ["Ranges", "The line above the chart holds the time window and the value range of each axis; its information control explains them."],
             [
                 "Values",
@@ -1229,18 +1236,65 @@ function chartCard() {
         HELP_PAGE,
     ];
 }
+
 // What each search mode matches; every mode ignores case. The hint under Find names the chosen mode in one line.
 const MODE_HINTS = {
     contains: "Words in any order, case ignored",
     glob: "The whole name; * is any characters, ? is one",
     regex: "Any part of the name; ^ and $ anchor it",
 };
-const MODES_CARD = [
-    "Search modes",
+const FIND_CARD = [
+    "Find: how do I narrow the list?",
     [
+        ["In short", "Type words; every mode ignores case. Show chooses a list of the server, and a prefix button keeps the PVs of one name prefix."],
         ["Contains", "Every word you type must appear in the name, in any order and in any place. The text bpm c02 x finds SR:BPM:C02:X and BPM:X:C02."],
         ["Glob", "The whole name must match. * stands for any characters and ? for exactly one, so SR:BPM:*:X finds every X of SR:BPM and SR:BPM:0?:X finds SR:BPM:01:X to SR:BPM:09:X."],
         ["Regex", "A regular expression that may match any part of the name; ^ anchors it to the start and $ to the end, so ^SR:BPM:0[1-4]:X$ finds the first four X."],
+        ["Show", "A list of the server: all archived PVs, the PVs in a state, recent changes, the heaviest load, or problems. The note under it says what the number beside each PV is."],
+        ["Prefix buttons", `The ${PREFIX_BUTTONS} largest name prefixes of the list, each with its count. Press one to show its PVs only; press it again to show every PV again.`],
+    ],
+    null,
+    HELP_PAGE,
+];
+const TABLE_CARD = [
+    "The table: what does each column say?",
+    [
+        ["In short", `One row for each PV you selected, up to ${LIMITS.table}. The columns read the PV at the end of the window, and Plot draws it in the chart.`],
+        ["Protocol", "CA for Channel Access and PVA for PV Access: the protocol the engine reads the PV with."],
+        ["State", "Shown while a PV is not in its normal state: the state word of the archiver and, when samples were dropped, how many. The information control of the column says what to do."],
+        ["Trend and Std dev", "Trend is a small line of the samples of the window. Std dev, shown while the band of the chart is on, is the standard deviation of those samples, as the Summary of the chart computes it."],
+        ["Value and Last event", "The newest sample at or before the end of the window, with its unit, and the time of that sample in the chosen time zone. An array PV reads array of N."],
+        ["Plot, Actions and Details", `Plot draws the PV in the chart, at most ${LIMITS.chart} at a time. Actions holds Pause or Resume, More and Cancel request, as the state allows. Details opens what the archiver reports about the PV.`],
+    ],
+    null,
+    HELP_PAGE,
+];
+const STATE_CARD = [
+    "State: why is a PV not normal, and what was lost?",
+    [
+        ["In short", "The column is shown while a PV of the table is not Being archived or has dropped samples. N lost counts the samples the engine received and discarded."],
+        ["What it shows", "The state word of the archiver: Paused, Disconnected, Initial sampling, Appliance assigned, Not being archived. Then the dropped samples, summed over the three causes."],
+        ["Normal", "The column is hidden: every PV is Being archived and none lost a sample."],
+        ["Attention", "Disconnected, Initial sampling or Appliance assigned: no samples are stored until the PV connects. Paused: the archiver knows the PV but does not sample it."],
+        ["Problem", "N lost grows, or the PV is Paused because its type changed; Details names the reason of a pause."],
+        [
+            "What to do",
+            "Wrong time stamp: fix the clock of the IOC. " +
+                "Buffer overflow: the record posts faster than the rate measured at the archive request; Change sampling with a shorter period rebuilds its buffer. " +
+                "Type change: in Maintenance, change the type to the new one and resume. " +
+                "From a number to a string or a waveform the change fails; then stop archiving the PV, delete its data and archive it again.",
+        ],
+    ],
+    null,
+    HELP_PAGE,
+];
+const MAINTENANCE_CARD = [
+    "Maintenance: what does each change do?",
+    [
+        ["In short", "Each changes the PV or its data. Each pauses the PV first and says again what it does before it asks."],
+        ["Rename", "Copies the settings and the data to a new name. Both names stay paused until you resume the new one and stop the old one."],
+        ["Change the type", "Converts the stored data of every store to the new type, in place, from a number to a number. It cannot be undone, so it asks for a confirmation that a backup exists."],
+        ["Consolidate the data", "Moves the data of the earlier stores up to the store you choose, so that one store holds it."],
     ],
     null,
     HELP_PAGE,
@@ -1732,7 +1786,10 @@ function wire() {
         window.clearTimeout(debounce);
         debounce = window.setTimeout(runSearch, 150);
     });
-    $("modesInfo").append(infoButton(...MODES_CARD));
+    $("modesInfo").append(infoButton(...FIND_CARD));
+    $("tableInfo").append(infoButton(...TABLE_CARD));
+    $("pvTable").querySelector("th.statecol").append(" ", infoButton(...STATE_CARD));
+    $("maintenanceTitle").append(" ", infoButton(...MAINTENANCE_CARD));
     $("queryHint").textContent = MODE_HINTS[state.mode] || MODE_HINTS.contains;
     document.querySelectorAll("#modes button").forEach((button) => {
         button.setAttribute("aria-pressed", String(button.dataset.mode === state.mode));

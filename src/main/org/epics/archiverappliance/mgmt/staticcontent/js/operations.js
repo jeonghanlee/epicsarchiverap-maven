@@ -19,8 +19,8 @@ import {
     prefixOf,
     groupByHost,
 } from "./system/judge.js";
-import { drawUsage, usageGroups } from "./system/treemap.js";
-import { HEAP_WORDS, chooseAppliance, statusNode, timeText } from "./system/view.js";
+import { GROUP_LIMIT, LEAF_LIMIT, drawUsage, usageGroups } from "./system/treemap.js";
+import { HEAP_CARD, chooseAppliance, statusNode, timeText } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_MS = 30000;
@@ -37,65 +37,96 @@ let timer = 0;
 // ---- the cards of the sections ---------------------------------------------------------------------
 
 const HELP = "help.html#system";
+// The thresholds in words, so that a card never types a number the judgement holds.
+const T = THRESHOLDS;
+const HOURS = T.disconnectedSeconds / 3600;
+const HOURS_TEXT = HOURS === 1 ? "an hour" : `${HOURS} hours`;
 const CARDS = [
     [
         "samplesHeading",
         "Samples: are they coming in?",
         [
-            ["Attention when", "A PV has been disconnected for more than an hour. A shorter loss is often a restart."],
-            ["A problem when", "No PV is connected. PVs that were never connected, and PVs that lose their connection again and again, are listed below but not judged."],
-            ["Then", "Find the host in the list below and check its IOC, or pause PVs that no longer exist."],
+            ["In short", `Every archived PV should be connected to its IOC; a PV disconnected for more than ${HOURS_TEXT} is a finding.`],
+            ["What it shows", "How many PVs are archived, connected and paused, the PVs that lost their connection most often, and the disconnected PVs grouped by host."],
+            ["Normal", `Every PV is connected, or a loss is shorter than ${HOURS_TEXT}, which is often a restart.`],
+            ["Attention", `A PV has been disconnected for more than ${HOURS_TEXT}. No samples are stored for it.`],
+            ["Problem", "No PV is connected. PVs that were never connected, and PVs that lose their connection again and again, are listed but not judged."],
+            ["What to do", "Find the host in the list below and check its IOC, or pause the PVs that no longer exist."],
         ],
     ],
     [
         "hostsHeading",
-        "Disconnected PVs by host",
+        "Disconnected PVs by host: which IOC is down?",
         [
-            ["Groups", "PVs of one host that lost their connection within 30 seconds of each other are one group."],
-            ["The host", "The host is the one the Channel Access connection came from; the appliance reports no IOC name, and a PV Access PV has no host."],
-            ["Partly listed", "A host that is listed with only some of its PVs may still be running: its other PVs are connected."],
+            ["In short", "PVs of one host that lost their connection at the same time are one group, which is usually one IOC."],
+            ["Groups", `PVs of one host that lost their connection within ${T.lossWindowSeconds} seconds of each other are one group.`],
+            ["The host", "The host the Channel Access connection came from; the appliance reports no IOC name, and a PV Access PV has no host."],
+            ["Partly listed", "A host listed with only some of its PVs may still be running: its other PVs are connected."],
+            ["What to do", "PVs lists the group, Open in Browse PVs selects them on that page, and Pause these… pauses the PVs that no longer exist."],
         ],
     ],
     [
         "droppedHeading",
         "Samples lost: is data missing?",
-        [["A problem is", "Any PV in these reports. Each report is a different cause and has its own remedy."]],
+        [
+            ["In short", "A dropped sample is one the engine received and then discarded. It is lost data, and each cause has its own remedy."],
+            ["What it shows", "Four reports: the PVs with samples dropped for a wrong time stamp, by buffer overflow and by a type change, and the slow PVs among them that lost more than they sent. The server calls a sample an event."],
+            ["Normal", "No PV is in any report."],
+            ["Problem", "Any PV in a report. The stored data of that PV has holes."],
+            [
+                "What to do",
+                "Wrong time stamp: fix the clock of the IOC. " +
+                    "Buffer overflow: the record posts faster than the rate measured at the archive request; Change sampling with a shorter period rebuilds its buffer. " +
+                    "Type change: the engine pauses the PV. In Maintenance, change the type to the new one and resume. " +
+                    "From a number to a string or a waveform the change fails; then stop archiving the PV, delete its data and archive it again.",
+            ],
+        ],
     ],
     [
         "writeHeading",
         "Write path: does the engine keep up?",
         [
-            ["Attention when", "The writer needs more than half of its write period."],
-            ["A problem when", "The writer needs all of its write period (100 %): samples are lost. The benchmark is what this disk sustained when the engine started; the incoming rate should stay far below it."],
-            ["Then", "Check the disk of the short term store, slow the fastest PVs, raise the seconds of write delay a buffer absorbs (PVTypeInfo.sampleBufferMarginSeconds in archappl.properties, at least 1.0), or add an appliance."],
+            ["In short", "The engine writes the samples of each write period to the short term store, and the writing must take less than the period."],
+            ["What it shows", "The share of the period the writing takes, the time it took, the jobs waiting, the incoming rate against the rate this disk sustained when the engine started, and the fastest PVs."],
+            ["Normal", `Below ${T.writeAttentionPercent} % of the period.`],
+            ["Attention", `${T.writeAttentionPercent} % or more: the writer needs more than half of its period.`],
+            ["Problem", `${T.writeProblemPercent} %: the writer needs all of its period, and samples are lost.`],
+            ["What to do", "Check the disk of the short term store, slow the fastest PVs with Change sampling, or add an appliance. The write delay a buffer absorbs is a setting described in the manual; ask the administrator."],
         ],
     ],
     [
         "storesHeading",
         "Stores: is there room, and does data move on?",
         [
-            ["Attention when", "Fewer than 30 days are left at the current data rate, a device has less than 5 % free, an ETL pass overran its interval or was late, or a job failed."],
-            ["A problem when", "Fewer than 7 days are left, a device has less than 3 % free, or an ETL pass was busy for twice its interval."],
-            ["Then", "Free or add disk space; if a pass overran, look at the slowest PV of that pass."],
+            ["In short", "The stores must have room for the data the archiver adds, and each ETL pass must finish within its interval."],
+            ["What it shows", "The passes of the ETL, the part that moves data from the short term store to the medium term store and on to the long term store at a fixed interval. The days left on each device at the current growth, and the largest users of storage."],
+            ["Normal", `At least ${T.daysLeftAttention} days left, at least ${T.freeAttentionPercent} % free on every device, and every pass within its interval.`],
+            ["Attention", `Fewer than ${T.daysLeftAttention} days left, less than ${T.freeAttentionPercent} % free, a pass that overran its interval or started late, or a failed job.`],
+            ["Problem", `Fewer than ${T.daysLeftProblem} days left, less than ${T.freeProblemPercent} % free, or a pass busy for ${T.etlBusyProblemPercent} % of its interval.`],
+            ["What to do", "Free or add disk space, or archive less of the prefixes below. For a pass that overran, look at the slowest PV of that pass."],
         ],
     ],
     [
         "usageHeading",
         "Largest users of storage: where does the space go?",
         [
+            ["In short", "The treemap draws the stored data, or the sample rate, by PV name prefix, so the prefixes that use the space show at once."],
             ["Block", "A block is a PV name prefix, the part of the name up to its second colon. The blocks inside it are its PVs."],
-            ["Size", "Stored data is what a PV occupies in all stores; event rate is its events per second. The buttons switch between them."],
-            ["Scope", "Every appliance of the cluster. The 24 largest prefixes and the 300 largest PVs are drawn; the rest of a prefix is one block."],
-            ["Then", "Click a prefix to find its PVs in Browse PVs, and archive less of a prefix that holds most of the space."],
+            ["Size", "Stored data is what a PV occupies in all stores; event rate is its samples per second, the server calling a sample an event. The buttons switch between them."],
+            ["Scope", `Every appliance of the cluster. The ${GROUP_LIMIT} largest prefixes and the ${LEAF_LIMIT} largest PVs are drawn; the rest of a prefix is one block.`],
+            ["What to do", "Click a prefix to find its PVs in Browse PVs, and archive less of a prefix that holds most of the space."],
         ],
     ],
     [
         "processesHeading",
         "Processes: is each part healthy?",
         [
-            ["Attention when", "A version differs, or the heap floor is above 70 % of the maximum or has risen by 5 points in a day. The heap line goes up and down all the time; that is normal garbage collection. What matters is the lowest point after a collection, the floor, drawn as the strong line."],
-            ["A problem when", "A process is down, or the heap floor is above 90 % of the maximum."],
-            ["Then", "A climbing floor means the heap is too small or something leaks: raise the heap size of that process (see the heap size setting of your installation) and watch whether the floor settles."],
+            ["In short", "The four processes of the appliance must run at one version, and the heap floor of each must stay low."],
+            ["What it shows", "Management, engine, ETL and retrieval, each with its start, its uptime, its heap now and the lowest heap after a collection, the floor. The heap rises and falls all the time; the floor is the line that matters."],
+            ["Normal", `All four run at the same version, and the floor is below ${T.heapFloorAttention} % of the maximum heap.`],
+            ["Attention", `A version differs, or the floor is above ${T.heapFloorAttention} % or has risen by ${T.heapFloorRiseAttention} points in a day.`],
+            ["Problem", `A process is down, or the floor is above ${T.heapFloorProblem} %.`],
+            ["What to do", "A climbing floor means the heap is too small or something leaks. Raise the heap size of that process, a setting of the installation, and watch whether the floor settles."],
         ],
     ],
 ];
@@ -508,7 +539,7 @@ function floorChart(host, title, floor) {
     const section = node(
         "div",
         { class: "process-chart" },
-        node("h3", null, title, " ", infoButton("Heap and floor", HEAP_WORDS, null, HELP)),
+        node("h3", null, title, " ", infoButton(...HEAP_CARD)),
         statusNode(floor.kind, floor.text)
     );
     const chartHost = node("div");

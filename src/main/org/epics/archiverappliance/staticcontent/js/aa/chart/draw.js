@@ -20,7 +20,7 @@ let clipCount = 0;
 const CLIP_PAD = 3;
 
 // More samples than this in view are not marked one by one.
-const MARKER_LIMIT = 200;
+export const MARKER_LIMIT = 200;
 
 // The most sample marks drawn for one line when marks are asked for on every sample.
 const MARK_CAP = 1500;

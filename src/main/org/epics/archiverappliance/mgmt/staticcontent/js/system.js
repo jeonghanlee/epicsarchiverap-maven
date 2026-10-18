@@ -70,6 +70,7 @@ function rowsFor(appliance, data) {
           : { kind: "ok", text: "" };
     const count = (n, word) => `${n.toLocaleString()} ${word}${n === 1 ? "" : "s"}`;
     const hours = THRESHOLDS.disconnectedSeconds / 3600;
+    const hoursText = hours === 1 ? "an hour" : `${hours} hours`;
     const rows = [
         {
             item: "Archived PVs",
@@ -79,10 +80,13 @@ function rowsFor(appliance, data) {
                 total === null
                     ? "The appliance did not report how many PVs it archives."
                     : `${count(total, "PV")} ${total === 1 ? "is" : "are"} archived${paused ? `; ${paused} of them ${paused === 1 ? "is" : "are"} paused and not sampled` : ", none paused"}.`,
-            meaning: [
-                ["What it is", "A PV is one named value of the control system, for example a beam current. These are the PVs the archiver keeps samples of. A paused PV is known but is not sampled."],
-                ["Judged", "Not judged. It is a count."],
-                ["Then", "Samples on the Operations page lists them; Browse PVs finds one by name."],
+            card: [
+                "Archived PVs: how many does the archiver keep?",
+                [
+                    ["In short", "The PVs the archiver keeps samples of; a paused PV is known but not sampled. A count, not judged."],
+                    ["What it shows", "A PV is one named value of the control system, for example a beam current. The number of PVs archived, and how many of them are paused."],
+                    ["What to do", "Samples on the Operations page lists them; Browse PVs finds one by name."],
+                ],
             ],
             link: "Samples",
             href: "operations.html#samples",
@@ -92,12 +96,16 @@ function rowsFor(appliance, data) {
             now: connected === null || total === null ? "?" : `${connected.toLocaleString()} of ${total.toLocaleString()}`,
             kind: connection.kind,
             detail: connection.text || (total === null ? "The appliance did not report the connections." : `${total === 1 ? "The PV is" : `All ${total.toLocaleString()} PVs are`} connected to ${total === 1 ? "its" : "their"} IOC.`),
-            meaning: [
-                ["What it is", "The archived PVs the engine can reach on the control system network right now. The engine is the part of the appliance that connects to the IOCs and receives their values."],
-                ["Normal when", `Every PV is connected, or a PV lost its connection less than ${hours === 1 ? "an hour" : `${hours} hours`} ago, which is often a restart.`],
-                ["Attention when", `A PV has been disconnected for more than ${hours === 1 ? "an hour" : `${hours} hours`}. No samples are stored for it.`],
-                ["A problem when", "No PV is connected."],
-                ["Then", "Samples on the Operations page lists the disconnected PVs by host. Many PVs of one host mean that IOC or its network is down."],
+            card: [
+                "Connected PVs: can the engine reach them?",
+                [
+                    ["In short", `The archived PVs the engine reaches on the control system network right now; a PV disconnected for more than ${hoursText} needs a look.`],
+                    ["What it shows", "The engine is the part of the appliance that connects to the IOCs and receives their values. The connected PVs against the archived PVs."],
+                    ["Normal", `Every PV is connected, or a PV lost its connection less than ${hoursText} ago, which is often a restart.`],
+                    ["Attention", `A PV has been disconnected for more than ${hoursText}. No samples are stored for it.`],
+                    ["Problem", "No PV is connected."],
+                    ["What to do", "Samples on the Operations page lists the disconnected PVs by host. Many PVs of one host mean that IOC or its network is down."],
+                ],
             ],
             link: "Samples",
             href: "operations.html#samples",
@@ -112,11 +120,13 @@ function rowsFor(appliance, data) {
                     : events === 0
                       ? `No sample arrived in the last measurement, from ${count(connected, "connected PV")}.`
                       : `${events.toLocaleString(undefined, { maximumFractionDigits: 1 })} samples arrive each second from ${count(connected, "connected PV")}.`,
-            meaning: [
-                ["What it is", "A sample is one reading of a PV: its value, with the time and the alarm severity the IOC gave it. This is how many samples reach the engine each second, from all archived PVs together."],
-                ["Judged", "Not judged. Read it against what you expect: about the sum of how often your PVs change."],
-                ["Look closer when", "It falls to nearly zero (the IOCs stopped sending or the network is cut) or rises suddenly (a PV began to change fast)."],
-                ["Then", "Samples on the Operations page shows which PVs send the most."],
+            card: [
+                "Samples arriving: how fast do values come in?",
+                [
+                    ["In short", "How many samples reach the engine each second from all archived PVs together. Not judged: read it against what you expect, about the sum of how often your PVs change."],
+                    ["What it shows", "A sample is one reading of a PV: its value, with the time and the alarm severity the IOC gave it. The server calls a sample an event."],
+                    ["What to do", "Look closer when it falls to nearly zero, the IOCs stopped sending or the network is cut, or when it rises suddenly, a PV began to change fast. Samples on the Operations page shows which PVs send the most."],
+                ],
             ],
             link: "Samples",
             href: "operations.html#samples",
@@ -126,11 +136,15 @@ function rowsFor(appliance, data) {
             now: dropped.pvs ? `${dropped.events.toLocaleString()} from ${dropped.pvs} PV${dropped.pvs > 1 ? "s" : ""}` : "0",
             kind: dropped.kind,
             detail: dropped.text || "No PV reports a dropped sample.",
-            meaning: [
-                ["What it is", "A dropped sample is one the engine received and then discarded: its timestamp was wrong, the engine's buffer was full, or the type of the PV changed. It is lost data."],
-                ["Normal when", "No PV reports a dropped sample."],
-                ["A problem when", "Any PV reports one."],
-                ["Then", "Samples lost on the Operations page names the PVs and the reason; each reason has its own fix, such as the clock of the IOC or a new archive request."],
+            card: [
+                "Samples dropped: is data lost?",
+                [
+                    ["In short", "A dropped sample is one the engine received and then discarded. It is lost data."],
+                    ["What it shows", "The samples dropped for a wrong time stamp, by buffer overflow and by a type change, summed over the PVs that report one."],
+                    ["Normal", "No PV reports a dropped sample."],
+                    ["Problem", "Any PV reports one; the stored data of that PV has holes."],
+                    ["What to do", "Samples lost on the Operations page names the PVs and the cause. A wrong time stamp asks for the clock of the IOC, a buffer overflow for a shorter sampling period, a type change for the type change in Maintenance."],
+                ],
             ],
             link: "Samples lost",
             href: "operations.html#dropped",
@@ -140,12 +154,16 @@ function rowsFor(appliance, data) {
             now: write.usage === null ? "unknown" : `${write.usage.toFixed(write.usage < 1 ? 2 : 0)} % of the write period`,
             kind: write.kind,
             detail: write.text || `The engine needs ${write.usage.toFixed(write.usage < 1 ? 2 : 0)} % of its write period to write; samples are lost only at ${THRESHOLDS.writeProblemPercent} %.`,
-            meaning: [
-                ["What it is", "The engine collects samples in memory and writes them out once per write period. This is the share of that period the writing takes."],
-                ["Normal when", `Below ${THRESHOLDS.writeAttentionPercent} % of the period.`],
-                ["Attention when", `${THRESHOLDS.writeAttentionPercent} % or more.`],
-                ["A problem when", `${THRESHOLDS.writeProblemPercent} % or more: the engine cannot keep up and samples are lost.`],
-                ["Then", "Write path on the Operations page shows the measures behind it."],
+            card: [
+                "Writing to disk: does the engine keep up?",
+                [
+                    ["In short", `The share of the write period the engine needs to write its samples; at ${THRESHOLDS.writeProblemPercent} % samples are lost.`],
+                    ["What it shows", "The engine collects samples in memory and writes them to the short term store once per write period."],
+                    ["Normal", `Below ${THRESHOLDS.writeAttentionPercent} % of the period.`],
+                    ["Attention", `${THRESHOLDS.writeAttentionPercent} % or more.`],
+                    ["Problem", `${THRESHOLDS.writeProblemPercent} % or more: the engine cannot keep up and samples are lost.`],
+                    ["What to do", "Write path on the Operations page shows the measures behind it."],
+                ],
             ],
             link: "Write path",
             href: "operations.html#write",
@@ -155,12 +173,16 @@ function rowsFor(appliance, data) {
             now: etl.kind === "unknown" ? "unknown" : `busiest pass ${etl.busiest.toFixed(0)} % of its interval`,
             kind: etl.kind,
             detail: etl.text || `The busiest pass used ${etl.busiest.toFixed(0)} % of its interval; the passes keep up.`,
-            meaning: [
-                ["What it is", "The appliance keeps data in three stores: short term, medium term and long term. The ETL moves data from one store to the next at a fixed interval, and each move is a pass."],
-                ["Normal when", "Each pass finishes within its interval."],
-                ["Attention when", "A pass overran its interval, started late, or a job failed."],
-                ["A problem when", `A pass needs ${THRESHOLDS.etlBusyProblemPercent} % or more of its interval.`],
-                ["Then", "Stores on the Operations page shows each pass. A short term store that keeps filling means the ETL cannot keep up."],
+            card: [
+                "Moving data between stores: does the ETL keep up?",
+                [
+                    ["In short", "The ETL moves data from one store to the next at a fixed interval, and each pass must finish within its interval."],
+                    ["What it shows", "The appliance keeps data in three stores: short term, medium term and long term. The busiest pass, as a share of its interval."],
+                    ["Normal", "Each pass finishes within its interval."],
+                    ["Attention", "A pass overran its interval, started late, or a job failed."],
+                    ["Problem", `A pass needs ${THRESHOLDS.etlBusyProblemPercent} % or more of its interval.`],
+                    ["What to do", "Stores on the Operations page shows each pass. A short term store that keeps filling means the ETL cannot keep up."],
+                ],
             ],
             link: "Stores",
             href: "operations.html#stores",
@@ -174,12 +196,15 @@ function rowsFor(appliance, data) {
                 (storage.days === null
                     ? `${free === null ? "No" : `${free.toFixed(1)} % of the fullest device is free; no`} data is added at the moment, so the days left cannot be computed.`
                     : `At the current growth the space lasts ${daysText(storage.days)}${free === null ? "" : `, and the fullest device has ${free.toFixed(1)} % free`}.`),
-            meaning: [
-                ["What it is", "How long the free space of the fullest store lasts at the current growth, with the free share of the fullest device beside it."],
-                ["Normal when", `The space lasts ${THRESHOLDS.daysLeftAttention} days or more and at least ${THRESHOLDS.freeAttentionPercent} % is free.`],
-                ["Attention when", `Fewer than ${THRESHOLDS.daysLeftAttention} days are left, or less than ${THRESHOLDS.freeAttentionPercent} % is free.`],
-                ["A problem when", `Fewer than ${THRESHOLDS.daysLeftProblem} days are left, or less than ${THRESHOLDS.freeProblemPercent} % is free.`],
-                ["Then", "Stores on the Operations page shows each device. Archive less of a large prefix or add space."],
+            card: [
+                "Storage left: how long does the space last?",
+                [
+                    ["In short", "How long the free space of the fullest store lasts at the current growth, with the free share of the fullest device beside it."],
+                    ["Normal", `The space lasts ${THRESHOLDS.daysLeftAttention} days or more and at least ${THRESHOLDS.freeAttentionPercent} % is free.`],
+                    ["Attention", `Fewer than ${THRESHOLDS.daysLeftAttention} days are left, or less than ${THRESHOLDS.freeAttentionPercent} % is free.`],
+                    ["Problem", `Fewer than ${THRESHOLDS.daysLeftProblem} days are left, or less than ${THRESHOLDS.freeProblemPercent} % is free.`],
+                    ["What to do", "Stores on the Operations page shows each device. Archive less of a large prefix or add space."],
+                ],
             ],
             link: "Stores",
             href: "operations.html#stores",
@@ -193,11 +218,15 @@ function rowsFor(appliance, data) {
                 : requests === undefined
                   ? "The retrieval process is running; the appliance did not report how many requests it served."
                   : `The retrieval process is running and has served ${requests} request${requests === "1" ? "" : "s"} for ${users ?? "?"} user${users === "1" ? "" : "s"}.`,
-            meaning: [
-                ["What it is", "Retrieval is the server that answers requests for stored data, from the viewer or from your scripts. The numbers are the requests served so far and the users who made them."],
-                ["Normal when", "The retrieval process is running."],
-                ["A problem when", "It is not running, so no request is answered."],
-                ["Then", "The server does not record how long a request takes; Retrieval performance measures one request from your browser."],
+            card: [
+                "Retrieval: is stored data being served?",
+                [
+                    ["In short", "Retrieval is the server that answers requests for stored data, from the console, the analyzer or your scripts; it must run."],
+                    ["What it shows", "The requests served so far and the users who made them."],
+                    ["Normal", "The retrieval process is running."],
+                    ["Problem", "It is not running, so no request is answered."],
+                    ["What to do", "The server does not record how long a request takes; Retrieval performance measures one request from your browser."],
+                ],
             ],
             link: "Retrieval performance",
             href: "retrieval.html",
@@ -207,12 +236,15 @@ function rowsFor(appliance, data) {
             now: stopped ? String(appliance.status) : "all running",
             kind: components.kind,
             detail: components.text || "Management, engine, ETL and retrieval all run, at the same version.",
-            meaning: [
-                ["What it is", "Management, engine, ETL and retrieval run as separate processes. Together they are the appliance."],
-                ["Normal when", "All four run, at the same version."],
-                ["Attention when", "They run different versions."],
-                ["A problem when", "The appliance reports that it is not working."],
-                ["Then", "Processes on the Operations page shows each one, its uptime and its heap."],
+            card: [
+                "Components: do all four run?",
+                [
+                    ["In short", "Management, engine, ETL and retrieval run as separate processes; together they are the appliance."],
+                    ["Normal", "All four run, at the same version."],
+                    ["Attention", "They run different versions."],
+                    ["Problem", "The appliance reports that it is not working."],
+                    ["What to do", "Processes on the Operations page shows each one, its uptime and its heap."],
+                ],
             ],
             link: "Processes",
             href: "operations.html#processes",
@@ -226,7 +258,7 @@ function itemCell(row) {
     const cut = row.item.lastIndexOf(" ");
     const head = cut < 0 ? "" : `${row.item.slice(0, cut)} `;
     const last = cut < 0 ? row.item : row.item.slice(cut + 1);
-    const button = infoButton(row.item, row.meaning, `Open: ${row.link}, in the last column.`, "help.html#system");
+    const button = infoButton(row.card[0], row.card[1], `Open: ${row.link}, in the last column.`, "help.html#system");
     return node("td", null, head, node("span", { class: "nobreak" }, last, button));
 }
 
