@@ -85,6 +85,7 @@
         <p id="reportNote" class="hint"></p>
         <div class="chips" id="groups" role="group" aria-label="Name groups"></div>
         <p class="count"><span id="count"></span> <span id="indexCount" class="faint">Loading PV names…</span></p>
+        <p class="plot-tools list-tools"><button type="button" id="listSelected" class="plain" aria-pressed="false">Selected only</button><button type="button" id="listClear" class="plain">Clear selection</button></p>
         <p class="offer"><a id="archiveLink" href="archive.html">Archive PVs…</a></p>
         <div
           class="results"
@@ -127,7 +128,7 @@
 
         <div id="chartHost"></div>
         <h2 class="area table-head">PVs <span id="selN" class="num">0</span> <span class="limits num">table <span id="limScan">0</span>/<span id="limScanMax">100</span></span>
-          <span class="plot-tools"><button type="button" id="plotFirst" class="plain">First 5</button><button type="button" id="plotNone" class="plain">Deselect all</button></span>
+          <span class="plot-tools"><button type="button" id="plotFirst" class="plain">First 5</button><button type="button" id="plotNone" class="plain">Deselect all</button><button type="button" id="plotOnly" class="plain" aria-pressed="false">Plotted only</button><button type="button" id="selNone" class="plain">Clear selection</button></span>
           <span id="plotNote" class="plot-note" role="status"></span></h2>
         <div class="scroll">
           <table class="pvs" id="pvTable" aria-label="Table of PVs">

@@ -138,6 +138,10 @@ const state = {
     plotted: [],
     // True while the note of the Plot limit stays after a tap on a cell, until a tap elsewhere or a Plot box is turned off.
     plotNoteStays: false,
+    // True while the table shows only the rows whose Plot box is on; not kept in the address.
+    plottedOnly: false,
+    // True while the list of found PVs shows only the selected ones instead of the matches; not kept in the address.
+    selectedOnly: false,
     active: 0,
     focus: null,
     status: new Map(),
@@ -277,9 +281,7 @@ function renderFinder() {
             groups.append(button);
         });
 
-    $("count").textContent = state.overflow
-        ? `${state.total.toLocaleString()}${state.partial ? " or more" : ""} PVs match`
-        : `${state.total.toLocaleString()} of ${state.count.toLocaleString()} PVs match`;
+    $("count").textContent = countText();
     renderResults();
     renderArchiveOffer();
 }
@@ -312,17 +314,52 @@ async function setReport(key) {
 }
 
 // A windowed list: only the rows in view exist in the document.
+/** The names the list shows: the matches of the search, or only the selected PVs while Selected only is on; the toggle goes off by itself when nothing is selected. */
+function listNames() {
+    if (state.selectedOnly && !state.selected.length) {
+        state.selectedOnly = false;
+    }
+    return state.selectedOnly ? state.selected : state.results;
+}
+
+/** The count line of the list: the selected PVs shown while Selected only is on, the matches of the search otherwise. */
+function countText() {
+    if (state.selectedOnly) {
+        return `${state.selected.length} selected PVs shown`;
+    }
+    return state.overflow
+        ? `${state.total.toLocaleString()}${state.partial ? " or more" : ""} PVs match`
+        : `${state.total.toLocaleString()} of ${state.count.toLocaleString()} PVs match`;
+}
+
+/** The state of the two controls of the list and of its count line after it is drawn. */
+function updateListTools() {
+    $("listSelected").disabled = !state.selected.length;
+    $("listSelected").setAttribute("aria-pressed", String(state.selectedOnly));
+    $("listClear").disabled = !state.selected.length;
+    $("count").textContent = countText();
+}
+
+/** Shows only the selected PVs in the list, or the matches again. */
+function toggleSelectedOnly() {
+    state.selectedOnly = !state.selectedOnly;
+    state.active = 0;
+    renderFinder();
+}
+
 function renderResults() {
     const list = $("results");
     const spacer = $("resultsSpacer");
-    spacer.style.height = `${state.results.length * rowHeight()}px`;
+    const names = listNames();
+    updateListTools();
+    spacer.style.height = `${names.length * rowHeight()}px`;
     const top = list.scrollTop;
     const first = Math.max(0, Math.floor(top / rowHeight()) - 5);
-    const last = Math.min(state.results.length, Math.ceil((top + list.clientHeight) / rowHeight()) + 5);
+    const last = Math.min(names.length, Math.ceil((top + list.clientHeight) / rowHeight()) + 5);
     const rows = $("resultRows");
     rows.textContent = "";
     for (let i = first; i < last; i += 1) {
-        const name = state.results[i];
+        const name = names[i];
         const selected = state.selected.includes(name);
         const row = node("li", { role: "option", id: `row-${i}`, class: i === state.active ? "active" : null, "aria-selected": String(selected) });
         row.style.transform = `translateY(${i * rowHeight()}px)`;
@@ -351,7 +388,7 @@ function readVisibleStatus(first, last) {
             return;
         }
         const selected = new Set(state.selected);
-        const names = state.results
+        const names = listNames()
             .slice(first, last)
             .filter((name) => !selected.has(name) && Date.now() - (rowStatusAt.get(name) || 0) > 30000)
             .slice(0, 60);
@@ -392,7 +429,8 @@ function renderArchiveOffer() {
 
 // Keyboard use of the list: the arrow keys move, Space or Enter selects or clears the active row.
 function moveInResults(event) {
-    const count = state.results.length;
+    const names = listNames();
+    const count = names.length;
     if (!count) {
         return;
     }
@@ -407,7 +445,7 @@ function moveInResults(event) {
         state.active = count - 1;
     } else if (event.key === " " || event.key === "Enter") {
         event.preventDefault();
-        toggle(state.results[state.active]);
+        toggle(names[state.active]);
         return;
     } else {
         return;
@@ -759,13 +797,37 @@ function showPlotNote(on) {
     }
 }
 
-/** The state of the two Plot controls and of the note after the table is drawn. */
+/** The state of the four Plot controls and of the note after the table is drawn. */
 function updatePlotTools() {
     $("plotFirst").disabled = !state.selected.length;
     $("plotNone").disabled = !state.plotted.length;
+    $("plotOnly").disabled = !state.plotted.length;
+    $("plotOnly").setAttribute("aria-pressed", String(state.plottedOnly));
+    $("selNone").disabled = !state.selected.length;
     if (!state.plotNoteStays) {
         showPlotNote(false);
     }
+}
+
+/** The rows the table shows: every chosen PV, or only the plotted ones while Plotted only is on; the toggle goes off by itself when no PV is plotted. */
+function shownRows() {
+    if (state.plottedOnly && !state.plotted.length) {
+        state.plottedOnly = false;
+    }
+    return state.plottedOnly ? state.selected.filter((name) => state.plotted.includes(name)) : state.selected;
+}
+
+/** Shows only the rows whose Plot box is on, or every row again. */
+function togglePlottedOnly() {
+    state.plottedOnly = !state.plottedOnly;
+    renderTable();
+}
+
+/** Unticks every chosen PV, so that the table is empty and nothing is plotted. */
+function clearSelection() {
+    state.selected = [];
+    state.focus = null;
+    afterSelection();
 }
 
 /** Turns the Plot boxes of the first LIMITS.chart rows of the table on, in the order of the table, and every other Plot box off. */
@@ -1050,8 +1112,10 @@ function renderTable() {
     if (all) {
         $("analyzerAll").setAttribute("href", all);
     }
+    const rows = shownRows();
     $("selN").textContent = String(state.selected.length);
-    $("limScan").textContent = String(state.selected.length);
+    // While Plotted only is on, the counter reads the shown rows of the chosen PVs.
+    $("limScan").textContent = state.plottedOnly ? `${rows.length} of ${state.selected.length}` : String(state.selected.length);
     $("limScanMax").textContent = String(LIMITS.table);
     $("limChart").textContent = String(state.plotted.length);
     $("limChartMax").textContent = String(LIMITS.chart);
@@ -1086,7 +1150,7 @@ function renderTable() {
     if (!state.selected.length) {
         body.append(node("tr", null, node("td", { colspan: "10", class: "empty" }, "Pick PVs in the list to add them to this table.")));
     }
-    for (const name of state.selected) {
+    for (const name of rows) {
         const data = state.data.get(name);
         const row = node("tr", { "data-name": name, "data-focus": String(state.focus === name), tabindex: "0" });
         row.append(plotCell(name));
@@ -1722,6 +1786,14 @@ function wire() {
     $("plotFirst").addEventListener("click", plotFirst);
     $("plotNone").title = "Turn off every Plot box";
     $("plotNone").addEventListener("click", plotNone);
+    $("plotOnly").title = "Show only the rows whose Plot box is on; press again to show every row";
+    $("plotOnly").addEventListener("click", togglePlottedOnly);
+    $("selNone").title = "Untick every PV, so that the table is empty";
+    $("selNone").addEventListener("click", clearSelection);
+    $("listSelected").title = "Show only the selected PVs in the list; press again to show the matches";
+    $("listSelected").addEventListener("click", toggleSelectedOnly);
+    $("listClear").title = "Untick every PV, so that the table is empty";
+    $("listClear").addEventListener("click", clearSelection);
     // A tap that leaves the cell where the note of the Plot limit was shown hides it.
     document.addEventListener("click", () => {
         if (state.plotNoteStays) {

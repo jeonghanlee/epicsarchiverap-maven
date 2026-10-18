@@ -46,7 +46,7 @@ The Browse PVs page, with five PVs in the table and two of them plotted:
 
 | Part | Behavior |
 | :--- | :--- |
-| Find | Words in any order with case ignored, glob, or regular expression; the **i** button beside the three modes explains each; chips group the matches by the first two `:` segments; the rows in view show the state of a PV that is not in the table (paused, not archived), read in one call for at most 60 rows |
+| Find | Words in any order with case ignored, glob, or regular expression; the **i** button beside the three modes explains each; chips group the matches by the first two `:` segments; the rows in view show the state of a PV that is not in the table (paused, not archived), read in one call for at most 60 rows; under the count, Selected only shows only the selected PVs in the list until it is pressed again, and Clear selection clears every selection |
 | Show | A selection of the list by one of the server reports: disconnected now, paused, never connected, waiting for the first connection, recently added, recently changed, highest event rate, highest storage rate, most storage used, most connection drops, silent for the longest time, most events dropped for a wrong time stamp, by buffer overflow and by a type change |
 | Chart | The PVs whose Plot box is on, at most 5, with one value axis for each unit and a legend. Above it are the range buttons and the Refresh control; the line above the chart holds the time window and the value ranges; Options, Enlarge chart and Open in the analyzer are on the row of the Inspect heading. The gestures and options are listed under [Chart controls](#chart-controls) |
 | Table of PVs | One row per PV selected in the list, at most 100, under the chart; the columns are listed under [The table of PVs](#the-table-of-pvs) |
@@ -106,7 +106,7 @@ Each PV selected in the list has one row:
 
 | Column | Content |
 | :--- | :--- |
-| Plot | The box that draws the PV in the chart. It is off when the row appears. At most 5 boxes are on; at 5 the other boxes are disabled, and the pointer over one of them, or a tap on it, says why in its title and in a note beside the counters of the table. Beside the counter `table x/100`, First 5 turns on the boxes of the first five rows and turns off the others, and Deselect all turns every box off |
+| Plot | The box that draws the PV in the chart. It is off when the row appears. At most 5 boxes are on; at 5 the other boxes are disabled, and the pointer over one of them, or a tap on it, says why in its title and in a note beside the counters of the table. Beside the counter `table x/100`, First 5 turns on the boxes of the first five rows and turns off the others, Deselect all turns every box off, Plotted only shows only the rows whose box is on (the counter then reads the shown rows of the chosen PVs) until it is pressed again, and Clear selection unticks every PV so that the table is empty |
 | PV | The name |
 | Protocol | CA or PVA, read from `usePVAccess` of `getPVTypeInfo`; empty for a PV that is not archived |
 | State | The state word of the PV and, when events were lost, `N lost`, where N is the sum of `eventsDropped` of the reports `getPVsByDroppedEventsTimestamp`, `getPVsByDroppedEventsBuffer` and `getPVsByDroppedEventsTypeChange`. The column is shown only while a PV is not in its normal state, which is Being archived with no lost event |

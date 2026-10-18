@@ -178,6 +178,13 @@
     color: var(--ink-2);
 }
 
+/* The two controls of the list (Selected only, Clear selection) sit under the count, styled like the Plot controls of the table. */
+.list-tools {
+    display: flex;
+    gap: 4px 18px;
+    margin: 0 0 4px;
+}
+
 .offer {
     margin: 4px 0 8px;
     font-size: 0.9375rem;
@@ -810,6 +817,12 @@ dialog input[type="number"] {
     color: var(--ink-3);
     cursor: default;
     border-bottom-color: transparent;
+}
+
+/* The pressed state of a toggle among the Plot controls (Plotted only) is a solid underline. */
+.plot-tools button.plain[aria-pressed="true"] {
+    border-bottom-color: currentColor;
+    font-weight: 600;
 }
 
 #maintainFields label {
