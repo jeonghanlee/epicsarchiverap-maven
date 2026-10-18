@@ -77,7 +77,14 @@ public class GetDataAtTimeEngine implements BPLAction {
         String timeStr = req.getParameter("at");
         Instant atTime = TimeUtils.now();
         if (timeStr != null) {
-            atTime = TimeUtils.convertFromISO8601String(timeStr);
+            try {
+                atTime = TimeUtils.convertFromISO8601String(timeStr);
+            } catch (IllegalArgumentException ex) {
+                String msg = "Cannot parse time " + timeStr;
+                logger.warn(msg, ex);
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+                return;
+            }
         }
 
         EngineContext engineContext = configService.getEngineContext();

@@ -82,15 +82,22 @@ public class CompareWithChannelArchiver implements BPLAction {
 
 		// ISO datetimes are of the form "2011-02-02T08:00:00.000Z"
         Instant end = TimeUtils.now();
-		if(endTimeStr != null) {
-			end = TimeUtils.convertFromISO8601String(endTimeStr);
-		}
-
-		// We get one day by default
-        Instant start = TimeUtils.minusDays(end, 1);
-		if(startTimeStr != null) {
-			start = TimeUtils.convertFromISO8601String(startTimeStr);
-		}
+        Instant start;
+        try {
+            if (endTimeStr != null) {
+                end = TimeUtils.convertFromISO8601String(endTimeStr);
+            }
+            // We get one day by default
+            start = TimeUtils.minusDays(end, 1);
+            if (startTimeStr != null) {
+                start = TimeUtils.convertFromISO8601String(startTimeStr);
+            }
+        } catch (IllegalArgumentException ex) {
+            String msg = "Cannot parse time " + startTimeStr + " or " + endTimeStr;
+            logger.warn(msg, ex);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+            return;
+        }
 
 		int limit = 100;
 		if(limitStr != null && !limitStr.equals("")) {

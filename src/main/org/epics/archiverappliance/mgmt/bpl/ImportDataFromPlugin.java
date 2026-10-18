@@ -62,8 +62,17 @@ public class ImportDataFromPlugin implements BPLAction {
 			return;
 		}
 
-        Instant startTime = TimeUtils.convertFromISO8601String(startTimeStr);
-        Instant endTime = TimeUtils.convertFromISO8601String(endTimeStr);
+        Instant startTime;
+        Instant endTime;
+        try {
+            startTime = TimeUtils.convertFromISO8601String(startTimeStr);
+            endTime = TimeUtils.convertFromISO8601String(endTimeStr);
+        } catch (IllegalArgumentException ex) {
+            String msg = "Cannot parse time " + startTimeStr + " or " + endTimeStr;
+            logger.warn(msg, ex);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+            return;
+        }
 		
 		String srcStoragePluginURL = req.getParameter("src");
 		if(srcStoragePluginURL == null || srcStoragePluginURL.equals("")) {

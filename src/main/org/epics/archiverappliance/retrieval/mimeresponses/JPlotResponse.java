@@ -15,12 +15,11 @@ import org.epics.archiverappliance.common.BasicContext;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.HashMap;
 
 /**
  * @author mshankar
- * Sends the event data as a JSON response tailored to JPlot, which is used in the test page..
+ * Sends the event data as a JSON response tailored to JPlot: each point is [epoch milliseconds, value].
  * The response is a array of array of data series: [ series1, series2, ... ]
  * A series can either be raw data or an object with properties. 
  * The raw data format is an array of points: [ [x1, y1], [x2, y2], ... ] E.g. [ [1, 3], [2, 14.01], [3.5, 3.14] ]
@@ -30,7 +29,6 @@ public class JPlotResponse implements MimeResponse {
 	boolean needComma = false;
 	boolean firstPV = true;
 	boolean closePV = false;
-    private final ZoneId localTimeZone = ZoneId.systemDefault();
 
 	@Override
 	public void consumeEvent(Event e) throws Exception {
@@ -39,8 +37,7 @@ public class JPlotResponse implements MimeResponse {
 		} else {
 			out.println(",");
 		}
-		// Add 3 zeros for millseconds...
-        out.print("[" + e.getEventTimeStamp().atZone(localTimeZone) + ", " + e.getSampleValue().toString() + "]");
+        out.print("[" + e.getEventTimeStamp().toEpochMilli() + ", " + e.getSampleValue().toString() + "]");
 	}
 
 	@Override

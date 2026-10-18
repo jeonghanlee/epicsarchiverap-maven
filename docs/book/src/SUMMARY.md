@@ -11,6 +11,7 @@
 - [Management interface](interface.md)
 - [Logging](logging.md)
 - [Retrieving data](retrieval.md)
+- [Times](time-handling.md)
 - [Scripting](scripting.md)
 - [Redundancy and EPICS 7](redundancy.md)
 - [Developer guide](developer.md)

@@ -80,8 +80,15 @@ public class SlicePBFile {
             return;
         }
 
-        Instant startTs = TimeUtils.convertFromISO8601String(startTime);
-        Instant endTs = TimeUtils.convertFromISO8601String(endTime);
+        Instant startTs;
+        Instant endTs;
+        try {
+            startTs = TimeUtils.convertFromISO8601String(startTime);
+            endTs = TimeUtils.convertFromISO8601String(endTime);
+        } catch (IllegalArgumentException ex) {
+            logger.error("Cannot parse time " + startTime + " or " + endTime + "; use ISO 8601 such as 2011-02-01T08:00:00.000Z");
+            return;
+        }
         if (!startTs.isBefore(endTs)) {
             logger.error("Start time " + startTime + " is not before " + endTime);
             return;

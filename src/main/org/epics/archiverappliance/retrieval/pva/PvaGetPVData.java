@@ -164,7 +164,7 @@ public class PvaGetPVData implements PvaAction {
 				try {
 					end = TimeUtils.convertFromDateTimeStringWithOffset(endTimeStr);
 				} catch (IllegalArgumentException ex2) {
-					String msg = "Cannot parse time" + endTimeStr;
+					String msg = "Cannot parse time " + endTimeStr;
 					throw new PvaActionException(msg, ex2);
 
 				}
@@ -325,7 +325,7 @@ public class PvaGetPVData implements PvaAction {
 					postProcessor, applianceForPV, retrievalContext, executorResult);
 			pmansProfiler.mark("After data source resolution");
 
-			long s1 = System.currentTimeMillis();
+			long s1 = System.nanoTime();
 			String currentlyProcessingPV = null;
 
 			List<Future<EventStream>> eventStreamFutures = getEventStreamFuturesFromRetrievalResults(executorResult,
@@ -425,9 +425,9 @@ public class PvaGetPVData implements PvaAction {
 			mergeDedupCountingConsumer.send();
 			pmansProfiler.mark("After writing all eventstreams to response");
 
-			long s2 = System.currentTimeMillis();
+			long s2 = System.nanoTime();
 			logger.debug("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
-					+ " in " + (s2 - s1) + "(ms)" + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs
+					+ " in " + ((s2 - s1) / 1_000_000) + "(ms)" + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs
 					+ " events" + " deduping involved " + mergeDedupCountingConsumer.comparedEventsForAllPVs
 					+ " compares.");
 		} catch (Exception ex) {
@@ -831,7 +831,7 @@ public class PvaGetPVData implements PvaAction {
 			}
 		}
 
-		long s1 = System.currentTimeMillis();
+		long s1 = System.nanoTime();
 		String currentlyProcessingPV = null;
 
 		/*
@@ -966,9 +966,9 @@ public class PvaGetPVData implements PvaAction {
 			}
 		}
 
-		long s2 = System.currentTimeMillis();
+		long s2 = System.nanoTime();
 		logger.debug("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
-				+ " in " + (s2 - s1) + "(ms)" + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs
+				+ " in " + ((s2 - s1) / 1_000_000) + "(ms)" + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs
 				+ " events" + " deduping involved " + mergeDedupCountingConsumer.comparedEventsForAllPVs
 				+ " compares.");
 

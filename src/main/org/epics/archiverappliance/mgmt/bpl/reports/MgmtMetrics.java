@@ -8,7 +8,6 @@
 package org.epics.archiverappliance.mgmt.bpl.reports;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.lang.management.ManagementFactory;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -38,9 +37,8 @@ public class MgmtMetrics implements Metrics {
     @Override
     public Map<String, String> metrics(ConfigService configService) { 
         Map<String, String> result = new HashMap<String, String>();
-        long vmStartTime = ManagementFactory.getRuntimeMXBean().getStartTime();
-        Duration vmInterval = Duration.between(
-                Instant.ofEpochMilli(vmStartTime), Instant.ofEpochMilli(System.currentTimeMillis()));            
+        // The uptime of the JVM is an elapsed time, read from the runtime and not as the difference of two wall clock readings.
+        Duration vmInterval = Duration.ofMillis(ManagementFactory.getRuntimeMXBean().getUptime());
         result.put("uptime", vmInterval.toString());
         return result;
     }

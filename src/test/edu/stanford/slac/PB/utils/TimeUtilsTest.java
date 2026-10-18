@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Test TimeUtils.
@@ -407,5 +408,36 @@ public class TimeUtilsTest {
 		Assertions.assertThrows(IllegalArgumentException.class, () -> TimeUtils.fromString("yesterday", Instant.now()));
 		Assertions.assertThrows(IllegalArgumentException.class, () -> TimeUtils.convertFromISO8601String("yesterday"));
 		Assertions.assertThrows(IllegalArgumentException.class, () -> TimeUtils.convertFromDateTimeStringWithOffset("yesterday"));
+	}
+
+	@Test
+	public void testPreviousPartitionLastSecondClearsNanosOfMinutePartitions() {
+		Instant withNanos = TimeUtils.convertFromISO8601String("2010-10-12T18:45:45.123Z").plusNanos(456789);
+		for (PartitionGranularity granularity : new PartitionGranularity[] {PartitionGranularity.PARTITION_5MIN, PartitionGranularity.PARTITION_15MIN, PartitionGranularity.PARTITION_30MIN, PartitionGranularity.PARTITION_HOUR}) {
+			Instant previous = TimeUtils.getPreviousPartitionLastSecond(withNanos, granularity);
+			Assertions.assertEquals(0, previous.getNano(), "the last second of the previous " + granularity + " partition is a whole second");
+		}
+		testPrevEquals("2010-10-12T18:45:45.123Z", PartitionGranularity.PARTITION_5MIN, "2010-10-12T18:44:59.000Z");
+		testPrevEquals("2010-10-12T18:45:45.123Z", PartitionGranularity.PARTITION_15MIN, "2010-10-12T18:44:59.000Z");
+		testPrevEquals("2010-10-12T18:45:45.123Z", PartitionGranularity.PARTITION_30MIN, "2010-10-12T18:29:59.000Z");
+	}
+
+	@Test
+	public void testStartOfYearBefore1970ForShortYear() {
+		Assertions.assertEquals(-31536000L, TimeUtils.getStartOfYearInSeconds((short) 1969));
+		Assertions.assertEquals(TimeUtils.getStartOfYearInSeconds(1969), TimeUtils.getStartOfYearInSeconds((short) 1969));
+		Assertions.assertEquals(TimeUtils.getStartOfYearInSeconds(2026), TimeUtils.getStartOfYearInSeconds((short) 2026));
+	}
+
+	@Test
+	public void testHumanReadableStringIsEnglishUnderAnotherLocale() {
+		Locale before = Locale.getDefault();
+		try {
+			Locale.setDefault(Locale.KOREA);
+			String text = TimeUtils.convertToHumanReadableString(TimeUtils.convertFromISO8601String("2010-06-15T12:00:00.000Z"));
+			Assertions.assertTrue(text.matches("Jun/1[56]/2010 \\d{2}:\\d{2}:\\d{2} .+"), "the month is written in English whatever the locale: " + text);
+		} finally {
+			Locale.setDefault(before);
+		}
 	}
 }

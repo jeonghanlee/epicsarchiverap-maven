@@ -38,9 +38,12 @@ they keep.
 
 ## How are time zones handled?
 
-EPICS timestamps are UTC, and the appliance stores and returns UTC. Any
-conversion to local time, including daylight saving time, happens in
-the client.
+EPICS timestamps are UTC, and the appliance stores them as UTC. The
+machine readable responses (JSON, CSV, SVG, protocol buffers, the
+MATLAB file) return UTC, and a client converts to local time. The text
+responses and the reports write the time zone of the server, and the
+console writes the time zone of the browser. [Times](time-handling.md)
+names every time a reader meets and its clock.
 
 ## Can one appliance archive the same PV twice?
 

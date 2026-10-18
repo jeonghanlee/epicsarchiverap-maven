@@ -104,11 +104,11 @@ public class WriterRunnable implements Runnable {
 	public void run() {
 		try {
 			// final long written = write();
-			long startTime = System.currentTimeMillis();
+			long startNanos = System.nanoTime();
 			write();
-			long endTime = System.currentTimeMillis();
+			long endNanos = System.nanoTime();
 			configservice.getEngineContext().setSecondsConsumedByWriter(
-					(double) (endTime - startTime) / 1000);
+					(double) (endNanos - startNanos) / 1_000_000_000);
 		} catch (Exception e) {
 			logger.error("Exception", e);
 		}

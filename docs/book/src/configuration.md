@@ -84,6 +84,7 @@ with `org.epics.archiverappliance.`, left out here.
 | `config.RuntimeKeys` | `DESC` | fields kept in engine memory |
 | `engine.util.EngineContext.disconnectCheckTimeoutInMinutes` | `0` | disconnect check interval; `0` turns it off |
 | `engine.archivePVSonStartup.determineLastKnownEventFromStores` | `false` | `false` starts from server time, not from the last stored sample |
+| `engine.epics.server_ioc_drift_seconds` | `1800` | seconds the time of an event may lead or lag the server clock before the engine drops it; an event before 1991-01-01 is dropped whatever the drift |
 
 The file carries further keys as comments, with a description of each.
 

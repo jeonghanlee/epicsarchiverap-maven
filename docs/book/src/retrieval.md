@@ -42,7 +42,9 @@ or ISO 8601 date times with an offset, such as
 `2026-09-24T01:00:00-07:00`, URL-encoded when needed; the `+` of an
 offset such as `+09:00` is sent as `%2B`, because an unencoded `+`
 arrives as a space. A time that cannot be parsed returns HTTP 400.
-The appliance stores and returns UTC; clients convert to local time.
+The appliance stores UTC and the machine readable responses return UTC;
+clients convert to local time. The `txt` response writes the time zone
+of the server ([Times](time-handling.md)).
 
 For `getDataForPVs`, repeat `pv` in a GET, or send the names in a POST
 body as a JSON array or as one name per line.
@@ -167,7 +169,8 @@ delete('temp.mat');
 
 The file holds a `header` structure and a `data` structure with the
 fields `epochSeconds` (UTC seconds), `values` (a row per sample, with one
-column per waveform element), `nanos` and `isDST`.
+column per waveform element), `nanos` and `isDST`, the daylight saving
+state of each sample in the time zone of the server.
 
 ## Python
 

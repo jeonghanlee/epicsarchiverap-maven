@@ -170,7 +170,15 @@ public class GetDataAtTime {
         if (timeStr == null) {
             timeStr = TimeUtils.convertToISO8601String(TimeUtils.getCurrentEpochSeconds());
         }
-        Instant atTime = TimeUtils.convertFromISO8601String(timeStr);
+        Instant atTime;
+        try {
+            atTime = TimeUtils.convertFromISO8601String(timeStr);
+        } catch (IllegalArgumentException ex) {
+            String msg = "Cannot parse time " + timeStr;
+            logger.warn(msg, ex);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+            return;
+        }
 
         boolean fetchFromExternalAppliances =
                 req.getParameter("includeProxies") != null && Boolean.parseBoolean(req.getParameter("includeProxies"));
@@ -511,7 +519,15 @@ public class GetDataAtTime {
         if (timeStr == null) {
             timeStr = TimeUtils.convertToISO8601String(TimeUtils.getCurrentEpochSeconds());
         }
-        Instant atTime = TimeUtils.convertFromISO8601String(timeStr);
+        Instant atTime;
+        try {
+            atTime = TimeUtils.convertFromISO8601String(timeStr);
+        } catch (IllegalArgumentException ex) {
+            String msg = "Cannot parse time " + timeStr;
+            logger.warn(msg, ex);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+            return;
+        }
         String searchPeriodStr = req.getParameter("searchPeriod");
         if(searchPeriodStr == null) {
             searchPeriodStr = "P1D";

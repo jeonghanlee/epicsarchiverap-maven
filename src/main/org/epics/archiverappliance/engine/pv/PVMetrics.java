@@ -82,9 +82,11 @@ public class PVMetrics {
     /**the time when starting archiving and it is the the number of seconds since 1970/01/01
      * When connection is lost , this time will be updated
      * */
-    private long lastStartEpochSeconds;
+    /**
+     * The reading of the monotonic clock (System.nanoTime) from which the event and storage rates are measured.
+     */
+    private long rateStartNanos;
 
-    private final long initialEpochSeconds;
 
     /**how many events so far? */
     private long eventCounts;
@@ -226,7 +228,7 @@ public class PVMetrics {
     public void setConnectionEstablishedEpochSeconds(long connectionEstablishedEpochSeconds) {
         eventCounts = 0;
         storageSize = 0;
-        this.lastStartEpochSeconds = connectionEstablishedEpochSeconds;
+        this.rateStartNanos = System.nanoTime();
         isFirstDataAfterConnection = true;
         if (firstTimeConnection) {
             this.connectionFirstEstablishedEpochSeconds = System.currentTimeMillis() / 1000;
@@ -245,8 +247,13 @@ public class PVMetrics {
         if (eventCounts > ROTATEEVENTS_OR_STORAGE_LIMIT) {
             eventCounts = 0;
             storageSize = 0;
-            lastStartEpochSeconds = System.currentTimeMillis() / 1000;
+            rateStartNanos = System.nanoTime();
         }
+    }
+
+    /** The seconds since the rates were last reset, from the monotonic clock. */
+    private double rateElapsedSeconds() {
+        return (System.nanoTime() - rateStartNanos) / 1_000_000_000.0;
     }
 
     /**
@@ -254,12 +261,7 @@ public class PVMetrics {
      * @return  the average event rate in count/second
      */
     public double getEventRate() {
-        double eventRateTemp = 0;
-        if (lastStartEpochSeconds == 0) {
-            eventRateTemp = (double) this.eventCounts / (System.currentTimeMillis() / 1000 - this.initialEpochSeconds);
-        } else {
-            eventRateTemp = (double) this.eventCounts / (System.currentTimeMillis() / 1000 - lastStartEpochSeconds);
-        }
+        double eventRateTemp = (double) this.eventCounts / rateElapsedSeconds();
 
         if (Double.isNaN(eventRateTemp) | Double.isInfinite(eventRateTemp)) {
             eventRateTemp = 0;
@@ -273,13 +275,7 @@ public class PVMetrics {
      * @return  the average storage rate in byte/second
      */
     public double getStorageRate() {
-        double storageRateTemp = 0;
-        if (lastStartEpochSeconds == 0) {
-            storageRateTemp =
-                    (double) this.storageSize / (System.currentTimeMillis() / 1000 - this.initialEpochSeconds);
-        } else {
-            storageRateTemp = (double) this.storageSize / (System.currentTimeMillis() / 1000 - lastStartEpochSeconds);
-        }
+        double storageRateTemp = (double) this.storageSize / rateElapsedSeconds();
 
         if (Double.isNaN(storageRateTemp) | Double.isInfinite(storageRateTemp)) storageRateTemp = 0;
         return storageRateTemp;
@@ -295,7 +291,7 @@ public class PVMetrics {
         if (storageSize > ROTATEEVENTS_OR_STORAGE_LIMIT) {
             eventCounts = 0;
             storageSize = 0;
-            lastStartEpochSeconds = System.currentTimeMillis() / 1000;
+            rateStartNanos = System.nanoTime();
         }
     }
 
@@ -303,16 +299,15 @@ public class PVMetrics {
      * Constructor for PVMetrics
      * @param pvName  the name of pv
      * @param controlPVname  the name of pv who controls this pv archived or not
-     * @param startEpochSeconds  the starting  time and it is the the number of seconds since 1970/01/01
+     * @param startEpochSeconds  the starting time, kept for the callers; the rates are measured from the monotonic clock at construction
      * @param dbrTypes ArchDBRTypes
      */
     public PVMetrics(String pvName, String controlPVname, long startEpochSeconds, ArchDBRTypes dbrTypes) {
         this.controlPVname = controlPVname;
         this.pvName = pvName;
-        this.lastStartEpochSeconds = startEpochSeconds;
+        this.rateStartNanos = System.nanoTime();
         this.archDBRTypes = dbrTypes;
         this.newCADBRType = this.archDBRTypes;
-        this.initialEpochSeconds = System.currentTimeMillis() / 1000;
     }
 
     /**

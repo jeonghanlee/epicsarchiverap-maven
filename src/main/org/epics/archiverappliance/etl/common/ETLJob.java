@@ -149,10 +149,10 @@ public class ETLJob implements Runnable {
             // elements containing information about event streams
             // (e.g., files) ready for ETL for the current time and
             // PV name being processed.
-            long time1 = System.currentTimeMillis();
+            long time1 = System.nanoTime();
             long totalSrcBytes = 0;
             List<ETLInfo> ETLInfoList = curETLSource.getETLStreams(pvName, processingTime, etlContext);
-            time4getETLStreams = time4getETLStreams + System.currentTimeMillis() - time1;
+            time4getETLStreams = time4getETLStreams + (System.nanoTime() - time1) / 1_000_000;
             streamsCompleted = true;
             if (ETLInfoList != null) {
                 streamsReturned = ETLInfoList.size();
@@ -165,7 +165,7 @@ public class ETLJob implements Runnable {
                                 + infoItem.getGranularity().toString() + " and size " + infoItem.getSize());
                     }
 
-                    long checkSzStart = System.currentTimeMillis();
+                    long checkSzStart = System.nanoTime();
                     long sizeOfSrcStream = infoItem.getSize();
                     totalSrcBytes += sizeOfSrcStream;
                     if (sizeOfSrcStream > 0 && destMetrics != null) {
@@ -204,22 +204,22 @@ public class ETLJob implements Runnable {
                             }
                         }
                     }
-                    long checkSzEnd = System.currentTimeMillis();
-                    time4checkSizes = time4checkSizes + (checkSzEnd - checkSzStart);
+                    long checkSzEnd = System.nanoTime();
+                    time4checkSizes = time4checkSizes + (checkSzEnd - checkSzStart) / 1_000_000;
 
                     try (EventStream stream = infoItem.getEv()) {
-                        long time2 = System.currentTimeMillis();
+                        long time2 = System.nanoTime();
                         boolean partitionPrepareResult = curETLDest.prepareForNewPartition(
                                 pvName, infoItem.getFirstEvent(), infoItem.getType(), etlContext);
-                        time4prepareForNewPartition = time4prepareForNewPartition + System.currentTimeMillis() - time2;
+                        time4prepareForNewPartition = time4prepareForNewPartition + (System.nanoTime() - time2) / 1_000_000;
                         if (logger.isDebugEnabled()) {
                             if (!partitionPrepareResult)
                                 logger.debug("Destination partition already prepared for PV " + pvName + " with key = "
                                         + infoItem.getKey());
                         }
-                        long time3 = System.currentTimeMillis();
+                        long time3 = System.nanoTime();
                         boolean status = curETLDest.appendToETLAppendData(pvName, stream, etlContext);
-                        time4appendToETLAppendData = time4appendToETLAppendData + System.currentTimeMillis() - time3;
+                        time4appendToETLAppendData = time4appendToETLAppendData + (System.nanoTime() - time3) / 1_000_000;
                         if (status) {
                             movedList.add(infoItem);
                             if (logger.isDebugEnabled()) {
@@ -250,10 +250,10 @@ public class ETLJob implements Runnable {
                 // Concatenate any append data for the current ETLDest
                 // destination to this destination.
                 try {
-                    long time7 = System.currentTimeMillis();
+                    long time7 = System.nanoTime();
                     commitAttempted = true;
                     boolean commitSuccessful = curETLDest.commitETLAppendData(pvName, etlContext);
-                    time4commitETLAppendData = time4commitETLAppendData + System.currentTimeMillis() - time7;
+                    time4commitETLAppendData = time4commitETLAppendData + (System.nanoTime() - time7) / 1_000_000;
                     commitSucceeded = commitSuccessful;
 
                     if (commitSuccessful) {
@@ -271,9 +271,9 @@ public class ETLJob implements Runnable {
                         // (e.g., file) for deletion.
                         for (ETLInfo infoItem : movedList) {
                             logger.debug("mark for deletion itemInfo key= " + infoItem.getKey());
-                            long time4 = System.currentTimeMillis();
+                            long time4 = System.nanoTime();
                             curETLSource.markForDeletion(infoItem, etlContext);
-                            time4markForDeletion = time4markForDeletion + System.currentTimeMillis() - time4;
+                            time4markForDeletion = time4markForDeletion + (System.nanoTime() - time4) / 1_000_000;
                         }
                     } else {
                         logger.error("Unsuccessful commiting ETL for pv " + pvName);
@@ -283,16 +283,16 @@ public class ETLJob implements Runnable {
                 }
 
                 try {
-                    long time5 = System.currentTimeMillis();
+                    long time5 = System.nanoTime();
                     curETLDest.runPostProcessors(pvName, lookupItem.getDbrType(), etlContext);
-                    time4runPostProcessors = time4runPostProcessors + System.currentTimeMillis() - time5;
+                    time4runPostProcessors = time4runPostProcessors + (System.nanoTime() - time5) / 1_000_000;
                 } catch (Exception e) {
                     logger.error("Exception running post processors for pv " + pvName, e);
                 }
                 logger.debug("Executing post ETL tasks for this run");
-                long time6 = System.currentTimeMillis();
+                long time6 = System.nanoTime();
                 etlContext.executePostETLTasks();
-                time4executePostETLTasks = time4executePostETLTasks + System.currentTimeMillis() - time6;
+                time4executePostETLTasks = time4executePostETLTasks + (System.nanoTime() - time6) / 1_000_000;
                 logger.debug("Done executing post ETL tasks for this run");
 
                 long pvETLEndEpochMilliSeconds = TimeUtils.getCurrentEpochMilliSeconds();

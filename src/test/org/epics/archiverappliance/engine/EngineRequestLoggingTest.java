@@ -60,6 +60,8 @@ public class EngineRequestLoggingTest {
         final ByteArrayOutputStream body = new ByteArrayOutputStream();
         final StringWriter text = new StringWriter();
         int error = 0;
+        /** True makes the body stream fail on its first write, as a client that went away does. */
+        boolean failWrite = false;
     }
 
     private static Object defaultFor(Class<?> type) {
@@ -90,7 +92,8 @@ public class EngineRequestLoggingTest {
     private HttpServletResponse response(Exchange exchange) {
         ServletOutputStream out = new ServletOutputStream() {
             @Override
-            public void write(int b) {
+            public void write(int b) throws IOException {
+                if (exchange.failWrite) throw new IOException("the client went away");
                 exchange.body.write(b);
             }
 
@@ -161,7 +164,10 @@ public class EngineRequestLoggingTest {
     }
 
     private Exchange dataRequest(String pv, String from, String to) throws Exception {
-        Exchange exchange = new Exchange();
+        return dataRequest(new Exchange(), pv, from, to);
+    }
+
+    private Exchange dataRequest(Exchange exchange, String pv, String from, String to) throws Exception {
         if (pv != null) exchange.parameters.put("pv", pv);
         if (from != null) exchange.parameters.put("from", from);
         if (to != null) exchange.parameters.put("to", to);
@@ -232,14 +238,31 @@ public class EngineRequestLoggingTest {
 
     @Test
     void aFailedRequestWritesOneRecordAtInfoAndOneErrorWithTheStackTrace() throws Exception {
+        addSamples(3);
+        Exchange exchange = new Exchange();
+        exchange.failWrite = true;
         try (CapturedLog log = new CapturedLog("org.epics.archiverappliance", Level.DEBUG)) {
-            Assertions.assertThrows(IOException.class, () -> dataRequest(PV, "not-a-time", null));
+            Assertions.assertThrows(IOException.class,
+                    () -> dataRequest(exchange, PV, base.minusSeconds(5).toString(), base.plusSeconds(30).toString()));
             log.settle();
             assertRecordFields(onlyDataRecord(log), "failed", 0);
             Assertions.assertEquals(1, infoLines(log).size(), "only the record at INFO: " + infoLines(log));
             List<CapturedLog.Entry> errors = log.at(Level.ERROR);
             Assertions.assertEquals(1, errors.size(), "the exception is logged once: " + errors);
             Assertions.assertTrue(errors.getFirst().hasThrowable(), "the stack trace stays on the ERROR");
+        }
+    }
+
+    @Test
+    void aTimeThatCannotBeReadAnswers400AndWritesNothingAtInfo() throws Exception {
+        try (CapturedLog log = new CapturedLog("org.epics.archiverappliance", Level.DEBUG)) {
+            Exchange exchange = dataRequest(PV, "not-a-time", null);
+            log.settle();
+            Assertions.assertEquals(400, exchange.error);
+            Assertions.assertEquals(List.of(), infoLines(log), "nothing at INFO");
+            Assertions.assertTrue(
+                    log.at(Level.WARN).stream().anyMatch(e -> e.message().startsWith("Cannot parse time not-a-time")),
+                    "the rejected time is available at WARN");
         }
     }
 

@@ -450,7 +450,7 @@ public class DataRetrievalServlet extends HttpServlet {
                     pvName, typeInfo, postProcessor, applianceForPV, retrievalContext, executorResult, req);
             pmansProfiler.mark("After data source resolution");
 
-            long s1 = System.currentTimeMillis();
+            long s1 = System.nanoTime();
             String currentlyProcessingPV = null;
 
             List<Future<EventStream>> eventStreamFutures =
@@ -487,9 +487,9 @@ public class DataRetrievalServlet extends HttpServlet {
 
             pmansProfiler.mark("After writing all eventstreams to response");
 
-            long s2 = System.currentTimeMillis();
+            long s2 = System.nanoTime();
             logger.debug("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
-                    + " in " + (s2 - s1) + "(ms)"
+                    + " in " + ((s2 - s1) / 1_000_000) + "(ms)"
                     + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs + " events"
                     + " deduping involved " + mergeDedupCountingConsumer.comparedEventsForAllPVs + " compares.");
         } catch (Exception ex) {
@@ -664,7 +664,7 @@ public class DataRetrievalServlet extends HttpServlet {
         try {
             end = TimeUtils.fromString(req.getParameter("to"), TimeUtils.plusHours(TimeUtils.now(), 1));
         } catch (IllegalArgumentException ex) {
-            logAndRespond("Cannot parse time" + req.getParameter("to"), ex, resp, HttpServletResponse.SC_BAD_REQUEST);
+            logAndRespond("Cannot parse time " + req.getParameter("to"), ex, resp, HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
         // ISO datetimes are of the form "2011-02-02T08:00:00.000Z"
@@ -672,7 +672,7 @@ public class DataRetrievalServlet extends HttpServlet {
         try {
             start = TimeUtils.fromString(req.getParameter("from"), TimeUtils.minusDays(end, 1));
         } catch (IllegalArgumentException ex) {
-            logAndRespond("Cannot parse time" + req.getParameter("from"), ex, resp, HttpServletResponse.SC_BAD_REQUEST);
+            logAndRespond("Cannot parse time " + req.getParameter("from"), ex, resp, HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
 
@@ -991,7 +991,7 @@ public class DataRetrievalServlet extends HttpServlet {
             logger.error("Exception when retrieving data ", ex);
         }
 
-        long s1 = System.currentTimeMillis();
+        long s1 = System.nanoTime();
         String currentlyProcessingPV = null;
 
         /*
@@ -1047,9 +1047,9 @@ public class DataRetrievalServlet extends HttpServlet {
             logger.error("Exception when retrieving data ", ex);
         }
 
-        long s2 = System.currentTimeMillis();
+        long s2 = System.nanoTime();
         logger.debug("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
-                + " in " + (s2 - s1) + "(ms)"
+                + " in " + ((s2 - s1) / 1_000_000) + "(ms)"
                 + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs + " events"
                 + " deduping involved " + mergeDedupCountingConsumer.comparedEventsForAllPVs + " compares.");
 
