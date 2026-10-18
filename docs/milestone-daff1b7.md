@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D43. First finish M74 (read its Verification Results; commit under the owner's commit authority) and M73 (prepare the issues of its three findings, file them under the owner's issue authority, and ask the owner to confirm the two names changed in T1); then M68 steps 2 to 6. M66 stays Blocked until G8 records readiness of the required Ansible tools.
+Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D43. First finish M74 (read its Verification Results; commit under the owner's commit authority) and M73 (prepare the issues of its three findings, file them under the owner's issue authority, and ask the owner to confirm the two names changed in T1), then M75 (plan review of the IOC procedure, then the procedure written from the commands M73 ran), then M77 (plan review, then the log lines and the pause; M76, the full reaction, is Deferred to the next major release by D45 and its issue is filed from its GitHub Projection); then M68 steps 2 to 6. M66 stays Blocked until G8 records readiness of the required Ansible tools.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -105,6 +105,9 @@ This register covers the minimal modernization of the existing Java appliance on
 | Interface analyzer | M72 | One chart widget with its controls | Milestone | Complete | No | M59, M58, D38 | Every page that plots draws through one widget, split into modules by role, that builds and keeps its controls: the Options panel with its state, Enlarge chart, the cards, the range strip, the legend and the tooltip; the Operations and Retrieval performance charts have the Options and Enlarge chart that the Browse PVs page has, and `browse.js` no longer builds any of them; complete on 2026-10-17 at 0ccc2ba3; [detail](#m72---one-chart-widget-with-its-controls) |
 | Verification | M73 | Reaction of the archiver to a record that changes while it is archived | Milestone | In progress | No |  | On a local appliance with a soft IOC, a change of the scan rate, of the unit, precision and limits, and of the record type of an archived PV is made while the PV is archived, and what the engine and the stores do with the samples before and after it is observed and recorded: which samples are kept, which are dropped and counted, and what the type information, the Details window and the data show; [detail](#m73---reaction-of-the-archiver-to-a-record-that-changes-while-it-is-archived) |
 | Interface console | M74 | Plot limit note and bulk Plot controls in the PV table | Milestone | In progress | No |  | The Plot boxes over the limit of 5 give a stronger message, on a pointer and on a tap, as a tooltip on their cell and as a note beside the counters of the table; the table heading offers First 5, which turns the Plot boxes of the first five rows on and the others off, and Deselect all, which turns every Plot box off; verified in the browser on the Browse PVs page; [detail](#m74---plot-limit-note-and-bulk-plot-controls-in-the-pv-table) |
+| Verification | M75 | Procedure for the test IOC of the console checks in the book | Milestone | Not started | Yes |  | The developer page of the book has a procedure that installs, starts, lists, switches the mode of and stops the one soft IOC of the console checks with `ioc-runner` from `src/resources/test/st.cmd`, with the configuration file it needs carried in the repository and every command run as shown; [detail](#m75---procedure-for-the-test-ioc-of-the-console-checks-in-the-book) |
+| Verification | M76 | Archiving continues across a change of the record | Milestone | Deferred | No | M73, D45 | The engine detects a change of the archived record (type, rate, unit, precision or limits) on its own and goes on storing the signal under the new condition from the instant of the change, with the earlier samples readable as they were stored; deferred to the next major release by D45; the GitHub issue that holds the direction is filed; [detail](#m76---archiving-continues-across-a-change-of-the-record) |
+| Verification | M77 | Log and pause on a record that changes | Milestone | Not started | Yes | M73 | For each change of M73 that the engine can detect, it writes one log line that names the PV and what changed, and where storing has to stop (a changed type) it pauses the PV instead of dropping on without a word; nothing else changes until M76; verified on the one IOC and the one appliance of D44; [detail](#m77---log-and-pause-on-a-record-that-changes) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Decisions
@@ -154,6 +157,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | D41 | The page header has a fixed frame with two marker blocks: `site_header` holds the header logo on the left and `site_logo` the site logo on the right; blocks do not nest, so `site_header` no longer holds the whole header. The header logo is `archiverheader.svg`, switching to `wordmark.svg` below 360 px through a `<picture>` source. The default site logo is `sitelogo.svg`: a filled jar with a labelled wave and its lid ajar beside the words "store signals" and "analyze in place", text as outlines of Inter Display, 142 by 44 px. Both logos are sized by height (44 px, 30 px at 720 px and below, the site logo 24 px at 380 px and below). A site fills `site_logo` with its own logo and keeps the rest of the header. | 2026-10-12 |
 | D42 | Help is a help page of the console, served by mgmt, not the book: it says what each menu entry is for and how to use its page (adding PVs and their states, the search modes, reading the System pages), the information controls of the pages link to its sections, the generated API reference is an entry under it, and one link leads to the book on GitHub Pages (https://jeonghanlee.github.io/epicsarchiverap-maven/) for the full manual. The page works without a network beyond the appliance. | 2026-10-12 |
 | D43 | The open work runs in this order. Stage 1, finish what is under way: M74, M73 (its three findings filed as issues), M68 (steps 2 to 6), and M28 as aa-env allows, alongside. Stage 2, time: M70, then M67. Stage 3, text and use: M65, then M60. Stage 4, the analyzer: M58 closed by a dated exception because issue #39 stays open for the analyzer rows, then M62, M63, M64; the analyzer cards of M65 are written with M62. Stage 5, PVA and status: M69, then M61. Stage 6, verification and the rest of Phase 2: M55; M40, then M41, after M37; M66 after G8. The order is the owner's sequencing and does not replace the dependencies of the rows; a row whose plan is a draft needs its plan accepted and its implementation authorized before it starts. | 2026-10-17 |
+| D44 | The console checks run against one soft IOC and one local appliance. The IOC is the `consolechart` IOC of `ioc-runner` (local mode), started from `src/resources/test/st.cmd`, which loads `ConsoleChartPVs.db` and one record-change database chosen by the `RECORD_CHANGE` macro; a check that needs another record set switches the macro in the IOC configuration and restarts that IOC, and does not start a second one. The appliance is the kept local appliance (port base 27665); a check that needs another archiver state uses it, and does not start a second one. The procedure of this IOC is written into the book as M75, in stage 1 of D43 after M73, so that it records the commands the M73 checks ran. D20 is unchanged: the Java test fixtures keep launching softIocPVX directly. | 2026-10-17 |
+| D45 | The role of the archiver is to keep the signal without a gap: when the archived record changes, the archiver detects it and goes on storing under the new condition, with the earlier samples readable as they were stored. That is M76, deferred to the next major release, and one GitHub issue holds the direction. In this release the engine does only this much (M77): it writes to its log that the record is changing, naming the PV and the change, and it pauses what can be paused, which is a PV whose type changed; the other reactions stay as M73 observed them. M77 runs in stage 1 of D43 after M75. | 2026-10-17 |
 
 ### Conceptual-integrity findings
 
@@ -6896,7 +6901,7 @@ Out of scope: the repair of any deviation found; a change of the PV name (rename
 - Decision Date: 2026-10-16. The owner asked for this check as an item of its own, apart from the chart widget, and remarked that the checks should use PVs that are already archived and keep their earlier data.
 - Decision Date: 2026-10-17. The owner decided that the record type check includes the way out (pause, change of type, resume and a read across the change) and a PVAccess case, after the review of the plan found that the Channel Access path drops every event of the new type until the type is changed in the archiver, and that the PVAccess path has no such drop.
 - Decision Date: 2026-10-17. The names of the checks are fixed in Scope: the first draft named two PVs for eight cases.
-- Decision Date: 2026-10-17. T1 uses `SR:BPM:02:X` and `SR:BPM:02:Y` and not `FAST:SIG:1` and `FAST:SIG:2`: the first run showed that the two FAST records compute from `SR:TICK` only, so their value changes once a second whatever the scan period (the description of the records says 10 Hz). This changes two names of the accepted plan and is reported to the owner for confirmation.
+- Decision Date: 2026-10-17. T1 uses `SR:BPM:02:X` and `SR:BPM:02:Y` and not `FAST:SIG:1` and `FAST:SIG:2`: the first run showed that the two FAST records compute from `SR:TICK` only, so their value changes once a second whatever the scan period (the description of the records says 10 Hz). This changes two names of the accepted plan; the owner confirmed the change on 2026-10-17 and the Test Plan names the two BPM records.
 - Decision Date: 2026-10-17. The second IOC database is built in two steps, `meta.db` (the changed control data of the two `SR:RF:CAV2` records, for the restart of T2) and `types.db` (`meta.db` with four records replaced, for T3 to T5); each run starts a new run folder, because the launcher keeps the configuration and the stores of a folder.
 - Record 2026-10-17: the kept appliance stopped at 15:15:28 PDT because the setup script of these checks ended every local appliance launcher and not only the temporary one; it archived nothing until it was started again at 16:28 PDT (a gap of 73 minutes in the archived history; the earlier data and the IOC were not affected). The restart needed other WARs, because `./mvnw clean verify` had emptied `target/`, which the kept WAR folder pointed to; it now runs the build aa-20261017-aa6ca27f from a folder of copies. The scripts stop only the launcher of their own port base and their own IOC.
 - The plan is accepted and implemented; the findings below are to be filed as issues.
@@ -6916,7 +6921,7 @@ Superseded Plan Artifacts: none
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Scan rate | Archive `FAST:SIG:1` by monitor and `FAST:SIG:2` by scan, change `.SCAN` of each with `caput` from `.1 second` to `1 second` and to `10 second`, read the stored samples with `getData` and the Details window | Packaged WARs, soft IOC | From the code: by monitor the engine stores each event the record posts, so the spacing of the samples follows the SCAN of the record; by scan the engine samples at its own period whatever the SCAN of the record. The Details value `Estimated event rate` is measured once after the archive request and does not follow. To be observed: what a scan of the engine writes when the record has not changed between two scans |
+| T1 | Scan rate | Archive `SR:BPM:02:X` by monitor and `SR:BPM:02:Y` by scan, change `.SCAN` of each with `caput` from `.1 second` to `1 second` and to `10 second`, read the stored samples with `getData` and the Details window | Packaged WARs, soft IOC | From the code: by monitor the engine stores each event the record posts, so the spacing of the samples follows the SCAN of the record; by scan the engine samples at its own period whatever the SCAN of the record. The Details value `Estimated event rate` is measured once after the archive request and does not follow. To be observed: what a scan of the engine writes when the record has not changed between two scans |
 | T2 | Meta fields | Change `.EGU`, `.PREC` and the limit fields with `caput` on `SR:RF:CAV2:TEMP` (defaults) and `SR:RF:CAV2:POWER` (property subscription on), then restart the IOC; read `getPVTypeInfo`, the Details window and the meta of `getData` after each step | Packaged WARs, soft IOC | From the code: with the defaults the archiver does not learn of a change while the channel stays connected (`useDBEProperties` is false; the control data are read at the connection); with the property subscription the change is noticed at once and travels as a field value with the next sample; the restart reads the control data again. To be observed: what each of the three views shows, and whether a new value reaches the stored header before the next file |
 | T3 | Record type, Channel Access | Restart the IOC with `SR:BPM:04:X`, `SR:BPM:04:Y` and `SR:BPM:03:X` on an integer, a string and a waveform record; read the counter of `getPVsByDroppedEventsTypeChange`, the State column, `listTypeChanges.bash`, `getData` and `getDataAtTime` | Packaged WARs, soft IOC, second database | From the code: the type of the PV is fixed from the stored type information, so every event of the new type is dropped and counted, nothing of the new type is stored, the State column shows `N lost`, the script selects the PV, and the samples before the change stay readable |
 | T4 | The way out | For each PV of T3: pause it, change its type in the Maintenance window to the type of the new record, resume it, wait for samples, then read one window that holds samples before and after the change | Packaged WARs, soft IOC, second database | From the code: `changeTypeForPV` needs the PV paused; after the resume the new samples are stored and the counter stops rising. To be observed: what `getData` returns for a window across the change (both types in one answer, the older part, or an error), the size of the gap, and what the Details window and the type information show |
@@ -6931,6 +6936,8 @@ Superseded Plan Artifacts: none
 | T3 | 2026-10-17T23:02Z to 23:04Z | The same fresh appliance, IOC restarted with `types.db` | Pass | For the three Channel Access PVs no sample of the new type was stored in 100 s (121 samples before, none after), the type information kept DBR_SCALAR_DOUBLE, and the dropped counts were 105 (integer), 3 (string, which posts only when the text changes) and 105 (waveform); `getPVsByDroppedEventsTypeChange` and `listTypeChanges.bash` listed each with its previous and current type; the State column read Being archived with `N lost` (108, 4, 108); the Value column kept the last stored value and the Last event column its time; `getDataAtTime` returned the last sample before the change; the engine log holds no error line |
 | T4 | 2026-10-17T23:04Z to 23:06Z | The same fresh appliance | Deviation | Integer: pause, `changeTypeForPV`, resume worked; 100 samples were stored in the next 100 s and the page stopped showing `lost`. A window across the change reads as integers: the earlier samples were converted, and a double such as 0.0057 became 0. String and waveform: `changeTypeForPV` returned HTTP 500 (`UnsupportedOperationException` in `ThruNumberAndStringConversion`: `ScalarValue.getStringValue` for the string, the default branch for the waveform); the PV stayed Paused with DBR_SCALAR_DOUBLE, its 151 earlier samples stayed readable as doubles, and resumed without a change it kept dropping (101 events in 100 s for the waveform) |
 | T5 | 2026-10-17T23:02Z to 23:06Z | The same fresh appliance; `SR:BPM:03:Y` archived with `pva://` | Deviation | The hypothesis was wrong: the PVAccess PV drops and counts the events of the new type like a Channel Access PV (100 in 100 s), is listed by `listTypeChanges.bash` and shows `N lost` with Protocol PVA; the way out to an integer worked (100 samples after the resume, the window reads as integers). After the change the meta of the PVA PV holds PREC 0 and no EGU, where the Channel Access PV keeps EGU mm and PREC 3 |
+
+Rerun on the one IOC and the one appliance of D44, 2026-10-18T04:31Z to 05:04Z (build aa-20261018-0ccc2ba3, port base 27665; the `consolechart` IOC of `ioc-runner` switched between its record sets by `work/exp/m73/lib.py restart_ioc`, which rewrites the configuration file and runs `ioc-runner --local stop`, `-f install`, `start`; `restore.py` put the IOC and the type information back afterwards). Every result of the first run was reproduced. T1: 58 samples in 46 s at 0.1 s (median spacing 0.1 s, longest gap 9.1 s, 445 events lost to the full buffer, `getPVsByDroppedEventsBuffer`); 72 in 71 s at 1 s; 15 in 136 s at 10 s; the scan PV 47, 72, 15; the estimate 1 to 0.49 and `Not enough info` to 0.47. T2: nothing moved for 100 s after the change; after the restart with the `CAV2_*` macros the type information and the meta read K and 4, MW and 3; the display limits stayed 0.0 and the warning limits NaN (HIGH and LOW are macros of the database since this run). T3: 121 samples before the change and none after for all four; dropped 104 (integer), 3 (string), 104 (waveform); the page read `N lost` 111, 7, 111 with Protocol CA. T4: the integer PV converted (100 samples in the next 100 s, the window reads integers); string and waveform answered HTTP 500 and dropped on (101 in 100 s). T5, in a second pass 05:00Z to 05:04Z after `SR:BPM:03:Y` was archived again over `pva://` (the first pass of this rerun had it over Channel Access, so its T5 does not count): the PVAccess PV dropped and counted 101 events in 100 s, `listTypeChanges.bash` listed it, the page read `104 lost` with Protocol PVA, the way out to an integer worked (100 samples after the resume, integers), and the meta of the PVA PV holds PREC 0 and no EGU. Results in the job folder `tmp/m73/results-full-0442` (first pass) and `tmp/m73/results` (second pass).
 
 Deviations from the expected reaction, to be filed as issues:
 
@@ -7012,7 +7019,192 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | Packaged WARs, fresh temporary appliance | Pending | none |
+| T1 | 2026-10-17 21:18 PDT | The one local appliance of D44 (port base 27665, build aa-20261018-0ccc2ba3 with the uncommitted change of this row, 131 names of the fixed list archived) and the `consolechart` IOC of `ioc-runner` | Pass | `work/exp/m58/t_m74_plot.py` (28 checks: no note up to five boxes; with five on, the three others are over the limit and disabled, the pointer over such a cell and a tap on it show the tooltip and the note, the note goes on leaving, on the next tap elsewhere and when a box is turned off, the table does not move; Deselect all leaves no box on and no `plot` in the address; First 5 turns on rows 1 to 5 only and three rows give three; the controls are disabled when idle and work with the keys; no sideways scroll at 720 and 500 px, text of at least 14 px), `t1_table.py` (the Plot boxes and the cell title) and `t1_limit.py` (the 100-row limit with the LIM names) all end with ALL OK; rerun with `AA_UI=http://127.0.0.1:27665/mgmt/ui AA_RET=http://127.0.0.1:27668/retrieval/data python3 work/exp/m58/t_m74_plot.py` |
+| T2 | 2026-10-17 21:35 PDT (local part) | Local, JDK 21, Tomcat 9.0.121 for the integration tests; GitHub Actions pending | Local part Pass; workflows Pending | `bash scripts/ui-static-checks.bash` passed at 21:19 PDT (415 checks); `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS at 21:35 PDT (1006 tests, 0 failures, 0 errors, 0 skipped, 10 min 36 s; log `tmp/m74-mvn-2.log` of the job folder); the Help page and the book name First 5, Deselect all and the note (read against `index.html`); the Maven and Pages workflows run after the push and are recorded then |
+
+##### Closure Evidence
+
+- none
+
+#### M75 - Procedure for the test IOC of the console checks in the book
+
+Origin: daff1b7 / M75
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+Read on 2026-10-17: `docs/book/src/developer.md` describes the local appliance launcher and names the IOC only as "a separately running IOC". The IOC of the console checks is started with `ioc-runner` in local mode from `src/resources/test/st.cmd`, which loads `ConsoleChartPVs.db` and the record-change database selected by the `RECORD_CHANGE` macro (`ConsoleChartPVsRecordChange.db` by default, `ConsoleChartPVsRecordChangeTypes.db` with `RECORD_CHANGE=Types`), with the `CAV2_*` macros for the unit, precision and limits of `SR:RF:CAV2:TEMP` and `SR:RF:CAV2:POWER`. The purpose of the files is in their head comments only. The configuration file of the IOC (`work/ioc/consolechart.conf`: user, group, working folder, command, CA and PVA ports and address lists) is in the ignored `work/` folder, so a fresh checkout has no way to install the IOC, and no page says how the mode is switched.
+
+##### Scope
+
+- A procedure page section in `docs/book/src/developer.md`, after the local appliance section, for the one soft IOC of the console checks: prerequisites (EPICS 7.0.10 with pvxs, `ioc-runner`, a free CA port), install the IOC from its configuration file, start it, list it, read one record over CA and one over PVA, switch the record-change mode and the `CAV2_*` macros by editing the configuration file and restarting the IOC, and stop it; a Verification section.
+- The configuration file carried in the repository beside `st.cmd`, as `src/resources/test/consolechart.conf`, with the user, group, repository path and the `PATH` that holds `softIocPVX` (the shebang of `st.cmd` is `/usr/bin/env softIocPVX`; a shell gets the path from `setEpicsEnv.bash` of the EPICS installation) as `<value_name>` placeholders that the procedure tells the reader to replace; the macros of `st.cmd` and the ports of the kept appliance as its defaults.
+- The head comments of `st.cmd` and the three databases point to the procedure instead of repeating it.
+- The glossary of the book gains `ioc-runner` if it is not there.
+
+Out of scope: the launcher of the appliance and its section; the Java test fixtures (D20); a change of the records; a procedure for the appliance of the Browse PVs checks beyond the one line that names its port base and address lists.
+
+##### Completion Criteria
+
+- Every command of the section runs as shown, with the placeholders replaced, on this host from a clean state (the IOC not installed), and its output is the one the page shows.
+- After the mode switch, `cainfo SR:BPM:04:X` reports the type of the record-change database that the configuration file names, and after switching back it reports DBF_DOUBLE.
+- The configuration file in the repository, with the placeholders replaced, is the one the IOC runs from; `ioc-runner --local list -v` names it.
+- The book builds, the Pages workflow passes, and the page has one type (procedure) with the title form and the parts of that type.
+
+##### Dependencies And Decisions
+
+- No M or G dependency. D44 places the row in stage 1 of D43 after M73, because the procedure records the commands the M73 checks ran; D20 is unchanged.
+- Decision Date: 2026-10-17. The owner asked for one IOC and one appliance for every console check, with every record the checks need loaded by `st.cmd` from the database files, and asked that the way the IOC is operated is recorded (D44).
+- Open for the owner at plan review: whether the configuration file in the repository keeps the CA port 25064 and the PVA address list of the kept appliance as defaults, or placeholders for them too.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. The configuration file `src/resources/test/consolechart.conf` with placeholders, and the head comments of `st.cmd` and the databases. Check: T1.
+2. The procedure section of `docs/book/src/developer.md` and the glossary entry, written from the commands of step 1 run on this host. Check: T1, T2.
+3. The book build and the Pages workflow. Check: T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Procedure | From a clean state (the `consolechart` IOC removed from `ioc-runner`), run every command of the section as shown with the placeholders replaced: install, start, list, `caget SR:TICK`, `pvxget SR:TICK`, switch to `RECORD_CHANGE=Types` and restart, `cainfo SR:BPM:04:X`, switch back and restart, `cainfo SR:BPM:04:X`, stop; compare each output with the page | This host, EPICS 7.0.10 with pvxs 1.5.2, `ioc-runner` local mode | Every command succeeds, the outputs match the page, the type of `SR:BPM:04:X` is DBF_LONG after the switch and DBF_DOUBLE after the switch back |
+| T2 | Static and build | `bash scripts/ui-static-checks.bash`; the book build (`mdbook build docs/book`); the Pages workflow; the page read against the review checklist of the technical-writing skill | Local; GitHub Actions | The checks and the build pass, the workflow is green, the page has the parts of a procedure page |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | This host, EPICS 7.0.10, `ioc-runner` local mode | Pending | none |
+| T2 | Not run | Local; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+#### M76 - Archiving continues across a change of the record
+
+Origin: daff1b7 / M76
+Identity History: none
+GitHub Issue: none (to be filed; the projection below is its content)
+Status: Deferred
+
+##### Summary
+
+M73 observed, on 2026-10-17 and again on 2026-10-18 on the one IOC and the one appliance of D44, that the engine detects a change of the archived record but stops at counting: a record that posts faster than the rate estimated at the archive request loses most events to a sample buffer of 11 (T1); a changed unit, precision or limit reaches the archiver only through the property subscription or, for the unit and the precision, at a reconnect, and the display limits are never read again (T2); a record that comes back under the same name with another type has every event dropped and counted while the type information keeps the old type (T3, T5); the way out is manual, pause and `changeTypeForPV` and resume, converts the history (a double 0.0057 becomes the integer 0) and refuses a string or a waveform with HTTP 500 (T4). The role of the archiver is the opposite: to keep the signal without a gap (D45).
+
+##### Scope
+
+- The engine detects each change that M73 names and goes on storing under the new condition from the instant of the change, on its own: a changed type opens a new type from that instant, a faster record gets a buffer and a sampling that follow it, changed metadata is read again.
+- The earlier samples stay readable as they were stored: a PV has a type boundary on its time axis, and the stores and the retrieval know it, because a PB file holds one type.
+- The console and the manual show the boundary and the change.
+
+Out of scope until the plan is written: the exact store layout of the boundary; the policy for a change the engine cannot follow.
+
+##### Completion Criteria
+
+- The five checks of M73, run again, store the signal through each change without a manual step, and a window of `getData` across the change returns the earlier samples with their stored type and the later samples with the new one.
+- No event is dropped for a reason the engine could have followed; what is dropped is logged with its reason.
+
+##### Dependencies And Decisions
+
+- M73 is the observation this row answers; D45 defers the row to the next major release (Decision Date: 2026-10-17) and limits this release to M77.
+- Transition: Deferred on 2026-10-17 by D45; it returns to Not started when the next major release opens.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Design of the type boundary in the stores and the retrieval, with the data-change rules of the PB files.
+2. The engine reactions, one per change of M73.
+3. The console and the manual.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Engine and stores | The five checks of M73 (`work/exp/m73/run_all.sh`) on the one IOC and the one appliance of D44, read for continuity instead of for loss | Packaged WARs, the IOC of D44 | Every change is followed; a window across the change holds both sides |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Packaged WARs, the IOC of D44 | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Archiving continues across a change of the record
+
+Body: The engine detects a change of an archived record but stops at counting, so a change on the IOC side ends the recording of the signal until an operator acts. Observed on a local appliance with a soft IOC: a record that posts faster than the rate estimated at the archive request loses most events to a sample buffer of 11 (58 samples and 445 lost in 46 s at 10 Hz); a changed unit, precision or limit reaches the archiver only through the property subscription or at a reconnect, and the display limits are never read again; a record that comes back under the same name with another type has every event dropped and counted while the type information keeps the old type; the way out, pause, `changeTypeForPV`, resume, converts the history (a double 0.0057 becomes the integer 0) and answers HTTP 500 for a string or a waveform (`UnsupportedOperationException` in `ThruNumberAndStringConversion`). The archiver should keep the signal without a gap: detect the change and go on storing under the new condition from the instant of the change, with the earlier samples readable as they were stored, which needs a type boundary on the time axis of a PV that the stores and the retrieval know. Planned for the next major release; in the current release the engine logs the change and pauses a PV whose type changed.
+
+Labels: enhancement
+
+#### M77 - Log and pause on a record that changes
+
+Origin: daff1b7 / M77
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+Read on 2026-10-18 in the engine logs of the M73 runs: none of the five changes writes a line to the engine console log (`grep -c` of each PV name counted 18 lines, all from the archive request and the connection). The only signs are the counters of `getPVDetails`, the dropped-events reports and the `N lost` mark of the Browse PVs page. A PV whose type changed stays `Being archived` and drops every event; nothing stops it.
+
+##### Scope
+
+- One log line at WARN level for each change the engine detects, naming the PV and the change: the first event dropped for a changed type (with the old and the new type), the first event dropped for a full sample buffer in a write period (with the capacity and the measured rate), and a changed unit, precision or limit that arrives through the property subscription or at a reconnect (with the old and the new value). One line per PV per change, not per event.
+- A PV whose type changed is paused by the engine after the first dropped event, with the reason in the log line and in `getPVStatus`, so that it stops dropping and the operator sees Paused instead of `N lost`.
+- The manual's section on a record that changes names the log lines and the pause.
+
+Out of scope: following the change (M76); a change of the buffer, the sampling or the type information; the console beyond what Paused already shows.
+
+##### Completion Criteria
+
+- Each of the five checks of M73, run again, leaves exactly one WARN line per PV per change in the engine log, with the PV name and the change in it.
+- After the type change of T3 the three Channel Access PVs and the PVAccess PV are Paused within one write period, `getPVStatus` carries the reason, and the dropped count stops growing.
+- The suite passes and the manual names the lines.
+
+##### Dependencies And Decisions
+
+- Depends on M73 (the observations and the checks). D45 (Decision Date: 2026-10-17) limits the reaction in this release to the log line and the pause.
+- Open for the owner at plan review: whether a PV whose events are lost to the full buffer (T1) is also paused, or only logged; the row assumes only logged, because the signal still arrives in part.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. The log lines in the engine where the three counters are incremented (type change, buffer full, property change). Check: T1.
+2. The pause of a PV on the first event dropped for a changed type, with the reason. Check: T1.
+3. The manual. Check: T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Engine | `work/exp/m73/run_all.sh` on the one IOC and the one appliance of D44, then `grep` of the engine console log for each PV of the checks and `getPVStatus` of the four PVs of the type change | Packaged WARs, the IOC of D44 | One WARN line per PV per change; the four PVs Paused with the reason; the dropped count stops |
+| T2 | Static and suite | `bash scripts/ui-static-checks.bash`; `./mvnw -B -ntp clean verify`; the book read against the log lines | Local, JDK 21; GitHub Actions | The checks and the suite pass; the manual names the lines |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Packaged WARs, the IOC of D44 | Pending | none |
 | T2 | Not run | Local, JDK 21; GitHub Actions | Pending | none |
 
 ##### Closure Evidence
