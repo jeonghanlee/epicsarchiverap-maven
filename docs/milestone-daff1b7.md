@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D43. M74 and M75 are Complete. Next: M73, whose checks, reruns and issues (#44 to #47) are recorded; close its issue #44 under the owner's issue authority and then the row. Then M77: its plan review of 2026-10-18 waits for two owner decisions (whether a PV losing events to a full buffer is paused or only logged; where the reason of an engine pause is kept), then acceptance, authorization, the log lines and the pause. M76 is Deferred by D45 with issue #48. Then M68 steps 2 to 6. M66 stays Blocked until G8 records readiness of the required Ansible tools.
+Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D43. M74, M75 and M77 are Complete. M73 is Complete with #44 closed. Next: #46 stays open until the manual names the operator's remedy for a record that got faster (one sentence). M76 is Deferred by D45 with issue #48. Then M68 steps 2 to 6. M66 stays Blocked until G8 records readiness of the required Ansible tools.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -103,11 +103,11 @@ This register covers the minimal modernization of the existing Java appliance on
 | Interface console | M70 | Epoch seconds beside the text of a time in the management calls | Milestone | Not started | Yes |  | The management calls that write a time as text (`getPVStatus`, `getPVDetails` and the reports) also send the same instant as epoch seconds, so that a client can write it in another time zone; the existing fields stay; [detail](#m70---epoch-seconds-beside-the-text-of-a-time-in-the-management-calls) |
 | Interface console | M71 | Backward read of a small PB file | Milestone | Complete | No |  | A backward read of a PB file with one sample returns the sample, and a search for a time earlier than every sample of a small file returns not found and does not throw `Max iterations reached`; [detail](#m71---backward-read-of-a-small-pb-file) |
 | Interface analyzer | M72 | One chart widget with its controls | Milestone | Complete | No | M59, M58, D38 | Every page that plots draws through one widget, split into modules by role, that builds and keeps its controls: the Options panel with its state, Enlarge chart, the cards, the range strip, the legend and the tooltip; the Operations and Retrieval performance charts have the Options and Enlarge chart that the Browse PVs page has, and `browse.js` no longer builds any of them; complete on 2026-10-17 at 0ccc2ba3; [detail](#m72---one-chart-widget-with-its-controls) |
-| Verification | M73 | Reaction of the archiver to a record that changes while it is archived | Milestone | In progress | No |  | On a local appliance with a soft IOC, a change of the scan rate, of the unit, precision and limits, and of the record type of an archived PV is made while the PV is archived, and what the engine and the stores do with the samples before and after it is observed and recorded: which samples are kept, which are dropped and counted, and what the type information, the Details window and the data show; [detail](#m73---reaction-of-the-archiver-to-a-record-that-changes-while-it-is-archived) |
+| Verification | M73 | Reaction of the archiver to a record that changes while it is archived | Milestone | Complete | No |  | On a local appliance with a soft IOC, a change of the scan rate, of the unit, precision and limits, and of the record type of an archived PV is made while the PV is archived, and what the engine and the stores do with the samples before and after it is observed and recorded: which samples are kept, which are dropped and counted, and what the type information, the Details window and the data show; [detail](#m73---reaction-of-the-archiver-to-a-record-that-changes-while-it-is-archived) |
 | Interface console | M74 | Plot limit note and bulk Plot controls in the PV table | Milestone | Complete | No |  | The Plot boxes over the limit of 5 give a stronger message, on a pointer and on a tap, as a tooltip on their cell and as a note beside the counters of the table; the table heading offers First 5, which turns the Plot boxes of the first five rows on and the others off, Deselect all, which turns every Plot box off, Plotted only, which shows only the plotted rows, and Clear selection, which unticks every chosen PV; verified in the browser on the Browse PVs page; [detail](#m74---plot-limit-note-and-bulk-plot-controls-in-the-pv-table) |
 | Verification | M75 | Procedure for the test IOC of the console checks in the book | Milestone | Complete | No |  | The developer page of the book has a procedure that installs, starts, lists, switches the mode of and stops the one soft IOC of the console checks with `ioc-runner` from `src/resources/test/st.cmd`, with the configuration file it needs carried in the repository and every command run as shown; [detail](#m75---procedure-for-the-test-ioc-of-the-console-checks-in-the-book) |
 | Verification | M76 | Archiving continues across a change of the record | Milestone | Deferred | No | M73, D45 | The engine detects a change of the archived record (type, rate, unit, precision or limits) on its own and goes on storing the signal under the new condition from the instant of the change, with the earlier samples readable as they were stored; deferred to the next major release by D45; the GitHub issue that holds the direction is filed; [detail](#m76---archiving-continues-across-a-change-of-the-record) |
-| Verification | M77 | Log and pause on a record that changes | Milestone | In progress | No | M73 | For each change of M73 that the engine can detect, it writes one log line that names the PV and what changed, and where storing has to stop (a changed type) it pauses the PV instead of dropping on without a word; nothing else changes until M76; verified on the one IOC and the one appliance of D44; [detail](#m77---log-and-pause-on-a-record-that-changes) |
+| Verification | M77 | Log and pause on a record that changes | Milestone | Complete | No | M73 | For each change of M73 that the engine can detect, it writes one log line that names the PV and what changed, and where storing has to stop (a changed type) it pauses the PV instead of dropping on without a word; nothing else changes until M76; verified on the one IOC and the one appliance of D44; [detail](#m77---log-and-pause-on-a-record-that-changes) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Decisions
@@ -6866,7 +6866,7 @@ Superseded Plan Artifacts: none
 Origin: daff1b7 / M73
 Identity History: none
 GitHub Issue: #44 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/44)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -6949,17 +6949,20 @@ Observations that need no issue unless the owner decides so: with the property s
 
 ##### Closure Evidence
 
-- none
+- Deliverable: the checks `work/exp/m73/` (gitignored scratch, run twice) with the test IOC files they need in commits dacf5315 and 476cf218 on `modernize`, and the results above in the register (commits 0ccc2ba3, 87490922, 1f771568, e42b69b6).
+- Checks: T1 to T5 run on 2026-10-17 on a temporary appliance and again on 2026-10-18 on the one appliance and the one IOC of D44, every result reproduced, as recorded above.
+- Deviations filed: #45, #46, #47 on 2026-10-17; the direction #48 (M76). Issue #44 closed on 2026-10-18 after its body was synced.
+- Closed on 2026-10-18.
 
 ##### GitHub Projection
 
 Title: Check the archiver on a changing record
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: CLOSED
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-17; `gh issue view 44` shows state OPEN, label enhancement, assignee jeonghanlee, and a body equal to the prepared file
+Last Compared: 2026-10-18; the body was rewritten with the verification summary and the three acceptance criteria checked (the third as run on the one appliance and the one IOC of D44), the closing comment posted and the issue closed as completed at 15:08 UTC under the owner's issue authority; `gh issue view 44` read back CLOSED with three checked boxes
 
 #### M74 - Plot limit note and bulk Plot controls in the PV table
 
@@ -7181,7 +7184,7 @@ Last Compared: 2026-10-17; filed from the body above with `gh issue create`
 Origin: daff1b7 / M77
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: Complete
 
 ##### Summary
 
@@ -7230,11 +7233,15 @@ Superseded Plan Artifacts: none
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | 2026-10-18 02:14 to 02:31 PDT | The one local appliance of D44 restarted on build aa-20261018-1f771568 plus the uncommitted change of this row (WAR copies in the kept WAR folder), the `consolechart` IOC switched by `work/exp/m73/lib.py`, 131 names archived and connected | Pass | `work/exp/m73/run_all.sh` ran its five checks (02:15 to 02:28 PDT). Engine console log of the run folder: `SR:BPM:02:X` at 10 Hz for 50 s gave 5 WARN lines "The sample buffer of PV SR:BPM:02:X is full: capacity 11 samples for a sampling period of 1.0 s, measured event rate … events/s", one per 10 s write period, and the PV stayed Being archived (446 lost counted as before); the four PVs of the type change each got one WARN line "The type of PV … changed from DBR_SCALAR_DOUBLE to …: its events are dropped and the archiver pauses it" at the restart with the other types and read Paused on the page (State column) within the 100 s of T3, the three Channel Access ones and the PVAccess one alike, with the dropped count at 0 after the change; every later line was one more change of the same PV (a change back to doubles while the type information held an integer after T4, a resume without a type change, and a second switch to the other types), never a second line for one change. A second switch to the other types with `work/exp/m73/m77_reason.py` (02:30 PDT): all four Paused within 3 s, `getPVTypeInfo` with `paused` true and `pauseReason` "type changed from DBR_SCALAR_DOUBLE to DBR_SCALAR_INT" (04:X, 03:Y over PVAccess), "… to DBR_SCALAR_STRING" (04:Y), "… to DBR_WAVEFORM_DOUBLE" (03:X); `getPVDetails` with the row "Reason for the pause:" of the same text; the Details window of 04:X with the row "Paused because" and that text (screenshot `work/exp/m58/shots/m77-paused-because.png`); `SR:BPM:02:X` Being archived. `restore.py` put the IOC and the PVs back, and the resume of an operator cleared the reason (`pauseReason` empty afterwards). Results in the job folder `tmp/m73/results` (`t1` to `t4`, `m77_reason`) |
-| T2 | 2026-10-18 02:12 PDT (new test), 02:33 PDT (static, book), 02:42 PDT (suite) | Local, JDK 21, EPICS 7.0.10 with pvxs on `PATH`, Tomcat 9.0.121 for the integration tests; GitHub Actions pending | Local part Pass; workflows Pending | `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS (1006 tests, 0 failures, 0 errors, 0 skipped, 10 min 27 s; the new test is tagged localEpics and ran under that profile); `./mvnw -PlocalEpics -Dtest=TypeChangePauseTest test` passed (1 test, 11.8 s): the soft IOC started with `UnitTestPVs.db`, the PV archived as a double with its type information registered, then the IOC replaced by one with `UnitTestTypeChange.db` (the same name as `longin`), the WARN line written, the PV Paused within the minute with the reason naming both types, its channel gone and one dropped event counted; `bash scripts/ui-static-checks.bash` passed (415); `mdbook build docs/book` built with the new sentences in `operating.html` and `interface.html` |
+| T2 | 2026-10-18 02:12 PDT (new test), 02:33 PDT (static, book), 02:42 PDT (suite), 03:01 PDT (GitHub Actions) | Local, JDK 21, EPICS 7.0.10 with pvxs on `PATH`, Tomcat 9.0.121 for the integration tests; GitHub Actions on commit 9c940e5f | Pass | After the push of 9c940e5f and e42b69b6 the Maven workflow (run 39116550571) and the Pages workflow (run 39116550541) both ended success; `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS (1006 tests, 0 failures, 0 errors, 0 skipped, 10 min 27 s; the new test is tagged localEpics and ran under that profile); `./mvnw -PlocalEpics -Dtest=TypeChangePauseTest test` passed (1 test, 11.8 s): the soft IOC started with `UnitTestPVs.db`, the PV archived as a double with its type information registered, then the IOC replaced by one with `UnitTestTypeChange.db` (the same name as `longin`), the WARN line written, the PV Paused within the minute with the reason naming both types, its channel gone and one dropped event counted; `bash scripts/ui-static-checks.bash` passed (415); `mdbook build docs/book` built with the new sentences in `operating.html` and `interface.html` |
 
 ##### Closure Evidence
 
-- none
+- Deliverable: commit 9c940e5f on `modernize` (the two WARN lines, the pause with `pauseReason` in the type information, its row in `getPVDetails` and the Details window, the engine test with its soft IOC database, the manual); the register in e42b69b6.
+- Checks: T1 on the one appliance and the one IOC of D44, T2 locally and on GitHub Actions, both Pass as recorded above.
+- Landing: observed 2026-10-18 03:01 PDT after `git fetch origin`, `origin/modernize` at e42b69b6 equal to HEAD, and `git branch -r --contains 9c940e5f` naming `origin/modernize`; the Maven and Pages workflows of the push ended success.
+- Linked issues: #46 asked for the WARN line of the buffer loss, which this row delivers, and for the manual to name the operator's remedy (a shorter sampling period through Change sampling), which the manual does not yet say; #46 stays open for that sentence. #48 holds the full reaction (M76). This row has no issue of its own.
+- Closed on 2026-10-18.
 
 ## Backlog
 
