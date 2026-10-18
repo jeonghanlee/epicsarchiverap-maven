@@ -604,6 +604,15 @@ button.info:focus-visible {
     border-bottom: 1px solid var(--c-border);
 }
 
+/* A card that fits on neither side of its button lies within the window, scrolls inside and points at nothing. */
+.card.free {
+    overflow-y: auto;
+}
+
+.card.free::before {
+    display: none;
+}
+
 .card h4 {
     margin: 0 0 6px;
     color: var(--c-brand);

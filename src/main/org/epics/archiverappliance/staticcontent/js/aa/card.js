@@ -27,14 +27,20 @@ function placeCard(button, card) {
     const base = inPage ? { left: -window.scrollX, top: -window.scrollY } : parent.getBoundingClientRect();
     const inset = inPage ? { left: 0, top: 0 } : { left: parent.clientLeft - parent.scrollLeft, top: parent.clientTop - parent.scrollTop };
     const viewLeft = Math.min(Math.max(8, box.left + box.width / 2 - 24), document.documentElement.clientWidth - width - 8);
-    // The card opens below its button, or above it when it does not fit below and does fit above.
+    // The card opens below its button, or above it when it does not fit below and does fit above. A card that fits on
+    // neither side is as tall as the window allows, scrolls inside, and lies within the window without its arrow.
+    card.style.maxHeight = `${window.innerHeight - 16}px`;
     const height = card.offsetHeight;
     const below = box.bottom + 8;
     const above = box.top - 8 - height;
-    const flip = below + height > window.innerHeight - 8 && above >= 8;
+    const fitsBelow = below + height <= window.innerHeight - 8;
+    const flip = !fitsBelow && above >= 8;
+    const free = !fitsBelow && !flip;
+    const top = free ? Math.max(8, window.innerHeight - 8 - height) : flip ? above : below;
     card.classList.toggle("above", flip);
+    card.classList.toggle("free", free);
     card.style.left = `${viewLeft - base.left - inset.left}px`;
-    card.style.top = `${(flip ? above : below) - base.top - inset.top}px`;
+    card.style.top = `${top - base.top - inset.top}px`;
     card.style.setProperty("--arrow", `${box.left + box.width / 2 - viewLeft - 6}px`);
 }
 
@@ -67,8 +73,10 @@ function showCard(button, title, text, action, helpHref) {
     placeCard(button, card);
 }
 
+// Esc closes the card and nothing else: inside a dialog the default action of the key would close the dialog too.
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && openCard) {
+        event.preventDefault();
         const owner = openCard.button;
         closeCard();
         owner.focus();
