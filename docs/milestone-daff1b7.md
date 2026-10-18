@@ -8,9 +8,9 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M46 and G6 are Complete; #29 records the passed preflight, four-hour stress observation and native PB comparison and is closed as completed. Preserve originals. For the separate later campaign, resume M66 in this document only after G8 records readiness of the required Ansible tools; M66 remains Blocked in Backlog. Ansible test-tool maintenance is independent of this product fix.
+Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D43. First finish M74 (read its Verification Results; commit under the owner's commit authority) and M73 (prepare the issues of its three findings, file them under the owner's issue authority, and ask the owner to confirm the two names changed in T1); then M68 steps 2 to 6. M66 stays Blocked until G8 records readiness of the required Ansible tools.
 
-Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is implemented and verified locally on 2026-10-17; it waits for the owner's commit and push and for the Maven and Pages workflows.
+Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). The System pages are read item by item in M65, a row of its own since the owner's direction of 2026-10-14 (plan draft; its Overview is built and pushed in dd125c12 and waits for the acceptance of the plan). The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
 Other open work: M28 (issue #12) resumes in `docs/milestone-daff1b7.md`: the 33-test local suite and the eight-PV development-appliance automatic/HTTP checks have evidence from 2026-10-07, both startup transfers and the shortened STS repeat preserved the expected old interval, and a startup overrun=true observation is recorded separately. Next collect actual aa-env configuration under T2, verify deployed T4/T5 and hourly/eight-hour repeats, then run T1's 903-PV soak; ansible deployment and soak require separate implementation authorization. M28 stays In progress until the revised focused checks and soak criteria have execution evidence. M36's reply to epicsarchiverap-env's request `live-to-20261001` was sent on 2026-10-02; do not resend it. [jeonghanlee/epicsarchiverap-env#56](https://github.com/jeonghanlee/epicsarchiverap-env/issues/56) owns full VM revalidation.
 
@@ -84,7 +84,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Interface analyzer | M63 | Analysis of numeric signals in the analyzer | Milestone | Not started | No | M62, D40 | The analyzer summarises, fits, correlates, compares and tests one or several numeric signals (statistics, distribution, trend, fit, correlation, dependency, FFT), computed by the page where the D3 bundle has no function; [detail](#m63---analysis-of-numeric-signals-in-the-analyzer) |
 | Interface analyzer | M64 | Waveform and image analysis in the analyzer | Milestone | Not started | No | M63, M62, D40 | The analyzer draws an array at a time, over time and as a heatmap, computes its summary values and spectrum, and analyses an image by region, projections, centroid and size; [detail](#m64---waveform-and-image-analysis-in-the-analyzer) |
 | Interface console | M60 | Name check on the network and hold of a pending request | Milestone | Not started | Yes | M57 | The appliance reports whether a complete PV name answers on the network before it is archived, and a pending archive request can be paused and held as well as cancelled; [detail](#m60---name-check-on-the-network-and-hold-of-a-pending-request) |
-| Interface console | M65 | System pages read item by item | Milestone | Not started | Yes | M56, D38 | Every item of the System pages (System, Operations, Retrieval performance, External servers) has an information card that says what it is and when it is normal, needs attention or is a problem, and its state in words beside a one-word status; a measure that is not reported never reads Normal; [detail](#m65---system-pages-read-item-by-item) |
+| Interface console | M65 | Information cards answer on every page | Milestone | Not started | Yes | M56, M72, D38 | Every item of every page of the console (Browse PVs with its table columns and chart, Archive PVs, System, Operations, Retrieval performance, External servers and the Details and Maintenance windows) has an information card in one form, which answers what the item shows, when it is normal, needs attention or is a problem, and what to do, in plain words with the terms explained where they first appear; the System pages show a state in words beside a one-word status, and a measure that is not reported never reads Normal; [detail](#m65---information-cards-answer-on-every-page) |
 | Interface analyzer | M67 | Time zone choice for charts and times | Milestone | Not started | Yes | M59, D38 | One selection box in the header of the console and in that of the analyzer (Browser, UTC, Berkeley, Chicago, NYC, Seoul, Berlin) decides the time zone of every chart and time text, the range strip names the zone, and the choice passes from the console to the analyzer in the address; [detail](#m67---time-zone-choice-for-charts-and-times) |
 | Interface console | M68 | Time handling of the server and the time page in the book | Milestone | In progress | No |  | The server writes the same instant the same way in every response (a valid `getData.jplot`, a `getDataAtTime` that returns the newest sample at or before an instant in the recent past, a response to a time without a zone that is HTTP 400 in every call, a fixed locale in the text of a time, nanoseconds cleared in every partition boundary), the code and comments agree with `docs/time-handling.md`, and the book has the page of the times; [detail](#m68---time-handling-of-the-server-and-the-time-page-in-the-book) |
 | Tracking | G1 | aa-maven GitHub issues enabled | External gate | Complete | No | | Repository setting has_issues=true; [detail](#g1---aa-maven-github-issues-enabled) |
@@ -94,6 +94,18 @@ This register covers the minimal modernization of the existing Java appliance on
 | Tracking | G5 | ETL pass deadline plan authorization and issue creation | External gate | Complete | No | | The current M45 plan is accepted and explicitly authorized, and its prepared bug issue exists on GitHub before implementation; [detail](#g5---etl-pass-deadline-plan-authorization-and-issue-creation) |
 | Tracking | G6 | Four-hour appliance stress run at or after 6c6b973a with zero sample-buffer-full losses | External gate | Complete | No | | M46 / T5-T7 passed on corrected-build source 629533a3; complete measured exposure coverage and zero losses; results recorded in #29 and authorized closure observed on 2026-10-16; [detail](#g6---four-hour-appliance-stress-run-at-or-after-6c6b973a-with-zero-sample-buffer-full-losses) |
 | Tracking | G7 | aa-env installation checks of the MariaDB socket and TCP paths at 61e1b4c5 or later | External gate | Complete | No | | epicsarchiverap-env reported both MariaDB installation checks passing at pin 3de600d9, which contains 61e1b4c5 (2026-10-16); [detail](#g7---aa-env-installation-checks-of-the-mariadb-socket-and-tcp-paths-at-61e1b4c5-or-later) |
+| Phase 2 | M40 | Modernize the retained state-changing sample scripts | Milestone | Not started | No | M37 | Each of the seven retained scripts that change appliance state has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m40---modernize-the-retained-state-changing-sample-scripts) |
+| Phase 2 | M41 | Mail delivery for the alert checks | Milestone | Not started | No | M37 | emailHandler.py's mail delivery is available to the on-demand alert checks of M37 with a defined configuration, timeout and failure contract and is verified against a real SMTP endpoint; [detail](#m41---mail-delivery-for-the-alert-checks) |
+| Phase 2 | M55 | Verify the proxy to an external Archiver Appliance | Milestone | Not started | Yes |  | An integration test on two appliances registers the second as an external `ARCHAPPL_PBRAW` server of the first and observes, through the first, the data, the name match and the value at a time of a PV archived only on the second; [detail](#m55---verify-the-proxy-to-an-external-archiver-appliance) |
+| Interface console | M61 | Appliance status as PVA PVs | Milestone | Not started | Yes |  | The appliance publishes its status measures as PVA PVs through its own PVA server and archives them, so the analyzer plots them like any archived PV; [detail](#m61---appliance-status-as-pva-pvs) |
+| Verification | M66 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | M46, G8 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m66---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
+| Interface console | M69 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes |  | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of the same record does; [detail](#m69---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
+| Interface console | M70 | Epoch seconds beside the text of a time in the management calls | Milestone | Not started | Yes |  | The management calls that write a time as text (`getPVStatus`, `getPVDetails` and the reports) also send the same instant as epoch seconds, so that a client can write it in another time zone; the existing fields stay; [detail](#m70---epoch-seconds-beside-the-text-of-a-time-in-the-management-calls) |
+| Interface console | M71 | Backward read of a small PB file | Milestone | Complete | No |  | A backward read of a PB file with one sample returns the sample, and a search for a time earlier than every sample of a small file returns not found and does not throw `Max iterations reached`; [detail](#m71---backward-read-of-a-small-pb-file) |
+| Interface analyzer | M72 | One chart widget with its controls | Milestone | Complete | No | M59, M58, D38 | Every page that plots draws through one widget, split into modules by role, that builds and keeps its controls: the Options panel with its state, Enlarge chart, the cards, the range strip, the legend and the tooltip; the Operations and Retrieval performance charts have the Options and Enlarge chart that the Browse PVs page has, and `browse.js` no longer builds any of them; complete on 2026-10-17 at 0ccc2ba3; [detail](#m72---one-chart-widget-with-its-controls) |
+| Verification | M73 | Reaction of the archiver to a record that changes while it is archived | Milestone | In progress | No |  | On a local appliance with a soft IOC, a change of the scan rate, of the unit, precision and limits, and of the record type of an archived PV is made while the PV is archived, and what the engine and the stores do with the samples before and after it is observed and recorded: which samples are kept, which are dropped and counted, and what the type information, the Details window and the data show; [detail](#m73---reaction-of-the-archiver-to-a-record-that-changes-while-it-is-archived) |
+| Interface console | M74 | Plot limit note and bulk Plot controls in the PV table | Milestone | In progress | No |  | The Plot boxes over the limit of 5 give a stronger message, on a pointer and on a tap, as a tooltip on their cell and as a note beside the counters of the table; the table heading offers First 5, which turns the Plot boxes of the first five rows on and the others off, and Deselect all, which turns every Plot box off; verified in the browser on the Browse PVs page; [detail](#m74---plot-limit-note-and-bulk-plot-controls-in-the-pv-table) |
+| Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Decisions
 
@@ -141,6 +153,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | D40 | The analyzer, which replaces the data viewer of M47, is a data analysis tool in the browser: an operator analyzes archived data in it without exporting to an external tool. It is built with every applicable tool of the bundled D3 package (7.9.0, `staticcontent/js/vendor/d3.min.js`); D3 is the only library: the bundled package first, then, where it lacks a tool, a module of the official D3 repositories outside the default bundle (such as `d3-hexbin`), vendored with its version, source and licence recorded as for `d3.min.js`; no third-party package is added. The tools of the bundled package are built first. A simple computation that D3 does not provide, such as the correlation and the linear regression, is implemented in the page's own code. | 2026-10-12 |
 | D41 | The page header has a fixed frame with two marker blocks: `site_header` holds the header logo on the left and `site_logo` the site logo on the right; blocks do not nest, so `site_header` no longer holds the whole header. The header logo is `archiverheader.svg`, switching to `wordmark.svg` below 360 px through a `<picture>` source. The default site logo is `sitelogo.svg`: a filled jar with a labelled wave and its lid ajar beside the words "store signals" and "analyze in place", text as outlines of Inter Display, 142 by 44 px. Both logos are sized by height (44 px, 30 px at 720 px and below, the site logo 24 px at 380 px and below). A site fills `site_logo` with its own logo and keeps the rest of the header. | 2026-10-12 |
 | D42 | Help is a help page of the console, served by mgmt, not the book: it says what each menu entry is for and how to use its page (adding PVs and their states, the search modes, reading the System pages), the information controls of the pages link to its sections, the generated API reference is an entry under it, and one link leads to the book on GitHub Pages (https://jeonghanlee.github.io/epicsarchiverap-maven/) for the full manual. The page works without a network beyond the appliance. | 2026-10-12 |
+| D43 | The open work runs in this order. Stage 1, finish what is under way: M74, M73 (its three findings filed as issues), M68 (steps 2 to 6), and M28 as aa-env allows, alongside. Stage 2, time: M70, then M67. Stage 3, text and use: M65, then M60. Stage 4, the analyzer: M58 closed by a dated exception because issue #39 stays open for the analyzer rows, then M62, M63, M64; the analyzer cards of M65 are written with M62. Stage 5, PVA and status: M69, then M61. Stage 6, verification and the rest of Phase 2: M55; M40, then M41, after M37; M66 after G8. The order is the owner's sequencing and does not replace the dependencies of the rows; a row whose plan is a draft needs its plan accepted and its implementation authorized before it starts. | 2026-10-17 |
 
 ### Conceptual-integrity findings
 
@@ -5791,7 +5804,7 @@ Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-12; `gh issue view 38` shows the drafted body, open, assignee jeonghanlee
 
-#### M65 - System pages read item by item
+#### M65 - Information cards answer on every page
 
 Origin: daff1b7 / M65
 Identity History: none
@@ -5802,27 +5815,64 @@ Status: Not started
 
 The four System pages of the console (System, `system.html`; Operations, `operations.html`; Retrieval performance, `retrieval.html`; External servers, `external.html`) are the status monitoring of D38. A table row shows a value, a mark and a word of status; the rules that judge a measure and their threshold values are in `js/system/judge.js` (`THRESHOLDS`). A reader who does not already know the appliance cannot tell from a row what the item is, when its value is normal and what a mark asks for, and a line at the top of the Overview can read Normal while a measure under it is not reported.
 
+The review of 2026-10-17 read the 26 information cards of the console (Browse PVs 2, the chart widget 3, Archive PVs 1, the Overview 9, Operations 7, Retrieval performance 3 and the heap and floor card that Operations and Retrieval share) as a reader who does not know the appliance, and found that the same faults are on every page and not only on the System pages:
+
+1. Cards are missing where a reader is most puzzled. The State column of the table of Browse PVs shows `N lost`, and no card says what it counts or what to do; the columns Protocol, Trend, Value and Last event have none either. M73 showed the cases that such a card has to cover: a type change drops every sample of the new type, and the way out, the change of type in the Maintenance window, works from a number to a number and fails with HTTP 500 for a string or a waveform.
+2. Some text is not true to what the appliance does. The Overview card Samples dropped names "a new archive request" as the remedy of a type change, and a request for an archived PV is left as it is. The Operations card Samples lost holds no definition, no list of the three causes and no remedy for any of them; the definition is only in the Overview card.
+3. The rows are named in four ways. The Overview cards use What it is, Normal when, Attention when, A problem when and Then; the Operations cards leave out the first two; the Retrieval cards use Slow is, Not a problem and Not recorded; the cards of Browse PVs, of the widget and of Archive PVs name their rows by topic. The row Then does not say that it holds the next step.
+4. Terms are used before they are explained: ETL, short term, medium term and long term store, write period, heap floor, block, policy, and in the Write path card the setting `PVTypeInfo.sampleBufferMarginSeconds` of `archappl.properties`, which belongs to the manual. The manual has no glossary page in `SUMMARY.md`.
+5. Some sentences do not read at once: in the range card of the chart, "from the range of the buttons too"; the statistics card does not list its columns; the options card says "few" where the manual says 200, and calls a number of samples "Window". A row such as Where data lives has about 90 words.
+6. The pages say sample, and the Details window and the reports say events (`eventsDropped`, "How many events").
+7. The Operations cards write the threshold values as typed text (30 and 7 days, 5 and 3 %, 50 %, 70 and 90 %, 30 seconds, one hour), which today equal `THRESHOLDS` and drift when it changes; the Overview cards read them from it.
+
+Kept as they are, because they work: the Measure card of Retrieval performance (a limit in seconds and a size per sample), the examples of the search modes, and the titles that are a question.
+
 ##### Scope
 
-Every item of the four pages is readable by itself: an information card (the `i` control of D38) that says what the item is, when it is normal, when it needs attention, when it is a problem and what to do then, with its values read from `THRESHOLDS` and not typed again; a state in words (Detail) beside the one-word status; a measure that is not reported reads Not reported and is never Normal, in a row and in the three lines at the top of the Overview, where a line is Normal only when every measure it rests on is reported. The summary table of the Overview has the columns Item, Now, Status (a word), Detail (the state in words) and Open (the link). The pages say only what changes how they read now; the explanations are in the cards (decision of 2026-10-14 recorded in M59).
+Every item of every page of the console is readable by itself through an information card (the `i` control of D38), in one form on all pages:
 
-Out of scope: the drawing of the charts of these pages (M59); the judgement rules and their threshold values (`js/system/judge.js` stays as it is); new measures and the appliance status as PVA PVs (M61); the page frame and the menu (M56, M57).
+- The title is a question. The first row, In short, answers it in one sentence. The rows that follow are What it shows, Normal, Attention, Problem and What to do, and a row is left out when it does not apply, so that a card has five rows or fewer. A sentence has fewer than 40 words, and a term is explained where it first appears in the card.
+- The pages are all the pages of the console that hold content, and all of them get the same form. Read on 2026-10-17, they are:
+  - Browse PVs (`index.html`): has cards (Find, how to read the chart); gets a card for the table with a row for each column, among them State with `N lost`, its three causes and what to do about each, and Protocol, Trend, Value and Last event.
+  - The chart widget (`js/aa/chart/widget.js`), which Browse PVs, Operations and Retrieval performance show: has the range, options and statistics cards; gets them in the form.
+  - Archive PVs (`archive.html`): has one card; gets it in the form.
+  - System (`system.html`), Operations (`operations.html`), Retrieval performance (`retrieval.html`): have cards in their own forms; get the one form.
+  - External servers (`external.html`): has no card; gets cards for the list of servers and for Add a server and Remove.
+  - Analyzer (the viewer, `retrieval/staticcontent/viewer/archViewer.html`, reached from the menu entry `analyzer.html`): has no card; gets cards for its controls (add a PV, the range buttons, Copy link, Download CSV, the chart). M62 changes this page, so these cards are written with M62 if M62 has replaced the page by then.
+  - Help (`help.html`): a page of steps that links to the cards; its steps use the same words as the cards.
+  - The Details and Maintenance windows of Browse PVs: where they carry standing explanation, it moves into a card.
+  - Not in the scope, because they hold no content and only forward the reader: `appliance.html`, `cacompare.html`, `integration.html`, `metrics.html`, `pvdetails.html`, `redirect.html`, `reports.html` and `storage.html`.
+- A card says what the appliance does. The remedies of the Samples dropped and Samples lost cards follow the cases observed in M73. The settings of `archappl.properties` and the other site setting names are in the manual and not in a card, with a sentence that names the administrator as the one to ask.
+- A card takes a threshold from `THRESHOLDS` and a limit of the page from its constant, and types no number twice.
+- The word is sample on every page, except where a field is named by the server (`eventsDropped`) and the card says in one clause that the server calls a sample an event.
+- The System pages keep what M65 first held: a state in words (Detail) beside the one-word status, the summary table of the Overview with the columns Item, Now, Status, Detail and Open, a measure that is not reported reads Not reported and is never Normal, in a row and in the three lines at the top of the Overview, where a line is Normal only when every measure it rests on is reported. The pages say only what changes how they read now; the explanations are in the cards (decision of 2026-10-14 recorded in M59).
+
+Out of scope: the page layout of the analyzer and its drawing options (M62), whose controls get their cards here;
+
+Also out of scope: the drawing of the charts (M59); the judgement rules and their threshold values (`js/system/judge.js` stays as it is); new measures and the appliance status as PVA PVs (M61); the page frame and the menu (M56, M57); the note of the Plot limit and the controls of the Plot boxes (M74); a repair of the behaviors that the cards describe (the issues of M73).
 
 ##### Completion Criteria
 
+- Every page of the list in Scope that holds content has cards, and every card of every page has the form of Scope: a question as its title, In short as the first row, the rows named from the set What it shows, Normal, Attention, Problem and What to do, five rows or fewer, and a link into the Help page; a check in `scripts/ui-static-checks.bash` reads the sources of every page of the list and refuses a row name outside the set; a page of the list with a control and no card is named by the check.
+- The table of Browse PVs has a card with a row for each column; the State row says what `N lost` counts, names the three causes and says what to do about each, in agreement with the cases of M73.
+- The cards Samples dropped (Overview) and Samples lost (Operations) agree: both define a dropped sample, name the three causes and give the remedy of each, and neither names a remedy that the appliance does not have.
+- No threshold or limit is typed in a card text: a search of the card sources finds the numbers only through `THRESHOLDS` or a constant of the page.
+- No term of the list in Summary item 4 is used in a card before it is explained there, and no card names a setting of a properties file.
 - The summary table of the Overview has the columns Item, Now, Status, Detail and Open, and its three top lines rest only on measures that are reported.
-- Every item of the four pages has an information card that says what the item is, and the pages Operations, Retrieval performance and External servers show a state in words beside the one-word status.
-- A measure that is not reported is never Normal, in a row or in a line at the top of the Overview.
+- Operations, Retrieval performance and External servers show a state in words beside the one-word status, and a measure that is not reported is never Normal, in a row or in a line at the top of the Overview.
 - The comment at the head of `js/system/judge.js` names no decision that the register does not hold.
-- The book describes the System pages item by item and the default suite passes.
+- The book describes the pages item by item and the default suite passes.
 
 ##### Dependencies And Decisions
 
 - M56 (Complete): the page frame and the menu the pages sit in.
+- M72 (Complete): the chart widget, whose three cards this item rewrites in `js/aa/chart/widget.js`.
+- M73: the cases of the type change that the State row and the dropped-sample cards describe; its findings are the facts these texts rest on, and a change of the behavior in the issues of M73 changes the text.
 - D38: explanations open on demand, not as standing text; the System pages provide status monitoring.
 - Decision Date 2026-10-14: the explanation of the items of the System pages is a milestone of its own; it was placed in M59 first and moved here on the owner's direction.
 - Decision Date 2026-10-14: the cards, the tables and the heap and floor cards of the System charts are this item's; the drawing of the charts through the component (the legend, its quiet look, the tooltip) stays in M59.
 - Decision Date 2026-10-16: the comment at the head of `js/system/judge.js` is corrected so that it names no decision that the register does not hold; the reasons of the rules stay in the comments of each threshold (the owner chose to correct the comment over recording the decision D51).
+- Decision Date: 2026-10-17. The owner directed that the findings of the review of the cards are merged into this item and that they apply to every page, not to the Browse PVs page alone; the item is renamed from System pages read item by item, and its number and its scope for the System pages stay.
 
 ##### Implementation Plan
 
@@ -5831,12 +5881,15 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. The Overview (`js/system.js`, `system.html`, `css/system.css`): the five columns, a card for every row built from `THRESHOLDS`, the three top lines resting on reported measures. Check: T1, T2.
-2. Operations (`js/operations.js`): a card for every measure and a state in words beside the status, in the same form. Check: T1, T2.
-3. Retrieval performance (`js/retrieval.js`, `retrieval.html`): the same form, with the heap and floor card. Check: T1, T2.
-4. External servers (`external.html`, `js/external.js`): the same form. Check: T1, T2.
-5. `js/system/judge.js`: the comment at its head states that the values are starting values and names no decision of the register; the sources hold no mention of `D51`. Check: T1.
-6. The book (`docs/book/src/interface.md`, `operating.md`) describes the pages item by item. Check: T3.
+1. The form: write the set of row names and the rules of Scope into a short section of the manual, and add the check to `scripts/ui-static-checks.bash` that reads the card sources (`js/*.js`, `js/system/*.js`, `staticcontent/js/aa/chart/widget.js`). Check: T1.
+2. The Overview (`js/system.js`, `system.html`, `css/system.css`): the five columns, a card for every row in the form, built from `THRESHOLDS`, the three top lines resting on reported measures. Check: T1, T2.
+3. Operations (`js/operations.js`): a card for every measure in the form with its numbers from `THRESHOLDS`, the Samples lost card with the three causes, and a state in words beside the status. Check: T1, T2.
+4. Retrieval performance (`js/retrieval.js`, `retrieval.html`) and External servers (`external.html`, `js/external.js`): the same form, with the heap and floor card. Check: T1, T2.
+5. Browse PVs (`js/browse.js`): the card for the columns of the table, in particular State, and the Find card and the chart card in the form. Check: T1, T2.
+6. The chart widget (`js/aa/chart/widget.js`): the range, options and statistics cards in the form, with the columns of the statistics and the number for the marks. Check: T1, T2.
+7. Archive PVs (`js/archive.js`) and the standing text of the Details and Maintenance windows: the same form. Check: T1, T2.
+8. `js/system/judge.js`: the comment at its head states that the values are starting values and names no decision of the register; the sources hold no mention of `D51`. Check: T1.
+9. The book (`docs/book/src/interface.md`, `operating.md`) describes the pages item by item. Check: T3.
 
 Progress on 2026-10-14 at 16:55 PDT, observed state and not a change of the plan: step 1 is built in the working tree and not committed (`js/system.js`, `system.html`, `css/system.css`); of steps 2 and 3 only the heap and floor cards exist (`js/operations.js`, `js/retrieval.js`, `retrieval.html`, `js/system/view.js`, working tree). The Overview was read on a local appliance at 500 pixels without a sideways scroll of the page, and `bash scripts/ui-static-checks.bash` passes 366 checks. The rest is not started.
 
@@ -5844,8 +5897,8 @@ Progress on 2026-10-14 at 16:55 PDT, observed state and not a change of the plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the System pages pass, and a search of `src` for `D51` finds nothing |
-| T2 | Browser | Open each System page on a local appliance, press the information control of every item and read the card, read the Status and the Detail of every row of a table, and look at a measure that is not reported (the write time of a new appliance) | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | Each card says what the item is; the Detail agrees with the Status; a measure that is not reported is never Normal, and the lines at the top of the Overview agree with the table |
+| T1 | Static | `bash scripts/ui-static-checks.bash` (with the new check of the row names of the cards) and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the pages pass, every card row has a name of the set, no number typed in a card text is found outside `THRESHOLDS` and the constants, and a search of `src` for `D51` finds nothing |
+| T2 | Browser | Open each page of the console on a local appliance (Browse PVs with PVs that are lost, paused and normal, Archive PVs, the four System pages), press the information control of every item and read the card against the form of Scope, read the Status and the Detail of every row of a table, and look at a measure that is not reported (the write time of a new appliance) | Local appliance, soft IOC with `src/resources/test/ConsoleChartPVs.db` | Each card has the form and says what the item is; the State row of Browse PVs agrees with the cases seen in M73; the Detail agrees with the Status; a measure that is not reported is never Normal, and the lines at the top of the Overview agree with the table |
 | T3 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
 
 ##### Verification Results
@@ -5862,7 +5915,7 @@ Progress on 2026-10-14 at 16:55 PDT, observed state and not a change of the plan
 
 ##### GitHub Projection
 
-Title: System pages read item by item
+Title: Information cards answer on every page
 Labels: none
 GitHub Milestone: none
 #### M67 - Time zone choice for charts and times
@@ -6088,26 +6141,6 @@ epicsarchiverap-env runs its installation checks of a MariaDB-backed appliance o
 ##### Closure Evidence
 
 - Complete on 2026-10-16. The criterion is met by the passes at 3de600d9 and the result is recorded in issue #31 (comment of 2026-10-16). The runs are four cases on two environment commits, not a full-matrix acceptance run.
-
-## Backlog
-
-### Work
-
-| Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Phase 2 | M40 | Modernize the retained state-changing sample scripts | Milestone | Not started | No | M37 | Each of the seven retained scripts that change appliance state has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m40---modernize-the-retained-state-changing-sample-scripts) |
-| Phase 2 | M41 | Mail delivery for the alert checks | Milestone | Not started | No | M37 | emailHandler.py's mail delivery is available to the on-demand alert checks of M37 with a defined configuration, timeout and failure contract and is verified against a real SMTP endpoint; [detail](#m41---mail-delivery-for-the-alert-checks) |
-| Phase 2 | M55 | Verify the proxy to an external Archiver Appliance | Milestone | Not started | Yes |  | An integration test on two appliances registers the second as an external `ARCHAPPL_PBRAW` server of the first and observes, through the first, the data, the name match and the value at a time of a PV archived only on the second; [detail](#m55---verify-the-proxy-to-an-external-archiver-appliance) |
-| Interface console | M61 | Appliance status as PVA PVs | Milestone | Not started | Yes |  | The appliance publishes its status measures as PVA PVs through its own PVA server and archives them, so the analyzer plots them like any archived PV; [detail](#m61---appliance-status-as-pva-pvs) |
-| Verification | M66 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | M46, G8 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m66---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
-| Interface console | M69 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes |  | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of the same record does; [detail](#m69---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
-| Interface console | M70 | Epoch seconds beside the text of a time in the management calls | Milestone | Not started | Yes |  | The management calls that write a time as text (`getPVStatus`, `getPVDetails` and the reports) also send the same instant as epoch seconds, so that a client can write it in another time zone; the existing fields stay; [detail](#m70---epoch-seconds-beside-the-text-of-a-time-in-the-management-calls) |
-| Interface console | M71 | Backward read of a small PB file | Milestone | Complete | No |  | A backward read of a PB file with one sample returns the sample, and a search for a time earlier than every sample of a small file returns not found and does not throw `Max iterations reached`; [detail](#m71---backward-read-of-a-small-pb-file) |
-| Interface analyzer | M72 | One chart widget with its controls | Milestone | In progress | No | M59, M58, D38 | Every page that plots draws through one widget, split into modules by role, that builds and keeps its controls: the Options panel with its state, Enlarge chart, the cards, the range strip, the legend and the tooltip; the Operations and Retrieval performance charts have the Options and Enlarge chart that the Browse PVs page has, and `browse.js` no longer builds any of them; [detail](#m72---one-chart-widget-with-its-controls) |
-| Verification | M73 | Reaction of the archiver to a record that changes while it is archived | Milestone | Not started | Yes |  | On a local appliance with a soft IOC, a change of the scan rate, of the unit, precision and limits, and of the record type of an archived PV is made while the PV is archived, and what the engine and the stores do with the samples before and after it is observed and recorded: which samples are kept, which are dropped and counted, and what the type information, the Details window and the data show; [detail](#m73---reaction-of-the-archiver-to-a-record-that-changes-while-it-is-archived) |
-| Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
-
-### Backlog Details
 
 #### M40 - Modernize the retained state-changing sample scripts
 
@@ -6708,13 +6741,12 @@ Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-10-16; `gh issue view 43` shows the title and the body of this detail, closed as completed with one comment, assignee jeonghanlee
 
-
 #### M72 - One chart widget with its controls
 
 Origin: daff1b7 / M72
 Identity History: none
 GitHub Issue: none
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -6818,74 +6850,185 @@ Superseded Plan Artifacts: none
 | T1 | 2026-10-17 | Packaged WARs of build aa-20261017-aa6ca27f, fresh temporary appliance with the soft IOC of `ConsoleChartPVs.db` (the static files of the WARs equal the source files); also the kept appliance for the checks that change nothing | Pass | The checks of Browse PVs, unchanged from the earlier change, pass: page load, find, table with the PVA protocol, limit of 100 rows, refresh, links, analyzer, chart (axes, strip, gestures, Projection tab, legend, tooltip, Enlarge chart, Line and Y scale), more, details, bulk, actions, help, probe and race. The options survive the refresh. Drawing: the committed `chart.js` and the modules produced the same DOM and the same reactions to drags, keys, clicks and callbacks in 377 comparisons (four injected defects were each found). Layout: the boxes of the chart controls are the same in the closed, Projection, Chart tab, enlarged and returned states; the computed styles of the information control and its card are the same in 23281 properties on five pages. The Details window once showed `Estimated event rate` 1.01 against 1 and a row button once met the main menu in a batch; neither came back |
 | T2 | 2026-10-17 | Kept appliance (days of values; WARs of the earlier change with the current static files) and the temporary appliance | Pass | On Operations and Retrieval performance each option redraws the chart, the Projection tab holds the statistics, the standard deviation band is drawn, Enlarge chart closes with Esc and with Close and returns the focus to its button, the options and the open panel stay after the refresh of the page (34 s), there is no link into the analyzer and no Earlier, Later or Back to the selected range, and the page has no sideways scroll and no text below 14 px at 720 and 500 px. A click outside does not close the large window, which covers the browser window; the earlier window of the Browse PVs page behaved so too. Not run on the packaged appliance, which holds less than two hours of values |
 | T3 | 2026-10-17 | Local, JDK 21, Tomcat 9.0.121 (`TOMCAT_HOME`) | Pass | `scripts/ui-static-checks.bash` 415 passed, 0 failed; `MgmtPageLinksTest`, `IPApplianceXMLTest`, `LocalhostApplianceXMLTest` and `FQDNApplianceXMLTest` through the `integration` profile: 4 run, 0 failed; the controls named by the Help page and the book are on the page; the book and the Help page describe the charts of the System pages |
-| T4 | 2026-10-17 | JDK 21; local `./mvnw -B -ntp clean verify`; GitHub Actions not yet | Partial | The local suite ran 1006 tests with no failure and no error; the Maven and Pages workflows of the pushed commit are pending |
+| T4 | 2026-10-17T20:47:26Z | JDK 21; local `./mvnw -B -ntp clean verify`; GitHub Actions on 0ccc2ba3 | Pass | The local suite ran 1006 tests with no failure and no error; the Maven run 39066944861 (job Build and test on JDK 21) and the Deploy docs to GitHub Pages run 39066944904 on 0ccc2ba3 completed with success |
 
 ##### Closure Evidence
 
-- none
+- Complete on 2026-10-17. The commits 9a485166 (the widget, the modules, the pages, the manual and the test database) and 0ccc2ba3 (this register) are on origin/modernize: fetched at 2026-10-17T20:47:38Z, origin/modernize equals the local HEAD and no committed path differs. T1 to T4 pass. M72 has no issue of its own; issue #39 stays open for the rows that follow (M62, M63, M64).
 
 #### M73 - Reaction of the archiver to a record that changes while it is archived
 
 Origin: daff1b7 / M73
 Identity History: none
-GitHub Issue: none
-Status: Not started
+GitHub Issue: #44 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/44)
+Status: In progress
 
 ##### Summary
 
-The browser checks of the Browse PVs page and the integration tests run against PVs that do not change. A record of a control system changes while it is archived: its scan rate is set to another value, its unit, precision or limits are edited, or the IOC is started with the same name on a record of another type. The engine has code for the last case (`EPICS_V3_PV` drops a sample whose DBR type differs from the type of the PV, `PVMetrics` counts it, and `getPVsByDroppedEventsTypeChange` and the `N lost` of the State column report it), and no recorded check runs the three changes against the real appliance. Read on 2026-10-16: the sample script `listTypeChanges.bash` selects its PVs with the same report.
+The browser checks of the Browse PVs page and the integration tests run against PVs that do not change. A record of a control system changes while it is archived: its scan rate is set to another value, its unit, precision or limits are edited, or the IOC is started with the same name on a record of another type. The engine has code for the last case (`EPICS_V3_PV` drops a sample whose DBR type differs from the type of the PV, `PVMetrics` counts it, and `getPVsByDroppedEventsTypeChange` and the `N lost` of the State column report it), and no recorded check runs the three changes against the real appliance. Read on 2026-10-16: the sample script `listTypeChanges.bash` selects its PVs with the same report. The PVA path (`EPICS_V4_PV`) fixes the type from the first structure of the channel and has no such drop: an event of another structure is converted with the old constructor. No existing test drives a real type change; the script tests use a fake server and `EPICS_V4_PVDisconnectSeamTest` leaves the callback empty.
 
 ##### Scope
 
-- Test PVs: the fixed list of M72 (decision of 2026-10-17). The checks that change a record use `FAST:SIG:1` and `FAST:SIG:2` and the second IOC database with the same record names on another type, on a temporary appliance only; the kept appliance and its IOC are not changed by this item.
-- The scan rate: a periodic record of a soft IOC has its scan period changed with `caput` on `.SCAN` while the PV is archived by monitor and by scan; the spacing of the stored samples is read back.
-- The unit, the precision and the limits: `.EGU`, `.PREC` and the limit fields are changed with `caput`; the type information, the Details window and the meta fields of `getData` are read back.
-- The record type: the IOC is restarted with the same record name on a record of another DBR type (a scalar double to a scalar integer, to a string and to a waveform); the dropped samples, the counter, the State column and the data before and after are read back.
-- The expected reaction of each change is fixed in step 1 by reading the code of the engine and the documentation, and the result of each check is compared with it; a deviation is a finding and gets an issue, and no code is changed in this item.
+- Test PVs: the fixed list of M72 (decision of 2026-10-17), on a temporary appliance that starts fresh for every run; the kept appliance and its IOC are not changed by this item. A name serves one check only, so that a check never depends on what another left:
+  - T1: `SR:BPM:02:X` archived by monitor and `SR:BPM:02:Y` archived by scan (their values change at every scan).
+  - T2: `SR:RF:CAV2:TEMP` with the defaults of the archiver and `SR:RF:CAV2:POWER` with the property subscription (`useDBEProperties`) turned on.
+  - T3 and T4: `SR:BPM:04:X` changed to an integer record, `SR:BPM:04:Y` to a string record and `SR:BPM:03:X` to a waveform record, all archived over Channel Access.
+  - T5: `SR:BPM:03:Y` archived over PVAccess (`pva://`) and changed to an integer record.
+- The second IOC database is built from `ConsoleChartPVs.db` with these four records replaced by records of the same names and other types; it is a test resource and no record outside the list is added.
+- The scan rate: `.SCAN` of the periodic record is changed with `caput` to a faster and a slower period while the PV is archived; the spacing of the stored samples is read back.
+- The unit, the precision and the limits: `.EGU`, `.PREC` and the limit fields are changed with `caput` in three conditions (the channel stays connected with the defaults; it stays connected with the property subscription on; the IOC restarts); the type information, the Details window and the meta fields of `getData` are read back.
+- The record type over Channel Access: the IOC is restarted with the record name on a record of another DBR type; the dropped samples, the counter, the State column and the data before and after are read back.
+- The way out: the PV is paused, its type is changed in the Maintenance window (`changeTypeForPV`) and the PV is resumed; the counter, the new samples and a read of one window across the change are checked.
+- The record type over PVAccess: the same change on a PV archived with `pva://`; the counters, the log, the stored data and the State column are read back.
+- The expected reaction of each change is written in the Test Plan from the code of the engine; what the code does not settle is marked as to be observed, and a deviation from the expected reaction is a finding and gets an issue. No code is changed in this item.
 
 Out of scope: the repair of any deviation found; a change of the PV name (rename); the loss of the connection and the IOC restart without a change, which the existing connection checks cover; the Browse PVs page itself.
 
 ##### Completion Criteria
 
-- For each of the three changes (scan rate, unit with precision and limits, record type) the check and its observed result are recorded in this detail, with the data window, the counters and the reading of the type information before and after.
-- Every deviation from the expected reaction is filed as an issue with the steps that reproduce it.
-- The checks run through the real shipped path, on packaged WARs with a soft IOC, and each check returns the test PVs to their first state.
+- For each of the changes (scan rate, unit with precision and limits in three conditions, record type over Channel Access with its way out, record type over PVAccess) the check and its observed result are recorded in this detail, with the data window, the counters and the reading of the type information before and after.
+- Every deviation from the expected reaction is filed as an issue with the steps that reproduce it, and every observation marked as to be observed has its result written down.
+- The checks run through the real shipped path, on packaged WARs with a soft IOC on a temporary appliance, and a rerun starts from a fresh appliance and needs no state that an earlier run left.
 
 ##### Dependencies And Decisions
 
 - No M or G dependency.
 - Decision Date: 2026-10-16. The owner asked for this check as an item of its own, apart from the chart widget, and remarked that the checks should use PVs that are already archived and keep their earlier data.
+- Decision Date: 2026-10-17. The owner decided that the record type check includes the way out (pause, change of type, resume and a read across the change) and a PVAccess case, after the review of the plan found that the Channel Access path drops every event of the new type until the type is changed in the archiver, and that the PVAccess path has no such drop.
+- Decision Date: 2026-10-17. The names of the checks are fixed in Scope: the first draft named two PVs for eight cases.
+- Decision Date: 2026-10-17. T1 uses `SR:BPM:02:X` and `SR:BPM:02:Y` and not `FAST:SIG:1` and `FAST:SIG:2`: the first run showed that the two FAST records compute from `SR:TICK` only, so their value changes once a second whatever the scan period (the description of the records says 10 Hz). This changes two names of the accepted plan and is reported to the owner for confirmation.
+- Decision Date: 2026-10-17. The second IOC database is built in two steps, `meta.db` (the changed control data of the two `SR:RF:CAV2` records, for the restart of T2) and `types.db` (`meta.db` with four records replaced, for T3 to T5); each run starts a new run folder, because the launcher keeps the configuration and the stores of a folder.
+- Record 2026-10-17: the kept appliance stopped at 15:15:28 PDT because the setup script of these checks ended every local appliance launcher and not only the temporary one; it archived nothing until it was started again at 16:28 PDT (a gap of 73 minutes in the archived history; the earlier data and the IOC were not affected). The restart needed other WARs, because `./mvnw clean verify` had emptied `target/`, which the kept WAR folder pointed to; it now runs the build aa-20261017-aa6ca27f from a folder of copies. The scripts stop only the launcher of their own port base and their own IOC.
+- The plan is accepted and implemented; the findings below are to be filed as issues.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-17; owner accepted the plan with the way out and the PVAccess case
+Implementation Authorization: 2026-10-17; owner directed the implementation of this plan; commits, pushes and issue changes need their own authority
 Superseded Plan Artifacts: none
 
-1. Read the engine code and the documentation for each of the three changes and write the expected reaction into the Test Plan. No code.
-2. Prepare the test PVs and the IOC databases that change a record: the soft IOC database with the periodic records, the second database with the other record type, and the start and return steps of a check. Check: the PVs are archived and return to their first state.
-3. Run T1 to T3 on packaged WARs and record the results; file the issues for the deviations. Check: T1, T2, T3.
+1. The expected reaction of each change is written in the Test Plan from the code of the engine (done 2026-10-17); the observations marked as to be observed are settled by the runs. No code.
+2. The fixture of a run: a script that starts a fresh temporary appliance from the packaged WARs, starts the soft IOC and archives the fixed list; the second IOC database built from `ConsoleChartPVs.db`; the checks as scripts that drive `caput`, the IOC restart, the management calls and the pages. Check: a dry run archives the list and a second run starts from nothing.
+3. Run T1 to T5 on packaged WARs and record the results; file an issue for each deviation. Check: T1 to T5.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Scan rate | Archive a periodic record by monitor and by scan, change `.SCAN` with `caput` to a faster and a slower period, read the stored samples with `getData` | Packaged WARs, soft IOC | To be fixed in step 1: the spacing of the samples follows the period for the monitor, and the sampling period for the scan |
-| T2 | Meta fields | Change `.EGU`, `.PREC` and the limit fields with `caput` while the PV is archived; read `getPVTypeInfo`, the Details window and the meta of `getData` | Packaged WARs, soft IOC | To be fixed in step 1: which of the fields the archiver reads again, and when |
-| T3 | Record type | Restart the IOC with the record name on a record of another DBR type; read the counter of `getPVsByDroppedEventsTypeChange`, the State column, `listTypeChanges` and the data before and after | Packaged WARs, soft IOC, second database | To be fixed in step 1: the samples of the new type are dropped and counted, the earlier data stay readable, and the State column shows the loss |
+| T1 | Scan rate | Archive `FAST:SIG:1` by monitor and `FAST:SIG:2` by scan, change `.SCAN` of each with `caput` from `.1 second` to `1 second` and to `10 second`, read the stored samples with `getData` and the Details window | Packaged WARs, soft IOC | From the code: by monitor the engine stores each event the record posts, so the spacing of the samples follows the SCAN of the record; by scan the engine samples at its own period whatever the SCAN of the record. The Details value `Estimated event rate` is measured once after the archive request and does not follow. To be observed: what a scan of the engine writes when the record has not changed between two scans |
+| T2 | Meta fields | Change `.EGU`, `.PREC` and the limit fields with `caput` on `SR:RF:CAV2:TEMP` (defaults) and `SR:RF:CAV2:POWER` (property subscription on), then restart the IOC; read `getPVTypeInfo`, the Details window and the meta of `getData` after each step | Packaged WARs, soft IOC | From the code: with the defaults the archiver does not learn of a change while the channel stays connected (`useDBEProperties` is false; the control data are read at the connection); with the property subscription the change is noticed at once and travels as a field value with the next sample; the restart reads the control data again. To be observed: what each of the three views shows, and whether a new value reaches the stored header before the next file |
+| T3 | Record type, Channel Access | Restart the IOC with `SR:BPM:04:X`, `SR:BPM:04:Y` and `SR:BPM:03:X` on an integer, a string and a waveform record; read the counter of `getPVsByDroppedEventsTypeChange`, the State column, `listTypeChanges.bash`, `getData` and `getDataAtTime` | Packaged WARs, soft IOC, second database | From the code: the type of the PV is fixed from the stored type information, so every event of the new type is dropped and counted, nothing of the new type is stored, the State column shows `N lost`, the script selects the PV, and the samples before the change stay readable |
+| T4 | The way out | For each PV of T3: pause it, change its type in the Maintenance window to the type of the new record, resume it, wait for samples, then read one window that holds samples before and after the change | Packaged WARs, soft IOC, second database | From the code: `changeTypeForPV` needs the PV paused; after the resume the new samples are stored and the counter stops rising. To be observed: what `getData` returns for a window across the change (both types in one answer, the older part, or an error), the size of the gap, and what the Details window and the type information show |
+| T5 | Record type, PVAccess | Do T3 and T4 on `SR:BPM:03:Y` archived with `pva://` and changed to an integer record | Packaged WARs, soft IOC, second database | A hypothesis from the code: the type is fixed from the first structure and later structures are converted with the old constructor, so an event of the new type fails or is stored wrongly and is not counted as a type change. To be observed: the counters, the log of the engine, the stored data and the State column |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | Packaged WARs, soft IOC | Pending | none |
-| T2 | Not run | Packaged WARs, soft IOC | Pending | none |
-| T3 | Not run | Packaged WARs, soft IOC, second database | Pending | none |
+| T1 | 2026-10-17T22:53Z to 22:58Z | Packaged WARs (build aa-20261017-aa6ca27f), fresh temporary appliance, soft IOC of `ConsoleChartPVs.db`; `SR:BPM:02:X` by monitor, `SR:BPM:02:Y` by scan | Deviation | With the record at 1 s and at 10 s both methods store one sample for each time the record processes: spacing 1.0 s (72 samples in 71 s) and 10.0 s (14 samples in 136 s); the scan method adds no repeated sample when the record is slower than its period. With the record at 0.1 s the monitor PV stored 59 samples in 46 s, in bursts of 11 every 10 s (median spacing 0.1 s, longest gap 9 s), and counted 446 events as lost because the sample buffer is full (capacity 11), listed by `getPVsByDroppedEventsBuffer`; the engine log holds no error line. The scan PV stored one sample a second (47). `Estimated event rate` follows the PV: 1 to 0.49 (monitor) and `Not enough info` to 0.47 (scan). Corrections to the expected reaction: the monitor path does not follow a record whose rate rose after the archive request, and the estimate is not fixed at the request |
+| T2 | 2026-10-17T22:58Z to 23:02Z | The same fresh appliance; `SR:RF:CAV2:TEMP` with the defaults, `SR:RF:CAV2:POWER` with `useDBEProperties` set through `putPVTypeInfo` and a pause and resume | Deviation | Defaults: for 100 s after the change nothing moved (type information, Details and the meta of `getData` kept C and 2; no field reached a sample); after the IOC restart the type information and the meta show K and 4. Property subscription: the sample 4 s after the change carried EGU MW, PREC 3, LOPR 5, HOPR 200, DRVH 200 and DRVL 5 as fields, while the type information, Details and meta kept kW and 1 until the restart, then MW and 3; HIGH and LOW did not travel because the IOC reports NaN for the warning limits of a calc record. The display limits of the type information (`lowerDisplayLimit`, `upperDisplayLimit`) stayed 0.0 after the restart although the IOC reports 10 and 120 (5 and 200 for the other record); only the unit and the precision were read again |
+| T3 | 2026-10-17T23:02Z to 23:04Z | The same fresh appliance, IOC restarted with `types.db` | Pass | For the three Channel Access PVs no sample of the new type was stored in 100 s (121 samples before, none after), the type information kept DBR_SCALAR_DOUBLE, and the dropped counts were 105 (integer), 3 (string, which posts only when the text changes) and 105 (waveform); `getPVsByDroppedEventsTypeChange` and `listTypeChanges.bash` listed each with its previous and current type; the State column read Being archived with `N lost` (108, 4, 108); the Value column kept the last stored value and the Last event column its time; `getDataAtTime` returned the last sample before the change; the engine log holds no error line |
+| T4 | 2026-10-17T23:04Z to 23:06Z | The same fresh appliance | Deviation | Integer: pause, `changeTypeForPV`, resume worked; 100 samples were stored in the next 100 s and the page stopped showing `lost`. A window across the change reads as integers: the earlier samples were converted, and a double such as 0.0057 became 0. String and waveform: `changeTypeForPV` returned HTTP 500 (`UnsupportedOperationException` in `ThruNumberAndStringConversion`: `ScalarValue.getStringValue` for the string, the default branch for the waveform); the PV stayed Paused with DBR_SCALAR_DOUBLE, its 151 earlier samples stayed readable as doubles, and resumed without a change it kept dropping (101 events in 100 s for the waveform) |
+| T5 | 2026-10-17T23:02Z to 23:06Z | The same fresh appliance; `SR:BPM:03:Y` archived with `pva://` | Deviation | The hypothesis was wrong: the PVAccess PV drops and counts the events of the new type like a Channel Access PV (100 in 100 s), is listed by `listTypeChanges.bash` and shows `N lost` with Protocol PVA; the way out to an integer worked (100 samples after the resume, the window reads as integers). After the change the meta of the PVA PV holds PREC 0 and no EGU, where the Channel Access PV keeps EGU mm and PREC 3 |
+
+Deviations from the expected reaction, to be filed as issues:
+
+1. `changeTypeForPV` cannot convert a numeric PV to a string or to a waveform: it answers HTTP 500, leaves the PV Paused, and the PV keeps dropping when resumed; no route for the operator remains in the console (T4).
+2. A monitored PV whose record posts faster than the rate estimated at the archive request loses most events to the full sample buffer (capacity 11 for a 10 s write period at 1 s); the loss shows only in the counters and the State column, and the manual does not describe it (T1).
+3. The type information keeps the display limits of the archive request after a reconnect, so the Details window reads Display limits as not set while the IOC reports them; the unit and the precision are read again (T2).
+
+Observations that need no issue unless the owner decides so: with the property subscription the changed fields travel with the samples but the type information follows only after a reconnect (T2); `changeTypeForPV` truncates the stored history when it converts a double to an integer (T4); the Browse PVs page keeps showing the last stored value of a PV that drops, with `N lost` as the only sign (T3); the meta of a PVA PV lacks EGU after a change of type (T5); `FAST:SIG:1` and `FAST:SIG:2` change once a second although their description says 10 Hz.
 
 ##### Closure Evidence
 
 - none
+
+##### GitHub Projection
+
+Title: Check the archiver on a changing record
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-17; `gh issue view 44` shows state OPEN, label enhancement, assignee jeonghanlee, and a body equal to the prepared file
+
+#### M74 - Plot limit note and bulk Plot controls in the PV table
+
+Origin: daff1b7 / M74
+Identity History: none
+GitHub Issue: none
+Status: In progress
+
+##### Summary
+
+Read on 2026-10-17 in `js/browse.js` and `css/browse.css`: when 5 PVs are plotted, the other Plot boxes of the table are disabled, the pointer over one shows the not-allowed cursor, and the only explanation is the text of its tooltip ("At most 5 PVs are plotted at a time. Turn another Plot box off first.", `browse.js:725`). No note is on the page while the limit is reached, and a disabled box takes no click, so the page cannot answer an attempt to turn a sixth box on. The table has no control that turns Plot boxes on or off together: each is turned off one by one. The counts are in two places: "Plotted n of at most 5" in the left panel and "table x/100" in the heading of the table.
+
+##### Scope
+
+- The message of the Plot boxes that are over the limit is made stronger and stays where it is: the boxes remain `disabled` with the not-allowed cursor. The words say that at most 5 PVs are drawn and that a Plot box has to be turned off first. A disabled box takes neither the pointer nor a tap, so the box over the limit is made transparent to them (`pointer-events: none`) and the cell under it takes them. The tooltip is on the whole cell, the cell has the not-allowed cursor, and the same words are shown as a visible note beside the counters of the heading of the table, as a status for assistive technology: while the pointer is over the cell, and, on a touch screen, from a tap on the cell until the next tap elsewhere or until a Plot box is turned off. The note floats in the top margin above the heading and takes no room, because a note that took room moved the table down under the pointer, the pointer then stood on the cell of the row above, the note went and the table moved back (seen on 2026-10-17 with a note in the line of the heading). The boxes under the limit show nothing.
+- Two controls beside "table x/100", for the Plot boxes only: First 5 turns the Plot boxes of the first five rows of the table, in the order of the table, on and every other Plot box off (with fewer than five rows, every row); Deselect all turns every Plot box off. Each is disabled while it has nothing to do (First 5 with an empty table, Deselect all with no Plot box on).
+- The address of the page keeps the plotted PVs as it does for one Plot box, so a link reproduces the choice.
+- The manual and the Help page name the two controls and the note.
+
+Out of scope: a change of the limit of 5 or 100; the chart; the selection of the rows of the table; the other pages.
+
+##### Completion Criteria
+
+- With 5 Plot boxes on, the pointer over the cell of any other Plot box, and a tap on it, show the stronger message as the tooltip of the cell and as the note beside the counters; the note goes when the pointer leaves, at the next tap elsewhere or when a Plot box is turned off; the note takes no room (the table stays where it was); the boxes stay disabled and turn nothing on; with 4 or fewer nothing is shown.
+- First 5 turns on exactly the Plot boxes of the first five rows in table order and turns off the others, and the chart draws those PVs; with three rows it turns on three.
+- Deselect all turns every Plot box off, the chart shows the message for no plotted PV, and the address holds no `plot` parameter.
+- The controls work with the keyboard, are at least 44 px high on a narrow screen, have text of at least 14 px, and the page has no sideways scroll at 720 and 500 px.
+- The manual and the Help page describe them, the static checks and the default suite pass.
+
+##### Dependencies And Decisions
+
+- No M or G dependency.
+- Decision Date: 2026-10-17. The owner asked for the note and the two controls and chose First 5 for the control that selects, because all rows cannot be plotted under the limit of 5.
+- Decision Date: 2026-10-17. The owner chose that the message belongs to the disabled boxes, from the sixth on, and that the work is to make that message stronger: the boxes stay `disabled`. The owner asked that a touch screen gets the message too, which the cell under the box gives through the tap.
+- No owner decision is open; the plan can be accepted.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-17; owner accepted the plan with the message on the pointer and on the tap
+Implementation Authorization: 2026-10-17; owner directed the implementation of this plan; commits, pushes and issue changes need their own authority
+Superseded Plan Artifacts: none
+
+1. The note and the two controls in the markup of `index.html` and their rules in `css/browse.css`. Check: T1.
+2. The functions in `js/browse.js` that turn the Plot boxes on and off together, the stronger message on the cell of a box over the limit, the note beside the counters while the pointer is over such a cell or after a tap on it, the state of the controls, and the address. Check: T1.
+3. The manual and the Help page. Check: T2.
+4. The static checks and the suite. Check: T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser | On the Browse PVs page with eight PVs of the fixed list in the table, turn Plot boxes on one by one to five, then put the pointer over the cell of a sixth box and read the tooltip and the note, move away, tap the cell and read the note, tap elsewhere, turn one off, press Deselect all, press First 5, press First 5 again with three rows, use the keys, and look at the page at 720 and 500 px | Packaged WARs, fresh temporary appliance, soft IOC of `ConsoleChartPVs.db` | The message is absent up to five boxes, appears with the pointer over, or a tap on, a cell of a box over the limit, which stays off, and goes when the pointer leaves, at the next tap elsewhere or when a box is turned off; Deselect all leaves no Plot box on and no `plot` in the address; First 5 turns on rows 1 to 5 only; three rows give three; the controls are disabled when idle; no sideways scroll, text of at least 14 px |
+| T2 | Static and suite | `bash scripts/ui-static-checks.bash`; `./mvnw -B -ntp clean verify`; the Maven and Pages workflows; the Help page and the book read against the page | Local, JDK 21; GitHub Actions | The checks and the suite pass; the controls named by the Help page and the book are on the page |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Packaged WARs, fresh temporary appliance | Pending | none |
+| T2 | Not run | Local, JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+## Backlog
+
+### Work
+
+| Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+No work is unassigned on 2026-10-17: every row is in the Milestone table, in the order of D43 (see Assignment History).
+
+### Backlog Details
 
 ## Assignment History
 
@@ -6904,6 +7047,18 @@ Superseded Plan Artifacts: none
 | 2026-10-04 | M40 | Milestone (Phase 2), part of M37 | Backlog | this synchronization commit | The owner moved M37's recovery-selection and storage-and-configuration groups into a new Backlog row; M37 keeps the read-only and alert groups. |
 | 2026-10-04 | M41 | Milestone (Phase 2), part of M37 | Backlog | this synchronization commit | The owner made M37's alert scripts on-demand checks without mail and moved emailHandler.py and mail delivery into a new Backlog row. |
 | 2026-10-05 | M35 | Backlog | Milestone (Phase 2) | this synchronization commit | The owner moved the Complete row from the Backlog table to the Milestone table; its detail moved with it. |
+| 2026-10-17 | M40 | Backlog | Milestone (Phase 2) | this synchronization commit | The owner ordered the open work (D43) and chose one table for work under way and work waiting; the row and its detail moved from the Backlog table. |
+| 2026-10-17 | M41 | Backlog | Milestone (Phase 2) | this synchronization commit | The owner ordered the open work (D43) and chose one table for work under way and work waiting; the row and its detail moved from the Backlog table. |
+| 2026-10-17 | M55 | Backlog | Milestone (Phase 2) | this synchronization commit | The owner ordered the open work (D43) and chose one table for work under way and work waiting; the row and its detail moved from the Backlog table. |
+| 2026-10-17 | M61 | Backlog | Milestone (Interface console) | this synchronization commit | The owner ordered the open work (D43) and chose one table for work under way and work waiting; the row and its detail moved from the Backlog table. |
+| 2026-10-17 | M66 | Backlog | Milestone (Verification) | this synchronization commit | The owner ordered the open work (D43) and chose one table for work under way and work waiting; the row and its detail moved from the Backlog table. |
+| 2026-10-17 | M69 | Backlog | Milestone (Interface console) | this synchronization commit | The owner ordered the open work (D43) and chose one table for work under way and work waiting; the row and its detail moved from the Backlog table. |
+| 2026-10-17 | M70 | Backlog | Milestone (Interface console) | this synchronization commit | The owner ordered the open work (D43) and chose one table for work under way and work waiting; the row and its detail moved from the Backlog table. |
+| 2026-10-17 | M71 | Backlog | Milestone (Interface console) | this synchronization commit | The owner ordered the open work (D43) and chose one table for work under way and work waiting; the row and its detail moved from the Backlog table. |
+| 2026-10-17 | M72 | Backlog | Milestone (Interface analyzer) | this synchronization commit | The owner ordered the open work (D43) and chose one table for work under way and work waiting; the row and its detail moved from the Backlog table. |
+| 2026-10-17 | M73 | Backlog | Milestone (Verification) | this synchronization commit | The owner ordered the open work (D43) and chose one table for work under way and work waiting; the row and its detail moved from the Backlog table. |
+| 2026-10-17 | M74 | Backlog | Milestone (Interface console) | this synchronization commit | The owner ordered the open work (D43) and chose one table for work under way and work waiting; the row and its detail moved from the Backlog table. |
+| 2026-10-17 | G8 | Backlog | Milestone (Tracking) | this synchronization commit | The external gate moved with M66, the row that it blocks. |
 
 ## History
 
