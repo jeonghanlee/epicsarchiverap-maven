@@ -93,11 +93,14 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * are 0 which leads to data being transferred out of this plugin as soon as the partition boundary is reached.
  * You can <code>hold</code> a certain number of partitions in this store (perhaps because this store is a
  * high performing one).
- * In this case, ETL does not start until the first event in this store is older than <code>hold</code> partitions.
- * Once ETL begins, you can transfer <code>gather</code> partitions at a time.
- * For example, <code>hold=5&amp;gather=3</code> lets you keep at least <code>5-3=2</code> partitions in this store.
- * ETL kicks in once the oldest event is older than than <code>5</code> partitions and data is moved <code>3</code>
- * partitions at a time.
+ * In this case, ETL does not move a file until its first event is <code>hold+1</code> partitions old, counted
+ * from the start of the partition that holds the event: the file of a partition that starts at S moves in the
+ * first pass whose processing time is at or after S + (hold+1) partitions.
+ * <code>gather</code> sets the boundary up to which files move once ETL begins: every file whose first event is
+ * at or before the end of the partition <code>hold-(gather-1)</code> partitions before the processing time moves
+ * in that pass, so a pass on schedule moves <code>gather</code> files and a late pass can move more.
+ * For example, <code>hold=5&amp;gather=3</code> moves the three oldest partitions once the oldest event is 6
+ * partitions old, and a pass on schedule leaves <code>5-3+1=3</code> completed partitions in this store.
  * </dd>
  * <dt>pp</dt><dd>An optional parameter, this contains a list of
  * {@link org.epics.archiverappliance.retrieval.postprocessors.PostProcessor post processing operators}
