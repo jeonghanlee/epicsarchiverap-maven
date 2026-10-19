@@ -7455,43 +7455,46 @@ A store URL with `reducedata=optimized_N` is accepted, but the ETL reduces into 
 
 ##### Scope
 
-- `PlainPBStoragePlugin.initialize` refuses `optimized` and `optimLastSample`, with or without `_N`, as the value of `reducedata`, with an ERROR line that names the parameter, the value and the operators that apply.
-- The `reducedata` row of the Stores table of `docs/book/src/configuration.md` names the operators that apply.
+- `PlainPBStoragePlugin.initialize` refuses `optimized` and `optimLastSample`, with or without `_N`, as the value of `reducedata`: it throws the `IOException` that `StoragePluginURLParser` passes on, whose message names the parameter, the value and the form of the operators that apply (an operator with a bin width in seconds, such as `firstSample_3600` or `mean_60`), so that the store is not created.
+- The `reducedata` row of the Stores table of `docs/book/src/configuration.md` names the form of the operators that apply and says that `optimized` does not.
 
 Out of scope: a range-free form of `optimized` for the ETL; the `pp` parameter.
 
 ##### Completion Criteria
 
-- A store URL with `reducedata=optimized` or `reducedata=optimized_500` fails to initialize and the log names the value and the operators that apply; a unit test covers both forms.
+- A store URL with `reducedata=optimized`, `reducedata=optimized_500` or `reducedata=optimLastSample_100` fails to initialize with an `IOException` whose message names the value and the form of the operators that apply; a unit test covers the three forms.
 - A store URL with `reducedata=firstSample_3600` initializes as before and the existing reducedata tests pass.
-- The book row names the operators that apply.
+- The PVs of a policy that carries a refused URL cannot use that store: the ETL logs one ERROR line per PV at its registration and the retrieval and the engine report the `IOException` where they parse the URL, instead of reducing silently into 900-second bins; the book row says that `optimized` does not apply.
+- The book row names the form of the operators that apply.
 
 ##### Dependencies And Decisions
 
 - D46 (Decision Date 2026-10-19): moved from the Backlog to the Milestone table to land before the merge of `modernize`.
+- Decision Date 2026-10-19: M78 and M79 change the same lines of `initialize` and share one unit test class, so they are built together and land in one commit that closes #49 and #50; each row keeps its own completion criteria and closes on its own.
 - Found on 2026-10-19 while answering the environment session's question on `optimized_N` in `reducedata`.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-19: the owner accepted the plan with the two refinements of its review (the message names the operators that apply by their form, and the completion criteria state what a refused URL does to the PVs of its policy) and the joint build with M79 ("그렇게 합시다. 네가 제안하는 대로 하자. 반영 다 하고.")
+Implementation Authorization: 2026-10-19: the owner authorized the implementation of the accepted plan in the same words; commits, pushes and issue changes need their own authority
 Superseded Plan Artifacts: none
 
-1. The refusal in `PlainPBStoragePlugin.initialize` where `reducedata` is parsed, with its unit test. Check: T1.
-2. The book row. Check: T1.
+1. The refusal in `PlainPBStoragePlugin.initialize` where `reducedata` is parsed: the operator found by `PostProcessors.findPostProcessor` is refused when it is `Optimized` or `OptimizedWithLastSample`, with the message of the Scope; built with the refusal of M79 in the same change. Check: T1.
+2. A unit test class for the store URL (`PlainPBStoreUrlTest`) over `ConfigServiceForTests` and a temporary root folder: the three refused forms with their message, `firstSample_3600` accepted; shared with M79. Check: T1.
+3. The book row. Check: T1.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Unit and suite | A unit test that initializes a `pb` URL with `reducedata=optimized` and with `reducedata=optimized_500` and reads the failure and its message, and one with `reducedata=firstSample_3600` that initializes; `./mvnw -B -ntp clean verify`; `mdbook build docs/book` | JDK 21 | Both refused with the message, the third accepted, suite and book pass |
+| T1 | Unit and suite | `PlainPBStoreUrlTest`: a `pb` URL with `reducedata=optimized`, `reducedata=optimized_500` and `reducedata=optimLastSample_100` each throws an `IOException` whose message names the value and the form of the operators that apply, and `reducedata=firstSample_3600` initializes; then `./mvnw -B -ntp clean verify` and `mdbook build docs/book` | JDK 21, Tomcat 9.0.121 for the integration tests | The three refused with the message, the fourth accepted; suite and book pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | pending | | | |
+| T1 | 2026-10-19 16:01 PDT (`PlainPBStoreUrlTest`), 16:12 PDT (suite), 16:12 PDT (book) | JDK 21, Tomcat 9.0.121 for the integration tests, on the working tree | Pass | `PlainPBStoreUrlTest` (6 tests, 0 failures): `reducedata=optimized`, `optimized_500` and `optimLastSample_100` each throw an `IOException` whose message names the value, says the operator is defined by the range of a retrieval request and names the form that applies with `firstSample_3600`; `reducedata=firstSample_3600` initializes and its URL representation carries it. `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS (1021 tests, 0 failures, 0 errors, 0 skipped, 10 min 55 s); `mdbook build docs/book` built with the two rows; no shipped policy, test or book page carries a refused URL (grep of `src/` and `docs/book/src`) |
 
 ##### Closure Evidence
 
@@ -7520,43 +7523,46 @@ A store URL that carries both `reducedata` and `pp` is accepted; `appendData` ap
 
 ##### Scope
 
-- `PlainPBStoragePlugin.initialize` refuses a URL that carries both `reducedata` and `pp`, with an ERROR line that names both parameters.
+- `PlainPBStoragePlugin.initialize` refuses a URL that carries both `reducedata` and `pp`: it throws the `IOException` that `StoragePluginURLParser` passes on, whose message names both parameters and the store, so that the store is not created.
 - The `reducedata` and `pp` rows of the Stores table of `docs/book/src/configuration.md` say that the two are not combined on one store.
 
 Out of scope: computing the `pp` caches from the raw stream before the reduction.
 
 ##### Completion Criteria
 
-- A store URL with both parameters fails to initialize with the logged reason; a unit test covers it.
-- A store URL with either parameter alone initializes as before and the existing ETL and post-processor tests pass.
+- A store URL with both parameters fails to initialize with an `IOException` whose message names both parameters; a unit test covers it.
+- A store URL with either parameter alone initializes as before (`pp=firstSample&pp=firstSample_3600`, the shipped LTS form, among them) and the existing ETL and post-processor tests pass.
+- The PVs of a policy that carries a refused URL cannot use that store: the ETL logs one ERROR line per PV at its registration and the retrieval and the engine report the `IOException` where they parse the URL.
 - The two book rows say that the parameters are not combined.
 
 ##### Dependencies And Decisions
 
 - D46 (Decision Date 2026-10-19): moved from the Backlog to the Milestone table to land before the merge of `modernize`.
+- Decision Date 2026-10-19: built together with M78 in one change and one commit that closes #49 and #50 (see M78).
 - Found on 2026-10-19 while answering the environment session's question on `reducedata` with `pp`.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-19: the owner accepted the plan with the two refinements of its review (the message names the operators that apply by their form, and the completion criteria state what a refused URL does to the PVs of its policy) and the joint build with M78 ("그렇게 합시다. 네가 제안하는 대로 하자. 반영 다 하고.")
+Implementation Authorization: 2026-10-19: the owner authorized the implementation of the accepted plan in the same words; commits, pushes and issue changes need their own authority
 Superseded Plan Artifacts: none
 
-1. The refusal in `PlainPBStoragePlugin.initialize` where `pp` and `reducedata` are parsed, with its unit test. Check: T1.
-2. The two book rows. Check: T1.
+1. The refusal in `PlainPBStoragePlugin.initialize` where `pp` and `reducedata` are parsed, in the same change as M78's. Check: T1.
+2. The cases of the shared unit test class `PlainPBStoreUrlTest`: both parameters refused with the message, each alone accepted. Check: T1.
+3. The two book rows. Check: T1.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Unit and suite | A unit test that initializes a `pb` URL with `reducedata=firstSample_3600&pp=mean_60` and reads the failure and its message, and one with each parameter alone that initializes; `./mvnw -B -ntp clean verify`; `mdbook build docs/book` | JDK 21 | The combination refused with the message, each alone accepted, suite and book pass |
+| T1 | Unit and suite | `PlainPBStoreUrlTest`: a `pb` URL with `reducedata=firstSample_3600&pp=mean_60` throws an `IOException` whose message names both parameters; `pp=mean_60` alone and `pp=firstSample&pp=firstSample_3600` alone initialize; then `./mvnw -B -ntp clean verify` and `mdbook build docs/book` | JDK 21, Tomcat 9.0.121 for the integration tests | The combination refused with the message, each alone accepted; suite and book pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | pending | | | |
+| T1 | 2026-10-19 16:01 PDT (`PlainPBStoreUrlTest`), 16:12 PDT (suite), 16:12 PDT (book) | JDK 21, Tomcat 9.0.121 for the integration tests, on the working tree | Pass | `PlainPBStoreUrlTest` (6 tests, 0 failures): `reducedata=firstSample_3600&pp=mean_60` throws an `IOException` whose message names both parameters and the store and says the two are not combined; `pp=mean_60` alone and `pp=firstSample&pp=firstSample_3600` alone initialize and their URL representations carry the pp list and no reducedata. The same suite run as M78 (1021 tests, 0 failures) and the same book build; no shipped URL combines the two parameters |
 
 ##### Closure Evidence
 
