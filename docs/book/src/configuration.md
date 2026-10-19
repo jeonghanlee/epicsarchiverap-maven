@@ -114,6 +114,12 @@ archives the fields `HIHI`, `HIGH`,
 `LOW`, `LOLO`, `LOPR` and `HOPR` with every PV, adding `DRVH` and `DRVL`
 for output records.
 
+The management keeps the loaded file for one minute when it chooses the
+policy and the fields archived with every PV. The list of policies reads the
+file at every call, and the retrieval reads it when it looks up the stores
+of a PV that is not archived. An edited file takes effect without a
+restart.
+
 ## Stores
 
 A store is written as a URL. The scheme selects the plugin:
@@ -139,7 +145,7 @@ Parameters of the `pb` plugin:
 | `name` | store name, such as `STS`; required |
 | `rootFolder` | folder of the store; required |
 | `partitionGranularity` | partition length: `PARTITION_5MIN`, `PARTITION_15MIN`, `PARTITION_30MIN`, `PARTITION_HOUR`, `PARTITION_DAY`, `PARTITION_MONTH` or `PARTITION_YEAR`; required |
-| `hold`, `gather` | ETL starts once the oldest sample is older than `hold` partitions and then moves `gather` partitions at a time; both default to 0, which moves each partition as soon as it closes |
+| `hold`, `gather` | A partition moves once its first event is `hold+1` partitions old, counted from its start, or `hold+2` partitions old when `gather` is 0 and `hold` is not. A pass then moves every partition up to `hold-(gather-1)` partitions before the time of the pass, one minute before its start, so a pass on schedule moves `gather` partitions and a late pass more. Between two moves nothing leaves the store, and at least `hold-gather+1` completed partitions stay in it. Just before a move it holds `hold+1` completed partitions, or `hold+2` when `gather` is 0 and `hold` is not, plus the one being written. `gather` must not exceed `hold`; both default to 0, which skips the rule above and moves each partition as soon as it closes |
 | `consolidateOnShutdown` | move the data to the next store when the appliance stops; for a STS on a RAM disk |
 | `reducedata` | post-processor applied to data moved into this store; the raw samples are dropped |
 | `pp` | post-processors computed and cached while data moves into this store; a retrieval request that matches one exactly reads the cached result |
