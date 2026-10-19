@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D43. Stages 1 to 3 are done except the analyzer step of M67: M74, M75, M77, M73, M68, M70, M65 and M60 are Complete (#44, #46, #42 and #38 closed); M67 is In progress only for its step 5 and T3, which wait for M62. M76 is Deferred by D45 with issue #48. Stage 4 is under way: M58 is Complete by the exception of D43 (#39 stays open for the analyzer rows); next is M62, then M63 and M64; then stage 5 (M69, M61) and stage 6 (M55, M40, M41; M66 after G8). M28 is Complete: ansible-provision's deployed check and 903-PV soak of 2026-10-15 are recorded in it. The Backlog holds M78, M79 and M80 (the store defects of issues #49, #50 and #51), which wait for a place in the order.
+Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D46 (2026-10-19), which follows D43. Stages 1 to 3 of D43 are done except the closure record of M67 (M74, M75, M77, M73, M68, M70, M65 and M60 Complete; #44, #46, #42 and #38 closed); M58 and M28 are Complete; M76 is Deferred by D45 with issue #48. Before the merge of `modernize`: close M67 by its dated exception (its step 5 moves to M62), then do M78, M79 and M80 (the store defects of issues #49, #50 and #51). After the merge: the analyzer in five phases A to E (M62, M81, M63, M82, M64), planned from `docs/design-analyzer.md`, each plan a draft to accept and to authorize; then M69, M61, M55, M40, M41, M66 after G8, and M76 as deferred. Next is the closure record of M67, then M78.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). M65 (the information cards of every page, and the Operations page composed again for a reader new to the appliance) is Complete on 2026-10-18 at 14f083e9 with both workflows green. The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -80,9 +80,9 @@ This register covers the minimal modernization of the existing Java appliance on
 | Interface console | M57 | Archive PVs page | Milestone | Complete | No | M56, D38 | Adding PVs has a visible entry apart from Find, takes a pasted list with a result per name and offers nothing for a half-typed name; each Scan row and the bulk actions carry the actions of the PV's state, including the cancel of a pending request; [detail](#m57---archive-pvs-page) |
 | Interface analyzer | M58 | Browse PVs page | Milestone | Complete | No | M56, D38, D40, M59 | Find explains its search modes on demand and Browse PVs shows a table of the chosen PVs with the actions of each in its row, one chart of up to five of them and a Details window for each, and a control that opens the analyzer; [detail](#m58---browse-pvs-page) |
 | Interface analyzer | M59 | One chart component and its simple form | Milestone | Complete | No | M56, D40 | The pages that plot draw through one chart component in a simple form (one axis per unit split between the sides, a legend, a tooltip with the date and time, ranges chosen with the mouse, the Y projection with its statistics, Chart options, an enlarged window) with a control into the analyzer; the checks T1 to T3 pass at ac322254 (2026-10-15); [detail](#m59---one-chart-component-and-its-simple-form) |
-| Interface analyzer | M62 | Analyzer page, drawing options and address | Milestone | Not started | Yes | M59, M58, D38, D40 | The analyzer is the viewer, an independent service that carries the site header and menu of the console (its menu items open the console pages), carries every drawing option and gesture of the component, and reads from its address the PVs, the time window and the options of the page that opened it; [detail](#m62---analyzer-page-drawing-options-and-address) |
-| Interface analyzer | M63 | Analysis of numeric signals in the analyzer | Milestone | Not started | No | M62, D40 | The analyzer summarises, fits, correlates, compares and tests one or several numeric signals (statistics, distribution, trend, fit, correlation, dependency, FFT), computed by the page where the D3 bundle has no function; [detail](#m63---analysis-of-numeric-signals-in-the-analyzer) |
-| Interface analyzer | M64 | Waveform and image analysis in the analyzer | Milestone | Not started | No | M63, M62, D40 | The analyzer draws an array at a time, over time and as a heatmap, computes its summary values and spectrum, and analyses an image by region, projections, centroid and size; [detail](#m64---waveform-and-image-analysis-in-the-analyzer) |
+| Interface analyzer | M62 | Analyzer phase A: page, header and address | Milestone | Not started | Yes | M59, M58, D38, D40, D46 | The analyzer is an independent service with the header, menu and time zone choice of the console, a page composition the owner approved from a mockup (tabs by kind of analysis, a drawer of Signals, Axes, Options, Data and Export), the Trend tab drawn through the chart component, and an address that carries the PVs, the window, the zone and the options the component has; the console passes its options; [detail](#m62---analyzer-phase-a-page-header-and-address) |
+| Interface analyzer | M63 | Analyzer phase C: tools for one signal | Milestone | Not started | No | M81, D40, D46 | The Distribution, Compare and Spectrum tabs: the summary and moments, histogram and box plot, moving statistics, the limits with the time beyond them, the pattern by hour and weekday, two ranges or two signals compared with their tests, and the spectrum by FFT with autocorrelation, computed by the page where the D3 bundle has no function and checked on signals of known parameters; [detail](#m63---analyzer-phase-c-tools-for-one-signal) |
+| Interface analyzer | M64 | Analyzer phase E: waveform and image analysis | Milestone | Not started | No | M82, M63, D40, D46 | The analyzer draws an array at a time, over time and as a heatmap, computes its summary values and spectrum, and analyses an image by region, projections, centroid and size; [detail](#m64---analyzer-phase-e-waveform-and-image-analysis) |
 | Interface console | M60 | Name check on the network and hold of a pending request | Milestone | Complete | No | M57, D44 | The engine searches a complete PV name on the network before it is archived and the Archive PVs page archives only the names that answered, offering Archive anyway for the rest; a request whose name no server answered within ten minutes is held by the appliance with its reason and can be resumed or cancelled; [detail](#m60---name-check-on-the-network-and-hold-of-a-pending-request) |
 | Interface console | M65 | Information cards answer on every page | Milestone | Complete | No | M56, M72, D38 | Every item of every page of the console (Browse PVs with its table columns and chart, Archive PVs, System, Operations, Retrieval performance, External servers and the Details and Maintenance windows) has an information card in one form, which answers what the item shows, when it is normal, needs attention or is a problem, and what to do, in plain words with the terms explained where they first appear; the System pages show a state in words beside a one-word status, and a measure that is not reported never reads Normal; [detail](#m65---information-cards-answer-on-every-page) |
 | Interface analyzer | M67 | Time zone choice for charts and times | Milestone | In progress | No | M59, D38 | One selection box in the header of the console and in that of the analyzer (Browser, UTC, Berkeley, Chicago, NYC, Seoul, Berlin) decides the time zone of every chart and time text, the range strip names the zone, and the choice passes from the console to the analyzer in the address; [detail](#m67---time-zone-choice-for-charts-and-times) |
@@ -108,6 +108,11 @@ This register covers the minimal modernization of the existing Java appliance on
 | Verification | M75 | Procedure for the test IOC of the console checks in the book | Milestone | Complete | No |  | The developer page of the book has a procedure that installs, starts, lists, switches the mode of and stops the one soft IOC of the console checks with `ioc-runner` from `src/resources/test/st.cmd`, with the configuration file it needs carried in the repository and every command run as shown; [detail](#m75---procedure-for-the-test-ioc-of-the-console-checks-in-the-book) |
 | Verification | M76 | Archiving continues across a change of the record | Milestone | Deferred | No | M73, D45 | The engine detects a change of the archived record (type, rate, unit, precision or limits) on its own and goes on storing the signal under the new condition from the instant of the change, with the earlier samples readable as they were stored; deferred to the next major release by D45; the GitHub issue that holds the direction is filed; [detail](#m76---archiving-continues-across-a-change-of-the-record) |
 | Verification | M77 | Log and pause on a record that changes | Milestone | Complete | No | M73 | For each change of M73 that the engine can detect, it writes one log line that names the PV and what changed, and where storing has to stop (a changed type) it pauses the PV instead of dropping on without a word; nothing else changes until M76; verified on the one IOC and the one appliance of D44; [detail](#m77---log-and-pause-on-a-record-that-changes) |
+| Phase 2 | M78 | Refuse optimized as a reducedata operator | Milestone | Not started | Yes | D46 | A store URL with `reducedata=optimized` or `optimized_N` fails to initialize with a logged reason that names the operators that apply, a unit test covers it, and the book's `reducedata` row names them; issue #49; [detail](#m78---refuse-optimized-as-a-reducedata-operator) |
+| Phase 2 | M79 | Refuse reducedata together with pp on one store | Milestone | Not started | Yes | D46 | A store URL with both `reducedata` and `pp` fails to initialize with a logged reason, a unit test covers it, and the two book rows say the parameters are not combined; issue #50; [detail](#m79---refuse-reducedata-together-with-pp-on-one-store) |
+| Phase 2 | M80 | Delete the post-processor files of a moved partition | Milestone | Not started | Yes | D46 | After the ETL moves a partition out of a store with `pp`, no file of that partition stays in the source store, the explicit deletion of a PV removes its post-processor files too, and an ETL test covers both; issue #51; [detail](#m80---delete-the-post-processor-files-of-a-moved-partition) |
+| Interface analyzer | M81 | Analyzer phase B: interaction, options and export | Milestone | Not started | No | M62, D40, D46 | The gestures beyond the simple form (the drag tool chosen on the strip, wheel and pinch zoom, undo and redo of the range, two cursors, pinned samples), the options the reference tools offer (line width and style, a gap threshold, a fill between signals, fixed and soft ranges, the averaging interval or raw samples, the min-max band, a split by unit, SI prefixes, a legend table, tooltip modes), the Data tab and the full Export tab, each carried in the address; [detail](#m81---analyzer-phase-b-interaction-options-and-export) |
+| Interface analyzer | M82 | Analyzer phase D: tools for two and several signals | Milestone | Not started | No | M63, D40, D46 | The Correlation tab (pairing by held values, scatter with projections and density, Pearson and Spearman, profile, the fit panel with fixed and bounded parameters) and the Dependency tab (correlation matrix ordered by clustering, ranking by mutual information, multiple regression, principal components), derived signals from a typed expression and a change of unit, the routines checked on signals of known parameters; [detail](#m82---analyzer-phase-d-tools-for-two-and-several-signals) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Decisions
@@ -159,6 +164,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | D43 | The open work runs in this order. Stage 1, finish what is under way: M74, M73 (its three findings filed as issues), M68 (steps 2 to 6), and M28 as aa-env allows, alongside. Stage 2, time: M70, then M67. Stage 3, text and use: M65, then M60. Stage 4, the analyzer: M58 closed by a dated exception because issue #39 stays open for the analyzer rows, then M62, M63, M64; the analyzer cards of M65 are written with M62. Stage 5, PVA and status: M69, then M61. Stage 6, verification and the rest of Phase 2: M55; M40, then M41, after M37; M66 after G8. The order is the owner's sequencing and does not replace the dependencies of the rows; a row whose plan is a draft needs its plan accepted and its implementation authorized before it starts. | 2026-10-17 |
 | D44 | The console checks run against one soft IOC and one local appliance. The IOC is the `consolechart` IOC of `ioc-runner` (local mode), started from `src/resources/test/st.cmd`, which loads `ConsoleChartPVs.db` and one record-change database chosen by the `RECORD_CHANGE` macro; a check that needs another record set switches the macro in the IOC configuration and restarts that IOC, and does not start a second one. The appliance is the kept local appliance (port base 27665); a check that needs another archiver state uses it, and does not start a second one. The procedure of this IOC is written into the book as M75, in stage 1 of D43 after M73, so that it records the commands the M73 checks ran. D20 is unchanged: the Java test fixtures keep launching softIocPVX directly. | 2026-10-17 |
 | D45 | The role of the archiver is to keep the signal without a gap: when the archived record changes, the archiver detects it and goes on storing under the new condition, with the earlier samples readable as they were stored. That is M76, deferred to the next major release, and one GitHub issue holds the direction. In this release the engine does only this much (M77): it writes to its log that the record is changing, naming the PV and the change, and it pauses what can be paused, which is a PV whose type changed; the other reactions stay as M73 observed them. M77 runs in stage 1 of D43 after M75. | 2026-10-17 |
+| D46 | Before the merge of `modernize` into the default branch, the open work is closed down to what the shipped console needs: M67 closes by a dated exception with its step 5 (the header of the analyzer) moved to M62; M78, M79 and M80 move from the Backlog to the Milestone table and are done; the analyzer design (`docs/design-analyzer.md`) is in place. After the merge the analyzer is built in five phases, one row each, in the order A (M62, page, header and address), B (M81, interaction, options and export), C (M63, tools for one signal), D (M82, tools for two and several signals) and E (M64, waveforms and images), each phase accepted and authorized on its own and usable when it ends; then M69, M61, M55, M40, M41, M66 after G8, and M76 as deferred. Issue #39 stays the one issue of the analyzer, with a box per phase in its body. | 2026-10-19 |
 
 ### Conceptual-integrity findings
 
@@ -5463,7 +5469,7 @@ Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
 
-#### M62 - Analyzer page, drawing options and address
+#### M62 - Analyzer phase A: page, header and address
 
 Origin: daff1b7 / M62
 Identity History: none
@@ -5472,42 +5478,27 @@ Status: Not started
 
 ##### Summary
 
-The analyzer is the viewer of the retrieval web application (`archViewer.html`, `viewer.js`, `viewer.css`) with few drawing options and no analysis tool. Its menu entry `analyzer.html` forwards to it (`js/analyzer-forward.js`), it carries no site header, logo or menu, and it reads only `pv`, `from` and `to` from its address. The Browse PVs page of M58 opens it and the chart component of M59 draws the simple form; this work gives the analyzer the site header, logo and menu of the console while it stays an independent service, gives it every drawing option and gesture of the component, and lets it read the options of the page that opened it from its address. Its input for plotting an archived PV, **Add**, can be taken for starting archiving.
+The analyzer is the viewer of the retrieval web application (`archViewer.html`, `viewer.js`, `viewer.css`) with few drawing options and no analysis tool. Its menu entry `analyzer.html` forwards to it (`js/analyzer-forward.js`), it carries no site header, logo or menu, and it reads only `pv`, `from` and `to` from its address. The Browse PVs page of M58 opens it and the chart component of M59 draws the simple form; this phase gives the analyzer the site header, logo, menu and time zone choice of the console while it stays an independent service, the page composition the owner approves, and an address that carries the options of the page that opened it; the gestures and options beyond the simple form are phase B (M81) and the analysis tabs are phases C to E. Its input for plotting an archived PV, **Add**, can be taken for starting archiving.
 
 ##### Scope
 
-The analyzer of D38 and D40, as a page and with its drawing options, gestures and address; the analysis tools are M63 and M64.
+Phase A of `docs/design-analyzer.md` (D46): the analyzer as a page of the console's family, with nothing of the analysis yet.
 
-- The analyzer under its own menu entry: the viewer of the retrieval web application stays an independent service and carries the site header, logo and menu of the console, whose items are links that open the console pages at the address of the console (`mgmtURL` of the appliance information); the time zone choice of M67 sits in that header; the menu entry `analyzer.html` of the console forwards to it with the PVs, the time window and the zone in its address; a control on the console that opens it with the selected PVs.
-- The analyzer's control for plotting an archived PV named for what it does, not with the word used for archiving a PV.
-- The drawing options and gestures of the component in the analyzer, in addition to its simple form:
-  - drawing options beside the plot: data points on, off or automatic; line as step, straight or points only; Y axis linear or log, automatic or fixed range; the averaging interval chosen, or raw samples forced;
-  - a Y projection: when its option is on, a one-dimensional histogram of the values in view appears beside the plot and shares the plot's width, with its bins along the plot's Y scale, one per PV, following every zoom, pan and brush; the Distribution panel (`drawHistogram` in `staticcontent/js/aa/plots.js`) stays as an option of its own, apart from the Y projection;
-  - `d3-zoom`: wheel zoom, including trackpad pinch; drag to pan; double-click to zoom in and Shift+double-click to zoom out; pinch and pan on touch screens; limits on the zoom factor and the pannable range; a filter for the buttons and keys that start a gesture; zoom of the time axis, the Y axis (for example by dragging on the axis) or both;
-  - `d3-brush`: a time window (`brushX`), a value range (`brushY`) and a rectangle on the scatter plot, with move, resize, Alt to centre, Shift to keep one axis, clear by a click outside, and a range set programmatically;
-  - `d3-drag`: the direct labels at the line ends, two reference cursors with the difference of time and value between them, a legend;
-  - pointer events: the crosshair and tooltip, a click on a series to bring it to the front or hide it, and a click on a sample to pin its values;
-  - a double-click back to the original range and a step back to the previous range; a change of range reads the data again after the gesture ends, because the averaging interval follows the span;
-  - a min-max band (`d3-shape` `area`) around the line when the data is averaged, read through the retrieval `min` and `max` post-processors with the mean, so a spike the mean hides shows;
-  - the nearest sample to the pointer found with `d3-delaunay` or `d3-quadtree`, for the tooltip on plots with many points;
-  - time axis ticks on minute, hour and day boundaries (`d3-time`, `scaleTime`);
-  - transitions on zoom and range changes (`d3-transition`);
-  - CSV export through `d3-dsv`, replacing the viewer's own Download CSV code;
-  - values in SI prefixes with matched significant digits (`d3-format`);
-  - a split by unit: an option that draws one plot for each unit, one under another, sharing the time axis, the crosshair and the time range choice, each with its own value axis and range (the earlier viewer drew one chart per unit); the default is one plot with an axis per unit.
-- The address: the analyzer reads the PVs, the time window and the options from the query string and writes them back as the page changes. The names are `pv` (repeated), `from` and `to` as today; `shape` (`step` by default, `line`, `smooth`, `points`); `yscale` (`linear` by default, `symlog`, `log`, `sqrt`); `marks` (`auto` by default, `on`, `off`); `avg` (the window in samples, the running average on when present); `band` (the window in samples, the standard deviation band on when present); `yproj` (`1`); `yrange` (repeated, `unit:low:high`, `none` for a PV with no unit); `interval` (`raw` or the averaging interval in seconds, automatic when absent); `split` (`none` by default, `unit`).
-- The book pages for analyzing data.
+- The page composition, decided from a clickable mockup the owner reviews: the selection and the range strip at the top, tabs by kind of analysis in the middle (Trend, Distribution, Correlation, Dependency, Spectrum, Compare, Waveform, Image; a tab is enabled by the kind of the chosen signals), a drawer with the tabs Signals, Axes, Options, Data and Export, and the place of the range strip and the options (design, Page composition).
+- The independent service with the header of the console: the site header and logo, the same menu as the console pages whose items navigate to the console pages at `mgmtURL`, the time zone choice of M67 (its step 5 moves here), the Analyzer entry marked on both sides; the retrieval `BPLServlet` registers the management's `GetApplianceInfo` action so the page reads `mgmtURL` from its own origin; the marker blocks of the header on the page and the static check covering it; the input for plotting a PV named for what it does (design, Page and header; decisions D1, D2, D6).
+- The Trend tab drawn through the chart component in the simple form, with the drawer's Signals, Axes and Options tabs holding what the component has (one axis per unit, the legend, the Chart options), the Data tab with the table of statistics the component has, and the Export tab with Copy link and the CSV of the viewer as they are; the viewer's one chart per unit becomes the split option of phase B.
+- The address: `pv`, `from`, `to`, `tz`, `view` (the tab), and the options the component has (`shape`, `yscale`, `marks`, `avg`, `band`, `window`, `yproj`, `yrange`), read on opening, written back as the page changes, unknown names and unreadable values ignored; the control of the Browse PVs page adds the options chosen on the page to the address it opens (design, Address; decisions of 2026-10-14 and D3).
+- The book: `interface.md` and `operating.md` for the page as it is after this phase; `MgmtPageLinksTest` for the page and the entry.
 
-Out of scope: the chart component and its simple form (M59); the Browse PVs page and its control (M58), except that the control adds the options chosen on the page to the address it opens, and that the Distribution, scatter plot and summary panels leave the page once the analyzer carries them (M62); the analysis tools (M63, M64); the retrieval server.
+Out of scope: the gestures and options beyond the simple form, the Data table of samples and the full Export tab (M81, phase B); the analysis tabs (M63, M82, M64); the Browse PVs panels, which stay (D4 of the design).
 
 ##### Completion Criteria
 
-- The analyzer opens from its menu entry and from the Browse PVs page with the site header, logo and menu of the console above it, each menu item opens its page of the console, and the address of the viewer works on its own.
+- The analyzer opens from its menu entry and from the Browse PVs page with the site header, logo, menu and time zone choice above it; each menu item opens its console page; the Analyzer entry is marked; the address of the viewer opens on its own.
 - No analyzer control uses the wording of archiving a PV.
-- Each option and gesture of the Scope is observed on archived fixture data, and a range change reads the data once after the gesture.
-- The Distribution, scatter plot and summary panels are no longer on the Browse PVs page, and the analyzer carries them.
-- The Browse PVs page with options set opens the analyzer with the same PVs, time window and options; an address with `pv`, `from` and `to` alone opens as before, and a name it does not know or a value it cannot read is ignored.
-- The default suite passes and the book describes the analyzer as shipped.
+- The page shows the composition the owner approved: the tabs by kind of analysis with the Trend tab live and the others present but empty or disabled by the kind of signal, and the drawer with its five tabs.
+- The Browse PVs page with options set opens the analyzer with the same PVs, window, zone and options; an address with `pv`, `from` and `to` alone opens as before; a name the page does not know or a value it cannot read is ignored; the address follows every change of the page.
+- The static check covers the analyzer page's marker blocks; the default suite passes; the book describes the page as shipped.
 
 ##### Dependencies And Decisions
 
@@ -5525,6 +5516,8 @@ Out of scope: the chart component and its simple form (M59); the Browse PVs page
 - Decision Date 2026-10-15: the Distribution, scatter plot and summary panels leave the Browse PVs page in this item, when the analyzer carries them (they stay on the page in M58).
 - Decision Date 2026-10-15: the control of the Browse PVs page, which M58 builds with the PVs and the time window, gets the options added by this item, so the parameters are named where they are read.
 - Decision Date 2026-10-14: the analyzer reads, from its address, the PVs, the time window and the options of the simple form (line, Y scale, sample marks, running average, standard deviation band and its window, the Y projection, and the range of each axis), so that the control into the analyzer of the other pages opens the same picture; an option the user did not set is not in the address and the analyzer applies its own default; each option is one named parameter in the query string, a name it does not know or a value it cannot read is ignored so that an address with `pv`, `from` and `to` alone opens as before, and the range of an axis is given by the unit of the axis (`none` for a PV with no unit); the names and form of the parameters are settled in this milestone.
+- D46 (Decision Date 2026-10-19): the analyzer is built in five phases; this row is phase A, planned from `docs/design-analyzer.md`, whose decisions D1 to D6 of 2026-10-19 bind it (the independent service with the console's menu, `getApplianceInfo` on the retrieval, the defaults of the options, the Browse PVs panels staying, the time axis as drawn, the menu that navigates to the other side).
+- M67 step 5 (the header of the analyzer with the time zone box and the hand-over of `tz`) is done here.
 
 ##### Implementation Plan
 
@@ -5533,31 +5526,29 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Settled with the owner: the analyzer as an independent service with the header of the console (2026-10-15, replacing the frame of 2026-10-14), and the form of the address (the Decision Date lines above). Still for the owner before acceptance: the default of each option of the analyzer, and the gestures that conflict on one plot (drag to pan against drag to select).
-2. The page (`analyzer.html`, `js/analyzer-forward.js`, `archViewer.html`, `viewer.js`, `viewer.css`): the viewer carries the header of the console (logo, menu, the time zone choice of M67), the menu items link to the console pages at the address of the console, the menu entry `analyzer.html` keeps forwarding with the PVs, the window and the zone, and the bar of the time range of the viewer stays; the control for plotting a PV is renamed. Check: T1.
-3. The analyzer on the component (`archViewer.html`, `viewer.js`, `viewer.css`, `staticcontent/js/aa/chart.js`): every drawing option and gesture of the Scope with `d3-zoom`, `d3-brush` and `d3-drag`. Check: T2.
-4. The address: the analyzer reads the PVs, the time window and the options and writes them back as the page changes; the control of the Browse PVs page (`js/browse.js`) adds the options chosen on the page to the address it opens. Once the analyzer carries the Distribution panel and the scatter plot, the panels leave the Browse PVs page (`index.html`, `js/browse.js`). Check: T3.
-5. The book (`interface.md`, `operating.md`, the figure of the analyzer) and `MgmtPageLinksTest` for the page and entry. Check: T4 and T5.
+1. The mockup of the page composition (tabs, drawer, strip and options placement) for the owner's review; the decision is recorded in the design document and here. Check: the owner's approval.
+2. The retrieval `BPLServlet` registers `GetApplianceInfo`; the analyzer page gains the header markup with its marker blocks, the menu linking to `mgmtURL`, the time zone box (`mountTimeZoneSelect`) and the renamed input; `analyzer-forward.js` unchanged; the static check covers the page. Check: T1, T4.
+3. The composition built: the tabs by kind of analysis with the Trend tab drawn through `createChart`, the drawer with Signals, Axes, Options, Data (the statistics table) and Export (Copy link, the CSV as it is). Check: T1.
+4. The address: read and written with `view`, `tz` and the options of the component; the Browse PVs control adds its options. Check: T2.
+5. The book and `MgmtPageLinksTest`. Check: T3, T4.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Browser | Open the analyzer from the menu and from the Browse PVs page and read its header; use each menu item of the header; open the address of the viewer on its own; look at the Browse PVs page and see that the distribution, scatter plot and summary panels are gone; look at the page at 720 and 320 px | Local appliance, shipped soft IOC fixture | The viewer shows the header of the console with its menu; each menu item opens its console page; the Browse PVs page has no distribution, scatter plot or summary panel; the address of the viewer on its own shows the same picture; no sideways scroll |
-| T2 | Browser | Exercise each drawing option and gesture of the Scope with mouse and touch, and count the data requests of the browser after a drag that chooses a range | Local appliance, shipped soft IOC fixture | Each behavior is observed on archived fixture data; a chosen range issues one data request after the gesture |
-| T3 | Browser | Set options on the Browse PVs page and press Open in the analyzer; edit the address by hand; add an unknown name and a value that cannot be read; open an address with `pv`, `from` and `to` alone | Local appliance, shipped soft IOC fixture | The analyzer shows the options of the address; the unknown name and the unreadable value are ignored; the old address opens as before |
-| T4 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the pages pass |
-| T5 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+| T1 | Browser | Open the analyzer from the menu and from the Browse PVs page; read the header, use each menu item and the time zone box; open the address of the viewer on its own; read the tabs and the drawer; look at the page at 720 and 320 px | The one appliance and the one IOC of D44 | The header of the console with its menu and zone box; each menu item opens its console page; the composition of the mockup; no sideways scroll |
+| T2 | Browser | Set options on the Browse PVs page and press Open in the analyzer; edit the address by hand; add an unknown name and a value that cannot be read; open an address with `pv`, `from` and `to` alone | The one appliance of D44 | The analyzer shows the options of the address; the unknown name and the unreadable value are ignored; the old address opens as before; the address follows a change on the page |
+| T3 | Book | `mdbook build docs/book`; the pages read against the shipped page | Local | Every control the pages name is on the page |
+| T4 | Static and suite | `bash scripts/ui-static-checks.bash` with the analyzer page in its header check; `MgmtPageLinksTest` on the WARs packaged the same UTC day; `./mvnw -B -ntp clean verify`; Maven and Pages workflows | JDK 21, Tomcat 9.0.121; GitHub Actions | Pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T2 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T3 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T4 | Not run | Local, JDK 21, Tomcat 9.0.121 | Pending | none |
-| T5 | Not run | JDK 21; GitHub Actions | Pending | none |
+| T1 | Not run | The one appliance and the one IOC of D44 | Pending | none |
+| T2 | Not run | The one appliance of D44 | Pending | none |
+| T3 | Not run | Local | Pending | none |
+| T4 | Not run | JDK 21; GitHub Actions | Pending | none |
 
 ##### Closure Evidence
 
@@ -5573,7 +5564,87 @@ Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
 
-#### M63 - Analysis of numeric signals in the analyzer
+#### M81 - Analyzer phase B: interaction, options and export
+
+Origin: daff1b7 / M81
+Identity History: none
+GitHub Issue: #39 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/39)
+Status: Not started
+
+##### Summary
+
+Phase B of `docs/design-analyzer.md` (D46): the gestures and options the reference tools offer beyond the simple form, and the Data and Export tabs in full, on the page of phase A.
+
+##### Scope
+
+- Gestures (design, Drawing options and gestures; Reference tools): the drag tool chosen on the range strip (select, pan, box zoom), the wheel and the trackpad pinch zooming the time axis around the pointer within limits, Shift and a drag panning, undo and redo of the range, a double-click back, one finger selecting and two fingers panning and zooming on a touch screen, a click on a legend item hiding its line, a click on a series bringing it to the front, a click on a sample pinning its values, two reference cursors with the difference of time and value, the nearest sample found with `d3-delaunay` or `d3-quadtree`, one batch of data requests after a gesture.
+- Options (design, Reference tools, Options the tools offer): line width and style, a gap threshold that disconnects the line, a fill between two signals, soft and fixed axis ranges typed per unit, grid lines, centered zero, SI prefixes, an axis label, the averaging interval in seconds or raw samples forced, the min-max band from the retrieval `min` and `max` operators with the mean, a split by unit (one plot per unit sharing the time axis), the legend in table mode with computed values, the tooltip in single or all mode with a sort order, decimals and a display name per signal, transitions on range changes.
+- The Data tab: the table of the samples in view with their time, value, severity and status, and the statistics table of the component.
+- The Export tab (design, Export): the range (shown or typed), the source (the samples shown, the raw samples, N bins with minimum, mean and maximum, a linear interpolation), the format (wide or long CSV, severity and status, digits, ISO 8601 in the zone or UNIX milliseconds, the unit in the header), the products (data CSV, statistics CSV, plot as PNG or SVG, the address copied), and the retrieval's own `getData.csv` and `getData.mat` addresses for large ranges.
+- The address names of every new option, read and written as in phase A; the book.
+
+Out of scope: the analysis tabs (M63, M82, M64); the Browse PVs page.
+
+##### Completion Criteria
+
+- Each gesture and option of the Scope is observed on archived fixture data with mouse, keyboard and touch, and a range change reads the data once after the gesture ends.
+- The Data tab lists the samples in view and the Export tab produces each product of the Scope; a CSV of N bins carries minimum, mean and maximum per bin; the exported values equal the retrieval's for the same range and operator.
+- Every option is in the address, and an address with the options of phase A alone opens as before.
+- The default suite passes and the book describes the controls.
+
+##### Dependencies And Decisions
+
+- M62: the page, the drawer and the address of phase A.
+- D40: the analyzer as a self-contained analysis tool built with the bundled D3.
+- D46 (Decision Date 2026-10-19): phase B of the analyzer, planned from `docs/design-analyzer.md`.
+- Open in the design document: the assignment of the drag (the reference tools choose the drag tool on a toolbar with the wheel and hover always on), the labels at the line ends (the legend names the lines), and whether the running average and the band share one window (`window`); each is settled before this plan is accepted.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. The three open decisions above, with the owner. Check: the decisions recorded in the design document.
+2. The gestures in the chart component (`staticcontent/js/aa/chart/gestures.js` and a zoom module on `d3-zoom`), with the strip's drag tool control, undo and redo, cursors and pins; the simple form of the console pages unchanged. Check: T1.
+3. The options in `options.js` and `draw.js`, the split by unit, the min-max band through the retrieval operators, the interval choice. Check: T1.
+4. The Data tab and the Export tab (`viewer.js`), the CSV through `d3-dsv`, the PNG and SVG export, the retrieval addresses. Check: T2.
+5. The address names and the book. Check: T3, T4.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser | Exercise each gesture and option of the Scope with mouse, keyboard and touch on archived fixture PVs, and count the data requests of the browser after a drag that chooses a range | The one appliance and the one IOC of D44 | Each behavior is observed; a chosen range issues one batch of requests after the gesture |
+| T2 | Browser and retrieval | Export each product of the Export tab for a known range and compare the CSV with the retrieval's `getData.csv` of the same range and operator; open the retrieval addresses the tab hands out | The one appliance of D44 | The values equal; the N-bin CSV carries minimum, mean and maximum; the addresses answer |
+| T3 | Book | `mdbook build docs/book`; the pages read against the shipped page | Local | Every control the pages name is on the page |
+| T4 | Static and suite | `bash scripts/ui-static-checks.bash`; `MgmtPageLinksTest`; `./mvnw -B -ntp clean verify`; Maven and Pages workflows | JDK 21, Tomcat 9.0.121; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | The one appliance and the one IOC of D44 | Pending | none |
+| T2 | Not run | The one appliance of D44 | Pending | none |
+| T3 | Not run | Local | Pending | none |
+| T4 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Analyzer for archived data
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-19 11:57 PDT; `gh issue view 39` shows the body with the Browse PVs parts ticked, OPEN; a box per phase is added to its body when the phase plans are accepted (D46).
+
+#### M63 - Analyzer phase C: tools for one signal
 
 Origin: daff1b7 / M63
 Identity History: none
@@ -5582,44 +5653,35 @@ Status: Not started
 
 ##### Summary
 
-The Browse PVs page shows a distribution, a scatter plot of two PVs and a statistics table for the PVs of one chart (`plots.js`), and the viewer none. The scatter plot pairs only samples at exactly equal times, so raw samples of two records rarely pair, and it offers only a PV of the same unit at a fixed 150 px height. The bundled D3 has no correlation, regression, fit, FFT or principal component analysis. The analysis of one or several numeric signals is built in the analyzer of M62 from what the D3 bundle provides and from routines the page writes.
+The Browse PVs page shows a distribution, a scatter plot of two PVs and a statistics table for the PVs of one chart (`plots.js`), and the viewer none. The scatter plot pairs only samples at exactly equal times, so raw samples of two records rarely pair, and it offers only a PV of the same unit at a fixed 150 px height. The bundled D3 has no correlation, regression, fit, FFT or principal component analysis. The analysis of one numeric signal and the comparison of two ranges are built in this phase on the page of phases A and B (M62, M81), from what the D3 bundle provides and from routines the page writes; two and several signals are phase D (M82).
 
 ##### Scope
 
-Analysis by the kind of signal in the analyzer (decision of 2026-10-14: the tools are added by the kind of signal; the page decides the kind from `getPVTypeInfo`, the data type, the element count, the unit and the event rate, and the user chooses the purpose within it):
+Phase C of `docs/design-analyzer.md` (D46): the tools of one numeric signal and the comparison of two ranges, in the Distribution, Compare and Spectrum tabs of the page of phases A and B (design, Tools by kind of signal; Analysis functions).
 
-- a scatter plot of any two PVs, one on each axis, of the same or different units, with both axes labelled and its own size. Today's panel ("Two PVs against each other", `drawScatter`, Browse PVs page only) pairs only samples at exactly equal times, so raw samples of two records rarely pair, and it offers only a PV of the same unit at a fixed 150 px height with the X range alone on its axis. Samples pair by the value each PV holds at the other's sample times. The plot computes and shows the number of pairs, the correlation, and the linear regression (slope, intercept, R²) with its line drawn. Its options, beside it as for the time series: each axis linear or log, automatic or fixed range; the regression line shown or hidden; an X and a Y projection, one-dimensional histograms beside the axes; point size and transparency for dense data; points coloured by time, so a drift shows;
-- median and percentiles (`d3-array` `quantile`, `median`) in the statistics, and a box plot;
-- a heatmap of time against value (`d3-array` `bin` with `scaleSequential`) for long spans of fast PVs;
-- a density contour (`d3.contourDensity`) on the scatter plot for dense data;
-- One numeric scalar: a summary (samples, minimum, maximum, mean, median, standard deviation, skewness, kurtosis, the errors of the mean and of the standard deviation, quantiles, lost events); the trend with zoom, two cursors and a min-max band; the distribution (histogram, box); the variation (running average, standard deviation band, rate of change); a slow trend (a linear fit against time); the limits (the display, warning and alarm limits of the PV as reference lines, and the time outside them); the pattern by hour and weekday (`rollup`) and a time-value heatmap for a long span; the periodicity (autocorrelation, spectrum by FFT); the values beyond k standard deviations.
-- Two numeric scalars: a scatter plot with each axis in its own unit; the correlation (Pearson, Spearman, and a cross-correlation over a time lag); a profile (the mean of Y with its error in each bin of X); a fit of Y against X with its parameters and their errors, the chi-square per degree of freedom, R², the covariance and correlation of the parameters, a confidence band and the residuals; pairs taken by the value each PV holds at the other's sample times, with the number of pairs and the number of samples of the slower PV shown; derived signals (difference, sum, ratio, one divided by the other); the two trends under one another sharing the time axis.
-- A comparison of two time ranges of one signal, or of two signals: the distributions drawn over one another and normalised, and the tests of whether they differ (chi-square, Kolmogorov-Smirnov, Anderson-Darling) with the difference of the means and of the spreads.
-- Several numeric scalars (three or more), the dependency among them: all the signals first averaged over one common interval so that the samples line up; the mutual information of each pair, which also shows a dependence that is not linear, and a ranking of the signals by how much each explains the chosen one; a correlation matrix drawn as a heatmap, ordered by clustering so that dependent signals sit together; a scatter plot matrix; the partial correlation of two signals with the others held fixed; a multiple linear regression of one chosen signal on the others, with each coefficient, its standardised size, R² and the residuals; a principal component analysis with the variance of each component and the loading of each signal on it; the lag at which each pair is most correlated, drawn as a graph of which signal leads which (`forceSimulation`, with the strength of a dependence as the thickness of the edge and a threshold chosen by the user).
-- General functions of the analyzer, not tied to one kind of facility: a derived signal from an expression the user types (such as `(A-B)/C`; the content security policy forbids `eval`, so the page parses the expression itself); a threshold line with the time a signal spends beyond it; a change of unit; the export of a fit, a statistics table and a derived signal; and time scales from milliseconds to years in the axis ticks and the averaging interval. A fit may fix a parameter or bound it, and the Landau shape is among its models. The wording of the pages, the help and the book names a signal, its unit and a time range, and keeps an accelerator only as an example (a decay time constant, not a lifetime).
-- Fits (line, polynomial, exponential, power, logarithm, sine, Gaussian, Landau), correlations, the regression, the principal component analysis, the clustering and the FFT are computed by the page, with small matrix routines written for it; the bundled D3 has none of them. For a time series the FFT first resamples to an even interval, because the stored samples are not evenly spaced.
-- Settled on 2026-10-14 (the fit models by the owner, the others on the recommendation the owner accepted):
-  - The fit models are those listed above (line, polynomial, exponential, power, logarithm, sine, Gaussian, Landau).
-  - The pair of a correlation: the analyzer opens with the first two plotted PVs as X and Y, and X and Y can be changed there.
-  - The dependency analysis takes up to 20 PVs.
-  - The tools for state or enumerated and string signals (the step line, the time spent in each state, the number of transitions, a table of the changes) come after the numeric ones and are built when the site archives such signals.
-- Still for the owner: whether a small library is vendored later for LOESS or a non-linear fit (D40 stays as it is until then); a typed formula as a user-defined fit function.
+- Distribution tab: the summary (samples, minimum, maximum, mean, median, standard deviation, skewness, kurtosis, the errors of the mean and of the standard deviation, quantiles, lost events); the histogram with the `bin` threshold rules, the box plot, a kernel density estimate; the statistics box and, when a fit of phase D exists, the fit box; the pattern by hour and weekday (`rollup`) and a time-value heatmap for a long span; the values beyond k standard deviations.
+- Trend tab additions: the variation (running average, standard deviation band, rate of change), a slow trend (a linear fit against time), the limits of the PV (display, warning and alarm) as reference lines with the time outside them, a threshold line typed by the user with the time beyond it.
+- Compare tab: two time ranges of one signal, or two signals, side by side with their ranges linked, the distributions drawn over one another and normalised, the difference of the means and of the spreads, and the tests (chi-square, Kolmogorov-Smirnov, Anderson-Darling).
+- Spectrum tab: the FFT after resampling to an even interval (radix 2 with zero padding, or Bluestein), the window functions, the power spectral density, the peak frequency with its width, the spectrogram over time, the autocorrelation; the sampling frequency typed or read from a companion PV for a waveform.
+- The routines the page writes for these: moments, moving statistics, the tests, the FFT, the kernel density estimate; each checked on signals of known parameters made with the `random*` generators.
+- The address names of the tabs' options; the fixture records the checks need (a signal with a known distribution and a known period); the book.
 
-Out of scope: the page, drawing options and address of the analyzer (M62); the chart component (M59); waveforms and images (M64).
+Out of scope: two and several signals, fits, derived signals (M82); waveforms and images (M64); state and string signals (after the numeric tools).
 
 ##### Completion Criteria
 
-- Each tool of the Scope for one signal, two signals, a comparison and several signals is available in the analyzer and is observed on archived fixture data.
-- A fit, a correlation, a regression, a principal component analysis and a test return the known parameters of a signal made for the check, within the stated tolerance.
-- A time series is resampled to an even interval before an FFT, and the pairs of a correlation show their number and the number of samples of the slower PV.
+- Each tool of the Scope is available in its tab and is observed on archived fixture data.
+- The moments, the tests, the spectrum peak and the autocorrelation return the known parameters of a signal made for the check within the stated tolerance; a time series is resampled to an even interval before an FFT.
+- The Compare tab shows two ranges with their ranges linked and reports the tests with their statistics.
 - The default suite passes and the book describes the tools.
 
 ##### Dependencies And Decisions
 
-- M62: the analyzer page, its drawing options and its address, which the tools extend.
+- M81: the page with its gestures, options, Data and Export tabs, which the tools extend.
 - D40: the analyzer as a self-contained analysis tool built with the bundled D3.
 - The decisions of M59 on the bundled D3 (its functions are used wherever it has one), on the analyzer as a general signal analysis tool, and on no external library bind this work; the page writes only what the bundle lacks.
-- Decision Date 2026-10-12: the correlation and the linear regression are computed by the page, as the correlation is today in `plots.js`; the bundled D3 has neither, and no regression package is added.
+- D46 (Decision Date 2026-10-19): phase C of the analyzer, planned from `docs/design-analyzer.md`; the tools of two and several signals, the fits and the derived signals are phase D (M82).
+- Decision Date 2026-10-14: the tools are added by the kind of signal; the page decides the kind from the type information and the user chooses the purpose within it.
 
 ##### Implementation Plan
 
@@ -5628,30 +5690,29 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Settled with the owner on 2026-10-14: the signal kinds and the tools above, the fit models, the pair of a correlation and the limit of 20 PVs. Still for the owner: a small library for LOESS or a non-linear fit, and a typed formula as a fit function (listed under the Scope).
-2. The routines the page writes (new `staticcontent/js/aa/` files): least squares for the line, polynomial and the models that become linear in a logarithm; an iterative fit for the sine, Gaussian and Landau shapes; the correlation, partial correlation and mutual information; the covariance, regression and principal component analysis on a small matrix; the clustering; the FFT with a window and the resampling; the tests (chi-square, Kolmogorov-Smirnov, Anderson-Darling). Check: T2.
-3. The tools in the analyzer through the component and the D3 functions of the decision of M59: the summary, trend, distribution, variation, limits and pattern of one signal; the scatter, profile, fit and derived signals of two; the comparison; the matrix, ranking and graph of several; the general functions (expression, threshold, unit change, export). Check: T1 and T3.
-4. The fixture records of the kinds it lacks, for the checks (a state record and a string record), and the book. Check: T4 and T5.
+1. The routines the page writes (new modules under `staticcontent/js/aa/`): moments and their errors, moving statistics, the kernel density estimate, the tests, the resampling and the FFT with its windows, the autocorrelation; each with a unit check on generated signals. Check: T2.
+2. The Distribution tab and the Trend additions through the component and the D3 functions of the decision of M59. Check: T1.
+3. The Compare tab as a split view with linked ranges. Check: T1.
+4. The Spectrum tab. Check: T1, T2.
+5. The fixture records, the address names and the book. Check: T3, T4.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Browser | In the analyzer, use each tool for one signal and for two signals on archived fixture PVs, with real mouse and keys | Local appliance, shipped soft IOC fixture | Each tool is observed and agrees with the numbers of the same data computed outside the page |
-| T2 | Browser | Feed the routines signals made for the check (a line, an exponential decay, a sine, a Gaussian, a known correlation, a known period) and read the returned parameters | Local appliance, shipped soft IOC fixture with archived signals of known parameters | Each parameter is returned within the stated tolerance |
-| T3 | Browser | Choose five to twenty PVs for the dependency analysis and read the matrix, the ranking and the graph; a pair of different rates is shown with the number of samples of the slower PV | Local appliance, shipped soft IOC fixture | The matrix is symmetric with ones on the diagonal; the numbers agree with the same data computed outside the page |
-| T4 | Static | `bash scripts/ui-static-checks.bash` and `MgmtPageLinksTest` on the WARs packaged the same UTC day | Local, JDK 21, Tomcat 9.0.121 | The ids and links of the pages pass |
-| T5 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+| T1 | Browser | In the analyzer, use each tool of the three tabs and the Trend additions on archived fixture PVs with real mouse and keys; compare the numbers with the same data computed outside the page | The one appliance and the one IOC of D44 | Each tool is observed and agrees with the numbers computed outside the page |
+| T2 | Unit | Feed the routines generated signals of known parameters (a normal sample, a sine of known period, two samples that differ by a known shift) and read the moments, the test statistics, the spectrum peak and the autocorrelation | Local, the page's modules under a JavaScript test runner | Each value is returned within the stated tolerance |
+| T3 | Book | `mdbook build docs/book`; the pages read against the shipped page | Local | Every control the pages name is on the page |
+| T4 | Static and suite | `bash scripts/ui-static-checks.bash`; `MgmtPageLinksTest`; `./mvnw -B -ntp clean verify`; Maven and Pages workflows | JDK 21, Tomcat 9.0.121; GitHub Actions | Pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T2 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T3 | Not run | Local appliance, shipped soft IOC fixture | Pending | none |
-| T4 | Not run | Local, JDK 21, Tomcat 9.0.121 | Pending | none |
-| T5 | Not run | JDK 21; GitHub Actions | Pending | none |
+| T1 | Not run | The one appliance and the one IOC of D44 | Pending | none |
+| T2 | Not run | Local | Pending | none |
+| T3 | Not run | Local | Pending | none |
+| T4 | Not run | JDK 21; GitHub Actions | Pending | none |
 
 ##### Closure Evidence
 
@@ -5667,7 +5728,90 @@ Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
 
-#### M64 - Waveform and image analysis in the analyzer
+#### M82 - Analyzer phase D: tools for two and several signals
+
+Origin: daff1b7 / M82
+Identity History: none
+GitHub Issue: #39 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/39)
+Status: Not started
+
+##### Summary
+
+Phase D of `docs/design-analyzer.md` (D46): the tools of two and of several numeric signals, the fits and the derived signals, in the Correlation and Dependency tabs of the page of phases A to C (design, Tools by kind of signal; Analysis functions).
+
+##### Scope
+
+- Correlation tab: a scatter plot of two signals with each axis in its own unit, the samples paired by the value each holds at the other's sample times (`bisector`), with the number of pairs and of samples of the slower signal; the correlation (Pearson, Spearman through `rank`, a cross-correlation over a lag); a profile (the mean of Y with its error in each bin of X); the fit panel after the reference tools: a model chosen (line, polynomial, exponential, power, logarithm, sine, Gaussian, Landau) or typed, initial values, fixed and bounded parameters, a range by sliders, the parameters with their errors, the chi-square per degree of freedom, R², a confidence band, the residuals, earlier fits kept in a list; X and Y projections beside the axes; point size and transparency, points coloured by time, a density contour (`contourDensity`) for dense data, a rectangle brush; the two trends under one another sharing the time axis; derived signals (difference, sum, ratio, one divided by the other).
+- Dependency tab, for three to twenty signals averaged over one common interval: the mutual information of each pair and a ranking by how much each explains the chosen one; a correlation matrix as a heatmap ordered by hierarchical clustering with its dendrogram; a scatter plot matrix; the partial correlation; a multiple linear regression with each coefficient, its standardised size, R² and the residuals; a principal component analysis with the variance of each component; a graph of dependence (`forceSimulation`).
+- General functions: a derived signal from a typed expression parsed by the page, a change of unit, the export of a fit, a statistics table and a derived signal through the Export tab.
+- The routines the page writes: least squares and an iterative least squares (Levenberg-Marquardt) with fixed and bounded parameters, the covariance of the parameters, correlation and partial correlation, mutual information, a small matrix module (multiply, invert, solve, Cholesky, Jacobi eigen decomposition), hierarchical clustering, the expression parser; each checked on signals of known parameters.
+- The address names of the tabs' options and the book.
+
+Out of scope: one signal and the comparison (M63); waveforms and images (M64); a vendored library for LOESS or a non-linear fit, and a typed formula as a fit model beyond the expression parser (open items of M63's decisions, settled before this plan is accepted).
+
+##### Completion Criteria
+
+- Each tool of the Scope is available in its tab and is observed on archived fixture data; a pair of different rates shows the number of pairs and of samples of the slower signal.
+- A fit of each model, a correlation, a regression and a principal component analysis return the known parameters of signals made for the check within the stated tolerance; the fit panel fixes and bounds a parameter.
+- The Dependency tab takes up to twenty signals; the matrix is symmetric with ones on its diagonal and its order follows the clustering.
+- The default suite passes and the book describes the tools.
+
+##### Dependencies And Decisions
+
+- M63: the tools of one signal and the routines it writes (moments, tests, FFT), which the fits and the dependency tools use.
+- D40: the analyzer as a self-contained analysis tool built with the bundled D3; no regression package is added (`d3-regression` is outside the official D3 repositories).
+- D46 (Decision Date 2026-10-19): phase D of the analyzer, planned from `docs/design-analyzer.md`.
+- Decision Date 2026-10-12: the correlation and the linear regression are computed by the page; the bundled D3 has neither.
+- Decision Date 2026-10-14: the fit models are those listed; the Correlation tab opens with the first two plotted PVs as X and Y; the dependency analysis takes up to 20 PVs.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. The open items (a vendored fit library, a typed fit model) with the owner. Check: the decisions recorded.
+2. The matrix module, the fits, the correlations, the mutual information and the clustering as modules under `staticcontent/js/aa/`, each with a unit check on generated signals. Check: T2.
+3. The Correlation tab with the fit panel and the derived signals. Check: T1.
+4. The Dependency tab. Check: T1, T3.
+5. The address names and the book. Check: T4, T5.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser | In the analyzer, use each tool of the Correlation tab on two archived fixture PVs with real mouse and keys, fit each model with and without a fixed parameter, and compare the numbers with the same data computed outside the page | The one appliance and the one IOC of D44 | Each tool is observed and agrees with the numbers computed outside the page |
+| T2 | Unit | Feed the routines generated signals (a line with noise, an exponential decay, a sine, a Gaussian, two signals of known correlation, a matrix of known eigenvalues) and read the parameters, their errors and the decompositions | Local, the page's modules under a JavaScript test runner | Each value is returned within the stated tolerance |
+| T3 | Browser | Choose five to twenty PVs for the Dependency tab and read the matrix, the ranking, the regression and the components; a pair of different rates shows the number of samples of the slower PV | The one appliance and the one IOC of D44 | The matrix is symmetric with ones on the diagonal and ordered by the clustering; the numbers agree with the same data computed outside the page |
+| T4 | Book | `mdbook build docs/book`; the pages read against the shipped page | Local | Every control the pages name is on the page |
+| T5 | Static and suite | `bash scripts/ui-static-checks.bash`; `MgmtPageLinksTest`; `./mvnw -B -ntp clean verify`; Maven and Pages workflows | JDK 21, Tomcat 9.0.121; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | The one appliance and the one IOC of D44 | Pending | none |
+| T2 | Not run | Local | Pending | none |
+| T3 | Not run | The one appliance and the one IOC of D44 | Pending | none |
+| T4 | Not run | Local | Pending | none |
+| T5 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Analyzer for archived data
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-19 11:57 PDT; `gh issue view 39` shows the body with the Browse PVs parts ticked, OPEN; a box per phase is added to its body when the phase plans are accepted (D46).
+
+#### M64 - Analyzer phase E: waveform and image analysis
 
 Origin: daff1b7 / M64
 Identity History: none
@@ -5676,7 +5820,7 @@ Status: Not started
 
 ##### Summary
 
-The appliance stores an array PV as a waveform (`DBR_WAVEFORM_*`, or `DBR_V4_GENERIC_BYTES` for a PVA structure); it holds no image size, and the data viewer draws a waveform as a time series of its elements. The camera IOC of the site serves row and column profiles of 1920 and 1200 elements, time-series arrays of 2048 points, a histogram of 256 bins and the statistics of up to four regions of interest, and a frame of 1920 by 1200 sixteen-bit pixels at up to 50 Hz. The analysis of arrays and images is built in the analyzer of M62 on the tools of M63.
+The appliance stores an array PV as a waveform (`DBR_WAVEFORM_*`, or `DBR_V4_GENERIC_BYTES` for a PVA structure); it holds no image size, and the data viewer draws a waveform as a time series of its elements. The camera IOC of the site serves row and column profiles of 1920 and 1200 elements, time-series arrays of 2048 points, a histogram of 256 bins and the statistics of up to four regions of interest, and a frame of 1920 by 1200 sixteen-bit pixels at up to 50 Hz. The analysis of arrays and images is built in this phase on the page of phases A and B (M62, M81) and on the tools of phases C and D (M63, M82).
 
 ##### Scope
 
@@ -5699,8 +5843,9 @@ Out of scope: the page, drawing options and address of the analyzer (M62); the t
 
 ##### Dependencies And Decisions
 
-- M63: the numeric tools (fits, FFT, statistics) that arrays and images use.
-- M62: the analyzer page, its drawing options and its address.
+- M82 and M63: the numeric tools (fits, FFT, statistics) that arrays and images use.
+- M62 and M81: the analyzer page, its gestures, options and address.
+- D46 (Decision Date 2026-10-19): phase E of the analyzer, planned from `docs/design-analyzer.md` (Waveforms and images).
 - D40: the analyzer as a self-contained analysis tool built with the bundled D3.
 - The decisions of M59 on the bundled D3, on the analyzer as a general signal analysis tool and on no external library bind this work; a frame is drawn on a canvas with the D3 colour scales and `contours`, the axes and text staying SVG.
 - The retrieval response for an array PV and the size limit of one response are read on the fixture before the page is built.
@@ -7293,20 +7438,6 @@ Superseded Plan Artifacts: none
 - Linked issues: #46 asked for the WARN line of the buffer loss, which this row delivers, and for the manual to name the operator's remedy (a shorter sampling period through Change sampling); the sentence landed in 4468147e (`docs/book/src/operating.md`, checked in the built book) and #46 was closed as completed on 2026-10-18 at 15:18 UTC under the owner's issue authority after its body was synced with the three criteria checked. #48 holds the full reaction (M76). This row has no issue of its own.
 - Closed on 2026-10-18.
 
-## Backlog
-
-### Work
-
-| Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| | M78 | Refuse optimized as a reducedata operator | Milestone | Not started | Yes | | A store URL with `reducedata=optimized` or `optimized_N` fails to initialize with a logged reason that names the operators that apply, a unit test covers it, and the book's `reducedata` row names them; issue #49; [detail](#m78---refuse-optimized-as-a-reducedata-operator) |
-| | M79 | Refuse reducedata together with pp on one store | Milestone | Not started | Yes | | A store URL with both `reducedata` and `pp` fails to initialize with a logged reason, a unit test covers it, and the two book rows say the parameters are not combined; issue #50; [detail](#m79---refuse-reducedata-together-with-pp-on-one-store) |
-| | M80 | Delete the post-processor files of a moved partition | Milestone | Not started | Yes | | After the ETL moves a partition out of a store with `pp`, no file of that partition stays in the source store, the explicit deletion of a PV removes its post-processor files too, and an ETL test covers both; issue #51; [detail](#m80---delete-the-post-processor-files-of-a-moved-partition) |
-
-The three rows were entered on 2026-10-19 from the defects found by the environment session's checks of the stores (jeonghanlee/epicsarchiverap-env) and read in the code of 246db15e; they wait for a place in the order of D43.
-
-### Backlog Details
-
 #### M78 - Refuse optimized as a reducedata operator
 
 Origin: daff1b7 / M78
@@ -7333,7 +7464,8 @@ Out of scope: a range-free form of `optimized` for the ETL; the `pp` parameter.
 
 ##### Dependencies And Decisions
 
-- None. Found on 2026-10-19 while answering the environment session's question on `optimized_N` in `reducedata`.
+- D46 (Decision Date 2026-10-19): moved from the Backlog to the Milestone table to land before the merge of `modernize`.
+- Found on 2026-10-19 while answering the environment session's question on `optimized_N` in `reducedata`.
 
 ##### Implementation Plan
 
@@ -7397,7 +7529,8 @@ Out of scope: computing the `pp` caches from the raw stream before the reduction
 
 ##### Dependencies And Decisions
 
-- None. Found on 2026-10-19 while answering the environment session's question on `reducedata` with `pp`.
+- D46 (Decision Date 2026-10-19): moved from the Backlog to the Milestone table to land before the merge of `modernize`.
+- Found on 2026-10-19 while answering the environment session's question on `reducedata` with `pp`.
 
 ##### Implementation Plan
 
@@ -7461,7 +7594,8 @@ Out of scope: the files left behind by earlier moves; the post-processor files o
 
 ##### Dependencies And Decisions
 
-- None. Found on 2026-10-19 from the environment session's observation of the leftover file.
+- D46 (Decision Date 2026-10-19): moved from the Backlog to the Milestone table to land before the merge of `modernize`.
+- Found on 2026-10-19 from the environment session's observation of the leftover file.
 
 ##### Implementation Plan
 
@@ -7499,10 +7633,24 @@ Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-10-19 10:25 PDT; `gh issue list` read the issue OPEN with label bug and assignee jeonghanlee at its creation.
 
+## Backlog
+
+### Work
+
+| Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+No work is unassigned on 2026-10-19: M78, M79 and M80, entered from the store defects on 2026-10-19, moved to the Milestone table by D46 the same day (see Assignment History).
+
+### Backlog Details
+
 ## Assignment History
 
 | Date | ID | From | To | Sync Commit | Note |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-19 | M78 | Backlog | Milestone (Phase 2) | this synchronization commit | Moved by D46 to land before the merge of modernize; entered in the Backlog the same day from issue #49. |
+| 2026-10-19 | M79 | Backlog | Milestone (Phase 2) | this synchronization commit | Moved by D46 to land before the merge of modernize; entered in the Backlog the same day from issue #50. |
+| 2026-10-19 | M80 | Backlog | Milestone (Phase 2) | this synchronization commit | Moved by D46 to land before the merge of modernize; entered in the Backlog the same day from issue #51. |
 | 2026-09-19 | M7 | Milestone (Phase 1) | Backlog | 3c96141d | No owner item list yet; unassigned until the site-required list is provided. |
 | 2026-09-19 | M10 | Milestone (Phase 1) | Backlog | 3c96141d | Ant removal deferred (D7); moved to backlog to close out Phase 1's active work. |
 | 2026-09-22 | M17 | Backlog | Milestone (Phase 2) | f03029b8 | Assigned to Phase 2 with the rest of the backlog; execution still waits on the owner's keep/cut list. |
