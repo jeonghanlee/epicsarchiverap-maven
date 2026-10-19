@@ -5347,7 +5347,7 @@ Progress on 2026-10-16 at 14:26 PDT, observed state and not a change of the plan
 - Deliverable: the range strip in ed57e9a8, 45c72da6 and 14d7113a (2026-10-15); the table of the chosen PVs with the row actions, the Details window, the chart above the table and the control into the analyzer in d17b269e, and the book and the Help page in f0b31a72 (2026-10-16); the register in 60910db4, 0a501025 and a1747759. Later rows refined the page in their own commits (the Plot controls of M74, the time zone of M70, the cards of M65, the Held state of M60).
 - Checks: T1 to T5 are Pass above; the observation of T3 that the Summary panel does not follow a value range concerns the Inspect panels, which leave the page in M62 by the decision of 2026-10-15.
 - Landing: observed 2026-10-19 11:44 PDT: `git branch -r --contains` names `origin/modernize` for d17b269e, f0b31a72 and a1747759, and `origin/modernize` is 1a8ef24f, equal to HEAD; the Maven and Pages workflows of a1747759 (runs 38984346243 and 38984346234) ended success (T5).
-- Linked issue #39: it stays open by the dated exception of D43 (Decision Date 2026-10-17), because its body also carries the analyzer rows M62, M63 and M64; observed OPEN on 2026-10-19 11:44 PDT. The Browse PVs parts of its body are ticked at the next sync of the body.
+- Linked issue #39: it stays open by the dated exception of D43 (Decision Date 2026-10-17), because its body also carries the analyzer rows M62, M63 and M64; observed OPEN on 2026-10-19 11:44 PDT. The Browse PVs parts of its body were synced under Issue authority at 11:57 PDT: the first item of Proposed Change split into the page (ticked, with d17b269e and f0b31a72) and the analyzer (open), a Current State section as of e5645f03, and the first acceptance criterion ticked; read back OPEN with two boxes ticked and seven open.
 - Closed on 2026-10-19 by the exception of D43.
 
 ##### GitHub Projection
@@ -5358,7 +5358,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-19 11:44 PDT; `gh issue view 39` shows the title above, OPEN, label enhancement, no milestone, assignee jeonghanlee, its eight boxes unticked. The issue stays open for the analyzer rows M62, M63 and M64 by D43; the Browse PVs parts of its body (the page in the first item of Proposed Change and the first acceptance criterion) are ticked at the next sync of the body.
+Last Compared: 2026-10-19 11:57 PDT; `gh issue view 39` shows the title above, OPEN, label enhancement, no milestone, assignee jeonghanlee, two boxes ticked (the Browse PVs page and its search modes criterion) and seven open, with a Current State section as of e5645f03. The issue stays open for the analyzer rows M62, M63 and M64 by D43.
 
 #### M59 - One chart component and its simple form
 
