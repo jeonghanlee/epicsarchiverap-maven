@@ -71,6 +71,8 @@ with `org.epics.archiverappliance.`, left out here.
 | `config.ConvertPVNameToKey.siteNameSpaceSeparators` | `[\\:\\-]` | characters of a PV name that become folder separators in the store paths |
 | `config.ConvertPVNameToKey.siteNameSpaceTerminator` | `:` | character that ends a store path |
 | `mgmt.bpl.ArchivePVAction.minimumSamplingPeriod` | `0.1` | smallest sampling period accepted, in seconds |
+| `mgmt.MgmtRuntimeState.holdArchiveRequestInMins` | `10` | minutes after which an archive request whose name no server answered is held: the engine stops searching, the request reads Held with the reason, and the operator resumes or cancels it; `0` turns the hold off |
+| `mgmt.MgmtRuntimeState.abortArchiveRequestInMins` | `1440` | minutes after which an archive request still unfinished is aborted; a held request is left out. An abort shorter than the hold makes the hold moot, since the abort check runs on the same tick after the hold check |
 | `config.PVTypeInfo.secondsToBuffer` | `10` | engine write period, in seconds |
 | `config.PVTypeInfo.sampleBufferMarginSeconds` | `1.0` | write delay every PV's buffer absorbs without dropping a sample, in seconds; values below 1.0 are raised to 1.0 |
 | `retrieval.DefaultUseReducedPostProcessor` | `...postprocessors.TwoWeekRaw` | post-processor used when a request asks for reduced data |
@@ -87,6 +89,8 @@ with `org.epics.archiverappliance.`, left out here.
 | `engine.epics.server_ioc_drift_seconds` | `1800` | seconds the time of an event may lead or lag the server clock before the engine drops it; an event before 1991-01-01 is dropped whatever the drift |
 
 The file carries further keys as comments, with a description of each.
+The two `MgmtRuntimeState` keys are read when the management starts, so a
+change needs a restart of the management.
 
 ## Policies
 

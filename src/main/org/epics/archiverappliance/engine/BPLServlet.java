@@ -32,6 +32,7 @@ import org.epics.archiverappliance.engine.bpl.DeletePV;
 import org.epics.archiverappliance.engine.bpl.GetDataAtTimeEngine;
 import org.epics.archiverappliance.engine.bpl.GetEngineDataAction;
 import org.epics.archiverappliance.engine.bpl.GetLatestMetaDataAction;
+import org.epics.archiverappliance.engine.bpl.SearchPVAction;
 import org.epics.archiverappliance.engine.bpl.PVStatusAction;
 import org.epics.archiverappliance.engine.bpl.PauseArchivingPV;
 import org.epics.archiverappliance.engine.bpl.PausePVsOnShutdown;
@@ -67,6 +68,7 @@ public class BPLServlet extends HttpServlet {
 	static {
 		getActions.put("/getData.raw", GetEngineDataAction.class);
 		getActions.put("/getMetadata", GetLatestMetaDataAction.class);
+		getActions.put("/searchPV", SearchPVAction.class);
 		getActions.put("/status", PVStatusAction.class);
 		getActions.put("/getMetaGetsForThisAppliance", MetaGetsForThisApplianceAction.class);
 		getActions.put("/getCurrentlyDisconnectedPVsForThisAppliance", CurrentlyDisconnectedPVsAction.class);

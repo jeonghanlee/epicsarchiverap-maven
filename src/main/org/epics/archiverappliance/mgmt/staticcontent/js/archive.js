@@ -11,7 +11,12 @@ const $ = (id) => document.getElementById(id);
 const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 
 // States of a PV whose archive request has not finished; the request can still be cancelled.
+// The states of a request the server is still working on; the page reads them again at the fast interval. A held request
+// (Held) also gets the controls of a pending request, but changes only when the operator acts, so it is not in this set.
 const PENDING = new Set(["Initial sampling", "Appliance assigned"]);
+// How many names are searched on the network at a time before they are archived, and how long one search waits.
+const SEARCHES_AT_A_TIME = 6;
+const SEARCH_TIMEOUT_S = 5;
 const RUNNING = new Set(["Being archived", "Disconnected"]);
 const POLL_FAST_MS = 2000;
 const POLL_SLOW_MS = 10000;
@@ -25,14 +30,16 @@ const CARD = [
         ["In short", "Type names and click Archive, then follow each request until it reads Being archived, which takes a few minutes."],
         ["Each name", "One name per line, or a pasted list. A name that is already archived is left as it is; the answer of the request says so."],
         ["Sampling", "By default the policy of the site decides the method and the period of each PV. Open the sampling choice to set them yourself."],
-        ["Initial sampling", "The appliance first measures the PV, which takes a few minutes. A name that no server answers stays there until you cancel the request."],
+        ["Before archiving", "Each name is searched on the network first. A name no server answers is not archived; its row says so and offers Archive anyway, for an IOC that is not up yet."],
+        ["Initial sampling", "The appliance first measures the PV, which takes a few minutes. A name no server answers is held after the hold time of the appliance, with the reason; resume or cancel it then."],
         ["What to do", "Open an archived PV in Browse PVs to look at its data."],
     ],
 ];
 
 const WORDS = {
     "Appliance assigned": { kind: "wait", note: "The request was accepted and the PV is assigned to an appliance. Sampling has not started yet." },
-    "Initial sampling": { kind: "wait", note: "The appliance is looking up the type and settings of the PV. A name that no server answers stays here; cancel the request if the name is wrong." },
+    "Initial sampling": { kind: "wait", note: "The appliance is looking up the type and settings of the PV. A name that no server answers is held after the hold time of the appliance." },
+    Held: { kind: "stop", note: "No server answered the name within the hold time of the appliance. Resume to search again when the IOC is up, or cancel the request." },
     "Being archived": { kind: "ok", note: "" },
     Disconnected: { kind: "bad", note: "The appliance cannot reach this PV on the control system network. No samples are stored until it returns." },
     Paused: { kind: "stop", note: "The appliance knows this PV but is not sampling it. Resume to continue storing samples." },
@@ -120,10 +127,63 @@ function refreshInput() {
 
 // ---- the request -----------------------------------------------------------------------------------
 
-/** Asks the server for each valid name; a name that is not valid is listed and not sent. */
-async function request(list, c) {
+/** The row of a name, created when the name is first requested, and moved to the top of the table. */
+function rowOf(name) {
+    const row = rows.get(name) || { name, selected: false };
+    rows.set(name, row);
+    order = order.filter((other) => other !== name);
+    order.unshift(name);
+    row.note = "";
+    row.info = undefined;
+    return row;
+}
+
+/**
+ * Searches the valid names on the network, a few at a time, and says how far it is; returns the names found and the
+ * answer of each name not found. A name whose search failed counts as found, so that the request decides.
+ */
+async function search(valid) {
+    const found = [];
+    const notFound = new Map();
+    const queue = valid.slice();
+    let done = 0;
+    $("archive").disabled = true;
+    const worker = async () => {
+        while (queue.length) {
+            const name = queue.shift();
+            try {
+                const answer = await api.searchPV(name, SEARCH_TIMEOUT_S);
+                if (answer.found) {
+                    found.push(name);
+                } else {
+                    notFound.set(name, `No server answered in ${SEARCH_TIMEOUT_S} s`);
+                }
+            } catch (error) {
+                found.push(name);
+            }
+            done += 1;
+            say(`Searching the network: ${done} of ${valid.length} name${valid.length === 1 ? "" : "s"} done.`);
+        }
+    };
+    await Promise.all(Array.from({ length: Math.min(SEARCHES_AT_A_TIME, valid.length) }, worker));
+    $("archive").disabled = false;
+    return { found, notFound };
+}
+
+/**
+ * Asks the server for each valid name; a name that is not valid is listed and not sent. Unless anyway is set, each valid
+ * name is searched on the network first, and a name no server answers is listed with Archive anyway instead of being sent.
+ */
+async function request(list, c, anyway) {
     const valid = list.filter((name) => PV_NAME.test(name));
-    const items = valid.map((pv) => {
+    let notFound = new Map();
+    let toSend = valid;
+    if (!anyway && valid.length) {
+        const searched = await search(valid);
+        notFound = searched.notFound;
+        toSend = searched.found;
+    }
+    const items = toSend.map((pv) => {
         const item = { pv };
         if (c.period) {
             item.samplingperiod = c.period;
@@ -148,21 +208,22 @@ async function request(list, c) {
             return false;
         }
     }
+    // The server answers with the name without its pva:// or ca:// prefix, so a request with a prefix is looked up by both.
     const answerOf = new Map((Array.isArray(answers) ? answers : [answers]).map((a) => [a.pvName, a.status]));
+    const answerFor = (name) => answerOf.get(name) || answerOf.get(name.replace(/^(pva|ca):\/\//, ""));
     for (const name of list) {
-        const row = rows.get(name) || { name, selected: false };
-        rows.set(name, row);
-        order = order.filter((other) => other !== name);
-        order.unshift(name);
-        row.note = "";
-        row.info = undefined;
+        const row = rowOf(name);
         if (!PV_NAME.test(name)) {
             row.kind = "invalid";
             row.answer = "Not a valid PV name";
             row.status = null;
+        } else if (notFound.has(name)) {
+            row.kind = "notfound";
+            row.answer = notFound.get(name);
+            row.status = null;
         } else {
             row.kind = "requested";
-            row.answer = answerOf.get(name) || "The server gave no answer";
+            row.answer = answerFor(name) || "The server gave no answer";
             row.status = null;
         }
     }
@@ -177,7 +238,7 @@ async function request(list, c) {
 // ---- following the PVs -----------------------------------------------------------------------------
 
 function wordOf(row) {
-    if (row.kind === "invalid") {
+    if (row.kind === "invalid" || row.kind === "notfound") {
         return "Not requested";
     }
     if (!row.status) {
@@ -192,6 +253,7 @@ function wordOf(row) {
 async function poll() {
     window.clearTimeout(pollTimer);
     const names = order.filter((name) => rows.get(name).kind === "requested");
+    // A name not found is not a request; its row keeps the answer of the search.
     if (!names.length) {
         return;
     }
@@ -236,6 +298,9 @@ function detailOf(row, word) {
     if (row.kind === "invalid") {
         return "Names use letters, digits and : _ - + [ ] ; / , # { } ^ < >, with an optional field after a dot.";
     }
+    if (row.kind === "notfound") {
+        return "Not archived. Archive anyway files the request for an IOC that is not up yet.";
+    }
     if (RUNNING.has(word) && row.status) {
         const monitored = String(row.status.isMonitored) === "true";
         const parts = [`${monitored ? "monitored" : "scanned"}, ${row.status.samplingPeriod} s`];
@@ -257,11 +322,17 @@ function actionsOf(row, word) {
         element.addEventListener("click", handler);
         return element;
     };
+    if (row.kind === "notfound") {
+        return [button("Archive anyway", () => request([row.name], choice(), true))];
+    }
     if (!word || row.kind === "invalid") {
         return [];
     }
     if (PENDING.has(word)) {
         return [button("Cancel request", () => cancel([row]))];
+    }
+    if (word === "Held") {
+        return [button("Resume", () => resumeHeld([row])), button("Cancel request", () => cancel([row]))];
     }
     if (RUNNING.has(word)) {
         return [button("Pause", () => pauseOrResume([row], "pause")), button("Stop archiving…", () => openStop([row]), "danger")];
@@ -346,6 +417,23 @@ function afterAction() {
 function counted(results) {
     const ok = results.filter((item) => item && item.status === "ok").length;
     return { ok, left: results.length - ok };
+}
+
+/** Resumes held requests: the engine searches for the names again. */
+async function resumeHeld(list) {
+    let done = 0;
+    const failed = [];
+    for (const row of list) {
+        try {
+            await api.pvAction("../bpl/resumeArchiveRequest", row.name);
+            row.note = "The request was resumed; the appliance searches for the name again.";
+            done += 1;
+        } catch (error) {
+            failed.push(`${row.name}: ${error.message}`);
+        }
+    }
+    say(`${done ? `Resumed ${done} request${done === 1 ? "" : "s"}.` : ""}${failed.length ? ` Could not resume ${failed.join("; ")}.` : ""}`.trim(), failed.length > 0);
+    afterAction();
 }
 
 async function cancel(list) {
@@ -467,7 +555,7 @@ async function start() {
     $("bulkResume").addEventListener("click", () => pauseOrResume(selectedRows(), "resume"));
     $("bulkStop").addEventListener("click", () => openStop(selectedRows()));
     $("bulkCancel").addEventListener("click", () => {
-        const wanted = selectedRows().filter((row) => PENDING.has(wordOf(row)));
+        const wanted = selectedRows().filter((row) => PENDING.has(wordOf(row)) || wordOf(row) === "Held");
         if (!wanted.length) {
             say("None of the selected PVs is waiting for the appliance.", true);
             return;

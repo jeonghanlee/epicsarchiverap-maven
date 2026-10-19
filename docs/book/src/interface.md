@@ -78,8 +78,17 @@ more, a typed threshold and a properties setting.
 One input takes a PV name or a pasted list with one name per line. The
 sampling is left to the policy of the site; a folded **Sampling** choice
 sets the method, the period, a policy or a controlling PV for every name.
+On **Archive** the page first searches every valid name on the network
+through `searchPV` (the management forwards the call to the engine of
+the appliance, which opens a channel of its own for five seconds and
+closes it), six names at a time, with the count of names searched shown
+and the button disabled meanwhile; the names a server answered are sent
+to `archivePV`, and a name no server answered is listed with the answer
+of the search and **Archive anyway**, which sends it all the same.
 Under **Requested in this visit** each name has the answer of the request
-and its state, and the actions of that state:
+and its state, and the actions of that state; a request the appliance
+held because no server answered its name reads **Held** with the reason
+and offers **Resume** (`resumeArchiveRequest`) and **Cancel request**:
 
 ![The Archive PVs page after a request of six names](images/archive-page.png)
 
@@ -118,6 +127,7 @@ The state of a PV and the actions in its row:
 | Being archived, Disconnected | Pause; More, which holds Change sampling, Maintenance and Stop archiving; Details |
 | Paused | Resume; More; Details |
 | Initial sampling, Appliance assigned | Cancel request; Details |
+| Held | Resume, which makes the engine search for the name again; Cancel request; Details |
 | Not being archived | A link to the Archive PVs page with the name of the PV in its address |
 
 Stop archiving pauses the PV first, because the archiver removes only a

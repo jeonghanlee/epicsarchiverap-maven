@@ -44,6 +44,9 @@ public class NeverConnectedPVsForThisAppliance implements BPLAction {
 				}
 				TimeUtils.putTime(pvStatus, "startOfWorkflow", neverConnectedPV.getStartOfWorkflow());
 				pvStatus.put("currentState", neverConnectedPV.getCurrentState().toString());
+				boolean held = neverConnectedPV.getCurrentState() == org.epics.archiverappliance.mgmt.archivepv.ArchivePVState.ArchivePVStateMachine.HELD;
+				pvStatus.put("status", held ? "Held" : "Initial sampling");
+				pvStatus.put("reason", held ? neverConnectedPV.getHoldReason() : "");
 				pvStatus.put("appliance", myIdentity);
 			}
 			out.println(JSONValue.toJSONString(result));

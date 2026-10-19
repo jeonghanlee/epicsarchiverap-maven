@@ -30,6 +30,27 @@ export function pvStatus(names) {
     });
 }
 
+/** Files the archive requests of the Archive PVs page: items are [{pv, samplingperiod?, samplingmethod?, policy?, controllingPV?}]. */
+export function archivePVs(items) {
+    return request("../bpl/archivePV", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(items),
+    });
+}
+
+/**
+ * Asks the engine whether a complete PV name answers on the control system network, within timeoutSeconds (5 by default,
+ * at most 30): {pvName, found, protocol, type, host, elapsedMs}. Nothing is archived.
+ */
+export function searchPV(pv, timeoutSeconds) {
+    const query = new URLSearchParams({ pv });
+    if (timeoutSeconds) {
+        query.set("timeout", String(timeoutSeconds));
+    }
+    return request(`../bpl/searchPV?${query}`);
+}
+
 /** pauseArchivingPV, resumeArchivingPV or deletePV for one PV; kind is the call path, for example "../bpl/deletePV". */
 export async function pvAction(kind, pv, params = {}) {
     const query = new URLSearchParams({ pv, ...params });

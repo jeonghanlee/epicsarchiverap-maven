@@ -36,6 +36,7 @@ const STATES = {
     Disconnected: "The archiver cannot reach this PV on the control system network. No samples are stored until it returns.",
     "Not being archived": "The archiver has no request for this PV. Archive it to start storing samples.",
     "Initial sampling": "The archiver is looking up the type and settings of this PV before it stores samples.",
+    Held: "No server answered this name within the hold time of the appliance. Resume to search again, or cancel the request.",
     "Appliance assigned": "The request was accepted and the PV is assigned to an appliance. Sampling has not started yet.",
     "Appliance Down": "The appliance that holds this PV does not answer, so its state cannot be read.",
 };
@@ -49,7 +50,7 @@ const TOP = { limit: "1000" };
 const REPORTS = {
     disconnected: { endpoint: "../bpl/getCurrentlyDisconnectedPVs", value: "lastKnownEvent", note: "Beside each PV: the time of its last event." },
     paused: { endpoint: "../bpl/getPausedPVsReport", value: "modificationTime", note: "Beside each PV: when its settings last changed." },
-    never: { endpoint: "../bpl/getNeverConnectedPVs", value: "requestTime", note: "Beside each PV: when its archive request was made." },
+    never: { endpoint: "../bpl/getNeverConnectedPVs", value: "requestTime", note: "Beside each PV: when its archive request was made; a request held because no server answered reads Held in the State column." },
     metagets: { endpoint: "../bpl/getMetaGets", value: "internalState", note: "Beside each PV: the state of its first connection." },
     recent: { endpoint: "../bpl/getRecentlyAddedPVs", params: TOP, value: "creationTime", ranked: true, note: "Newest first. Beside each PV: when it was added." },
     modified: { endpoint: "../bpl/getRecentlyModifiedPVs", params: TOP, value: "modificationTime", ranked: true, note: "Newest first. Beside each PV: when it changed." },
@@ -983,6 +984,9 @@ function actionsCell(name) {
     const word = stateOf(name);
     if (PENDING.has(word)) {
         cell.append(actionButton("Cancel request", "cancel", () => doAction("../bpl/abortArchivingPV", name)));
+    } else if (word === "Held") {
+        cell.append(actionButton("Resume", "resume", () => doAction("../bpl/resumeArchiveRequest", name)));
+        cell.append(" ", actionButton("Cancel request", "cancel", () => doAction("../bpl/abortArchivingPV", name)));
     } else if (word === "Not being archived") {
         cell.append(node("a", { class: "plain-link", "data-key": "archive", href: `archive.html#pv=${encodeURIComponent(name)}` }, "Archive…"));
     } else {
@@ -1273,9 +1277,9 @@ const STATE_CARD = [
     "State: why is a PV not normal, and what was lost?",
     [
         ["In short", "The column is shown while a PV of the table is not Being archived or has dropped samples. N lost counts the samples the engine received and discarded."],
-        ["What it shows", "The state word of the archiver: Paused, Disconnected, Initial sampling, Appliance assigned, Not being archived. Then the dropped samples, summed over the three causes."],
+        ["What it shows", "The state word of the archiver: Paused, Disconnected, Initial sampling, Appliance assigned, Held, Not being archived. Then the dropped samples, summed over the three causes."],
         ["Normal", "The column is hidden: every PV is Being archived and none lost a sample."],
-        ["Attention", "Disconnected, Initial sampling or Appliance assigned: no samples are stored until the PV connects. Paused: the archiver knows the PV but does not sample it."],
+        ["Attention", "Disconnected, Initial sampling or Appliance assigned: no samples are stored until the PV connects. Paused: the archiver knows the PV but does not sample it. Held: no server answered the name within the hold time; Resume searches again."],
         ["Problem", "N lost grows, or the PV is Paused because its type changed; Details names the reason of a pause."],
         [
             "What to do",

@@ -63,7 +63,12 @@ analyzer** under the table opens every PV of the table.
    and set **Monitor** (store each change) or **Scan** (store at a fixed
    period), the period in seconds, a policy by name, or a controlling
    PV. The choice applies to every name.
-3. Select **Archive**.
+3. Select **Archive**. The page first searches every name on the
+   network through the engine (five seconds for each, a few at a time,
+   and the count of names searched is shown meanwhile). A name a server
+   answers is archived; a name no server answers is listed with **No
+   server answered in 5 s** and **Archive anyway**, which files the
+   request all the same, for an IOC that is not up yet.
 
 ![The Archive PVs page after a request of six names](images/archive-page.png)
 
@@ -76,8 +81,14 @@ the PV is sampled and which policy chose it. A list of more than a few
 tens of names is sent to the `archivePV` call ([Scripting](scripting.md)).
 
 The appliance looks up the type and settings of the new PV, applies the
-policy, and starts archiving it. A name that no server answers stays in
-**Initial sampling**: select **Cancel request** in its row. **Pause**,
+policy, and starts archiving it. A request whose name no server answers
+within the hold time of the appliance (ten minutes by default,
+`holdArchiveRequestInMins` in [Configuration](configuration.md#archapplproperties))
+is held: the engine stops searching, the row reads **Held** with the
+reason, and **Resume** in the row searches again (when the IOC is up),
+or **Cancel request** ends it. A held request is not aborted by the
+abort time of the workflow; after a restart of the management it is
+restarted from persistence and held again when the hold time passes. **Pause**,
 **Resume** and **Stop archiving…** of a row act on that PV. Select rows
 to act on several; **Cancel requests** acts on the ones that are
 waiting, and a stop of a request that has not started cancels it
@@ -86,6 +97,7 @@ instead.
 | State | Meaning |
 | --- | --- |
 | Initial sampling | the archiver looks up the type and settings of the PV before it stores samples |
+| Held | no server answered the name within the hold time; the engine stopped searching and the request waits for Resume or Cancel request |
 | Appliance assigned | the request is accepted and the PV is assigned to an appliance; sampling has not started |
 | Being archived | the engine samples the PV and stores its samples |
 | Paused | the archiver knows the PV but does not sample it; the engine pauses a PV by itself when its record comes back under the same name with another type, and the Details window then says why |
@@ -93,8 +105,8 @@ instead.
 | Not being archived | the archiver has no request for the PV |
 | Appliance Down | the appliance that holds the PV does not answer, so its state cannot be read |
 
-A PV that never connects stays in Initial sampling. Its row offers
-**Cancel request**.
+A PV that never connects is held after the hold time. Its row offers
+**Resume** and **Cancel request**.
 
 ## Managing a PV
 

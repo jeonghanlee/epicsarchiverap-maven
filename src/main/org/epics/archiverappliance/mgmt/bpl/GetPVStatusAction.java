@@ -123,7 +123,14 @@ public class GetPVStatusAction implements BPLAction {
                 Map<String, String> pvStatusInfo = new LinkedHashMap<String, String>();
                 pvStatusInfo.put("pvName", pvNameFromRequest);
                 if (PVNames.determineIfPVInWorkflow(pvName, configService)) {
-                    pvStatusInfo.put("status", "Initial sampling");
+                    // A request held because no server answered reads so, with the reason; the others are still being measured.
+                    org.epics.archiverappliance.mgmt.archivepv.ArchivePVState request = configService.getMgmtRuntimeState().getArchivePVState(pvName);
+                    if (request != null && request.getCurrentState() == org.epics.archiverappliance.mgmt.archivepv.ArchivePVState.ArchivePVStateMachine.HELD) {
+                        pvStatusInfo.put("status", "Held");
+                        pvStatusInfo.put("reason", request.getHoldReason());
+                    } else {
+                        pvStatusInfo.put("status", "Initial sampling");
+                    }
                 } else {
                     pvStatusInfo.put("status", "Not being archived");
                 }

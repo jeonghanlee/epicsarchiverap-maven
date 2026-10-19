@@ -42,6 +42,7 @@ public class ArchivePVState {
         TYPEINFO_STABLE,
         ARCHIVE_REQUEST_SUBMITTED,
         ARCHIVING,
+        HELD,
         ABORTED,
         FINISHED
     }
@@ -49,6 +50,7 @@ public class ArchivePVState {
     private ArchivePVStateMachine currentState = ArchivePVStateMachine.START;
     private String pvName;
     private String abortReason = "";
+    private String holdReason = "";
     private ConfigService configService;
     private List<String> fieldsArchivedAsPartOfStream;
     private String applianceIdentityAfterCapacityPlanning;
@@ -297,6 +299,10 @@ public class ArchivePVState {
                     currentState = ArchivePVStateMachine.FINISHED;
                     return;
                 }
+                case HELD: {
+                    // A held request waits for the operator: nothing is asked of the engine until it is resumed.
+                    return;
+                }
                 case FINISHED: {
                     logger.error("Archive state for PV " + this.pvName + " is finished.");
                     return;
@@ -347,7 +353,12 @@ public class ArchivePVState {
     }
 
     public void metaInfoRequestAcknowledged() {
-        metaInfoRequestedSubmitted = TimeUtils.now();
+        metaInfoRequestAcknowledged(TimeUtils.now());
+    }
+
+    /** The engine acknowledged the request for meta information at the given instant; the hold and the abort count from it. */
+    public void metaInfoRequestAcknowledged(Instant at) {
+        metaInfoRequestedSubmitted = at;
         this.currentState = ArchivePVStateMachine.METAINFO_GATHERING;
     }
 
@@ -359,6 +370,31 @@ public class ArchivePVState {
     public void errorGettingMetaInfo() {
         abortReason = "Error getting meta info";
         this.currentState = ArchivePVStateMachine.ABORTED;
+    }
+
+    /**
+     * Holds the request: the appliance stops searching for the name and keeps the request for the operator, who resumes or
+     * cancels it. The reason is the sentence the console shows.
+     */
+    public synchronized void hold(String reason) {
+        this.holdReason = reason;
+        this.metaInfoRequestedSubmitted = null;
+        this.currentState = ArchivePVStateMachine.HELD;
+    }
+
+    /** Resumes a held request from the start, so that the engine searches for the name again; the clocks start anew. */
+    public synchronized boolean resume() {
+        if (this.currentState != ArchivePVStateMachine.HELD) {
+            return false;
+        }
+        this.holdReason = "";
+        this.metaInfoRequestedSubmitted = null;
+        this.currentState = ArchivePVStateMachine.START;
+        return true;
+    }
+
+    public String getHoldReason() {
+        return holdReason;
     }
 
     public void confirmedStartedArchivingPV() {
