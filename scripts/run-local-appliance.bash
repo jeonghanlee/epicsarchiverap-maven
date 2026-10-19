@@ -20,6 +20,8 @@ java_home="${JAVA_HOME:-}"
 port_base=17665
 start_timeout=180
 stop_timeout=300
+# Lines of archappl.properties the run adds to the file taken from the WAR; one KEY=VALUE per --property.
+properties=()
 stop_signal=0
 boot_id=''
 build_name=''
@@ -49,6 +51,8 @@ Options:
   --port-base PORT       Loopback HTTP ports PORT..PORT+3; cluster PORT+5 (17665)
   --start-timeout SEC    Startup limit, integer seconds from 1 to 86400 (180)
   --stop-timeout SEC     Total graceful-stop limit, 1 to 86400 seconds (300)
+  --property KEY=VALUE   Add or replace one line of archappl.properties, which the
+                         launcher writes from the WAR at every start; repeatable
   -h, --help            Show this help
 
 Requires Linux, Bash 4+, JDK 21, Python 3, sqlite3, curl, unzip, tar,
@@ -78,6 +82,12 @@ function parse_args {
                     --start-timeout) positive_integer "$option" "$2"; start_timeout=$((10#$2)) ;;
                     --stop-timeout) positive_integer "$option" "$2"; stop_timeout=$((10#$2)) ;;
                 esac
+                shift 2
+                ;;
+            --property)
+                (( $# >= 2 )) || die "Missing value for $option"
+                [[ "$2" =~ ^[A-Za-z_][A-Za-z0-9_.]*=.*$ ]] || die "$option takes KEY=VALUE"
+                properties+=("$2")
                 shift 2
                 ;;
             --) shift; positional+=("$@"); break ;;
@@ -254,7 +264,7 @@ function select_tomcat {
 }
 
 function configure {
-    python3 - "$run_dir" "$war_dir" "$build_name" "$tomcat_home" "$port_base" <<'PY'
+    python3 - "$run_dir" "$war_dir" "$build_name" "$tomcat_home" "$port_base" "${properties[@]}" <<'PY'
 import json
 import pathlib
 import shutil
@@ -264,7 +274,9 @@ import sys
 import xml.etree.ElementTree as ET
 import zipfile
 
-root, wars, build, tomcat, first = sys.argv[1:]
+root, wars, build, tomcat, first = sys.argv[1:6]
+# The lines of --property: each replaces the line of its key in the properties taken from the WAR, or is added at the end.
+extra_properties = sys.argv[6:]
 root, wars, tomcat, first = pathlib.Path(root), pathlib.Path(wars), pathlib.Path(tomcat), int(first)
 components = ("mgmt", "engine", "etl", "retrieval")
 
@@ -303,6 +315,14 @@ with zipfile.ZipFile(wars / f"{build}-mgmt.war") as archive:
     (root / "config/archappl_sqlite.sql").write_text(schema)
     for name in ("policies.py", "archappl.properties"):
         (root / "config" / name).write_bytes(archive.read("WEB-INF/classes/" + name))
+if extra_properties:
+    path = root / "config/archappl.properties"
+    lines = path.read_text().splitlines()
+    for item in extra_properties:
+        key = item.split("=", 1)[0]
+        lines = [line for line in lines if not (line.split("=", 1)[0].strip() == key and not line.lstrip().startswith("#"))]
+        lines.append(item)
+    path.write_text("\n".join(lines) + "\n")
 
 database = root / "config/archappl.sqlite"
 fresh = not database.exists()
