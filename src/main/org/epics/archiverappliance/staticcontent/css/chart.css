@@ -536,6 +536,30 @@ button.info::after {
     }
 }
 
+/* The control of a table row: smaller and quiet until it is pointed at, so a column of them is not noise. */
+button.info.small {
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
+    box-shadow: none;
+    opacity: 0.55;
+}
+
+button.info.small:hover,
+button.info.small:focus-visible,
+button.info.small.on {
+    opacity: 1;
+}
+
+button.info.small svg {
+    width: 12px;
+    height: 12px;
+}
+
+.card.narrow {
+    width: 300px;
+}
+
 button.info svg {
     width: 15px;
     height: 15px;

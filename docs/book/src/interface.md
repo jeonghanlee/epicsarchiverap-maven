@@ -235,10 +235,28 @@ and names what is still unknown:
 ![The System overview](images/system-overview.png)
 
 The Operations page gives the reading behind each verdict, in the sections
-Samples, Samples lost, Write path, Stores, Processes and Configuration in
-effect. The **i** button beside a section heading opens its card, and a
-judged measure of a section shows its status word with the sentence that
-explains it. The Samples lost section lists the four reports of dropped
+Samples, Samples lost, Writing to disk, Stores, Processes and Configuration
+in effect. Each section answers the question under its heading; the **i**
+button beside the heading opens its card, and a judged measure shows its
+status word with the sentence that explains it. A measure row has a plain
+name, its value with the unit, and a small **i** of its own whose card
+holds the one sentence that says what the value is; the sentences come
+from the code that computes the measure. The Counts table of Samples
+counts the active PVs of the engine (the archived PVs that are not paused)
+by connection, the paused PVs, the channels still searching for a server,
+the requests being measured, and the sample and byte rates. Writing to
+disk shows the share of the write period the last write took, computed
+from the seconds of the last write and the write period the engine
+reports, the rate the write moved against the rate at which samples
+arrive, the headroom, the writes queued and the requests not yet archived.
+Stores draws one bar per store with its percent on the bar and the used
+and total GB and the copy time in columns, lists the moves between stores
+with the rows of the last pass and the rows over time, and the rates
+measured at the archive requests of this appliance with their change
+since the capacity plan. Processes shows the heap now and the floor of
+each process, the heap charts and the load of the host. Configuration in
+effect lists the settings and the thresholds; the basis of the thresholds
+is in its card. The Samples lost section lists the four reports of dropped
 samples with the cause, the number of PVs, the worst PV, the sum and the
 remedy of each: a wrong time stamp asks for the clock of the IOC; a buffer
 overflow for a shorter sampling period, which rebuilds the buffer; a type
@@ -252,8 +270,8 @@ sections:
 
 ![The first sections of the System operations page](images/system-operations.png)
 
-The judgements are starting values, shown on the Operations page next to
-their basis. A measure that the appliance does not report is shown as Not
+The judgements are starting values, shown on the Operations page under
+Configuration in effect. A measure that the appliance does not report is shown as Not
 reported and is never shown as Normal.
 
 | Judgement | Attention | Problem | Basis |

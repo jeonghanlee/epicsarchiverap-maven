@@ -66,6 +66,15 @@ const CARDS = [
         ],
     ],
     [
+        "dropoutHeading",
+        "PVs that drop out most: which connections flap?",
+        [
+            ["In short", "The five PVs whose connection dropped most often since the engine started."],
+            ["Drops", "How often the connection was lost. A PV that drops again and again sits on an IOC that restarts or on a network that flaps."],
+            ["What to do", "Open the PV in Browse PVs; its Details hold the times of the connection. Many PVs of one host point at that IOC."],
+        ],
+    ],
+    [
         "droppedHeading",
         "Samples lost: is data missing?",
         [
@@ -84,26 +93,56 @@ const CARDS = [
     ],
     [
         "writeHeading",
-        "Write path: does the engine keep up?",
+        "Writing to disk: does the engine keep up?",
         [
-            ["In short", "The engine writes the samples of each write period to the short term store, and the writing must take less than the period."],
-            ["What it shows", "The share of the period the writing takes, the time it took, the jobs waiting, the incoming rate against the rate this disk sustained when the engine started, and the fastest PVs."],
+            ["In short", "Once per write period the engine writes the sample buffers of all PVs to the short term store; the write must take less than the period."],
+            ["What it shows", "The share of the period the last write took, the rate the write moved against the rate at which samples arrive, and the fastest PVs."],
             ["Normal", `Below ${T.writeAttentionPercent} % of the period.`],
             ["Attention", `${T.writeAttentionPercent} % or more: the writer needs more than half of its period.`],
             ["Problem", `${T.writeProblemPercent} %: the writer needs all of its period, and samples are lost.`],
-            ["What to do", "Check the disk of the short term store, slow the fastest PVs with Change sampling, or add an appliance. The write delay a buffer absorbs is a setting described in the manual; ask the administrator."],
+            ["What to do", "Slow the fastest PVs with Change sampling, check the disk under the short term store, or add an appliance. The write delay a buffer absorbs is a setting described in the manual; ask the administrator."],
+        ],
+    ],
+    [
+        "fastestHeading",
+        "Fastest PVs: which PVs send the most?",
+        [
+            ["In short", "The five PVs with the highest sample rate; they take the largest share of the write time and of the storage."],
+            ["What to do", "A PV that is faster than needed gets a longer period with Change sampling in Browse PVs."],
         ],
     ],
     [
         "storesHeading",
-        "Stores: is there room, and does data move on?",
+        "Stores: is there room?",
         [
-            ["In short", "The stores must have room for the data the archiver adds, and each ETL pass must finish within its interval."],
-            ["What it shows", "The passes of the ETL, the part that moves data from the short term store to the medium term store and on to the long term store at a fixed interval. The days left on each device at the current growth, and the largest users of storage."],
-            ["Normal", `At least ${T.daysLeftAttention} days left, at least ${T.freeAttentionPercent} % free on every device, and every pass within its interval.`],
-            ["Attention", `Fewer than ${T.daysLeftAttention} days left, less than ${T.freeAttentionPercent} % free, a pass that overran its interval or started late, or a failed job.`],
-            ["Problem", `Fewer than ${T.daysLeftProblem} days left, less than ${T.freeProblemPercent} % free, or a pass busy for ${T.etlBusyProblemPercent} % of its interval.`],
-            ["What to do", "Free or add disk space, or archive less of the prefixes below. For a pass that overran, look at the slowest PV of that pass."],
+            ["In short", "The three stores of this appliance and how full their devices are; the sentence says how long the free space lasts at the current growth."],
+            ["The stores", "Short term, medium term and long term store: data moves from one to the next as it ages, so the short term store holds the newest data."],
+            ["Used and of", "The space used and the size of the device that holds the store, in GB. Stores on one disk show the same numbers."],
+            ["Copy time", "The average seconds of a move into this store over its runs so far. The short term store receives from the engine, not from a move, so it has none."],
+            ["Attention", `Fewer than ${T.daysLeftAttention} days left, or a device with less than ${T.freeAttentionPercent} % free, drawn in the alarm color; fewer than ${T.daysLeftProblem} days or less than ${T.freeProblemPercent} % free is a problem.`],
+            ["What to do", "Free or add disk space, or archive less of the prefixes shown under Largest users of storage."],
+        ],
+    ],
+    [
+        "movesHeading",
+        "Moves between stores: does data move on?",
+        [
+            ["In short", "The ETL moves the data of every PV from one store to the next at a fixed interval; each column is one move, and a pass should finish within its interval."],
+            ["A pass", "One run of a move over all its PVs, one job per PV. Took is the time from start to end; busy is the time inside the jobs, and busy divided by the interval is what the judgement reads."],
+            ["Partitions and jobs", "A partition is the file of one PV for one period of the store, such as a day. A job failed when its data did not arrive whole, aborted when an error the ETL could not handle ended it, skipped when the PV had no next store."],
+            ["Late and overran", "Started late is the gap between the planned and the actual start when it is more than one interval; overran means the pass ended later than its planned start plus one interval."],
+            ["Problem", `A pass busy for ${T.etlBusyProblemPercent} % of its interval; an overran or late pass or a failed job is attention.`],
+            ["What to do", "A pass that overruns or a job that fails points at a slow or full destination: look at the slowest PV and at the device of that store."],
+        ],
+    ],
+    [
+        "ratesHeading",
+        "Rates at the archive requests: what did the PVs promise?",
+        [
+            ["In short", "Each PV was measured for about a minute when it was archived; these are those sample and storage rates added up for this appliance, and how they changed since the capacity plan."],
+            ["Not the rates of now", "The Samples section counts what arrives now; these sums keep the rates measured at the archive requests and change only when a PV is added or removed."],
+            ["The capacity plan", "A scheduled task of the management that reads these sums from every appliance; the change since then is what was added or removed meanwhile."],
+            ["What to do", "Compare the storage per year with the free space of the stores to see when a disk is needed; a large change since the plan means the plan is stale."],
         ],
     ],
     [
@@ -122,13 +161,35 @@ const CARDS = [
         "Processes: is each part healthy?",
         [
             ["In short", "The four processes of the appliance must run at one version, and the heap floor of each must stay low."],
-            ["What it shows", "Management, engine, ETL and retrieval, each with its start, its uptime, its heap now and the lowest heap after a collection, the floor. The heap rises and falls all the time; the floor is the line that matters."],
+            ["Heap and floor", "The heap is the memory a process holds; it rises and falls with garbage collection. The floor is the lowest heap reading of the last hour, which a collection cannot free."],
             ["Normal", `All four run at the same version, and the floor is below ${T.heapFloorAttention} % of the maximum heap.`],
             ["Attention", `A version differs, or the floor is above ${T.heapFloorAttention} % or has risen by ${T.heapFloorRiseAttention} points in a day.`],
             ["Problem", `A process is down, or the floor is above ${T.heapFloorProblem} %.`],
             ["What to do", "A climbing floor means the heap is too small or something leaks. Raise the heap size of that process, a setting of the installation, and watch whether the floor settles."],
         ],
     ],
+    [
+        "configHeading",
+        "Configuration in effect: what does the cluster run with?",
+        [
+            ["In short", "The settings of this cluster that the pages read, and the thresholds the judgements use, which are starting values."],
+            ["Thresholds", "The attention and problem values of the measures of this page and of the Overview; the cards of the sections read the same values."],
+            ["Basis", "The free share of a device and the heap floor levels follow the alerts of the Prometheus node exporter; the floor as the live set follows the Netflix Spectator example and the Oracle troubleshooting guide. The days left, the half of the write period, the heap rise, the hour of a disconnected PV and the ETL busy share are choices."],
+            ["What to do", "A threshold that does not fit the site is a change of the console; ask the administrator."],
+        ],
+    ],
+];
+
+// The card of the load chart, beside its heading.
+const LOAD_CARD = [
+    "Load of the host: is the machine busy?",
+    [
+        ["In short", "The one-minute load average of the host over the day: the processes running or waiting for a processor, as the operating system counts them."],
+        ["Reading", "A load above the number of processor cores means processes wait. The appliance does not report the number of cores, so the load is not judged."],
+        ["What to do", "Compare the load with the cores of the host. A load that stays above them slows every process, the writes of the engine among them."],
+    ],
+    null,
+    HELP,
 ];
 
 for (const [heading, title, rows] of CARDS) {
@@ -147,6 +208,35 @@ function fill(tableId, rows) {
     return body;
 }
 
+/**
+ * The name cell of a measure row: the plain name and its small information control, whose card holds the one sentence
+ * that says what the value is.
+ */
+function named(name, sentence) {
+    return node("td", { class: "name" }, name, " ", infoButton(name, sentence, null, HELP, true));
+}
+
+/** A row that only names the group of the rows under it, across every column. */
+function groupRow(label, columns) {
+    return node("tr", { class: "group" }, node("td", { colspan: String(columns) }, label));
+}
+
+/** Fills a table of measures: each row is [name, sentence, ...values] or ["group", label]. */
+function fillMeasures(tableId, rows) {
+    const body = $(tableId).querySelector("tbody");
+    body.textContent = "";
+    const columns = Math.max(...rows.map((row) => (row[0] === "group" ? 1 : row.length - 1)));
+    for (const row of rows) {
+        if (row[0] === "group") {
+            body.append(groupRow(row[1], columns));
+            continue;
+        }
+        const [name, sentence, ...values] = row;
+        body.append(node("tr", null, named(name, sentence), ...values.map((value) => node("td", { class: "r num" }, value instanceof Node ? value : String(value)))));
+    }
+    return body;
+}
+
 function emptyRow(tableId, columns, text) {
     $(tableId).querySelector("tbody").replaceChildren(node("tr", null, node("td", { colspan: String(columns), class: "empty" }, text)));
 }
@@ -156,23 +246,23 @@ function emptyRow(tableId, columns, text) {
 function renderSamples(data) {
     const m = data.measures;
     const show = (name) => (m.has(name) ? String(m.get(name)) : "not reported");
-    fill("counts", [
-        ["Total PVs", show("Total PV count")],
-        ["Connected", show("Connected PV count")],
-        ["Disconnected now", show("Disconnected PV count")],
-        ["Paused", show("Paused PV count")],
-        ["Never connected", data.never ? String(data.never.length) : "not read"],
-        ["Channels with pending search requests", show("Channels with pending search requests")],
-        ["PVs waiting for their first meta data", show("PVs pending computation of meta info")],
-        ["Events per second", show("Event Rate (in events/sec)")],
-        ["Data rate in bytes per second", show("Data Rate (in bytes/sec)")],
+    fillMeasures("counts", [
+        ["Active PVs", "Archived PVs that are not paused; the engine holds a channel for each of them.", show("Total PV count")],
+        ["Connected", "Active PVs whose channel is connected to its IOC right now.", show("Connected PV count")],
+        ["Disconnected now", "Active PVs whose channel is not connected right now; nothing is stored for them meanwhile.", show("Disconnected PV count")],
+        ["Paused", "Archived PVs paused on purpose; they have no channel until they are resumed.", show("Paused PV count")],
+        ["Never connected", "Archive requests whose PV has not connected once since the request.", data.never ? String(data.never.length) : "not read"],
+        ["Still searching for a server", "Channel Access channels whose search for a server is still unanswered, of all channels of the engine.", show("Channels with pending search requests")],
+        ["Being measured", "New archive requests the engine monitors for about a minute to measure their sample and storage rates before they are archived.", show("PVs pending computation of meta info")],
+        ["Samples per second", "The sample rates of all active PVs added up; the engine counts each rate over its measuring window.", show("Event Rate (in events/sec)")],
+        ["Bytes per second", "The storage rates of all active PVs added up: the bytes their samples take, each second.", show("Data Rate (in bytes/sec)")],
     ]);
     if (!data.lost) {
         emptyRow("lostConnections", 3, "The report could not be read.");
     } else if (!data.lost.length) {
         emptyRow("lostConnections", 3, "No PV lost its connection.");
     } else {
-        fill("lostConnections", data.lost.map((row) => [row.pvName, String(row.lostConnections), String(row.currentlyConnected)]));
+        fill("lostConnections", data.lost.map((row) => [row.pvName, String(row.lostConnections), String(row.currentlyConnected) === "true" ? "yes" : "no"]));
     }
     renderHosts(data.disconnected);
 }
@@ -305,17 +395,26 @@ function renderWrite(data) {
     const m = data.measures;
     const write = judgeWrite(m);
     const rate = number(m.get("Event Rate (in events/sec)"));
-    const benchmark = number(m.get("Benchmark - writing at (events/sec)"));
-    const headroom = rate && benchmark ? benchmark / rate : null;
+    const seconds = number(m.get("Time consumed for writing samplebuffers to STS (in secs)"));
+    const period = number(m.get("Write period (in secs)"));
+    // The rate the last write moved: the samples of one period divided by the seconds of the write; the headroom is the
+    // period divided by those seconds.
+    const moved = rate !== null && seconds && period ? (rate * period) / seconds : number(m.get("Benchmark - writing at (events/sec)"));
+    const headroom = seconds && period ? period / seconds : null;
     const show = (name, suffix = "") => (m.has(name) ? `${m.get(name)}${suffix}` : "not reported");
-    fill("writeTable", [
-        ["Write time as share of the write period", node("span", null, statusNode(write.kind, write.text), write.usage === null ? "" : ` ${write.usage.toFixed(write.usage < 1 ? 2 : 0)} %`)],
-        ["Time spent writing sample buffers to the short term store", show("Time consumed for writing samplebuffers to STS (in secs)", " s")],
-        ["Jobs waiting in the engine queue", show("Approx pending jobs in engine queue")],
-        ["Incoming rate", rate === null ? "not reported" : `${rate.toLocaleString(undefined, { maximumFractionDigits: 1 })} events per s`],
-        ["Benchmark write rate", benchmark === null ? "not reported" : `${benchmark.toLocaleString()} events per s`],
-        ["Headroom", headroom === null ? "unknown" : `${headroom.toLocaleString(undefined, { maximumFractionDigits: 0 })} times`],
-        ["PVs in the archive workflow", show("PVs in archive workflow")],
+    fillMeasures("writeTable", [
+        [
+            "Write time, share of the period",
+            "The seconds of the last write divided by the write period, in percent; at 100 % the next write is due before the last one ends, and samples are lost.",
+            node("span", null, statusNode(write.kind, write.text), write.usage === null ? "" : ` ${write.usage.toFixed(write.usage < 1 ? 2 : 0)} %`),
+        ],
+        ["Last write took", "The seconds the last write of all sample buffers to the short term store took.", show("Time consumed for writing samplebuffers to STS (in secs)", " s")],
+        ["Write period", "The seconds between two writes; the engine writes all sample buffers once per period.", period === null ? "not reported" : `${period} s`],
+        ["Samples arriving", "The sample rates of all active PVs added up, per second.", rate === null ? "not reported" : `${rate.toLocaleString(undefined, { maximumFractionDigits: 1 })} per s`],
+        ["Writing rate at the last write", "The samples of one period divided by the seconds of the last write: the samples per second the write moved to disk.", moved === null ? "not reported" : `${Math.round(moved).toLocaleString()} per s`],
+        ["Headroom", "The write period divided by the seconds of the last write: how many times longer the write could take before it fills the period.", headroom === null ? "unknown" : `${headroom.toLocaleString(undefined, { maximumFractionDigits: 0 })} times`],
+        ["Writes queued", "Tasks waiting in the write scheduler of the engine: the next periodic write, and writes queued when a buffer changes its year.", show("Approx pending jobs in engine queue")],
+        ["Requests not yet archived", "Archive requests the management is still working on: measuring the PV, or assigning it to an appliance.", show("PVs in archive workflow")],
     ]);
     if (!data.fastest) {
         emptyRow("fastest", 2, "The report could not be read.");
@@ -347,6 +446,9 @@ function renderStorage(data) {
         host.textContent = "The appliance reported no storage devices.";
         return;
     }
+    // One row per store: the name with the full name of the store under it, the bar with its percent, and the numbers
+    // in columns, so that a row with a copy time pushes nothing.
+    host.append(node("div", { class: "bar-row head" }, node("span"), node("span"), node("span", { class: "col" }, "used"), node("span", { class: "col" }, "of"), node("span", { class: "col" }, "copy time")));
     for (const device of data.storage) {
         const total = number(device.total_space);
         const free = number(device.available_space);
@@ -354,71 +456,133 @@ function renderStorage(data) {
         const used = total !== null && free !== null ? total - free : null;
         const usedPercent = freePercent !== null ? 100 - freePercent : null;
         const low = freePercent !== null && freePercent < THRESHOLDS.freeAttentionPercent;
-        const track = node("div", { class: "track", role: "img", "aria-label": usedPercent === null ? "usage unknown" : `${usedPercent.toFixed(0)} percent used` });
-        const fillBar = node("div", { class: low ? "fill low" : "fill" });
+        const percentText = usedPercent === null ? "" : `${usedPercent.toFixed(0)} %`;
+        const track = node("div", {
+            class: "track",
+            role: "img",
+            "aria-label": usedPercent === null ? "usage unknown" : `${usedPercent.toFixed(0)} percent used`,
+            title: usedPercent === null ? "" : `${percentText} used, ${free.toFixed(1)} GB free`,
+        });
+        const fillBar = node("div", { class: low ? "fill low" : "fill" }, percentText);
         fillBar.style.width = `${Math.max(0, Math.min(100, usedPercent === null ? 0 : usedPercent))}%`;
         track.append(fillBar);
-        const copy = device.time_copy_data_into_store && device.time_copy_data_into_store !== "NaN" ? `, copy ${device.time_copy_data_into_store} s` : "";
+        const copy = device.time_copy_data_into_store && device.time_copy_data_into_store !== "NaN" ? `${device.time_copy_data_into_store} s` : "";
+        const full = STORE_NAMES[String(device.name).toUpperCase()];
         host.append(
             node(
                 "div",
                 { class: "bar-row" },
-                node("span", { class: "pv" }, device.name),
+                node("span", { class: "pv" }, device.name, full ? node("small", null, full) : null),
                 track,
-                node("span", { class: low ? "num warn" : "num" }, used === null ? "" : `${used.toFixed(1)} of ${total.toFixed(1)} GB used${copy}`),
+                node("span", { class: low ? "col num warn" : "col num" }, used === null ? "" : `${used.toFixed(1)} GB`),
+                node("span", { class: "col num" }, total === null ? "" : `${total.toFixed(1)} GB`),
+                node("span", { class: "col copy num" }, copy),
             ),
         );
     }
 }
 
+// The full names of the stores, by the names the appliance reports.
+const STORE_NAMES = { STS: "short term store", MTS: "medium term store", LTS: "long term store" };
+
+/** The size of a count of bytes in a unit the reader can take in. */
+function bytesText(count) {
+    if (count === null) {
+        return "";
+    }
+    if (count >= 1073741824) {
+        return `${(count / 1073741824).toFixed(1)} GB`;
+    }
+    if (count >= 1048576) {
+        return `${(count / 1048576).toFixed(1)} MB`;
+    }
+    if (count >= 1024) {
+        return `${(count / 1024).toFixed(1)} KB`;
+    }
+    return `${count} B`;
+}
+
+// The rows of the table of the moves: the plain name, the one sentence of the row, and the measure of the ETL it reads
+// (one per move), with the unit the value is shown in; a group row names the rows under it.
+const SECONDS = (value) => (value === "" ? "" : `${value} s`);
+const PERCENT = (value) => (value === "" ? "" : `${value} %`);
+const AS_IS = (value) => value;
 const ETL_ROWS = [
-    "Passes so far",
-    "Last pass started at",
-    "Last pass duration (s)",
-    "Last pass busy time (s)",
-    "Last pass busy time as % of cadence",
-    "Last pass overran the cadence",
-    "Last pass late by (s)",
-    "Last pass PVs",
-    "Last pass partitions moved",
-    "Last pass bytes moved",
-    "Last pass jobs failed",
-    "Last pass jobs aborted",
-    "Last pass jobs skipped",
-    "Last pass slowest PV",
-    "Last pass slowest PV time (s)",
-    "Average busy time per pass (s)",
-    "Weekly usage (%)",
-    "Current pass",
+    ["group", "Last pass"],
+    ["Started", "When the last completed pass of this move started.", "Last pass started at", AS_IS],
+    ["Took", "Seconds from the start of the pass to its end.", "Last pass duration (s)", SECONDS],
+    ["Busy", "Seconds spent inside the jobs of the pass, one job per PV.", "Last pass busy time (s)", SECONDS],
+    ["Busy, share of the interval", "The busy seconds divided by the interval of the move, in percent; the judgement reads this.", "Last pass busy time as % of cadence", PERCENT],
+    ["Started late", "Seconds between the planned start and the actual start, when they are more than one interval apart; otherwise 0.", "Last pass late by (s)", SECONDS],
+    ["Overran", "Yes when the pass ended later than its planned start plus one interval.", "Last pass overran the cadence", AS_IS],
+    ["PVs", "PVs the pass was planned for.", "Last pass PVs", AS_IS],
+    ["Partitions moved", "Partitions appended to the next store and committed; a partition is the file of one PV for one period of the store, such as a day.", "Last pass partitions moved", AS_IS],
+    ["Data moved", "The bytes of those partitions.", "Last pass bytes moved", (value) => bytesText(number(value))],
+    ["Jobs failed", "Jobs whose data did not arrive whole: an error, a partition not appended, or a commit that failed.", "Last pass jobs failed", AS_IS],
+    ["Jobs aborted", "Jobs that ended with an error the ETL could not handle; they count among the failed too.", "Last pass jobs aborted", AS_IS],
+    ["Jobs skipped", "PVs the pass left out: no next store is set for the PV, or the store is excluded by a setting.", "Last pass jobs skipped", AS_IS],
+    ["Slowest PV", "The job that took the longest.", "Last pass slowest PV", AS_IS],
+    ["Slowest PV took", "The seconds of that job.", "Last pass slowest PV time (s)", SECONDS],
+    ["group", "Over time"],
+    ["Passes so far", "Passes completed since the ETL started.", "Passes so far", AS_IS],
+    ["Busy per pass, average", "Busy seconds of all passes so far divided by their number.", "Average busy time per pass (s)", SECONDS],
+    ["Busy, share of the week", "Busy seconds of the last seven days divided by the seconds since the first of those days, in percent.", "Weekly usage (%)", PERCENT],
+    ["Pass running now", "The pass in progress, as jobs done of its PVs; none between passes.", "Current pass", AS_IS],
 ];
 
 function renderEtl(data) {
     const tiers = etlTiers(data.measures);
     const keys = Object.keys(tiers).sort();
     const table = $("etl");
-    table.querySelector("thead").replaceChildren(node("tr", null, node("th", null, "Measure"), ...keys.map((key) => node("th", { class: "r" }, TIER_NAMES[key] || key))));
+    table.querySelector("thead").replaceChildren(node("tr", null, node("th"), ...keys.map((key) => node("th", { class: "r" }, TIER_NAMES[key] || key))));
     const body = table.querySelector("tbody");
     body.textContent = "";
     if (!keys.length) {
         body.append(node("tr", null, node("td", { class: "empty" }, "The appliance reported no ETL measures.")));
+        return;
     }
     const judged = judgeEtl(tiers);
-    if (keys.length) {
-        body.append(node("tr", null, node("td", null, "Judgement"), node("td", { colspan: String(keys.length) }, statusNode(judged.kind, judged.text))));
-    }
-    for (const name of ETL_ROWS) {
-        body.append(node("tr", null, node("td", null, name), ...keys.map((key) => node("td", { class: "r num" }, tiers[key][name] === undefined ? "" : String(tiers[key][name])))));
+    body.append(
+        node(
+            "tr",
+            null,
+            named("Judgement", "Normal while the last pass of every move ended within its interval, started on time and had no failed job."),
+            node("td", { colspan: String(keys.length) }, statusNode(judged.kind, judged.text)),
+        ),
+    );
+    // A pass in progress is reported as its jobs done of its PVs; between passes the measure reads none.
+    const current = (values) => (values["Current pass jobs done of PVs"] !== undefined ? String(values["Current pass jobs done of PVs"]) : values["Current pass"] === undefined ? "" : String(values["Current pass"]));
+    for (const row of ETL_ROWS) {
+        if (row[0] === "group") {
+            body.append(groupRow(row[1], keys.length + 1));
+            continue;
+        }
+        const [name, sentence, measure, format] = row;
+        const cells = keys.map((key) => {
+            const values = tiers[key];
+            const raw = measure === "Current pass" ? current(values) : values[measure] === undefined ? "" : String(values[measure]);
+            return node("td", { class: "r num" }, measure === "Current pass" ? raw : format(raw));
+        });
+        body.append(node("tr", null, named(name, sentence), ...cells));
     }
     const m = data.measures;
-    const plan = (name, suffix = "") => (m.has(name) ? `${m.get(name)}${suffix}` : "not reported");
-    fill("plan", [
-        ["Plan last updated", plan("Capacity planning last update")],
-        ["Storage rate, whole cluster", plan("Aggregated appliance storage rate (in GB/year)", " GB per year")],
-        ["Storage rate, this appliance", plan("Incremental appliance storage rate (in GB/year)", " GB per year")],
-        ["Event rate, whole cluster", plan("Aggregated appliance event rate (in events/sec)", " per s")],
-        ["Event rate, this appliance", plan("Incremental appliance event rate (in events/sec)", " per s")],
-        ["PV count, whole cluster", plan("Aggregated appliance PV count")],
-        ["PV count, this appliance", plan("Incremental appliance PV count")],
+    const plan = (name, suffix = "", signed = false) => {
+        if (!m.has(name)) {
+            return "not reported";
+        }
+        const text = String(m.get(name));
+        return `${signed && !text.startsWith("-") ? "+" : ""}${text}${suffix}`;
+    };
+    fillMeasures("plan", [
+        ["Capacity plan computed", "When the capacity plan last read these sums from the appliances.", plan("Capacity planning last update")],
+        ["group", "This appliance, from the rates measured at each archive request"],
+        ["Storage per year", "The storage rates of all PVs of this appliance, each measured when the PV was archived, added up and scaled to a year.", plan("Aggregated appliance storage rate (in GB/year)", " GB")],
+        ["Samples per second", "The sample rates of all PVs of this appliance, each measured when the PV was archived, added up.", plan("Aggregated appliance event rate (in events/sec)")],
+        ["Archived PVs", "The PVs of this appliance, paused ones included.", plan("Aggregated appliance PV count")],
+        ["group", "Change since the capacity plan"],
+        ["Storage per year", "The difference between the sum above now and at the time of the capacity plan.", plan("Incremental appliance storage rate (in GB/year)", " GB", true)],
+        ["Samples per second", "The same difference for the sample rates.", plan("Incremental appliance event rate (in events/sec)", "", true)],
+        ["Archived PVs", "PVs added, less PVs removed, since the capacity plan.", plan("Incremental appliance PV count", "", true)],
     ]);
 }
 
@@ -555,7 +719,7 @@ function floorChart(host, title, floor) {
         gapMs: 600000,
     });
     const rhythm = floor.rhythm === null ? "" : ` A collection runs about every ${floor.rhythm.toFixed(0)} minutes.`;
-    section.append(node("p", { class: "sub" }, `Lowest after a collection: ${floor.first.toFixed(0)} % at the start of the day, ${floor.last.toFixed(0)} % now.${rhythm}`));
+    section.append(node("p", { class: "sub" }, `Floor: ${floor.first.toFixed(0)} % at the start of the day, ${floor.last.toFixed(0)} % now.${rhythm}`));
 }
 
 function renderProcesses(data) {
@@ -604,51 +768,43 @@ function renderProcesses(data) {
     const load = seriesByLabel(data.series, "system_load (%)");
     if (load && load.length > 1) {
         const points = load.map(([t, v]) => ({ t, v: Number(v), s: 0 })).filter((p) => Number.isFinite(p.v));
-        const section = node("div", { class: "process-chart" }, node("h3", null, "Load average of the host"));
+        const section = node("div", { class: "process-chart" }, node("h3", null, "Load of the host", " ", infoButton(...LOAD_CARD)));
         const chartHost = node("div");
         section.append(chartHost);
         host.append(section);
-        createChart(chartHost, { id: chartId("load"), idPrefix: chartId("load"), dialogTitle: "Load average of the host", helpHref: HELP, labelNames: false }).draw({
+        createChart(chartHost, { id: chartId("load"), idPrefix: chartId("load"), dialogTitle: "Load of the host", helpHref: HELP, labelNames: false }).draw({
             series: [{ name: "load", egu: "", points, focus: true }],
             from: new Date(points[0].t),
             to: new Date(points[points.length - 1].t),
             gapMs: 600000,
         });
         const high = Math.max(...points.map((p) => p.v));
-        section.append(
-            node("p", { class: "sub" }, `One-minute load average of the host: now ${points[points.length - 1].v.toFixed(1)}, highest ${high.toFixed(1)}. The appliance does not report the number of cores, so no judgement is made; a load above the number of cores means processes wait for a processor.`),
-        );
+        section.append(node("p", { class: "sub" }, `One-minute load average: now ${points[points.length - 1].v.toFixed(1)}, highest today ${high.toFixed(1)}.`));
     }
 }
 
 // ---- configuration and thresholds ------------------------------------------------------------------
 
-const BASIS = [
-    ["Days left, attention / problem", `${THRESHOLDS.daysLeftAttention} / ${THRESHOLDS.daysLeftProblem} days`, "A choice: a store fills slowly, so published alert horizons of hours do not fit."],
-    ["Device free share, attention / problem", `${THRESHOLDS.freeAttentionPercent} / ${THRESHOLDS.freeProblemPercent} %`, "Prometheus node_exporter mixin, almost out of space."],
-    ["Write time, attention / problem", `${THRESHOLDS.writeAttentionPercent} / ${THRESHOLDS.writeProblemPercent} % of the write period`, "Samples are lost when the writer needs more than its period; the half is a choice."],
-    ["Heap floor level, attention / problem", `${THRESHOLDS.heapFloorAttention} / ${THRESHOLDS.heapFloorProblem} % of the maximum heap`, "A live data set above 70 % of the heap (Netflix Spectator example); 90 % from the node_exporter memory alert."],
-    ["Heap floor rise in a day, attention", `${THRESHOLDS.heapFloorRiseAttention} points`, "A rising live set under stable load is a leak sign (Oracle troubleshooting guide); the number is a choice."],
-    ["Disconnected PV, attention", `${THRESHOLDS.disconnectedSeconds / 3600} h`, "A choice: shorter losses are often restarts."],
-    ["ETL busy share, problem", `${THRESHOLDS.etlBusyProblemPercent} % of its interval`, "A choice; an overran pass or a failed job is attention."],
+// The thresholds the judgements use, as rows with the sentence of each; the basis of the values is in the card of the section.
+const THRESHOLD_ROWS = [
+    ["Days left", "How long the free space lasts at the current growth.", `${THRESHOLDS.daysLeftAttention} / ${THRESHOLDS.daysLeftProblem} days`],
+    ["Device free share", "The free part of the device of a store.", `${THRESHOLDS.freeAttentionPercent} / ${THRESHOLDS.freeProblemPercent} %`],
+    ["Write time", "The share of the write period the last write took.", `${THRESHOLDS.writeAttentionPercent} / ${THRESHOLDS.writeProblemPercent} %`],
+    ["Heap floor", "The lowest heap reading of the last hour, in percent of the maximum heap.", `${THRESHOLDS.heapFloorAttention} / ${THRESHOLDS.heapFloorProblem} %`],
+    ["Heap floor rise in a day", "How much the floor rose since the start of the day, in points.", `${THRESHOLDS.heapFloorRiseAttention} points (attention)`],
+    ["Disconnected PV", "How long a PV may be disconnected before it is a finding.", `${THRESHOLDS.disconnectedSeconds / 3600} h (attention)`],
+    ["Move busy share", "The busy seconds of a pass against its interval.", `${THRESHOLDS.etlBusyProblemPercent} % (problem)`],
 ];
 
 function renderConfiguration(data) {
     const policies = data.policies ? Object.keys(data.policies).sort() : [];
-    const rows = [
-        ["Minimum sampling period", data.properties && data.properties.minimum_sampling_period ? `${data.properties.minimum_sampling_period} s` : "not reported"],
-        ["Appliances in the cluster", data.cluster ? `${data.cluster.length}: ${data.cluster.map((a) => a.identity).join(", ")}` : "not read"],
-        ["Policies", policies.length ? `${policies.length}: ${policies.join(", ")}` : "not read"],
-    ];
-    const body = $("config").querySelector("tbody");
-    body.textContent = "";
-    for (const [label, value] of rows) {
-        body.append(node("tr", null, node("td", null, label), node("td", { class: "wrap" }, value)));
-    }
-    body.append(node("tr", null, node("th", { colspan: "2" }, "Thresholds the judgements use and their basis")));
-    for (const [label, value, basis] of BASIS) {
-        body.append(node("tr", null, node("td", null, label), node("td", { class: "wrap" }, node("span", { class: "num" }, value), node("br"), node("span", { class: "why" }, basis))));
-    }
+    fillMeasures("config", [
+        ["Minimum sampling period", "The shortest sampling period an archive request may ask for; a setting of the installation.", data.properties && data.properties.minimum_sampling_period ? `${data.properties.minimum_sampling_period} s` : "not reported"],
+        ["Appliances in the cluster", "The appliances that share the PVs of this archiver.", data.cluster ? `${data.cluster.length}: ${data.cluster.map((a) => a.identity).join(", ")}` : "not read"],
+        ["Policies", "The named sampling and storage rules of the site; one is chosen for each PV at its archive request, by its name.", policies.length ? `${policies.length}: ${policies.join(", ")}` : "not read"],
+        ["group", "Thresholds the judgements use, attention / problem"],
+        ...THRESHOLD_ROWS,
+    ]);
 }
 
 // ---- loading ---------------------------------------------------------------------------------------

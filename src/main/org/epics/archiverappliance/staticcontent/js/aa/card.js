@@ -50,7 +50,7 @@ function showCard(button, title, text, action, helpHref) {
     const body = rows
         ? node("dl", { class: "rows" }, ...text.flatMap(([term, detail]) => [node("dt", null, term), node("dd", null, detail)]))
         : node("p", null, text);
-    const card = node("div", { class: rows ? "card wide" : "card", role: "dialog", "aria-label": title, id: "infoCard" },
+    const card = node("div", { class: rows ? "card wide" : button.classList.contains("small") ? "card narrow" : "card", role: "dialog", "aria-label": title, id: "infoCard" },
         node("h4", null, title),
         body,
         action ? node("p", { class: "act" }, action) : null,
@@ -128,10 +128,11 @@ function infoGlyph() {
 /**
  * An information control: a small raised button with an italic "i" that opens a card with the text (one paragraph, or
  * rows of a term and its text), what to do about it and a link into the help page. The card stays open across a
- * refresh of the page that rebuilds its button.
+ * refresh of the page that rebuilds its button. With small set, the control is the quiet one of a table row, and its
+ * card is the narrow one of a single sentence.
  */
-export function infoButton(title, text, action, helpHref) {
-    const button = node("button", { type: "button", class: "info", "aria-expanded": "false", "aria-label": `About ${title}` }, infoGlyph());
+export function infoButton(title, text, action, helpHref, small) {
+    const button = node("button", { type: "button", class: small ? "info small" : "info", "aria-expanded": "false", "aria-label": `About ${title}` }, infoGlyph());
     button.addEventListener("click", () => {
         if (openCard && openCard.button === button) {
             closeCard();

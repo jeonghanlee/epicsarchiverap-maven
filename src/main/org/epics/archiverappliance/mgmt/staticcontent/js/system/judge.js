@@ -41,7 +41,7 @@ export function measureMap(rows) {
     return new Map((rows || []).map((row) => [plain(row.name), row.value]));
 }
 
-export const TIER_NAMES = { "0>1": "STS to MTS", "1>2": "MTS to LTS" };
+export const TIER_NAMES = { "0>1": "Short term to medium term", "1>2": "Medium term to long term" };
 
 /** The ETL measures, which repeat per tier, as {tier: {measure: value}}. */
 export function etlTiers(map) {
@@ -150,11 +150,18 @@ export function judgeDropped(reports) {
 
 // ---- write path and ETL -------------------------------------------------------------------------
 
+/**
+ * The share of the write period the last write took, from the seconds of the last write and the write period the engine
+ * reports; an engine that reports no write period falls back to the share the capacity plan computes.
+ */
 export function judgeWrite(measures) {
-    const usage = number(measures.get("Engine write thread usage"));
+    const seconds = number(measures.get("Time consumed for writing samplebuffers to STS (in secs)"));
+    const period = number(measures.get("Write period (in secs)"));
+    const planned = number(measures.get("Engine write thread usage"));
+    const usage = seconds !== null && period ? (seconds * 100) / period : planned;
     const queue = number(measures.get("Approx pending jobs in engine queue"));
     if (usage === null) {
-        return { kind: "unknown", usage, queue, text: "The appliance did not report the write time. It reports it after its first capacity plan." };
+        return { kind: "unknown", usage, queue, text: "The appliance did not report the time of its last write." };
     }
     if (usage >= THRESHOLDS.writeProblemPercent) {
         return { kind: "bad", usage, queue, text: `The engine needs ${usage.toFixed(0)} % of its write period to write. It cannot keep up and samples are lost.` };

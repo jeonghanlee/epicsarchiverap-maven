@@ -149,16 +149,39 @@
 
 /* storage bars: ink for the used part only */
 
+/* The question a section answers, under its heading. */
+.lead {
+    margin: 0 0 10px;
+    color: var(--ink-2);
+    font-size: 0.9375rem;
+}
+
+/* A row of a table that only names the group of the rows under it. */
+tr.group td {
+    padding-top: 12px;
+    border-bottom: 0;
+    color: var(--ink-3);
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* The device bars: the store, a bar that carries its percent, and the numbers in columns so that no row is pushed. */
 .bars {
     display: grid;
-    gap: 12px;
+    gap: 10px;
 }
 
 .bar-row {
     display: grid;
-    grid-template-columns: minmax(5rem, 9rem) minmax(0, 1fr) minmax(12rem, 22rem);
+    grid-template-columns: minmax(6rem, 11rem) minmax(0, 1fr) 7rem 7rem 6rem;
     gap: 12px;
     align-items: center;
+}
+
+.bar-row.head {
+    color: var(--ink-3);
+    font-size: 0.8125rem;
 }
 
 .bar-row .pv {
@@ -166,14 +189,27 @@
     font-size: 0.875rem;
 }
 
-.bar-row .num {
-    white-space: normal;
+.bar-row .pv small {
+    display: block;
+    color: var(--ink-3);
+    font-size: 0.8125rem;
+}
+
+.bar-row .col {
+    white-space: nowrap;
     text-align: right;
+}
+
+.bar-row .col.copy {
+    color: var(--ink-3);
+    font-size: 0.875rem;
 }
 
 .track {
     position: relative;
-    height: 8px;
+    height: 20px;
+    overflow: hidden;
+    border-radius: 3px;
     background: var(--grid);
 }
 
@@ -182,7 +218,14 @@
     top: 0;
     bottom: 0;
     left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 6px;
     background: var(--ink-3);
+    color: var(--c-surface);
+    font-size: 0.8125rem;
+    font-weight: 600;
 }
 
 .fill.low {
@@ -225,8 +268,18 @@
     }
 
     .bar-row {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 4px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px 8px;
+    }
+
+    .bar-row .pv,
+    .bar-row .track {
+        grid-column: 1 / -1;
+    }
+
+    .bar-row.head span:first-child,
+    .bar-row.head span:nth-child(2) {
+        display: none;
     }
 }
 
