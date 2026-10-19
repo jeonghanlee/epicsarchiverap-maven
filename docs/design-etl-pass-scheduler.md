@@ -29,14 +29,15 @@ consolidate BPL run through `ETLExecutor`.
 
 ## Current structure
 
-- `PBThreeTierETLPVLookup.addETLJobs` registers one `ScheduledFuture` per PV and per transition on a single-thread `ScheduledThreadPoolExecutor` per transition index, with `scheduleWithFixedDelay(job, initialDelay, cadence)`. The executor, the PV map and the `ETLMetricsForLifetime` of an index are created at the first PV registered for that index.
-- The cadence, the processing-time padding and the skip-store check are computed per PV from that PV's own source and destination store (`typeInfo.getDataStores()`).
-- `initialDelay` is `Duration.between(nextExpectedETLRun, now)`, which is negative while the expected run is in the future; the executor clamps it to zero, so the first job runs at registration and every later job runs `cadence + own duration` after the previous one. Each PV keeps its own phase, and the config sync thread registers PVs at 5-minute intervals, so the jobs of one transition spread over the cadence.
-- Which partitions a job moves is decided by the data, not by the timer: `ETLSource.getETLStreams` takes a processing time (`now - 10 % of the source partition`) and returns the partitions past hold and gather.
-- The appliance-wide values in `ETLMetricsForLifetime` are sums of per-PV values, except `totalETLRuns`, which is the largest per-PV run count. The "last job" value adds each job's duration to one sum and resets it after 15 minutes without a job; no gap appears with a 5-minute cadence, so the value grows without bound. The same method is the only writer of the seven weekly-usage buckets.
-- `ETLDetails` builds the per-PV row "ETL N next job runs at" from `getCancellingFuture().getDelay`.
-- `ETLMetrics.metrics()` serves three keys to the mgmt appliance list (`totalETLRuns(N)`, `timeForOverallETLInSeconds(N)`, `maxETLPercentage`); no page of the management interface reads them by name. `ETLMetrics.details()` serves the per-transition rows; no code, UI page or book page references their names.
-- The ETL tests call `manualControlForUnitTests`, which shuts down the executors that exist at that moment; because the executors are created at the first registration, the call is effective only after registration, and the first job of each PV has already run at registration. `ZeroByteFilesTest` calls it before registering, so a scheduled job runs during that test. No test calls `postStartup`.
+This section states the structure as the code implements it; the sections under Proposed design give the rules in full.
+
+- `PBThreeTierETLPVLookup.addETLJobs` creates one lookup item per PV and per transition and adds it to the `ETLPassDriver` keyed by the transition index and the cadence of the PV's source partition, `min(source partition seconds, 8 h)`; the driver is created at the first PV of that key. No job runs at registration. The `ETLMetricsForLifetime` of an index, created at its first PV, holds only the `FileStore` cache of that index.
+- `postStartup` starts the `ETL tick` daemon thread, which calls `tick` on every driver every 5 s in transition order and skips the drivers of an index above the lowest index with a running pass. The config sync thread registers the PVs of the appliance every 5 min, starting 60 s after start, and calls `start()` on every driver after each loop; `start()` arms a start-up pass for a driver that holds PVs and sets the next grid time for one that holds none.
+- A pass runs on the one `ETL - <index>` daemon worker thread of its transition index: it takes a snapshot of the driver's PVs and runs `ETLJob.run()` for each with the pass's processing time, `startedAt - 60 s` (`PROCESSING_MARGIN_SECONDS`), computed once per pass. `ETLJob.run()` without an as-if time pads by 10 % of the source partition; that path serves the tests that drive `ETLJob` directly.
+- Which partitions a job moves is decided by the data, not by the timer: `ETLSource.getETLStreams` takes the processing time and returns the files past hold and gather ([Configuration](book/src/configuration.md#stores)).
+- The reported values come from the pass records of the drivers: `ETLMetrics.details()` serves the per-index rows named under Reported rows per transition index, and the Operations page of the management interface reads them by name; `ETLMetrics.metrics()` serves `totalETLRuns(N)`, `timeForOverallETLInSeconds(N)` and `maxETLPercentage` to the appliance list from the same records, and no page reads those three by name.
+- `ETLDetails` builds the per-PV row "ETL N next job runs at" from `getNextPlannedAt()` of the driver that holds the PV, and reads "not scheduled" when no driver does.
+- The shutdown hook stops the config sync thread and the ticker, which sets the stop flag of every driver, waits the stop bound for the running passes, shuts the worker threads down, waits the bound again, then runs the shutdown consolidation (Shutdown). The ETL tests call `manualControlForUnitTests`, which stops the ticker, shuts down the tick thread and the worker threads and sets the sticky stop, so a driver created later stays idle and no pass runs during a test that calls it before or after registering its PVs.
 
 ## Reference behavior
 
@@ -47,7 +48,7 @@ Linux services that move or expire files by age share one shape (logrotate, fstr
 3. A firing missed while the service was down is made up once at start when a run was missed (`Persistent=true` on `OnCalendar=` timers, anacron); `systemd-tmpfiles-clean.timer` is a monotonic timer with a fixed post-boot delay instead.
 4. The pass itself is the unit of record: start, end, and counts come from the one process.
 
-The current ETL has item 2, lacks items 1 and 4, and has item 3 only as the side effect of the negative initial delay. The references randomize their firing (`RandomizedDelaySec`) to spread load across many hosts; a single appliance has no such reason, so this design fires at a predictable time.
+The ETL of Current structure has all four items: the grid of a driver is item 1, hold and gather are item 2, the start-up pass is item 3, and the pass record is item 4. The references randomize their firing (`RandomizedDelaySec`) to spread load across many hosts; a single appliance has no such reason, so this design fires at a predictable time.
 
 ## Requirements
 
