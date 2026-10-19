@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D43. Stages 1 to 3 are done except the analyzer step of M67: M74, M75, M77, M73, M68, M70, M65 and M60 are Complete (#44, #46, #42 and #38 closed); M67 is In progress only for its step 5 and T3, which wait for M62. M76 is Deferred by D45 with issue #48. Next is stage 4: M58 closed by a dated exception, then M62, M63 and M64; then stage 5 (M69, M61) and stage 6 (M55, M40, M41; M66 after G8). M28 runs alongside as aa-env allows.
+Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D43. Stages 1 to 3 are done except the analyzer step of M67: M74, M75, M77, M73, M68, M70, M65 and M60 are Complete (#44, #46, #42 and #38 closed); M67 is In progress only for its step 5 and T3, which wait for M62. M76 is Deferred by D45 with issue #48. Next is stage 4: M58 closed by a dated exception, then M62, M63 and M64; then stage 5 (M69, M61) and stage 6 (M55, M40, M41; M66 after G8). M28 runs alongside as aa-env allows. The Backlog holds M78, M79 and M80 (the store defects of issues #49, #50 and #51), which wait for a place in the order.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). M65 (the information cards of every page, and the Operations page composed again for a reader new to the appliance) is Complete on 2026-10-18 at 14f083e9 with both workflows green. The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -7290,10 +7290,205 @@ Superseded Plan Artifacts: none
 
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| | M78 | Refuse optimized as a reducedata operator | Milestone | Not started | Yes | | A store URL with `reducedata=optimized` or `optimized_N` fails to initialize with a logged reason that names the operators that apply, a unit test covers it, and the book's `reducedata` row names them; issue #49; [detail](#m78---refuse-optimized-as-a-reducedata-operator) |
+| | M79 | Refuse reducedata together with pp on one store | Milestone | Not started | Yes | | A store URL with both `reducedata` and `pp` fails to initialize with a logged reason, a unit test covers it, and the two book rows say the parameters are not combined; issue #50; [detail](#m79---refuse-reducedata-together-with-pp-on-one-store) |
+| | M80 | Delete the post-processor files of a moved partition | Milestone | Not started | Yes | | After the ETL moves a partition out of a store with `pp`, no file of that partition stays in the source store, the explicit deletion of a PV removes its post-processor files too, and an ETL test covers both; issue #51; [detail](#m80---delete-the-post-processor-files-of-a-moved-partition) |
 
-No work is unassigned on 2026-10-17: every row is in the Milestone table, in the order of D43 (see Assignment History).
+The three rows were entered on 2026-10-19 from the defects found by the environment session's checks of the stores (jeonghanlee/epicsarchiverap-env) and read in the code of 246db15e; they wait for a place in the order of D43.
 
 ### Backlog Details
+
+#### M78 - Refuse optimized as a reducedata operator
+
+Origin: daff1b7 / M78
+Identity History: none
+GitHub Issue: #49 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/49)
+Status: Not started
+
+##### Summary
+
+A store URL with `reducedata=optimized_N` is accepted, but the ETL reduces into 15-minute bins whatever N says, or keeps the raw samples when the partition holds N samples or fewer: `Optimized.initialize` reads N only, the bin width is set in `estimateMemoryConsumption` from the range of a retrieval request, which the ETL does not call, so the inner `Statistics` keeps `DEFAULT_SUMMARIZING_INTERVAL` (900 s). `optimized` and `optimLastSample` are defined by a retrieval range and have no meaning on a store; the time-bin operators (`firstSample_N`, `mean_N` and the others with a bin width in seconds) are the ones that apply.
+
+##### Scope
+
+- `PlainPBStoragePlugin.initialize` refuses `optimized` and `optimLastSample`, with or without `_N`, as the value of `reducedata`, with an ERROR line that names the parameter, the value and the operators that apply.
+- The `reducedata` row of the Stores table of `docs/book/src/configuration.md` names the operators that apply.
+
+Out of scope: a range-free form of `optimized` for the ETL; the `pp` parameter.
+
+##### Completion Criteria
+
+- A store URL with `reducedata=optimized` or `reducedata=optimized_500` fails to initialize and the log names the value and the operators that apply; a unit test covers both forms.
+- A store URL with `reducedata=firstSample_3600` initializes as before and the existing reducedata tests pass.
+- The book row names the operators that apply.
+
+##### Dependencies And Decisions
+
+- None. Found on 2026-10-19 while answering the environment session's question on `optimized_N` in `reducedata`.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. The refusal in `PlainPBStoragePlugin.initialize` where `reducedata` is parsed, with its unit test. Check: T1.
+2. The book row. Check: T1.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit and suite | A unit test that initializes a `pb` URL with `reducedata=optimized` and with `reducedata=optimized_500` and reads the failure and its message, and one with `reducedata=firstSample_3600` that initializes; `./mvnw -B -ntp clean verify`; `mdbook build docs/book` | JDK 21 | Both refused with the message, the third accepted, suite and book pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Optimized as reducedata ignores N
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-19 10:25 PDT; `gh issue list` read the issue OPEN with label bug and assignee jeonghanlee at its creation.
+
+#### M79 - Refuse reducedata together with pp on one store
+
+Origin: daff1b7 / M79
+Identity History: none
+GitHub Issue: #50 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/50)
+Status: Not started
+
+##### Summary
+
+A store URL that carries both `reducedata` and `pp` is accepted; `appendData` applies the `reducedata` operator first and writes the reduced events as the `.pb` file, and the `pp` caches are then computed from that file, so a cache named for a raw-data operator holds the operator applied to reduced data and the retrieval serves it as such. The plugin's class comment calls the results unpredictable; no code refuses the combination and the book does not mention it.
+
+##### Scope
+
+- `PlainPBStoragePlugin.initialize` refuses a URL that carries both `reducedata` and `pp`, with an ERROR line that names both parameters.
+- The `reducedata` and `pp` rows of the Stores table of `docs/book/src/configuration.md` say that the two are not combined on one store.
+
+Out of scope: computing the `pp` caches from the raw stream before the reduction.
+
+##### Completion Criteria
+
+- A store URL with both parameters fails to initialize with the logged reason; a unit test covers it.
+- A store URL with either parameter alone initializes as before and the existing ETL and post-processor tests pass.
+- The two book rows say that the parameters are not combined.
+
+##### Dependencies And Decisions
+
+- None. Found on 2026-10-19 while answering the environment session's question on `reducedata` with `pp`.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. The refusal in `PlainPBStoragePlugin.initialize` where `pp` and `reducedata` are parsed, with its unit test. Check: T1.
+2. The two book rows. Check: T1.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit and suite | A unit test that initializes a `pb` URL with `reducedata=firstSample_3600&pp=mean_60` and reads the failure and its message, and one with each parameter alone that initializes; `./mvnw -B -ntp clean verify`; `mdbook build docs/book` | JDK 21 | The combination refused with the message, each alone accepted, suite and book pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Store accepts reducedata together with pp
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-19 10:25 PDT; `gh issue list` read the issue OPEN with label bug and assignee jeonghanlee at its creation.
+
+#### M80 - Delete the post-processor files of a moved partition
+
+Origin: daff1b7 / M80
+Identity History: none
+GitHub Issue: #51 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/51)
+Status: Not started
+
+##### Summary
+
+When the ETL moves a partition out of a store that carries `pp`, `markForDeletion` deletes the `.pb` file of the partition and nothing deletes its post-processor files, so one file per partition and operator accumulates for every PV of such a store. Observed by the environment session with the shipped plugin at 65245250 (an MTS with `pp=mean_60` keeps `2026_01_01_10.mean_60` after its `2026_01_01_10.pb` moved to the LTS) and read in the code: `getETLStreams` and `getETLStreamsForDeletion` list `.pb` paths only.
+
+##### Scope
+
+- `markForDeletion` deletes, with the `.pb` file of a partition, the file of that partition for every operator in `postProcessorUserArgs`; a missing file is not an error.
+- `getETLStreamsForDeletion` lists the post-processor files of the partitions it returns, so the explicit deletion of a PV's data removes them too.
+
+Out of scope: the files left behind by earlier moves; the post-processor files of the destination store.
+
+##### Completion Criteria
+
+- An ETL test with `pp` on the source store moves a partition and leaves no file of that partition in the source store, while the post-processor files of the partitions still in the store are untouched.
+- The explicit deletion of a PV's data from a store with `pp` leaves no file of that PV.
+- The ETL and PlainPB test suites pass.
+
+##### Dependencies And Decisions
+
+- None. Found on 2026-10-19 from the environment session's observation of the leftover file.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. The deletion of the post-processor files in `markForDeletion` and their listing in `getETLStreamsForDeletion`. Check: T1.
+2. An ETL test over PlainPB stores with `pp` on the source. Check: T1.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit and suite | An ETL test with a source store carrying `pp=mean_60`, data in two partitions, one pass that moves the older partition, then the explicit deletion of the PV; the source folder listed after each step; `./mvnw -B -ntp clean verify` | JDK 21 | After the pass the source holds only the files of the newer partition, `.pb` and `.mean_60`; after the deletion it holds none; the suite passes |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Post-processor files stay after a move
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-19 10:25 PDT; `gh issue list` read the issue OPEN with label bug and assignee jeonghanlee at its creation.
 
 ## Assignment History
 
