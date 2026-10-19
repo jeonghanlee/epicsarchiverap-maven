@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D46 (2026-10-19), which follows D43. Stages 1 to 3 of D43 are done (M74, M75, M77, M73, M68, M70, M65, M60 and M67 Complete, M67 by the exception of D46; #44, #46, #42 and #38 closed); M58 and M28 are Complete; M76 is Deferred by D45 with issue #48. Before the merge of `modernize`: M78, M79 and M80 (the store defects of issues #49, #50 and #51). After the merge: the analyzer in five phases A to E (M62, M81, M63, M82, M64), planned from `docs/design-analyzer.md`, each plan a draft to accept and to authorize; then M69, M61, M55, M40, M41, M66 after G8, and M76 as deferred. Next is M78, whose plan is a draft to accept and to authorize, then M79 and M80.
+Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D46 (2026-10-19), which follows D43. Stages 1 to 3 of D43 are done (M74, M75, M77, M73, M68, M70, M65, M60 and M67 Complete, M67 by the exception of D46; #44, #46, #42 and #38 closed); M58 and M28 are Complete; M76 is Deferred by D45 with issue #48. Before the merge of `modernize`: M78 and M79 are Complete (db5884b1, #49 and #50 closed); M80 (the leftover post-processor files, issue #51) remains. After the merge: the analyzer in five phases A to E (M62, M81, M63, M82, M64), planned from `docs/design-analyzer.md`, each plan a draft to accept and to authorize; then M69, M61, M55, M40, M41, M66 after G8, and M76 as deferred. Next is M80, whose plan is a draft to accept and to authorize; then the merge.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). M65 (the information cards of every page, and the Operations page composed again for a reader new to the appliance) is Complete on 2026-10-18 at 14f083e9 with both workflows green. The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -94,8 +94,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | Tracking | G5 | ETL pass deadline plan authorization and issue creation | External gate | Complete | No | | The current M45 plan is accepted and explicitly authorized, and its prepared bug issue exists on GitHub before implementation; [detail](#g5---etl-pass-deadline-plan-authorization-and-issue-creation) |
 | Tracking | G6 | Four-hour appliance stress run at or after 6c6b973a with zero sample-buffer-full losses | External gate | Complete | No | | M46 / T5-T7 passed on corrected-build source 629533a3; complete measured exposure coverage and zero losses; results recorded in #29 and authorized closure observed on 2026-10-16; [detail](#g6---four-hour-appliance-stress-run-at-or-after-6c6b973a-with-zero-sample-buffer-full-losses) |
 | Tracking | G7 | aa-env installation checks of the MariaDB socket and TCP paths at 61e1b4c5 or later | External gate | Complete | No | | epicsarchiverap-env reported both MariaDB installation checks passing at pin 3de600d9, which contains 61e1b4c5 (2026-10-16); [detail](#g7---aa-env-installation-checks-of-the-mariadb-socket-and-tcp-paths-at-61e1b4c5-or-later) |
-| Phase 2 | M40 | Modernize the retained state-changing sample scripts | Milestone | Not started | No | M37 | Each of the seven retained scripts that change appliance state has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m40---modernize-the-retained-state-changing-sample-scripts) |
-| Phase 2 | M41 | Mail delivery for the alert checks | Milestone | Not started | No | M37 | emailHandler.py's mail delivery is available to the on-demand alert checks of M37 with a defined configuration, timeout and failure contract and is verified against a real SMTP endpoint; [detail](#m41---mail-delivery-for-the-alert-checks) |
+| Phase 2 | M40 | Modernize the retained state-changing sample scripts | Milestone | Not started | Yes | M37 | Each of the seven retained scripts that change appliance state has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m40---modernize-the-retained-state-changing-sample-scripts) |
+| Phase 2 | M41 | Mail delivery for the alert checks | Milestone | Not started | Yes | M37 | emailHandler.py's mail delivery is available to the on-demand alert checks of M37 with a defined configuration, timeout and failure contract and is verified against a real SMTP endpoint; [detail](#m41---mail-delivery-for-the-alert-checks) |
 | Phase 2 | M55 | Verify the proxy to an external Archiver Appliance | Milestone | Not started | Yes |  | An integration test on two appliances registers the second as an external `ARCHAPPL_PBRAW` server of the first and observes, through the first, the data, the name match and the value at a time of a PV archived only on the second; [detail](#m55---verify-the-proxy-to-an-external-archiver-appliance) |
 | Interface console | M61 | Appliance status as PVA PVs | Milestone | Not started | Yes |  | The appliance publishes its status measures as PVA PVs through its own PVA server and archives them, so the analyzer plots them like any archived PV; [detail](#m61---appliance-status-as-pva-pvs) |
 | Verification | M66 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | M46, G8 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m66---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
@@ -108,8 +108,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | Verification | M75 | Procedure for the test IOC of the console checks in the book | Milestone | Complete | No |  | The developer page of the book has a procedure that installs, starts, lists, switches the mode of and stops the one soft IOC of the console checks with `ioc-runner` from `src/resources/test/st.cmd`, with the configuration file it needs carried in the repository and every command run as shown; [detail](#m75---procedure-for-the-test-ioc-of-the-console-checks-in-the-book) |
 | Verification | M76 | Archiving continues across a change of the record | Milestone | Deferred | No | M73, D45 | The engine detects a change of the archived record (type, rate, unit, precision or limits) on its own and goes on storing the signal under the new condition from the instant of the change, with the earlier samples readable as they were stored; deferred to the next major release by D45; the GitHub issue that holds the direction is filed; [detail](#m76---archiving-continues-across-a-change-of-the-record) |
 | Verification | M77 | Log and pause on a record that changes | Milestone | Complete | No | M73 | For each change of M73 that the engine can detect, it writes one log line that names the PV and what changed, and where storing has to stop (a changed type) it pauses the PV instead of dropping on without a word; nothing else changes until M76; verified on the one IOC and the one appliance of D44; [detail](#m77---log-and-pause-on-a-record-that-changes) |
-| Phase 2 | M78 | Refuse optimized as a reducedata operator | Milestone | Not started | Yes | D46 | A store URL with `reducedata=optimized` or `optimized_N` fails to initialize with a logged reason that names the operators that apply, a unit test covers it, and the book's `reducedata` row names them; issue #49; [detail](#m78---refuse-optimized-as-a-reducedata-operator) |
-| Phase 2 | M79 | Refuse reducedata together with pp on one store | Milestone | Not started | Yes | D46 | A store URL with both `reducedata` and `pp` fails to initialize with a logged reason, a unit test covers it, and the two book rows say the parameters are not combined; issue #50; [detail](#m79---refuse-reducedata-together-with-pp-on-one-store) |
+| Phase 2 | M78 | Refuse optimized as a reducedata operator | Milestone | Complete | No | D46 | A store URL with `reducedata=optimized` or `optimized_N` fails to initialize with a logged reason that names the operators that apply, a unit test covers it, and the book's `reducedata` row names them; issue #49; [detail](#m78---refuse-optimized-as-a-reducedata-operator) |
+| Phase 2 | M79 | Refuse reducedata together with pp on one store | Milestone | Complete | No | D46 | A store URL with both `reducedata` and `pp` fails to initialize with a logged reason, a unit test covers it, and the two book rows say the parameters are not combined; issue #50; [detail](#m79---refuse-reducedata-together-with-pp-on-one-store) |
 | Phase 2 | M80 | Delete the post-processor files of a moved partition | Milestone | Not started | Yes | D46 | After the ETL moves a partition out of a store with `pp`, no file of that partition stays in the source store, the explicit deletion of a PV removes its post-processor files too, and an ETL test covers both; issue #51; [detail](#m80---delete-the-post-processor-files-of-a-moved-partition) |
 | Interface analyzer | M81 | Analyzer phase B: interaction, options and export | Milestone | Not started | No | M62, D40, D46 | The gestures beyond the simple form (the drag tool chosen on the strip, wheel and pinch zoom, undo and redo of the range, two cursors, pinned samples), the options the reference tools offer (line width and style, a gap threshold, a fill between signals, fixed and soft ranges, the averaging interval or raw samples, the min-max band, a split by unit, SI prefixes, a legend table, tooltip modes), the Data tab and the full Export tab, each carried in the address; [detail](#m81---analyzer-phase-b-interaction-options-and-export) |
 | Interface analyzer | M82 | Analyzer phase D: tools for two and several signals | Milestone | Not started | No | M63, D40, D46 | The Correlation tab (pairing by held values, scatter with projections and density, Pearson and Spearman, profile, the fit panel with fixed and bounded parameters) and the Dependency tab (correlation matrix ordered by clustering, ranking by mutual information, multiple regression, principal components), derived signals from a typed expression and a change of unit, the routines checked on signals of known parameters; [detail](#m82---analyzer-phase-d-tools-for-two-and-several-signals) |
@@ -7447,7 +7447,7 @@ Superseded Plan Artifacts: none
 Origin: daff1b7 / M78
 Identity History: none
 GitHub Issue: #49 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/49)
-Status: Not started
+Status: Complete
 
 ##### Summary
 
@@ -7494,28 +7494,31 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | 2026-10-19 16:01 PDT (`PlainPBStoreUrlTest`), 16:12 PDT (suite), 16:12 PDT (book) | JDK 21, Tomcat 9.0.121 for the integration tests, on the working tree | Pass | `PlainPBStoreUrlTest` (6 tests, 0 failures): `reducedata=optimized`, `optimized_500` and `optimLastSample_100` each throw an `IOException` whose message names the value, says the operator is defined by the range of a retrieval request and names the form that applies with `firstSample_3600`; `reducedata=firstSample_3600` initializes and its URL representation carries it. `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS (1021 tests, 0 failures, 0 errors, 0 skipped, 10 min 55 s); `mdbook build docs/book` built with the two rows; no shipped policy, test or book page carries a refused URL (grep of `src/` and `docs/book/src`) |
+| T1 | 2026-10-19 16:01 PDT (`PlainPBStoreUrlTest`), 16:12 PDT (suite), 16:12 PDT (book) | JDK 21, Tomcat 9.0.121 for the integration tests, on the working tree | Pass | `PlainPBStoreUrlTest` (6 tests, 0 failures): `reducedata=optimized`, `optimized_500` and `optimLastSample_100` each throw an `IOException` whose message names the value, says the operator is defined by the range of a retrieval request and names the form that applies with `firstSample_3600`; `reducedata=firstSample_3600` initializes and its URL representation carries it. `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS (1021 tests, 0 failures, 0 errors, 0 skipped, 10 min 55 s); `mdbook build docs/book` built with the two rows; no shipped policy, test or book page carries a refused URL (grep of `src/` and `docs/book/src`); after the push of db5884b1 and 6d02dab0 the Maven workflow (run 39341654991) and the Pages workflow (run 39341654926) both ended success at 16:43 PDT |
 
 ##### Closure Evidence
 
-- none
+- Deliverable: the refusal in `PlainPBStoragePlugin.initialize`, `PlainPBStoreUrlTest` and the two book rows landed in db5884b1 together with M79 (the commit carries Closes #49 and Closes #50); the register in 6d02dab0. Pushed to origin/modernize; observed 2026-10-19 16:27 PDT: origin/modernize is 6d02dab0, equal to HEAD.
+- Checks: T1 is Pass above (the unit test, the suite of 1021 tests, the built book, the two workflows).
+- Linked issue #49: the body synced with its three boxes ticked and a close comment posted, closed as completed under Issue authority at 2026-10-19T23:36:55Z; read back CLOSED with no open box and one comment at 16:37 PDT.
+- Closed on 2026-10-19.
 
 ##### GitHub Projection
 
 Title: Optimized as reducedata ignores N
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: CLOSED
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-19 10:25 PDT; `gh issue list` read the issue OPEN with label bug and assignee jeonghanlee at its creation.
+Last Compared: 2026-10-19 16:37 PDT; `gh issue view 49` shows the body with its three boxes ticked, one close comment naming db5884b1, CLOSED as completed at 2026-10-19T23:36:55Z, label bug, assignee jeonghanlee.
 
 #### M79 - Refuse reducedata together with pp on one store
 
 Origin: daff1b7 / M79
 Identity History: none
 GitHub Issue: #50 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/50)
-Status: Not started
+Status: Complete
 
 ##### Summary
 
@@ -7562,21 +7565,24 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | 2026-10-19 16:01 PDT (`PlainPBStoreUrlTest`), 16:12 PDT (suite), 16:12 PDT (book) | JDK 21, Tomcat 9.0.121 for the integration tests, on the working tree | Pass | `PlainPBStoreUrlTest` (6 tests, 0 failures): `reducedata=firstSample_3600&pp=mean_60` throws an `IOException` whose message names both parameters and the store and says the two are not combined; `pp=mean_60` alone and `pp=firstSample&pp=firstSample_3600` alone initialize and their URL representations carry the pp list and no reducedata. The same suite run as M78 (1021 tests, 0 failures) and the same book build; no shipped URL combines the two parameters |
+| T1 | 2026-10-19 16:01 PDT (`PlainPBStoreUrlTest`), 16:12 PDT (suite), 16:12 PDT (book) | JDK 21, Tomcat 9.0.121 for the integration tests, on the working tree | Pass | `PlainPBStoreUrlTest` (6 tests, 0 failures): `reducedata=firstSample_3600&pp=mean_60` throws an `IOException` whose message names both parameters and the store and says the two are not combined; `pp=mean_60` alone and `pp=firstSample&pp=firstSample_3600` alone initialize and their URL representations carry the pp list and no reducedata. The same suite run as M78 (1021 tests, 0 failures) and the same book build; no shipped URL combines the two parameters; the Maven workflow (run 39341654991) and the Pages workflow (run 39341654926) of the push ended success at 16:43 PDT |
 
 ##### Closure Evidence
 
-- none
+- Deliverable: the refusal in `PlainPBStoragePlugin.initialize`, `PlainPBStoreUrlTest` and the two book rows landed in db5884b1 together with M78 (the commit carries Closes #49 and Closes #50); the register in 6d02dab0. Pushed to origin/modernize; observed 2026-10-19 16:27 PDT: origin/modernize is 6d02dab0, equal to HEAD.
+- Checks: T1 is Pass above (the unit test, the suite of 1021 tests, the built book, the two workflows).
+- Linked issue #50: the body synced with its three boxes ticked and a close comment posted, closed as completed under Issue authority at 2026-10-19T23:36:59Z; read back CLOSED with no open box and one comment at 16:37 PDT.
+- Closed on 2026-10-19.
 
 ##### GitHub Projection
 
 Title: Store accepts reducedata together with pp
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: CLOSED
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-19 10:25 PDT; `gh issue list` read the issue OPEN with label bug and assignee jeonghanlee at its creation.
+Last Compared: 2026-10-19 16:37 PDT; `gh issue view 50` shows the body with its three boxes ticked, one close comment naming db5884b1, CLOSED as completed at 2026-10-19T23:36:59Z, label bug, assignee jeonghanlee.
 
 #### M80 - Delete the post-processor files of a moved partition
 
