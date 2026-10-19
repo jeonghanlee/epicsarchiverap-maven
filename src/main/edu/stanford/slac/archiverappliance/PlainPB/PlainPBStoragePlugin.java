@@ -34,6 +34,8 @@ import org.epics.archiverappliance.etl.StorageMetricsContext;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
+import org.epics.archiverappliance.retrieval.postprocessors.Optimized;
+import org.epics.archiverappliance.retrieval.postprocessors.OptimizedWithLastSample;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessorWithConsolidatedEventStream;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessors;
@@ -617,6 +619,13 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
 
             if (queryNVPairs.containsKey("reducedata")) {
                 reducedataPostProcessor = queryNVPairs.get("reducedata");
+                checkReducedataOperator(reducedataPostProcessor);
+                if (this.postProcessorUserArgs != null && !this.postProcessorUserArgs.isEmpty()) {
+                    throw new IOException("The store " + name + " carries both reducedata=" + reducedataPostProcessor
+                            + " and pp=" + String.join(",", this.postProcessorUserArgs)
+                            + "; the two are not combined on one store, because the pp caches would be computed"
+                            + " from the reduced data and not from the raw samples");
+                }
             }
 
             if (queryNVPairs.containsKey("consolidateOnShutdown")) {
@@ -704,6 +713,20 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
 
     public String getRootFolder() {
         return rootFolder;
+    }
+
+    /**
+     * Refuses a reducedata operator that is defined by a retrieval range rather than by a bin width: optimized and
+     * optimLastSample take a number of points over the range of a request, which a store does not have, so the ETL
+     * would reduce into the default 15-minute bins whatever the number says.
+     */
+    private static void checkReducedataOperator(String operator) throws IOException {
+        PostProcessor postProcessor = PostProcessors.findPostProcessor(operator);
+        if (postProcessor instanceof Optimized || postProcessor instanceof OptimizedWithLastSample) {
+            throw new IOException("reducedata=" + operator + " does not apply to a store: " + postProcessor.getIdentity()
+                    + " is defined by the range of a retrieval request; use an operator with a bin width in seconds,"
+                    + " such as firstSample_3600 or mean_60");
+        }
     }
 
     public void setRootFolder(String rootFolder) throws IOException {
