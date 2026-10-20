@@ -165,6 +165,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | D44 | The console checks run against one soft IOC and one local appliance. The IOC is the `consolechart` IOC of `ioc-runner` (local mode), started from `src/resources/test/st.cmd`, which loads `ConsoleChartPVs.db` and one record-change database chosen by the `RECORD_CHANGE` macro; a check that needs another record set switches the macro in the IOC configuration and restarts that IOC, and does not start a second one. The appliance is the kept local appliance (port base 27665); a check that needs another archiver state uses it, and does not start a second one. The procedure of this IOC is written into the book as M75, in stage 1 of D43 after M73, so that it records the commands the M73 checks ran. D20 is unchanged: the Java test fixtures keep launching softIocPVX directly. | 2026-10-17 |
 | D45 | The role of the archiver is to keep the signal without a gap: when the archived record changes, the archiver detects it and goes on storing under the new condition, with the earlier samples readable as they were stored. That is M76, deferred to the next major release, and one GitHub issue holds the direction. In this release the engine does only this much (M77): it writes to its log that the record is changing, naming the PV and the change, and it pauses what can be paused, which is a PV whose type changed; the other reactions stay as M73 observed them. M77 runs in stage 1 of D43 after M75. | 2026-10-17 |
 | D46 | Before the merge of `modernize` into the default branch, the open work is closed down to what the shipped console needs: M67 closes by a dated exception with its step 5 (the header of the analyzer) moved to M62; M78, M79 and M80 move from the Backlog to the Milestone table and are done; the analyzer design (`docs/design-analyzer.md`) is in place. After the merge the analyzer is built in five phases, one row each, in the order A (M62, page, header and address), B (M81, interaction, options and export), C (M63, tools for one signal), D (M82, tools for two and several signals) and E (M64, waveforms and images), each phase accepted and authorized on its own and usable when it ends; then M69, M61, M55, M40, M41, M66 after G8, and M76 as deferred. Issue #39 stays the one issue of the analyzer, with a box per phase in its body. | 2026-10-19 |
+| D47 | A `ZIP_PER_PV` store that is the source of an ETL move keeps the partition it moved (found by the check of M80). The defect goes to the Backlog as M83 for a later release, because the site uses no zip store and a zip store is the last store of a chain; the book's `compress` row says so, and M80 covers the zip store for the explicit deletion only. | 2026-10-19 |
 
 ### Conceptual-integrity findings
 
@@ -7597,43 +7598,47 @@ When the ETL moves a partition out of a store that carries `pp`, `markForDeletio
 
 ##### Scope
 
-- `markForDeletion` deletes, with the `.pb` file of a partition, the file of that partition for every operator in `postProcessorUserArgs`; a missing file is not an error.
-- `getETLStreamsForDeletion` lists the post-processor files of the partitions it returns, so the explicit deletion of a PV's data removes them too.
+- `markForDeletion` deletes, when it has deleted the `.pb` file of a partition, the post-processor file of that partition for every operator of `postProcessorUserArgs`: the file whose name is the `.pb` name with its trailing extension replaced by the operator's (`PostProcessors.findPostProcessor(arg).getExtension()`, as `commitETLAppendData` names the files it writes; the suffix alone is replaced, not every `.pb` of the path, which the existing lookup of missing caches does; an operator the registry does not know is skipped with the existing ERROR line); a missing file is not an error; when the `.pb` file is kept (its size changed), the post-processor files are kept with it. The path is resolved through `context.getPaths()`, so the uncompressed and the `ZIP_PER_PV` modes take the same route; for a zip store this reaches the explicit deletion only, because a zip store that is the source of a move keeps the moved partition itself (its `ETLInfo` key lacks the `jar:` form), a defect of the zip source that D47 leaves to the Backlog.
+- `getETLStreamsForDeletion` lists the post-processor files of the partitions it returns as `ETLInfo` rows with their sizes, so `deleteETLStream` removes them under its contract (a path and an observed size) and the explicit deletion of a PV's data removes them too.
 
 Out of scope: the files left behind by earlier moves; the post-processor files of the destination store.
 
 ##### Completion Criteria
 
-- An ETL test with `pp` on the source store moves a partition and leaves no file of that partition in the source store, while the post-processor files of the partitions still in the store are untouched.
-- The explicit deletion of a PV's data from a store with `pp` leaves no file of that PV.
-- The ETL and PlainPB test suites pass.
+- An ETL test over two hops (STS to a MTS that carries `pp=mean_60`, then that MTS to the LTS), run with the shipped `ETLJob` on PlainPB stores, moves a partition out of the MTS and leaves neither its `.pb` file nor its `.mean_60` file there, while both files of the partition still in the MTS are untouched.
+- The explicit deletion of a PV's data from a store with `pp` leaves no file of that PV, the post-processor files among them, for an uncompressed store and for a `ZIP_PER_PV` store (its entries).
+- A `merge` store in front of a PlainPB store deletes the same files, since `MergeDedupStoragePlugin` delegates `markForDeletion`, `getETLStreamsForDeletion` and `deleteETLStream` to the store behind it; the three delegating methods are unchanged in the diff and the existing merge store tests pass.
+- The `pp` row of the Stores table in `docs/book/src/configuration.md` says that the post-processor files of a moved partition leave the store with it.
+- `ETLPostProcessorTest` (the caches computed on the destination) and the ETL and PlainPB test suites pass.
 
 ##### Dependencies And Decisions
 
 - D46 (Decision Date 2026-10-19): moved from the Backlog to the Milestone table to land before the merge of `modernize`.
 - Found on 2026-10-19 from the environment session's observation of the leftover file.
+- D47 (Decision Date 2026-10-19): the check of the two hops found that a `ZIP_PER_PV` store that is the source of a move keeps the partition it moved (the `ETLInfo` key of `getETLStreams` lacks the `jar:` form); the owner left that defect to the Backlog (M83) because the site uses no zip store and a zip store sits last in a chain, and the book says so; this row covers the zip store for the explicit deletion only.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-19: the owner accepted the plan after three third-person reviews and three second-person passes of the same day, all findings applied (the suffix-only name of the post-processor file, the merge store's delegation, the ZIP entries, the two as-if times with the check after the first hop, the verifiable criteria) ("수락과 구현승인")
+Implementation Authorization: 2026-10-19: the owner authorized the implementation of the accepted plan in the same words; commits, pushes and issue changes need their own authority
 Superseded Plan Artifacts: none
 
-1. The deletion of the post-processor files in `markForDeletion` and their listing in `getETLStreamsForDeletion`. Check: T1.
-2. An ETL test over PlainPB stores with `pp` on the source. Check: T1.
+1. A private helper of `PlainPBStoragePlugin` that returns the post-processor paths of a `.pb` path (one per operator of `postProcessorUserArgs`, by `getExtension`, through `context.getPaths()`); `markForDeletion` deletes them after the `.pb` file, and `getETLStreamsForDeletion` lists them with their sizes. Check: T1.
+2. A test class `PlainPBPostProcessorCleanupTest` over the shipped `ETLJob` and PlainPB stores: STS HOUR to MTS HOUR with `pp=mean_60` to LTS YEAR, two hour partitions of data written with the shipped writer, one `ETLJob` run per hop: the first hop with an as-if time past both partitions, so both reach the MTS and get their `.pb` and `.mean_60` files there, the second hop with an as-if time between the end of the older partition and the end of the newer, so only the older moves on; the MTS folder listed after the first run, after the second run and after the explicit deletion of the PV from the MTS; and, for a MTS in `ZIP_PER_PV` mode, the first hop and the explicit deletion with the entries of the archive listed. Check: T1.
+3. The book: a sentence on the `pp` row that the files of a moved partition leave with it, and a `compress` row that names `ZIP_PER_PV` for the last store only, since a zip source keeps the partition it moved. Check: T1.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Unit and suite | An ETL test with a source store carrying `pp=mean_60`, data in two partitions, one pass that moves the older partition, then the explicit deletion of the PV; the source folder listed after each step; `./mvnw -B -ntp clean verify` | JDK 21 | After the pass the source holds only the files of the newer partition, `.pb` and `.mean_60`; after the deletion it holds none; the suite passes |
+| T1 | Unit and suite | `PlainPBPostProcessorCleanupTest`: the two hops of the plan with the shipped `ETLJob` and the MTS folder listed after each hop and after the explicit deletion; the first hop into a `ZIP_PER_PV` MTS and its explicit deletion with the entries of the archive listed; then `./mvnw -B -ntp clean verify` (with `ETLPostProcessorTest` among the tests) and `mdbook build docs/book` | JDK 21, Tomcat 9.0.121 for the integration tests | After the first hop the MTS holds the `.pb` and `.mean_60` files of both partitions; after the second hop only those of the newer partition; after the deletion none; the zip archive holds the four entries after its hop and none after its deletion; suite and book pass |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | pending | | | |
+| T1 | 2026-10-19 17:19 PDT (`PlainPBPostProcessorCleanupTest`), 17:40 PDT (suite), 17:31 PDT (book) | JDK 21, Tomcat 9.0.121 for the integration tests, on the working tree | Pass | `PlainPBPostProcessorCleanupTest` (2 tests, 0 failures): over STS HOUR to a MTS HOUR with `pp=mean_60` to LTS YEAR with the shipped `ETLJob`, after the first hop (as-if time 03:00) the MTS held the `.pb` and `.mean_60` files of both hour partitions, after the second hop (as-if time 01:30) only those of the newer partition, and after the explicit deletion none (the deletion listed the `.pb` file and its `.mean_60` file); for a `ZIP_PER_PV` MTS the first hop filled the archive with the four entries and the explicit deletion listed and removed all four. A two-hop case with a zip MTS was run and showed that the zip source keeps its moved partition (D47, M83). `./mvnw -B -ntp clean verify` with `TOMCAT_HOME` set ended BUILD SUCCESS (1023 tests, 0 failures, 0 errors, 0 skipped, 10 min 53 s, `ETLPostProcessorTest` among them); `mdbook build docs/book` built with the `pp` and `compress` rows |
 
 ##### Closure Evidence
 
@@ -7656,9 +7661,75 @@ Last Compared: 2026-10-19 10:25 PDT; `gh issue list` read the issue OPEN with la
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-No work is unassigned on 2026-10-19: M78, M79 and M80, entered from the store defects on 2026-10-19, moved to the Milestone table by D46 the same day (see Assignment History).
+| | M83 | Delete the moved partition of a zip store that is an ETL source | Milestone | Not started | Yes | D47 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; [detail](#m83---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
+
+M78, M79 and M80, entered on 2026-10-19 from the store defects, moved to the Milestone table by D46 the same day (see Assignment History); M83 was entered on 2026-10-19 by D47 and waits for a later release.
 
 ### Backlog Details
+
+#### M83 - Delete the moved partition of a zip store that is an ETL source
+
+Origin: daff1b7 / M83
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+A `pb` store with `compress=ZIP_PER_PV` that is the source of an ETL move keeps the partition it moved: `getETLStreams` keys each `ETLInfo` with `path.toAbsolutePath().toString()`, which for a path inside the zip file system is the entry's path without the `jar:` prefix; `markForDeletion` resolves that key on the local file system, finds nothing and ignores the `NoSuchFileException` by design, so the entry stays and the samples exist twice. `getETLStreamsForDeletion` keys its rows in the `jar:` form, so the explicit deletion works. Observed on 2026-10-19 with the shipped `ETLJob` over STS HOUR to a zip MTS HOUR with `pp=mean_60` to LTS YEAR: the LTS held the data and the archive still held both `.pb` and both `.mean_60` entries. A zip store is meant as the last store of a chain, where no move starts, so the shipped configurations do not reach this (D47).
+
+##### Scope
+
+- `getETLStreams` keys the `ETLInfo` of a zip path in the `jar:` form through the same helper as `getETLStreamsForDeletion`, so `markForDeletion` deletes the moved entry and its post-processor entries.
+- A test over two hops with a zip MTS, which keeps the moved partition today, passes.
+
+Out of scope: the uncompressed store (M80); where a zip store may sit in a chain (the book says the last store).
+
+##### Completion Criteria
+
+- After a move out of a zip store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, and the next store holds the data once.
+- The explicit deletion of a PV from a zip store keeps working.
+- The default suite passes.
+
+##### Dependencies And Decisions
+
+- D47 (Decision Date 2026-10-19): left to the Backlog for a later release; found by the check of M80.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. The key of `getETLStreams` through the shared helper. Check: T1.
+2. The two-hop case with a zip MTS added to `PlainPBPostProcessorCleanupTest`. Check: T1.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit and suite | `PlainPBPostProcessorCleanupTest` with the two hops over a zip MTS; `./mvnw -B -ntp clean verify` | JDK 21, Tomcat 9.0.121 for the integration tests | After the second hop the archive holds only the entries of the newer partition; suite passes |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: A zip store as an ETL source keeps the partition it moved
+Labels: bug
+GitHub Milestone: none
+Observed State: not filed
+Observed Labels: none
+Observed Milestone: none
+Last Compared: 2026-10-19; the issue is filed with the closure of M80 and its number entered here.
 
 ## Assignment History
 
