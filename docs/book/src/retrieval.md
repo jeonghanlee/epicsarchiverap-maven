@@ -133,6 +133,17 @@ getData.json?pv=mean_3600(TEST:PV:1)
 getData.json?pv=mean(TEST:PV:1,3600)
 ```
 
+The parameter `pp` has no PV name, so it takes the underscore form only,
+such as `pp=mean_3600`. The form with commas belongs to the PV name:
+`pp=mean(3600)` answers HTTP 400 as an unknown operator. When a request
+carries several `pp` parameters, the first one counts.
+
+The server turns the comma form into the underscore form before it checks
+it, so the error for `mean(TEST:PV:1,abc)` names the operator `mean_abc`.
+Giving the argument in both forms, as in `mean_60(TEST:PV:1,60)`, is an
+error and is reported as `mean_60_60`. A `+` in an operator is read as a
+blank unless it is written `%2B`.
+
 | Operator | Result per bin |
 | --- | --- |
 | `firstSample`, `lastSample` | the first or last sample |
@@ -145,41 +156,67 @@ getData.json?pv=mean(TEST:PV:1,3600)
 | `flyers`, `ignoreflyers` | only, or all but, the samples far from the mean; second argument is the number of standard deviations, default 3 |
 | `nth` | every n-th sample; the argument is n, default 900 |
 | `ncount` | the number of samples in the whole range; no argument |
-| `deadBand` | like the record's `ADEL`: a sample is kept when it differs from the last kept one by at least the argument, default 1 |
+| `deadBand` | like the record's `ADEL`: a sample is kept when it differs from the last kept one by more than the argument, default 1 |
 | `optimized`, `optimLastSample` | about the given number of points over the range, default 1000 |
 | `caplotbinning` | up to four samples per bin (first, last, minimum, maximum), as the Channel Archiver plot mode |
 
-The statistics operators, `optimized` and `optimLastSample` fill empty
-bins with the previous value; the variants with `Sample` appended, such
-as `meanSample`, leave them empty.
+The operators from `mean` to `loess` in the table, `optimized` and
+`optimLastSample` fill empty bins with the previous value, except `count`,
+which writes 0 for an empty bin; the variants with `Sample` appended, such
+as `meanSample`, leave them empty. The other
+operators have no `Sample` variant. Of `optimized` and `optimLastSample`
+only `optimized` has one, `optimizedSample`; `optimLastSampleSample` is
+accepted and fills the empty bins like `optimLastSample`.
 
 In a request with several PVs, each PV takes the operator in its own name
 or, when its name carries none, the operator of `pp`. The operator of one
 PV never reaches another.
 
-The server checks every operator before it reads data. The name before
-the first underscore must be an operator of the table or its `Sample`
-variant. The argument must be a number in the range of the operator:
+The server checks every operator in effect before it reads data; an
+operator of `pp` that no PV uses is not checked. The name before the
+first underscore must be an operator of the table, or the `Sample`
+variant of an operator that has one. The spelling is exact for the name and for integer arguments: the
+check is case sensitive and accepts no blank before or after them. The
+argument must be a number in the range of the operator:
 
 | Operator | Argument |
 | --- | --- |
-| `firstSample`, `lastSample`, `firstFill`, `lastFill`, the statistics operators, `caplotbinning` | the bin size, an integer of at least 1 |
-| `flyers`, `ignoreflyers` | the bin size as above, then optionally a finite number above 0 |
-| `nth` | n, an integer of at least 1 |
-| `optimized`, `optimLastSample` | the number of points, an integer of at least 1 |
+| `firstSample`, `lastSample`, `firstFill`, `lastFill`, `mean`, `median`, `min`, `max`, `count`, `std`, `variance`, `popvariance`, `rms`, `jitter`, `kurtosis`, `skewness`, `stats`, `errorbar`, `linear`, `loess`, `caplotbinning` | the bin size, an integer from 1 to 2147483647 |
+| `flyers`, `ignoreflyers` | the bin size as above, then optionally a number above 0 that fits a 32-bit float |
+| `nth` | n, an integer from 1 to 2147483647 |
+| `optimized`, `optimLastSample` | the number of points, an integer from 1 to 2147483647 |
 | `deadBand` | a finite number of at least 0 |
 | `ncount` | none |
+
+An integer above 2147483647 answers the same message as 0, which names
+"an integer of at least 1". A valid but very large point count, in the millions,
+can also empty the answer without an error, and can exhaust the memory of
+the retrieval application until it stops answering; keep the number of
+points far below that.
 
 An empty or blank `pp` and `pp=pb` return raw data. `twoweek` and
 `extraFields` are the names that one appliance sends to another; the
 server accepts them and treats them like an empty `pp`. An unknown
 operator, such as `bogus` or `meanx`, and a bad argument, such as `mean_`,
 `mean_0`, `mean_abc`, `mean_60.5` or `nth_-1`, return HTTP 400 on
-`getData` and `getDataForPVs`. The body names the operator and the
-reason. The PVAccess retrieval fails the call with the same message.
+`getData` and `getDataForPVs`. The body is the HTML error page of the
+server, and its Message line names the operator and the reason. The
+PVAccess retrieval fails the call with the same message.
 
 `optimLastSample` over a range shorter, in seconds, than its number of
-points answers an empty body.
+points answers an empty result; with the default of 1000 points that
+is every range shorter than 1000 seconds. `json`, `jplot` and `qw` answer an empty
+JSON array written over two lines, `csv` one empty line, `flx` an empty `data`
+element, `svg` a fragment that is not a valid SVG document, and `raw`,
+`txt` and `mat` no bytes. A range
+before the first stored sample of a PV answers the same. A range after
+the first stored sample that holds no sample answers differently for each
+operator: raw data adds the last sample before `from`, while
+`optimLastSample` and `nth` answer the PV with an empty `data` array. In a
+request with several PVs, one PV
+whose `optimLastSample` has more points than the range has seconds makes
+the whole response empty, and nothing in the response tells which PV
+caused it.
 
 ## The data viewer
 

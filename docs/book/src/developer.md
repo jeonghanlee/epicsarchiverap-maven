@@ -78,6 +78,12 @@ Prerequisites:
 
 3. To stop the appliance, press Ctrl-C in its terminal or send SIGTERM to
    the PID in `<run_folder>/launcher.pid`. Wait for the launcher to exit.
+   The file is not removed at a stop, and after a kill or a reboot the PID
+   may belong to another process. Send the signal only after you have
+   checked that the command line of the PID holds the run folder; the
+   [Tomcat integration tests](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#tomcat-integration-tests)
+   section of the test procedure describes the check and the values of the
+   `status` file.
 
 4. To resume archiving, repeat step 2 with the same folder. The launcher
    retains PV configuration and stored samples in that folder.

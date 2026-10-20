@@ -23,6 +23,12 @@ decides how the body is read ([POST bodies](retrieval.md#post-bodies)).
 objects, each with `pv` and the parameters of that PV; otherwise it reads
 the form or URL parameters.
 
+Some calls reject a bad parameter with an HTTP error status, such as 400,
+and an HTML error page instead of JSON. A script checks the status code
+(`curl -f` fails on it) before it parses the body. The commands on this
+page use paths relative to the repository root; a scheduled job uses the
+absolute path of the repository.
+
 ## The API reference
 
 The build generates the reference of every call, with its HTTP methods
@@ -42,17 +48,51 @@ authority on names and parameters.
 | `getAllPVs` | `pv` (glob), `limit` (default 500, `-1` for all) | names of the archived PVs and their aliases |
 | `getPVStatus` | `pv` (glob or comma list) | the state of each PV |
 | `getPVTypeInfo` | `pv` | the archiving configuration of a PV |
-| `archivePV` | `pv`, `samplingperiod` (s, default 1.0), `samplingmethod` (`MONITOR` or `SCAN`, default `MONITOR`), `policy` | start archiving |
-| `pauseArchivingPV`, `resumeArchivingPV` | `pv` (glob or comma list) | pause or resume |
+| `archivePV` | `pv`, `samplingperiod` (s), `samplingmethod` (`MONITOR` or `SCAN`, default `MONITOR`), `controllingPV`, `policy` | start archiving; see below for the sampling rule |
+| `pauseArchivingPV`, `resumeArchivingPV` | `pv` (glob or comma list) | pause or resume an archived PV |
+| `resumeArchiveRequest` | `pv` | resume an archive request that no server answers (`Held`) |
+| `abortArchivingPV` | `pv` | remove a pending archive request from the archive workflow; the console offers it for `Initial sampling`, `Appliance assigned` and `Held` |
 | `changeArchivalParameters` | `pv`, `samplingperiod`, `samplingmethod` | change sampling |
 | `deletePV` | `pv`, `deleteData` (`true` or `false`, default `false`) | stop archiving; the PV must be paused |
 | `renamePV` | `pv`, `newname` | copy paused configuration and data to an unused name; retain both names |
 | `getNeverConnectedPVs`, `getCurrentlyDisconnectedPVs` | none | the reports |
-| `getPausedPVsReport` | `limit` (an integer of at least 1, applied to each appliance; default all) | the paused PVs; any other `limit` answers HTTP 400 |
+| `getPausedPVsReport` | `limit` (an integer from 1 to 2147483647, applied to each appliance; default all) | the paused PVs; any other `limit` answers HTTP 400 |
 | `exportConfig`, `importConfig` | none; `importConfig` takes the export as POST body | the archiving configuration as JSON |
 | `getNamedFlag`, `setNamedFlag` | `name`, `value` | named flags ([Operating](operating.md#named-flags)) |
 | `getLogLevel`, `setLogLevel` | `component`, `logger`, `level` | log levels ([Logging](logging.md)) |
 | `getApplianceInfo` | `id` (appliance identity, default the appliance that answers) | the appliance's identity and URLs |
+| `searchPV` | `pv` (complete name, optionally with `pva://` or `ca://`), `timeout` (s, default 5, at most 30) | whether a server holds the name, and its type, without archiving it |
+| `getPVDetails` | `pv` | the detailed statistics of a PV |
+| `getMetaGets` | none | the PVs for which the engine is gathering the first data, waiting for the first connection or measuring |
+| `changeTypeForPV` | `pv`, `newtype` (for example `DBR_SCALAR_DOUBLE`) | change the type of a paused PV |
+| `consolidateDataForPV` | `pv`, `storage` (such as `STS` or `MTS`), `date` | move the data of a paused PV up to a store |
+
+`archivePV` lets the policy of the site choose the method and the period of a PV when the request has no `samplingperiod`, and then ignores `samplingmethod` and `controllingPV`. With a `samplingperiod`, the given period and the method, `MONITOR` unless `SCAN` is given, replace the choice of the policy.
+
+The answers differ by call. A call that the state of the PV refuses
+usually answers HTTP 200 as well, with a `validation` member that gives
+the reason, or with `"status": "no"` for `resumeArchiveRequest` and
+`abortArchivingPV`. A script therefore tests the content of the answer,
+not only the HTTP status. A missing `pv` answers HTTP 400 for
+`pauseArchivingPV`, `resumeArchivingPV`, `deletePV`, `resumeArchiveRequest`
+and `abortArchivingPV`, and a bad parameter of a read call may answer HTTP
+500 or 404. `archivePV` answers an array with an entry for each PV, with a
+`status` such as `Archive request submitted` or `Already submitted`; a PV
+name that fails the syntax check can cut the array short. `getPVStatus`
+puts the state of the PV in `status`. The generated
+reference and a trial against the call show the exact answer. The sample
+client for pause and resume, described in
+[Pause and resume archiving](#pause-and-resume-archiving), shows which
+members it checks.
+
+`getPausedPVsReport` answers a JSON array of objects whose members are all
+strings: `pvName`, `instance`, `modificationTime` and, when the time is
+known, `modificationTimeEpochSeconds`, which a script converts before
+arithmetic. The time is the last change of the settings of the PV: a
+pause sets it, and so do a resume, a change of sampling and, for the new
+name, a rename. The `pvName` values, one per line, are the PV file of
+`resumePVList.py`, except that the script rejects a file with two names
+of one record, such as `X` and `X.RBV`.
 
 ## Examples
 
@@ -106,8 +146,11 @@ is listed like a PV name.
 
 The default request explicitly sends `limit=-1`, overriding the API's
 500-name default. A positive limit applies on the server before client
-sorting and deduplication; it does not select the alphabetically first N
-names. The HTTP library honors the usual proxy environment variables; use
+sorting and deduplication. The server lists the names of one appliance
+sorted by name, one appliance after the other, and the aliases after the
+PVs; the order of the aliases among themselves is not defined. With one
+appliance a positive limit selects the first N PV names of that order.
+The HTTP library honors the usual proxy environment variables; use
 `NO_PROXY=127.0.0.1,localhost` for direct local access if a proxy is configured.
 
 HTTP errors, timeout, malformed JSON, unexpected response structures and
@@ -143,14 +186,36 @@ work/list-pvs-venv/bin/python "$samples/getPVStatus.py" "$bpl" "$pv_file"
 ```
 
 Both commands report per-PV results in an aligned ASCII table with `PV Name`
-and `Status`, in input order, followed by total, successful and failed counts. Successful
-status queries can report `Not being archived` or `Initial sampling`.
+and `Status`, in input order, followed by total, successful and failed
+counts. Successful status queries can report `Not being archived` or
+`Initial sampling`. Repeat the status command to observe progress; neither
+script waits for collection to begin.
+
 `Being archived` is separate from archive request acceptance, and does not
-by itself prove that the IOC is connected. Repeat the status command to
-observe progress; neither script waits for collection to begin.
+by itself prove that the IOC is connected. The console shows a PV as
+`Disconnected` when the status is `Being archived` and its
+`connectionState` member reads `false`. The status command prints only
+`Being archived` for it (see
+[Currently disconnected PVs](#currently-disconnected-pvs)).
+
+A request that no server answers reads `Held` after the hold time: ten
+minutes by default, and `0` turns the hold off
+([Configuration](configuration.md)). The status command prints `Held` as a
+successful result, and the `reason` member of the `getPVStatus` call tells
+why. A held request is resumed with `resumeArchiveRequest?pv=<name>` and
+cancelled with `abortArchivingPV?pv=<name>`. `resumeArchivingPV` does not
+resume it: that call is for paused PVs, and for one `pv` it answers HTTP
+200 with a `validation` member and leaves the request as it is.
+
+`getNeverConnectedPVs` lists the requests of the archive workflow that
+have not finished, a held one with `status` `Held` and its `reason`.
+`getMetaGets` lists the PVs for which the engine is gathering the first
+data.
 
 The archive command accepts `--sampling-method MONITOR|SCAN` and
-`--sampling-period SECONDS` (defaults MONITOR and 1). The period must be
+`--sampling-period SECONDS` (defaults MONITOR and 1) and always sends both
+values, so its requests replace the policy of the site, unlike an archive
+request from the console with the sampling left as it is. The period must be
 positive and representable as a finite 32-bit float. The server can enforce
 a minimum period. `Already submitted` is successful request handling; it
 does not mean existing sampling settings were updated. Use the appliance's
