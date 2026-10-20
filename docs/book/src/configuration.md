@@ -125,10 +125,113 @@ stands for both when they are equal. Each key starts with
   is full. Site file and unset
   `DELETE_SRC_STREAMS_IF_FIRST_DEST_WHEN_OUT_OF_SPACE`.
 - `etl.common.ETLPassWorkers`: the worker threads per ETL transition
-  index; only `1` is supported. Site file and unset `1`.
+  index; only `1` is supported, another value or one that is not a whole
+  number is replaced by `1` and logged at ERROR. Site file and unset `1`.
 - `etl.common.ETLPassStopWaitSeconds`: the seconds the etl shutdown waits
-  for a running ETL job before interrupting it, and again after the
-  interrupt; `0` interrupts at once. Site file and unset `60`.
+  for the running ETL passes before it interrupts their jobs, and again
+  after the interrupt. A value that is not a whole number of at least 0,
+  such as `-1`, `1.5` or `60s`, is replaced by `60` and logged at ERROR.
+  Site file and unset `60`.
+  - Stop time: the stop of the etl instance takes at most twice this value
+    plus the consolidation of every PV whose source consolidates on
+    shutdown. `0` interrupts the running jobs at once.
+  - Data left behind: the partitions of an interrupted job stay in the
+    source store, and so do the PVs that the shutdown does not
+    consolidate because their job still runs. On a RAM disk source, the
+    usual case of `consolidateOnShutdown`, this data survives a restart of
+    the process but not a reboot or power-off of the host. After a stop
+    that hangs or writes the lines below, restart the etl process (each
+    instance is its own process, see
+    [Installing](installing.md#starting-and-stopping)) and not the host. After the restart the PVs register again and the start-up
+    pass moves the partitions that hold and gather allow.
+  - A pause or delete that is already waiting for a consolidation when the
+    first wait of the shutdown has ended (at once with `0`) waits at most
+    this many seconds more for a consolidation that another thread runs,
+    or for the running job of that PV, and then logs an ERROR and returns.
+    Such a call can last up to twice this value from the start of the
+    shutdown, and longer when a job of that PV blocks it at several
+    transition indices. Otherwise it consolidates the PV itself, also with
+    `0`.
+  - A pause or delete of a PV that the etl lookup holds, arriving after
+    the shutdown has started, returns at once, logs an ERROR and leaves
+    the PV to the shutdown consolidation.
+  - The HTTP answer of these calls reports success whatever the
+    consolidation did, and an error only for other failures, such as a
+    failed deletion of stored data. The etl log shows what was skipped.
+  - The lines of the etl log, and what each one means for the data. A
+    delete with `deleteData` set to `true` removes the stored data of the
+    PV right after these steps, whatever the lines say:
+    - `A pass of ... is still running after the stop wait` (WARN): after the
+      first wait, a pass is running and its jobs are interrupted next. Only
+      the first such driver is named, and with `0` the line is not written.
+      After the second wait, the same line has one of two meanings. A job
+      did not end after the interrupt, and its PV is left unconsolidated.
+      Or a pass was queued behind another pass of the same index and never
+      started, and no PV is left behind.
+    - `Not consolidating <pv> from <store> at shutdown: its ETL job is still
+      running after the stop wait`, then `<n> PVs left unconsolidated in
+      store <store> at shutdown`: the data of these PVs stays in the source
+      store. The count covers these PVs and the PVs left out by
+      `ARCHAPPL_SKIP_ETL_FOR_STORE`, but not a PV for which a pause or delete
+      gave up, as the entries below describe.
+    - `The shutdown hook has run; not consolidating <pv> on delete`: the
+      call arrived after the shutdown started. For a source that
+      consolidates on shutdown nothing is left to do, because the shutdown
+      consolidates the PV; for another source the line is written and
+      nothing moves.
+    - `The consolidation of <pv> at transition index <n> is still running
+      after the stop wait; not waiting for it`: the consolidation goes on in
+      another thread and the exit of the process may cut it. Check the data
+      of the PV after the next start.
+    - `Not consolidating <pv> at transition index <n>: its ETL job is still
+      running after the stop wait`: a pause or delete gave up. Nobody
+      consolidates the PV and the count above does not include it. Its data
+      stays in the source store.
+    - `Not running the queued consolidation of <pv> at shutdown`: the
+      shutdown took a queued pause or delete task and did not run it,
+      because the job of its PV was running. The call that waits for the task
+      can consolidate the PV when that job ends, or give up with the line
+      above. The PV is not in the count.
+    - `Interrupted while waiting for the consolidation of ...`: the thread
+      of the call was interrupted and stopped waiting; each later index
+      writes its own line. The interrupted call runs nothing itself. A thread
+      that has claimed the task goes on with it, and the shutdown may take
+      the task from the queue and run it; otherwise the data of the PV stays
+      in the source store. The PV is not in the count.
+    - `Skipping the consolidation of ... into store ... as
+      ARCHAPPL_SKIP_ETL_FOR_STORE names it`: a pause or delete left the data
+      of the PV in the source store, because the variable names its
+      destination.
+    - `Not consolidating <pv> from <store> at shutdown:
+      ARCHAPPL_SKIP_ETL_FOR_STORE names its destination`: the same at
+      shutdown; the PV is in the count above.
+    - `Exception processing ETL for ...`, `IOException processing ETL for pv
+      ...` and `Unsuccessful commiting ETL for pv ...`: written by the ETL
+      job itself when a pass job or a consolidation fails. The partitions
+      that were not moved stay in the source store.
+    - `ETL job failed to move <n> partitions for PV ...`: written by a
+      consolidation (pause, delete or shutdown) whose partitions failed to
+      move. A pass writes `ETL pass failed to move partitions:
+      transition=... source=... destination=... failedPartitions=...
+      firstPV=... firstError=...` instead, one line for each pair of stores
+      that failed in that pass, and not the line above.
+    - `Error running a queued consolidation at shutdown` and `Error when
+      consolidating data on shutdown for pv <pv>`: an unexpected error ended
+      that consolidation, and the shutdown goes on with the next one. The PV
+      is not in the count.
+    - `No space on dest when moving ETLInfo ...` (ERROR), `Not enough space
+      on dest. Deleting src stream ...` (ERROR) and `Not enough space on
+      dest. Skipping ETL this time for pv ...` (WARN): the destination store
+      is full. Depending on the out-of-space handling the ETL job skips the
+      PV, or deletes the source stream after it has moved the rest; the
+      default deletes it at the first transition index. This holds for a
+      pass and for a consolidation alike.
+    - The list is not complete. The ETL job and the pass driver also write
+      lines for unexpected failures, such as `IOException from
+      prepareForNewPartition`, `Exception running post processors for pv`,
+      `Invalid status when processing ETLInfo` (WARN), `A pass of ... ended
+      with an exception` and `Exception in a task queued between ETL jobs
+      of ...`. Read them as a failure of the job or pass that wrote them.
 - `config.RuntimeKeys`: the fields kept in engine memory. Site file
   `DESC`; unset none.
 - `engine.util.EngineContext.disconnectCheckTimeoutInMinutes`: the seconds
