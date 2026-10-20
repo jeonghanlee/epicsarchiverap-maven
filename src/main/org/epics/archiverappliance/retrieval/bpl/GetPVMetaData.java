@@ -62,11 +62,13 @@ public class GetPVMetaData implements BPLAction {
 			JSONObject typeInfoJSON = jsonEncoder.encode(typeInfo);
 			GetUrlContent.combineJSONObjects(retVal, typeInfoJSON);
 			String engineURL = configService.getAppliance(typeInfo.getApplianceIdentity()).getEngineURL() + "/getMetadata?pv=" + URLEncoder.encode(pvName, "UTF-8");
-			JSONObject engineMetaData = GetUrlContent.getURLContentAsJSONObject(engineURL);
+			JSONObject engineMetaData = GetUrlContent.getURLContentAsJSONObject(engineURL, false);
 			if(engineMetaData != null) { 
 				GetUrlContent.combineJSONObjects(retVal, engineMetaData);
-				out.println(JSONValue.toJSONString(retVal));
+			} else {
+				logger.debug("The engine has no metadata for " + pvName + "; returning the type information alone");
 			}
+			out.println(JSONValue.toJSONString(retVal));
 		} catch(Exception ex) {
 			logger.error("Exception getting metadata typeinfo for pv " + pvName, ex);
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
