@@ -927,9 +927,11 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
             if (sizeFromInfo == -1) {
                 logger.error("We are missing size information from ETLInfo for " + info.getKey());
                 Files.delete(path);
+                deletePostProcessorFiles(path, info.getPvName());
             } else {
                 if (sizeFromInfo == size) {
                     Files.delete(path);
+                    deletePostProcessorFiles(path, info.getPvName());
                 } else {
                     logger.error("The path " + info.getKey()
                             + " has changed since we generate the ETLInfo. Not deleting it this time around. If this persists, please manually remove the file. Current Size "
@@ -948,12 +950,65 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                 pbFileExtension, partitionGranularity, compressionMode, pv2key);
         ArrayList<ETLInfo> infos = new ArrayList<>();
         for (Path path : paths) {
-            // ArchPaths reads the decoded ZIP archive and entry paths literally.
-            String key = compressionMode == CompressionMode.ZIP_PER_PV
-                    ? "jar:" + path.toUri().getSchemeSpecificPart() : path.toAbsolutePath().toString();
-            infos.add(new ETLInfo(pvName, null, key, partitionGranularity, null, null, Files.size(path)));
+            infos.add(new ETLInfo(pvName, null, deletionKey(path), partitionGranularity, null, null, Files.size(path)));
+            // The post-processor files of the partition leave with it, so the explicit deletion lists them too.
+            for (Path ppPath : postProcessorPathsOf(path, pvName)) {
+                if (Files.exists(ppPath)) {
+                    infos.add(new ETLInfo(pvName, null, deletionKey(ppPath), partitionGranularity, null, null, Files.size(ppPath)));
+                }
+            }
         }
         return infos;
+    }
+
+    /** The ETLInfo key of a path of this store; ArchPaths reads the decoded ZIP archive and entry paths literally. */
+    private String deletionKey(Path path) {
+        return compressionMode == CompressionMode.ZIP_PER_PV
+                ? "jar:" + path.toUri().getSchemeSpecificPart() : path.toAbsolutePath().toString();
+    }
+
+    /**
+     * The post-processor files beside a .pb file of this store: one per pp operator of the store, named like the .pb
+     * file with the operator's extension in place of the trailing .pb, on the same file system (a folder or a zip
+     * archive). The operator is initialized with its user argument first, because the extension of a binned operator
+     * carries its interval; an operator the registry does not know is logged and skipped.
+     */
+    private List<Path> postProcessorPathsOf(Path pbPath, String pvName) {
+        List<Path> result = new ArrayList<>();
+        if (postProcessorUserArgs == null || postProcessorUserArgs.isEmpty() || pbPath.getFileName() == null) {
+            return result;
+        }
+        String fileName = pbPath.getFileName().toString();
+        if (!fileName.endsWith(pbFileExtension)) {
+            return result;
+        }
+        String base = fileName.substring(0, fileName.length() - pbFileExtension.length());
+        for (String postProcessorUserArg : postProcessorUserArgs) {
+            PostProcessor postProcessor = PostProcessors.findPostProcessor(postProcessorUserArg);
+            if (postProcessor == null) {
+                logger.error("Cannot find post processor for " + postProcessorUserArg);
+                continue;
+            }
+            try {
+                postProcessor.initialize(postProcessorUserArg, pvName);
+            } catch (IOException ex) {
+                logger.error("Cannot initialize post processor " + postProcessorUserArg, ex);
+                continue;
+            }
+            result.add(pbPath.resolveSibling(base + "." + postProcessor.getExtension()));
+        }
+        return result;
+    }
+
+    /** Deletes the post-processor files of a .pb file this store has just deleted; an absent file is not an error. */
+    private void deletePostProcessorFiles(Path pbPath, String pvName) {
+        for (Path ppPath : postProcessorPathsOf(pbPath, pvName)) {
+            try {
+                Files.deleteIfExists(ppPath);
+            } catch (IOException ex) {
+                logger.error("Exception deleting " + ppPath + ". Please manually remove this file", ex);
+            }
+        }
     }
 
     @Override
