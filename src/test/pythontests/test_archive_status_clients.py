@@ -137,10 +137,13 @@ class ArchiveStatusClientTest(unittest.TestCase):
         self.assertEqual([p[0]["samplingperiod"] for p in posts], ["10.0", "10.0"])
 
     def test_all_known_statuses_are_query_success(self):
-        for status in ("Not being archived", "Initial sampling", "Appliance assigned", "Being archived", "Paused", "Appliance Down"):
+        for status in ("Not being archived", "Initial sampling", "Appliance assigned", "Being archived", "Paused", "Appliance Down",
+                       "Held"):
             with self.subTest(status=status):
                 self.states["TEST:A"] = [{"pvName": "TEST:A", "status": status}]
-                self.assert_result(self.cli("getPVStatus.py"), 0)
+                result = self.cli("getPVStatus.py")
+                self.assert_result(result, 0)
+                self.assertIn(status, result.stdout)
 
     def test_already_submitted_and_empty_validation(self):
         self.archive["TEST:A"] = [{"pvName": "TEST:A", "status": "Already submitted", "validation": ""}]

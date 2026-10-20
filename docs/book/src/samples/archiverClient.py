@@ -18,7 +18,7 @@ DEFAULT_TIMEOUT = 30.0
 FIELD_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 STATUS_VALUES = {
     "Not being archived", "Initial sampling", "Appliance assigned",
-    "Being archived", "Paused", "Appliance Down",
+    "Being archived", "Paused", "Appliance Down", "Held",
 }
 
 
