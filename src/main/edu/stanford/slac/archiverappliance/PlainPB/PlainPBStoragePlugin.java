@@ -86,9 +86,10 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * contains data for a particular instant in time and which chunks contain data for a particular time period.
  * This is a mandatory field.</dd>
  * <dt>compress</dt><dd>This is an optional field that defines the compression mode.
- * The support for zip compression is experimental.
- * If the zip compression is used, the <code>rootfolder</code> is prepended with <code>{@link org.epics.archiverappliance.utils.nio.ArchPaths#ZIP_PREFIX ZIP_PREFIX}</code>.
- * If this is absent in the <code>rootfolder</code>, the initialization code automatically adds it in.
+ * <code>ZIP_PER_PV</code> keeps the files of a PV in one zip archive instead of a folder; the
+ * <code>rootFolder</code> is prepended with <code>{@link org.epics.archiverappliance.utils.nio.ArchPaths#ZIP_PREFIX ZIP_PREFIX}</code>
+ * when it is absent. For the last store of a chain only: a zip store that is the source of an ETL move keeps
+ * the partition it moved, so the data would exist twice.
  * </dd>
  * <dt>hold &amp; gather</dt><dd><code>hold</code> and <code>gather</code> are optional fields that work together
  * to implement high/low watermarks for data transfer. By default, both <code>hold</code> and <code>gather</code>
@@ -111,21 +112,23 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * retrieval performance).
  * Otherwise, the post processor is applied and the data is computed at runtime.
  * To specify multiple post processors, use standard URL syntax like so <code>pp=rms&amp;pp=mean_3600</code>
+ * The cached files of a partition are deleted with its <code>.pb</code> file when ETL moves the partition on
+ * or the PV is deleted. Not combined with <code>reducedata</code> on one store (see below).
  * </dd>
  * <dt>consolidateOnShutdown</dt><dd>This lets you control if ETL should push data to the subsequent store on
  * appserver shutdown. This is useful if you are using a RAMDisk for the short term store.</dd>
  * <dt>reducedata</dt><dd>An optional parameter; use this parameter to reduce the data as you move it into this store.
- * You can use any of the
- * <a href="http://slacmshankar.github.io/epicsarchiver_docs/userguide.html#post_processing">post processors</a>
- * that can be used with the <code>pp</code> argument.
+ * An operator with a bin width in seconds applies, such as <code>firstSample_3600</code> or <code>mean_60</code>;
+ * <code>optimized</code> and <code>optimLastSample</code> are defined by the range of a retrieval request, so
+ * initialization refuses them.
  * For example, if you define the LTS as
  * <code>pb://localhost?name=LTS&amp;rootFolder=${ARCHAPPL_LONG_TERM_FOLDER}&amp;partitionGranularity=PARTITION_YEAR&amp;reducedata=firstSample_3600</code>,
  * then when moving data into this store, ETL will apply the <code>firstSample_3600</code>
  * operator on the raw data to reduce the data and store only the reduced data.
  * The difference between this parameter and the <code>pp</code> parameter is that in the
  * <code>reducedata</code> case, only the reduced data is stored. The raw data is thrown away.
- * If you specify both the <code>pp</code> and the <code>reducedata</code>, you may get unpredictable
- * results because the raw data is necessary to precompute the caches.
+ * A store carries either <code>pp</code> or <code>reducedata</code>; initialization refuses both on one store,
+ * because the raw data is necessary to precompute the caches.
  * </dd>
  * <dt>etlIntoStoreIf</dt><dd>An optional parameter; use this parameter to control if ETL should move data into
  * this store.

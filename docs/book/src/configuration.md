@@ -43,6 +43,11 @@ source store. The data stays in the source store. The variable is read
 from the process environment, so unset it and restart the etl instance
 to resume the moves.
 
+The code also reads `ARCHAPPL_ALL_APPS_ON_ONE_JVM`, which lowers the thread
+counts of the cluster library when the four web applications run in one
+JVM. This project runs them in four Tomcat instances, so the variable is
+not used.
+
 The engine also reads the EPICS client variables `EPICS_CA_ADDR_LIST`,
 `EPICS_CA_AUTO_ADDR_LIST`, `EPICS_CA_CONN_TMO`,
 `EPICS_CA_BEACON_PERIOD`, `EPICS_CA_REPEATER_PORT`,
@@ -63,10 +68,12 @@ on several hosts.
 
 ## archappl.properties
 
-The keys below are set in the `default` site's file. Each key starts
-with `org.epics.archiverappliance.`, left out here.
+The keys below are read by the code; the `default` site's file sets each
+one, or carries it as a comment with the value the code uses when the key
+is unset. Each key starts with `org.epics.archiverappliance.`, left out
+here.
 
-| Key | Default site | Meaning |
+| Key | Default | Meaning |
 | --- | --- | --- |
 | `config.ConvertPVNameToKey.siteNameSpaceSeparators` | `[\\:\\-]` | characters of a PV name that become folder separators in the store paths |
 | `config.ConvertPVNameToKey.siteNameSpaceTerminator` | `:` | character that ends a store path |
@@ -76,7 +83,9 @@ with `org.epics.archiverappliance.`, left out here.
 | `config.PVTypeInfo.secondsToBuffer` | `10` | engine write period, in seconds |
 | `config.PVTypeInfo.sampleBufferMarginSeconds` | `1.0` | write delay every PV's buffer absorbs without dropping a sample, in seconds; values below 1.0 are raised to 1.0 |
 | `retrieval.DefaultUseReducedPostProcessor` | `...postprocessors.TwoWeekRaw` | post-processor used when a request asks for reduced data |
+| `retrieval.DataRetrievalServlet.proxyRetrievalRequest` | `false` | how a single-PV request for a PV held by another appliance is answered: `false` proxies the request to that appliance, `true` answers with an HTTP redirect to it, which can fail behind a load balancer |
 | `engine.epics.JCAConfigGen.useCAJ` | `true` | use the pure Java CA client |
+| `engine.epics.JCAConfigGen.dispatcher` | `...engine.epics.JCAEventDispatcherBasedOnPVName` | class that dispatches the CA events; the default assigns each PV one dispatch thread by its name, `gov.aps.jca.event.QueuedEventDispatcher` is the JCA queue |
 | `engine.epics.commandThreadCount` | `10` | number of CA contexts |
 | `engine.epics.scanThreadCount` | `1` | threads that serve SCAN sampling |
 | `engine.epics.scanJitterFactor` | `0.95` | factor applied to SCAN periods |
