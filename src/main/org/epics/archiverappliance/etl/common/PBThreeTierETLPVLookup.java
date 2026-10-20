@@ -36,9 +36,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 /**
@@ -69,6 +71,9 @@ public final class PBThreeTierETLPVLookup {
     public static final String STOP_WAIT_PROPERTY = "org.epics.archiverappliance.etl.common.ETLPassStopWaitSeconds";
 
     public static final long DEFAULT_STOP_WAIT_SECONDS = 60;
+
+    /** Milliseconds between two looks of a waiting consolidation at the stop state and at the claim of its task. */
+    private static final long CONSOLIDATION_POLL_MILLIS = 100;
 
     /** What ETL does when a destination store lacks space; the value names an OutOfSpaceHandling constant. */
     public static final String OUT_OF_SPACE_HANDLING_PROPERTY =
@@ -110,6 +115,9 @@ public final class PBThreeTierETLPVLookup {
 
     /** Set by the shutdown hook and by the test stop: no worker runs a queued task after either. */
     private volatile boolean workersStopped = false;
+
+    /** The System.nanoTime reading at which workersStopped became true. */
+    private volatile long stoppedAtNanos = 0;
 
     private volatile boolean hookRan = false;
 
@@ -340,9 +348,56 @@ public final class PBThreeTierETLPVLookup {
                 0);
     }
 
+    /** Sets the stop state and records when it began; later calls change nothing. */
+    private synchronized void markWorkersStopped() {
+        if (!workersStopped) {
+            stoppedAtNanos = System.nanoTime();
+            workersStopped = true;
+        }
+    }
+
+    /**
+     * The consolidation job of one lookup item. Exactly one thread claims it and runs it: a worker thread between
+     * the jobs of a pass while the workers run, else the shutdown hook or the thread that waits for it.
+     */
+    private final class ConsolidationTask implements Runnable {
+        private final ETLPVLookupItems lookupItem;
+        private final ETLJob job;
+        private final AtomicBoolean claimed = new AtomicBoolean(false);
+        private final CompletableFuture<Void> done = new CompletableFuture<>();
+
+        ConsolidationTask(ETLPVLookupItems lookupItem, ETLJob job) {
+            this.lookupItem = lookupItem;
+            this.job = job;
+        }
+
+        /** The body queued on a worker: claims the task only while the workers run and its thread is not interrupted. */
+        @Override
+        public void run() {
+            if (workersStopped || Thread.currentThread().isInterrupted()) {
+                return;
+            }
+            runIfUnclaimed();
+        }
+
+        /** Claims the task and runs it on the calling thread; returns false, and runs nothing, when it was claimed. */
+        boolean runIfUnclaimed() {
+            if (!claimed.compareAndSet(false, true)) {
+                return false;
+            }
+            try {
+                job.run();
+            } finally {
+                done.complete(null);
+            }
+            return true;
+        }
+    }
+
     /**
      * Runs the consolidation job of one lookup item: between the jobs of the running pass of its driver, else on
-     * the worker thread of its index, else on the calling thread when no worker runs. Waits for it to end.
+     * the worker thread of its index. Waits for it to end. Once the workers are stopped, or when the worker of the
+     * index refuses the task, the calling thread runs a task nobody has claimed.
      */
     private void consolidate(ETLPVLookupItems lookupItem, ETLPassDriver driver) {
         if (skipsStore(lookupItem)) {
@@ -350,34 +405,81 @@ public final class PBThreeTierETLPVLookup {
                     + environmentReader.apply(SKIP_ETL_FOR_STORE_ENV) + " as " + SKIP_ETL_FOR_STORE_ENV + " names it");
             return;
         }
-        ETLJob job = new ETLJob(lookupItem, oneYearLater());
-        if (workersStopped) {
-            job.run();
-            return;
-        }
-        CompletableFuture<Void> done = new CompletableFuture<>();
-        Runnable task = () -> {
+        ConsolidationTask task = new ConsolidationTask(lookupItem, new ETLJob(lookupItem, oneYearLater()));
+        boolean workerRefused = false;
+        if (!workersStopped && (driver == null || !driver.enqueueIfRunning(task))) {
             try {
-                job.run();
-            } finally {
-                done.complete(null);
+                workerFor(lookupItem.getLifetimeorder()).execute(task);
+            } catch (RejectedExecutionException ex) {
+                workerRefused = true;
             }
-        };
-        if (driver == null || !driver.enqueueIfRunning(task)) {
-            workerFor(lookupItem.getLifetimeorder()).execute(task);
         }
+        awaitConsolidation(task, driver, workerRefused);
+    }
+
+    /**
+     * Waits for the task in a timed loop. Before the stop the wait has no limit. After the stop, a task that a
+     * thread claimed is waited for at most the stop wait; an unclaimed task is claimed and run by this thread, unless
+     * the pass driver runs a job for the PV, in which case it waits at most the stop wait for that job and then gives
+     * up. An interrupted wait keeps the interrupt flag, runs nothing on this thread and logs an ERROR.
+     */
+    private void awaitConsolidation(ConsolidationTask task, ETLPassDriver driver, boolean workerRefused) {
+        String pvName = task.lookupItem.getPvName();
+        int index = task.lookupItem.getLifetimeorder();
+        long stopWaitNanos = -1;
+        long blockedSinceNanos = 0;
         try {
-            done.get();
+            while (!task.done.isDone()) {
+                if (Thread.currentThread().isInterrupted()) {
+                    throw new InterruptedException();
+                }
+                if (task.claimed.get()) {
+                    if (workersStopped) {
+                        stopWaitNanos = stopWaitNanos < 0 ? stopWaitNanos() : stopWaitNanos;
+                        if (System.nanoTime() - stoppedAtNanos >= stopWaitNanos) {
+                            logger.error("The consolidation of " + pvName + " at transition index " + index
+                                    + " is still running after the stop wait; not waiting for it");
+                            return;
+                        }
+                    }
+                } else if (workersStopped || workerRefused) {
+                    if (driver != null && pvName.equals(driver.getCurrentJobPv())) {
+                        stopWaitNanos = stopWaitNanos < 0 ? stopWaitNanos() : stopWaitNanos;
+                        if (blockedSinceNanos == 0) {
+                            blockedSinceNanos = System.nanoTime();
+                        }
+                        if (System.nanoTime() - blockedSinceNanos >= stopWaitNanos) {
+                            logger.error("Not consolidating " + pvName + " at transition index " + index
+                                    + ": its ETL job is still running after the stop wait");
+                            return;
+                        }
+                    } else if (task.runIfUnclaimed()) {
+                        return;
+                    }
+                }
+                try {
+                    task.done.get(CONSOLIDATION_POLL_MILLIS, TimeUnit.MILLISECONDS);
+                } catch (TimeoutException ex) {
+                    // Look at the stop state and the claim again.
+                }
+            }
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
+            logger.error("Interrupted while waiting for the consolidation of " + pvName + " at transition index "
+                    + index + "; not waiting for it and not running it on this thread");
         } catch (ExecutionException ex) {
-            logger.error("Exception consolidating " + lookupItem, ex);
+            logger.error("Exception consolidating " + task.lookupItem, ex);
         }
+    }
+
+    private long stopWaitNanos() {
+        return TimeUnit.SECONDS.toNanos(readStopWaitSeconds());
     }
 
     /**
      * Cancel the ETL jobs for each of the ETL lifetime transitions and also remove from internal structures.
-     * The PV leaves its drivers first; then, index by index, its consolidation runs and is waited for.
+     * The PV leaves its drivers first; then, index by index, its consolidation runs and is waited for. An interrupted
+     * wait ends the waiting for this and the later indexes.
      * After the shutdown hook has run nothing is queued: the PV is logged and left to the hook's consolidation.
      * @param pvName The name of PV.
      */
@@ -477,7 +579,7 @@ public final class PBThreeTierETLPVLookup {
         for (ExecutorService worker : workers.values()) {
             worker.shutdownNow();
         }
-        workersStopped = true;
+        markWorkersStopped();
         waitForRunningPasses(bound);
 
         Map<String, Integer> leftPerStore = new TreeMap<>();
@@ -488,7 +590,17 @@ public final class PBThreeTierETLPVLookup {
                 for (ETLPassDriver driver : byCadence.values()) {
                     for (Runnable queued : driver.takeQueued()) {
                         try {
-                            queued.run();
+                            if (queued instanceof ConsolidationTask task) {
+                                String queuedPv = task.lookupItem.getPvName();
+                                if (queuedPv.equals(driver.getCurrentJobPv())) {
+                                    logger.error("Not running the queued consolidation of " + queuedPv
+                                            + " at shutdown: its ETL job is still running after the stop wait");
+                                    continue;
+                                }
+                                task.runIfUnclaimed();
+                            } else {
+                                queued.run();
+                            }
                         } catch (Throwable t) {
                             logger.error("Error running a queued consolidation at shutdown", t);
                         }
@@ -583,7 +695,7 @@ public final class PBThreeTierETLPVLookup {
         for (ExecutorService worker : workers.values()) {
             worker.shutdownNow();
         }
-        workersStopped = true;
+        markWorkersStopped();
     }
 
     /**
