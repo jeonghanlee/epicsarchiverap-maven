@@ -12,17 +12,17 @@ const CARDS = [
         "pageHeading",
         "External servers: whose data does this appliance serve?",
         [
-            ["In short", "Other EPICS Archiver Appliance clusters whose stored data this appliance serves through its own retrieval, each with its address and its indexes."],
-            ["Server URL", "The retrieval address of the other cluster, its data_retrieval_url: host, port and /retrieval."],
+            ["In short", "Other EPICS Archiver Appliance installations whose stored data this appliance serves through its own retrieval, each with its address and its indexes."],
+            ["Server URL", "The retrieval address of the other installation, its data_retrieval_url: host, port and /retrieval."],
             ["Indexes", "The archives of that server this appliance serves; pbraw is the raw data of an archiver appliance."],
-            ["What to do", "Add a server… connects another cluster; Remove… beside a server stops serving its data."],
+            ["What to do", "Add a server… connects another installation; Remove… beside a server stops serving its data."],
         ],
     ],
     [
         "addTitle",
         "Add a server: what do I give?",
         [
-            ["In short", "The data_retrieval_url of the other cluster, as its appliances.xml defines it: its host and port, then /retrieval."],
+            ["In short", "The data_retrieval_url of the other installation, as its appliances.xml defines it: its host and port, then /retrieval."],
             ["Connect", "This appliance asks the server for its archives and serves its raw data from then on. A server that does not answer is refused, with the reason."],
         ],
     ],
@@ -31,7 +31,7 @@ const CARDS = [
         "Remove the server: what stops?",
         [
             ["In short", "This appliance stops serving the data of that server; the data of this appliance is untouched."],
-            ["What to do", "The cluster may have to be restarted before the change takes effect."],
+            ["What to do", "The installation may have to be restarted before the change takes effect."],
         ],
     ],
 ];
@@ -126,7 +126,7 @@ async function submitRemove(event) {
     try {
         const answer = await getJSON("../bpl/removeExternalArchiverServer", { channelarchiverserverurl: server.CAUrl, archives: server.indexes });
         if (answer.status === "ok") {
-            say("The server was removed. The cluster may have to be restarted for this to take effect.");
+            say("The server was removed. The installation may have to be restarted for this to take effect.");
         } else {
             say("The server could not be removed. The archiver logs say why.", true);
         }

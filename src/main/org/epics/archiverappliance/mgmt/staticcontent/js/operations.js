@@ -152,7 +152,7 @@ const CARDS = [
             ["In short", "The treemap draws the stored data, or the sample rate, by PV name prefix, so the prefixes that use the space show at once."],
             ["Block", "A block is a PV name prefix, the part of the name up to its second colon. The blocks inside it are its PVs."],
             ["Size", "Stored data is what a PV occupies in all stores; event rate is its samples per second, the server calling a sample an event. The buttons switch between them."],
-            ["Scope", `Every appliance of the cluster. The ${GROUP_LIMIT} largest prefixes and the ${LEAF_LIMIT} largest PVs are drawn; the rest of a prefix is one block.`],
+            ["Scope", `Every appliance of this installation. The ${GROUP_LIMIT} largest prefixes and the ${LEAF_LIMIT} largest PVs are drawn; the rest of a prefix is one block.`],
             ["What to do", "Click a prefix to find its PVs in Browse PVs, and archive less of a prefix that holds most of the space."],
         ],
     ],
@@ -170,9 +170,9 @@ const CARDS = [
     ],
     [
         "configHeading",
-        "Configuration in effect: what does the cluster run with?",
+        "Configuration in effect: what does this installation run with?",
         [
-            ["In short", "The settings of this cluster that the pages read, and the thresholds the judgements use, which are starting values."],
+            ["In short", "The settings of this installation that the pages read, and the thresholds the judgements use, which are starting values."],
             ["Thresholds", "The attention and problem values of the measures of this page and of the Overview; the cards of the sections read the same values."],
             ["Basis", "The free share of a device and the heap floor levels follow the alerts of the Prometheus node exporter; the floor as the live set follows the Netflix Spectator example and the Oracle troubleshooting guide. The days left, the half of the write period, the heap rise, the hour of a disconnected PV and the ETL busy share are choices."],
             ["What to do", "A threshold that does not fit the site is a change of the console; ask the administrator."],
@@ -262,7 +262,7 @@ function renderSamples(data) {
     } else if (!data.lost.length) {
         emptyRow("lostConnections", 3, "No PV lost its connection.");
     } else {
-        fill("lostConnections", data.lost.map((row) => [row.pvName, String(row.lostConnections), String(row.currentlyConnected) === "true" ? "yes" : "no"]));
+        fill("lostConnections", data.lost.map((row) => [row.pvName, String(row.lostConnections), String(row.currentlyConnected).toLowerCase() === "yes" ? "yes" : "no"]));
     }
     renderHosts(data.disconnected);
 }
@@ -800,7 +800,7 @@ function renderConfiguration(data) {
     const policies = data.policies ? Object.keys(data.policies).sort() : [];
     fillMeasures("config", [
         ["Minimum sampling period", "The shortest sampling period an archive request may ask for; a setting of the installation.", data.properties && data.properties.minimum_sampling_period ? `${data.properties.minimum_sampling_period} s` : "not reported"],
-        ["Appliances in the cluster", "The appliances that share the PVs of this archiver.", data.cluster ? `${data.cluster.length}: ${data.cluster.map((a) => a.identity).join(", ")}` : "not read"],
+        ["Appliances in the installation", "The appliances that share the PVs of this archiver.", data.cluster ? `${data.cluster.length}: ${data.cluster.map((a) => a.identity).join(", ")}` : "not read"],
         ["Policies", "The named sampling and storage rules of the site; one is chosen for each PV at its archive request, by its name.", policies.length ? `${policies.length}: ${policies.join(", ")}` : "not read"],
         ["group", "Thresholds the judgements use, attention / problem"],
         ...THRESHOLD_ROWS,

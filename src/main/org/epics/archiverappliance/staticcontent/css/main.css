@@ -303,19 +303,6 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* destructive action on the home page */
-input#delete {
-  color: var(--c-danger);
-  background: var(--c-surface);
-  border-color: var(--c-danger);
-}
-
-input#delete:hover {
-  color: #ffffff;
-  background: var(--c-danger);
-  border-color: var(--c-danger);
-}
-
 /* touch and notched screens */
 
 html {
