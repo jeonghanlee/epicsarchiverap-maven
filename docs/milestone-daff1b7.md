@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D46 (2026-10-19), which follows D43. Stages 1 to 3 of D43 are done (M74, M75, M77, M73, M68, M70, M65, M60 and M67 Complete, M67 by the exception of D46; #44, #46, #42 and #38 closed); M58 and M28 are Complete; M76 is Deferred by D45 with issue #48. Before the merge of `modernize`: M78 and M79 are Complete (db5884b1, #49 and #50 closed); M80 (the leftover post-processor files, issue #51) remains. After the merge: the analyzer in five phases A to E (M62, M81, M63, M82, M64), planned from `docs/design-analyzer.md`, each plan a draft to accept and to authorize; then M69, M61, M55, M40, M41, M66 after G8, and M76 as deferred. Next is M80, whose plan is a draft to accept and to authorize; then the merge.
+Next session entry point: work the open rows of `docs/milestone-daff1b7.md` in the order of D46 (2026-10-19), which follows D43. Stages 1 to 3 of D43 are done (M74, M75, M77, M73, M68, M70, M65, M60 and M67 Complete, M67 by the exception of D46; #44, #46, #42 and #38 closed); M58 and M28 are Complete; M76 is Deferred by D45 with issue #48. Before the merge of `modernize`: M78, M79 and M80 are Complete (db5884b1 and 8d6aea8e; #49, #50 and #51 closed), and the conceptual-integrity sweep of the branch is recorded (CI-5 to CI-7 below, CD-14 and CD-15 in `docs/CLOSED_DOORS.md`, corrections in 3a62ed43). After the merge: the analyzer in five phases A to E (M62, M81, M63, M82, M64), planned from `docs/design-analyzer.md`, each plan a draft to accept and to authorize; then M69, M61, M55, M40, M41, M66 after G8, and M76 as deferred. Next is the merge of `modernize` into `master`: the pull request description is prepared here and the owner creates and merges the pull request; then phase A (M62).
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). M65 (the information cards of every page, and the Operations page composed again for a reader new to the appliance) is Complete on 2026-10-18 at 14f083e9 with both workflows green. The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -110,7 +110,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Verification | M77 | Log and pause on a record that changes | Milestone | Complete | No | M73 | For each change of M73 that the engine can detect, it writes one log line that names the PV and what changed, and where storing has to stop (a changed type) it pauses the PV instead of dropping on without a word; nothing else changes until M76; verified on the one IOC and the one appliance of D44; [detail](#m77---log-and-pause-on-a-record-that-changes) |
 | Phase 2 | M78 | Refuse optimized as a reducedata operator | Milestone | Complete | No | D46 | A store URL with `reducedata=optimized` or `optimized_N` fails to initialize with a logged reason that names the operators that apply, a unit test covers it, and the book's `reducedata` row names them; issue #49; [detail](#m78---refuse-optimized-as-a-reducedata-operator) |
 | Phase 2 | M79 | Refuse reducedata together with pp on one store | Milestone | Complete | No | D46 | A store URL with both `reducedata` and `pp` fails to initialize with a logged reason, a unit test covers it, and the two book rows say the parameters are not combined; issue #50; [detail](#m79---refuse-reducedata-together-with-pp-on-one-store) |
-| Phase 2 | M80 | Delete the post-processor files of a moved partition | Milestone | Not started | Yes | D46 | After the ETL moves a partition out of a store with `pp`, no file of that partition stays in the source store, the explicit deletion of a PV removes its post-processor files too, and an ETL test covers both; issue #51; [detail](#m80---delete-the-post-processor-files-of-a-moved-partition) |
+| Phase 2 | M80 | Delete the post-processor files of a moved partition | Milestone | Complete | No | D46 | After the ETL moves a partition out of a store with `pp`, no file of that partition stays in the source store, the explicit deletion of a PV removes its post-processor files too, and an ETL test covers both; landed in 8d6aea8e, issue #51 closed; [detail](#m80---delete-the-post-processor-files-of-a-moved-partition) |
 | Interface analyzer | M81 | Analyzer phase B: interaction, options and export | Milestone | Not started | No | M62, D40, D46 | The gestures beyond the simple form (the drag tool chosen on the strip, wheel and pinch zoom, undo and redo of the range, two cursors, pinned samples), the options the reference tools offer (line width and style, a gap threshold, a fill between signals, fixed and soft ranges, the averaging interval or raw samples, the min-max band, a split by unit, SI prefixes, a legend table, tooltip modes), the Data tab and the full Export tab, each carried in the address; [detail](#m81---analyzer-phase-b-interaction-options-and-export) |
 | Interface analyzer | M82 | Analyzer phase D: tools for two and several signals | Milestone | Not started | No | M63, D40, D46 | The Correlation tab (pairing by held values, scatter with projections and density, Pearson and Spearman, profile, the fit panel with fixed and bounded parameters) and the Dependency tab (correlation matrix ordered by clustering, ranking by mutual information, multiple regression, principal components), derived signals from a typed expression and a change of unit, the routines checked on signals of known parameters; [detail](#m82---analyzer-phase-d-tools-for-two-and-several-signals) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
@@ -165,7 +165,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | D44 | The console checks run against one soft IOC and one local appliance. The IOC is the `consolechart` IOC of `ioc-runner` (local mode), started from `src/resources/test/st.cmd`, which loads `ConsoleChartPVs.db` and one record-change database chosen by the `RECORD_CHANGE` macro; a check that needs another record set switches the macro in the IOC configuration and restarts that IOC, and does not start a second one. The appliance is the kept local appliance (port base 27665); a check that needs another archiver state uses it, and does not start a second one. The procedure of this IOC is written into the book as M75, in stage 1 of D43 after M73, so that it records the commands the M73 checks ran. D20 is unchanged: the Java test fixtures keep launching softIocPVX directly. | 2026-10-17 |
 | D45 | The role of the archiver is to keep the signal without a gap: when the archived record changes, the archiver detects it and goes on storing under the new condition, with the earlier samples readable as they were stored. That is M76, deferred to the next major release, and one GitHub issue holds the direction. In this release the engine does only this much (M77): it writes to its log that the record is changing, naming the PV and the change, and it pauses what can be paused, which is a PV whose type changed; the other reactions stay as M73 observed them. M77 runs in stage 1 of D43 after M75. | 2026-10-17 |
 | D46 | Before the merge of `modernize` into the default branch, the open work is closed down to what the shipped console needs: M67 closes by a dated exception with its step 5 (the header of the analyzer) moved to M62; M78, M79 and M80 move from the Backlog to the Milestone table and are done; the analyzer design (`docs/design-analyzer.md`) is in place. After the merge the analyzer is built in five phases, one row each, in the order A (M62, page, header and address), B (M81, interaction, options and export), C (M63, tools for one signal), D (M82, tools for two and several signals) and E (M64, waveforms and images), each phase accepted and authorized on its own and usable when it ends; then M69, M61, M55, M40, M41, M66 after G8, and M76 as deferred. Issue #39 stays the one issue of the analyzer, with a box per phase in its body. | 2026-10-19 |
-| D47 | A `ZIP_PER_PV` store that is the source of an ETL move keeps the partition it moved (found by the check of M80). The defect goes to the Backlog as M83 for a later release, because the site uses no zip store and a zip store is the last store of a chain; the book's `compress` row says so, and M80 covers the zip store for the explicit deletion only. | 2026-10-19 |
+| D47 | A `ZIP_PER_PV` store that is the source of an ETL move keeps the partition it moved (found by the check of M80). The defect goes to the Backlog as M83 (issue #52) for a later release, because the site uses no zip store and a zip store is the last store of a chain; the book's `compress` row says so, and M80 covers the zip store for the explicit deletion only. | 2026-10-19 |
 
 ### Conceptual-integrity findings
 
@@ -178,6 +178,14 @@ Coherence candidates from the 2026-09-17 sweep around the M6 Tier A and B applic
 **CI-1 (Resolved, Replace, 2026-09-17):** EPICS_V4_PV's teardown `disconnect()` did not set state Disconnected, so after the reactive `handleDisconnected()` (added by PR360) fired, stop() fired pvDisconnected a second time. The double-notification is timing-dependent: a first reproduction on a real soft IOC happened to show one notification and was mistakenly recorded as Keep, but under the localEpics suite timing it reproduced as a double (total 2). Fix: `disconnect()` now sets state and fires only when state is not already Disconnected, so the notification is idempotent. Verified: EPICS_V4_PVDisconnectSeamTest and repeated runs show at most one notification, and the full localEpics suite (28 tests) passes. Observation: one run showed zero notifications under a re-search-then-stop timing, cause not fully isolated and not seen to recur, left for a later look.
 
 **CI-4 (Keep, examined, no action):** the NELM to EAA_COUNT metadata key rename (PR423). A whole-tree search found only the producer `MetaInfo.java:715` and no in-tree reader of the NELM key in Java, JS, HTML or docs; only external API clients are affected, already noted in PR423's status. No in-tree coherence break, so the key is left as renamed. Recorded so a later sweep does not re-open this door.
+
+Coherence candidates from the 2026-10-19 sweep of the whole `modernize` branch before its merge (examined state a1dd96f5); all are decided. Coverage: the agreement-points between the code, the book, the Javadoc and the shipped configuration were compared one by one: the store URL keys, the `archappl.properties` keys, the environment variables, the four endpoint registries against the calls of the pages, the post-processor identities, the PV status strings, the page limits and time zones, the test tags against the pom and `TESTING.md`, the time-handling constants, the ETL pass margin and the skip variable, the default policy file, the book's table of contents and redirect pages, the build commands of the README, the book and the workflows, and the log configuration. Not covered: the Java sources of `src/main/org` beyond those seams (engine, persistence, redundancy), and the register itself. Two Keep verdicts went to `docs/CLOSED_DOORS.md` as CD-14 (`ARCHAPPL_ALL_APPS_ON_ONE_JVM`, unused here and named so in the book) and CD-15 (the header and footer sync of the management pages at build time).
+
+**CI-5 (Resolved, Replace, 2026-10-19):** the Javadoc of `PlainPBStoragePlugin` (the second description of the store parameters beside the book) still allowed `reducedata` with any operator and beside `pp`, both refused by the store since db5884b1 (M78, M79), and called the zip mode experimental. Rewritten to the behavior of the code and the book in 3a62ed43.
+
+**CI-6 (Resolved, Replace, 2026-10-19):** the `archappl.properties` table of the book said its keys are set in the `default` site's file, but `holdArchiveRequestInMins` appeared nowhere in that file and `abortArchiveRequestInMins` only as a comment, while the two keys the file sets, `JCAConfigGen.dispatcher` and `DataRetrievalServlet.proxyRetrievalRequest`, were missing from the table. The table now names the keys the code reads with their defaults and carries the two rows, and the file carries the hold key as a comment with its description, in 3a62ed43.
+
+**CI-7 (Resolved, Replace, 2026-10-19):** `docs/README.md` named readthedocs as the documentation builder; the book is an mdBook built by `.github/workflows/pages.yml` and no readthedocs file exists. Replaced by the list of what `docs/` holds, in 3a62ed43.
 
 ### Milestone Details
 
@@ -7590,7 +7598,7 @@ Last Compared: 2026-10-19 16:37 PDT; `gh issue view 50` shows the body with its 
 Origin: daff1b7 / M80
 Identity History: none
 GitHub Issue: #51 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/51)
-Status: Not started
+Status: Complete
 
 ##### Summary
 
@@ -7642,17 +7650,21 @@ Superseded Plan Artifacts: none
 
 ##### Closure Evidence
 
-- none
+- Deliverable: the deletion of the post-processor files in `markForDeletion`, their listing in `getETLStreamsForDeletion`, `PlainPBPostProcessorCleanupTest` and the `pp` and `compress` rows of the book landed in 8d6aea8e (the commit carries Closes #51); the register in a1dd96f5 and this commit. Pushed to origin/modernize; observed 2026-10-19 17:50 PDT: origin/modernize is a1dd96f5, equal to HEAD. The Maven workflow of a1dd96f5 (run 39349679716) and the Pages workflow (run 39349679689) ended success, read at 18:05 PDT.
+- Checks: T1 is Pass above (the test class, the suite of 1023 tests, the built book, the two workflows).
+- Linked issue #51: the body synced with its three boxes ticked and a close comment posted, closed as completed under Issue authority at 2026-10-20T00:50:03Z; read back CLOSED with no open box and one comment at 19:23 PDT.
+- The zip source defect found by T1 is M83 (issue #52) in the Backlog by D47.
+- Closed on 2026-10-19.
 
 ##### GitHub Projection
 
 Title: Post-processor files stay after a move
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: CLOSED
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-19 10:25 PDT; `gh issue list` read the issue OPEN with label bug and assignee jeonghanlee at its creation.
+Last Compared: 2026-10-19 19:23 PDT; `gh issue view` read the issue CLOSED (closed 2026-10-20T00:50:03Z) with label bug, three ticked boxes and one comment.
 
 ## Backlog
 
@@ -7661,7 +7673,7 @@ Last Compared: 2026-10-19 10:25 PDT; `gh issue list` read the issue OPEN with la
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| | M83 | Delete the moved partition of a zip store that is an ETL source | Milestone | Not started | Yes | D47 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; [detail](#m83---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
+| | M83 | Delete the moved partition of a zip store that is an ETL source | Milestone | Not started | Yes | D47 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m83---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
 
 M78, M79 and M80, entered on 2026-10-19 from the store defects, moved to the Milestone table by D46 the same day (see Assignment History); M83 was entered on 2026-10-19 by D47 and waits for a later release.
 
@@ -7671,7 +7683,7 @@ M78, M79 and M80, entered on 2026-10-19 from the store defects, moved to the Mil
 
 Origin: daff1b7 / M83
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #52 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/52)
 Status: Not started
 
 ##### Summary
@@ -7726,10 +7738,10 @@ Superseded Plan Artifacts: none
 Title: A zip store as an ETL source keeps the partition it moved
 Labels: bug
 GitHub Milestone: none
-Observed State: not filed
-Observed Labels: none
+Observed State: OPEN
+Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-19; the issue is filed with the closure of M80 and its number entered here.
+Last Compared: 2026-10-19 17:50 PDT; `gh issue list` read #52 OPEN with label bug and assignee jeonghanlee at its creation (2026-10-20T00:50:06Z).
 
 ## Assignment History
 
