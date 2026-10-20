@@ -13,12 +13,12 @@ fi
 
 CLASSPATH="${WEBINF_FOLDER}/classes"
 
-pushd "${WEBINF_FOLDER}/lib"
+pushd "${WEBINF_FOLDER}/lib" > /dev/null
 for file in *.jar
 do
 	CLASSPATH="${CLASSPATH}:${WEBINF_FOLDER}/lib/${file}"
 done
-popd
+popd > /dev/null
 
 java -Xmx2G -cp "${CLASSPATH}" edu.stanford.slac.archiverappliance.PlainPB.utils.PrintTimes $@
 
