@@ -1,19 +1,20 @@
 # Analyzer design
 
 Date: 2026-10-19
-Status: draft 1, gathered from the register; the page composition is open (see Decisions)
-Register: `docs/milestone-daff1b7.md` M62 (page, options, address), M63 (numeric signals), M64 (waveforms and images); M59 (the chart component) is complete; issue #39
+Status: draft 1, gathered from the register; four items are open (see Decisions)
+Register: `docs/milestone-daff1b7.md` M62 (phase A: page, header and address), M81 (phase B: interaction, options and export), M63 (phase C: tools for one signal), M82 (phase D: tools for two and several signals), M64 (phase E: waveforms and images); M59 (the chart component) is complete; issue #39
+Register decisions: D38 (console pages), D40 (the analyzer as a self-contained analysis tool built with the bundled D3) and D46 (the five phases); D1 to D6 under Decisions are the decisions of this note
 
 ## Scope
 
-This document gathers the design of the analyzer: what it is, how it relates to the console, which page it is, how it draws, what its address carries, and which analysis tools it offers for each kind of signal. The register rows M62, M63 and M64 hold the plans, tests and evidence; this document holds the one picture they implement.
+This document gathers the design of the analyzer: what it is, how it relates to the console, which page it is, how it draws, what its address carries, and which analysis tools it offers for each kind of signal. The register rows M62, M81, M63, M82 and M64 hold the plans, tests and evidence; this document holds the one picture they implement.
 
 **Out of scope:** the chart component itself beyond what the analyzer needs of it (M59, complete); the Browse PVs page (M58, complete) except its control into the analyzer; the retrieval server and its data calls; the storage of data.
 
 ## Terms
 
 - **Analyzer:** the page of the retrieval web application that draws and analyzes archived data (`ui/viewer/archViewer.html`, `viewer.js`, `viewer.css`). It replaces the data viewer.
-- **Console:** the management interface, served by the management web application; its menu has the entries Archive PVs, Browse PVs, System, Help and Analyzer (D38).
+- **Console:** the management interface, served by the management web application; its menu has the entries Archive PVs, Browse PVs, System, Help and Analyzer (register decision D38).
 - **Chart component:** the shared drawing code under `staticcontent/js/aa/chart/`, served to both web applications as `ui/comm/js/aa/`; `createChart` builds a chart with its options, legend, projection, statistics and range strip; `drawTimeSeries` draws one chart.
 - **Simple form:** the chart component as the console pages use it: one axis per unit, a legend, a tooltip, ranges chosen with the pointer, the Y projection with its statistics, the Chart options and an enlarged window (M59).
 - **Signal:** one PV as a time series. Its kind is decided from its type information: a numeric scalar, a state or string, a waveform (an array), or an image (an array whose element count is width times height).
@@ -25,8 +26,8 @@ This document gathers the design of the analyzer: what it is, how it relates to 
 - The analyzer is the data viewer: a bar with the title, a PV input named Add, the range buttons and the From/To form, then one chart for each unit drawn through `drawTimeSeries` with `strip: false`, then Copy link and Download CSV. It reads `pv` (repeated), `from` and `to` from its address and writes them back. It carries no site header, logo or menu. Its content security policy allows connections to its own origin only.
 - The menu entry Analyzer of the console is `analyzer.html`, which asks the management for the appliance information and forwards to the viewer at `dataRetrievalURL`, carrying the query string along (`js/analyzer-forward.js`).
 - The Browse PVs page builds the address of the analyzer from the plotted PVs, the time window and, when the viewer chose one, the zone (`tz`); the options chosen on the page are not passed.
-- The chart component has the options Line (step, straight, smooth, points), Y scale (linear, symmetric log, log, square root), Marks (auto, on, off), Window (10, 30, 60 samples), Running average and Standard deviation band, which share the one window (`options.js`); a time range chosen by a drag over the plot and a value range by a drag along an axis, the arrow and plus and minus keys on a focused axis, and a double-click back (`gestures.js`); a legend that hides and shows a line; the Y projection with a table of statistics; the range strip (`strip.js`); the time axis on `d3.scaleTime` with ticks formatted in the chosen zone (`draw.js`). The wheel does nothing; a touch gesture scrolls the page vertically and selects horizontally.
-- The Browse PVs page shows, under its chart, a Distribution panel, a scatter plot of two PVs and a Summary of the chart (`plots.js`, `browse.js`). The scatter plot pairs only samples at exactly equal times and draws them at a fixed height with the X range alone on its axis.
+- The chart component has the options Line (step, straight, smooth, points), Y scale (linear, symmetric log, log, square root), Marks (auto, on, off), Window (10, 30, 60 samples), Running average and Standard deviation band, which share the one window (`options.js`); a time range chosen by a drag over the plot and a value range by a drag along an axis, the arrow and plus and minus keys on a focused axis, and a double-click back (`gestures.js`); a legend that hides and shows a line; the Y projection with a table of statistics; the range strip (`strip.js`); the time axis on `d3.scaleTime` with four labels, at the start, one third, two thirds and the end of the span, written in the chosen zone (`draw.js`). The wheel does nothing; a touch gesture scrolls the page vertically and selects horizontally.
+- The Browse PVs page shows, under its chart, a Distribution panel, a scatter plot of two PVs and a Summary of the chart (`plots.js`, `browse.js`). The scatter plot takes a second PV of the same unit as the first, pairs only samples at exactly equal times, and draws the second PV's values on a linear Y scale in a chart of fixed height, with the X range alone written under it.
 - The bundled D3 7.9.0 (`staticcontent/js/vendor/d3.min.js`) carries `d3-zoom`, `d3-brush`, `d3-drag`, `contourDensity`, `Delaunay`, `quadtree` and `d3-dsv`; the pages use none of these.
 - The retrieval web application serves the BPL calls of its `BPLServlet` (metrics, PV details, searches, metadata) and none that answers the appliance information; the management serves `getApplianceInfo` with `mgmtURL` and `dataRetrievalURL`.
 - The static check (`scripts/ui-static-checks.bash`) verifies the four marker blocks of the site header (`site_header`, `site_logo`, `site_navbar`, `site_footer`) on the console pages only.
@@ -58,12 +59,12 @@ Read on 2026-10-19: the Phoebus Data Browser (EPICS), SLAC Trace (PyDM; the repl
 
 ### What the analyzer takes from them
 
-- The structure: the selection and the range at the top; tabs by kind of analysis in the middle with a comparison as a split view; a drawer with the tabs Signals, Axes, Options, Data and Export; the drag tool chosen on the range strip with the wheel and the hover always on (Decisions).
+- The structure: the selection and the range at the top; tabs by kind of analysis in the middle with a comparison as a split view; a drawer with the tabs Signals, Axes, Options, Data and Export; the drag tool chosen on the range strip with the wheel and the hover always on. This structure is a proposal: the page composition and the assignment of the drag are open (Decisions).
 - The options: line width and style, a gap threshold that disconnects the line, a fill between two signals, soft and fixed axis ranges, grid lines, centered zero, SI prefixes, an axis label, a legend in table mode with computed values, a tooltip in single or all mode with a sort order, thresholds as lines with the time beyond them, decimals and a display name per signal, a filter by value, a group by time interval with a reduce, undo and redo of the range, and the full export of the Export tab (below).
 
 ## Analysis scenarios
 
-The questions an operator or a physicist brings to archived data, each with the tab that answers it (the tabs are named in Page composition):
+The questions an operator or a physicist brings to archived data, each with the tab that answers it (the proposed tabs, named in Page composition):
 
 1. Did this signal drift overnight, and from when: the Trend with the running average and two cursors reading the time and the difference.
 2. What changed with the beam current when it dropped: several signals around that time; the Dependency tab ranks the signals by how much each explains the chosen one; the top two go to the Correlation tab.
@@ -74,17 +75,17 @@ The questions an operator or a physicist brings to archived data, each with the 
 7. What did the BPM or camera profile look like at that moment: the Waveform tab with one array at a time, several times overlaid, and the time series of the peak position.
 8. Did the beam spot move: the Image tab with the frame, a region of interest, and the time series of the centroid.
 
-Scenarios 1 to 6 are M62 and M63; 7 and 8 are M64.
+The register splits the scenarios over its phases. Scenario 1 needs the Trend tab (M62) and the two cursors (M81). Scenarios 3, 4 and 6 are the Spectrum, Compare and Distribution tabs and the Trend additions of M63; scenario 3 reads raw samples through the interval option of M81. Scenarios 2 and 5 are the Dependency and Correlation tabs of M82. Scenarios 7 and 8 are M64.
 
 ## Requirements
 
 - R1. The analyzer is an independent service: an application of its own, served by the retrieval web application on its own address, that may be split out of the appliance later. It carries the site header, logo and menu of the console, whose items are links to the console pages; it is not shown inside a frame of a console page (Decision 2026-10-15, confirmed 2026-10-19).
-- R2. The analyzer is a data analysis tool in the browser: an operator analyzes archived data in it without exporting to an external tool (D40).
-- R3. It is built with the bundled D3 and nothing else: every tool the bundle provides is used where it has one, a module of the official D3 repositories outside the bundle may be vendored with its version, source and licence recorded, and the page writes the computations the bundle lacks (correlation, regression, fits, FFT, tests) and checks them on signals of known parameters (D40, decisions of M59).
+- R2. The analyzer is a data analysis tool in the browser: an operator analyzes archived data in it without exporting to an external tool (register decision D40).
+- R3. It is built with the bundled D3 and nothing else: every tool the bundle provides is used where it has one, a module of the official D3 repositories outside the bundle may be vendored with its version, source and licence recorded, and the page writes the computations the bundle lacks (correlation, regression, fits, FFT, tests) and checks them on signals of known parameters (register decision D40 and the decisions of M59).
 - R4. It is a general signal analysis tool, not only a tool of accelerator operation; the wording names a signal, its unit and a time range (decision of M59).
 - R5. The console pages that plot use the chart component in its simple form and open their PVs in the analyzer; the analyzer extends the same component with every drawing option and gesture (M59, M62).
-- R6. The address carries everything the analyzer shows, one named parameter per option, so that an address can be read, edited and shared by hand; an option not set is absent and the analyzer applies its default; a name it does not know or a value it cannot read is ignored, so an address with `pv`, `from` and `to` alone opens as before (decisions of 2026-10-14).
-- R7. The tools are added by the kind of signal; the page decides the kind from the type information, and the user chooses the purpose within it (decision of 2026-10-14).
+- R6. The address carries everything the analyzer shows, one named parameter per option, so that an address can be read, edited and shared by hand; an option not set is absent and the analyzer applies its default; a name it does not know or a value it cannot read is ignored, so an address with `pv`, `from` and `to` alone opens as before (register M62, decisions of 2026-10-14).
+- R7. The tools are added by the kind of signal; the page decides the kind from the type information, and the user chooses the purpose within it (register M63, decision of 2026-10-14).
 - R8. The Browse PVs page keeps its Distribution, scatter plot and Summary panels as additional information in their simple forms; the analyzer carries the full forms of these tools (Decision 2026-10-19, replacing the decision of 2026-10-15 that the panels leave the page).
 
 ## Proposed design
@@ -99,21 +100,27 @@ Scenarios 1 to 6 are M62 and M63; 7 and 8 are M64.
 
 ### Page composition
 
-Open. The analyzer holds the trend with its options, the distribution and statistics, the tools of two signals (scatter, profile, fit), the tools of several signals (matrix, ranking, graph), the comparison of two ranges, and the waveform and image tools. How these are arranged on one page, whether as tabs by kind of analysis (trend, distribution, correlation, spectrum, waveform, image), by kind of signal (one numeric, two numeric, several, waveform, image), or as panels under one chart, is decided from a clickable mockup the owner reviews before M62 is accepted. The composition decides where the range strip goes (one for the page or one per chart) and where the options sit.
+Open. The analyzer holds the trend with its options, the distribution and statistics, the tools of two signals (scatter, profile, fit), the tools of several signals (matrix, ranking, graph), the comparison of two ranges, and the waveform and image tools. How these are arranged on one page, whether as tabs by kind of analysis, by kind of signal (one numeric, two numeric, several, waveform, image), or as panels under one chart, is decided by the owner from a clickable mockup, before M62 is accepted.
+
+The register proposes tabs by kind of analysis: Trend, Distribution, Correlation, Dependency, Spectrum, Compare, Waveform and Image, each enabled by the kind of the chosen signals, and a drawer with the tabs Signals, Axes, Options, Data and Export. The scenarios and the phases use these names.
+
+ The composition decides where the range strip goes (one for the page or one per chart) and where the options sit.
 
 ### Drawing options and gestures
 
 In addition to the simple form, the analyzer offers:
 
 - Options beside the plot: sample marks on, off or automatic; line as step, straight, smooth or points; Y axis linear, symmetric log, log or square root, each unit automatic or fixed to a typed range; the averaging interval chosen in seconds, or raw samples forced; the running average and the standard deviation band with their one window in samples; a min-max band around the line when the data is averaged, read through the retrieval `min` and `max` post-processors with the mean; a split by unit that draws one plot per unit under another, sharing the time axis, the crosshair and the time range; the Y projection and the Distribution panel as options of their own.
-- Gestures: a drag over the plot selects a time range and a drag along an axis a value range, as in the simple form; the wheel and the trackpad pinch zoom the time axis around the pointer (`d3-zoom`) within limits on the factor and the pannable range; Shift and a drag pans; a double-click returns to the original range and a step back returns to the previous one; on a touch screen one finger selects and two fingers pan and zoom; a click on a legend item hides its line, a click on a series brings it to the front, and a click on a sample pins its values; two reference cursors show the difference of time and value between them (`d3-drag`); the nearest sample to the pointer is found with `d3-delaunay` or `d3-quadtree` on plots with many points; a change of range reads the data again once after the gesture ends, because the averaging interval follows the span. The assignment of the drag is a decision still open (Decisions).
+- Gestures: a drag over the plot selects a time range and a drag along an axis a value range, as in the simple form; the wheel and the trackpad pinch zoom the time axis around the pointer (`d3-zoom`) within limits on the factor and the pannable range; Shift and a drag pans; a double-click returns to the original range and a step back returns to the previous one; on a touch screen one finger selects and two fingers pan and zoom; a click on a legend item hides its line, a click on a series brings it to the front, and a click on a sample pins its values; two reference cursors show the difference of time and value between them (`d3-drag`); the nearest sample to the pointer is found with `d3-delaunay` or `d3-quadtree` on plots with many points; a change of range reads the data again once after the gesture ends, because the averaging interval follows the span. The assignment of the drag is open: the owner decides it before the plan of M81 is accepted (Decisions).
 - Transitions on zoom and range changes (`d3-transition`); CSV export through `d3-dsv` in place of the viewer's own code; values in SI prefixes with matched significant digits (`d3-format`).
 
 ### Address
 
-The names: `pv` (repeated), `from`, `to`, `tz` (the zone, absent for the browser zone), `shape` (`step` by default, `line`, `smooth`, `points`), `yscale` (`linear` by default, `symlog`, `log`, `sqrt`), `marks` (`auto` by default, `on`, `off`), `avg` (`1` when the running average is on), `band` (`1` when the standard deviation band is on), `window` (the window in samples of both, 30 by default), `yproj` (`1`), `yrange` (repeated, `unit:low:high`, `none` for a PV with no unit), `interval` (`raw` or the averaging interval in seconds, automatic when absent), `split` (`none` by default, `unit`). The tools of M63 and M64 add their own names when they are designed. The control of the Browse PVs page adds the options chosen on the page to the address it opens.
+The names: `pv` (repeated), `from`, `to`, `tz` (the zone, absent for the browser zone), `view` (the tab), `shape` (`step` by default, `line`, `smooth`, `points`), `yscale` (`linear` by default, `symlog`, `log`, `sqrt`), `marks` (`auto` by default, `on`, `off`), `avg` (`1` when the running average is on), `band` (`1` when the standard deviation band is on), `window` (the window in samples of both, 30 by default; a second name follows if the Open row on the window decides two), `yproj` (`1`), `yrange` (repeated, `unit:low:high`, `none` for a PV with no unit), `interval` (`raw` or the averaging interval in seconds, automatic when absent), `split` (`none` by default, `unit`). M81 adds the names of its options, and the tools of M63, M82 and M64 add their own names when they are designed. The control of the Browse PVs page adds the options chosen on the page to the address it opens.
 
-### Tools by kind of signal (M63)
+### Tools by kind of signal (M63 and M82)
+
+M63 builds the tools of one numeric scalar and the comparison of two time ranges. M82 builds the tools of two and of several numeric scalars, the fits and the derived signals.
 
 - One numeric scalar: a summary (samples, minimum, maximum, mean, median, standard deviation, skewness, kurtosis, the errors of the mean and of the standard deviation, quantiles, lost events); the trend with zoom, two cursors and a min-max band; the distribution (histogram, box plot); the variation (running average, standard deviation band, rate of change); a slow trend (a linear fit against time); the limits of the PV as reference lines with the time outside them; the pattern by hour and weekday and a time-value heatmap for a long span; the periodicity (autocorrelation, spectrum by FFT after resampling to an even interval); the values beyond k standard deviations.
 - Two numeric scalars: a scatter plot with each axis in its own unit, the samples paired by the value each PV holds at the other's sample times, with the number of pairs and of samples of the slower PV, the correlation (Pearson, Spearman, a cross-correlation over a lag), a profile, a fit of Y against X with its parameters and their errors, the chi-square per degree of freedom, R², a confidence band and the residuals, a density contour for dense data, derived signals (difference, sum, ratio), and the two trends under one another sharing the time axis. The analyzer opens with the first two plotted PVs as X and Y.
@@ -142,7 +149,7 @@ Provided by the bundled D3:
 - Random variates for test signals of known parameters: `randomNormal`, `randomLogNormal`, `randomUniform`, `randomInt`, `randomExponential`, `randomPareto`, `randomBernoulli`, `randomGeometric`, `randomBinomial`, `randomGamma`, `randomBeta`, `randomWeibull`, `randomCauchy`, `randomLogistic`, `randomPoisson`, `randomBates`, `randomIrwinHall`, `randomLcg` (a seeded generator).
 - Interpolation: `interpolate`, `interpolateNumber`, `interpolateNumberArray`, `interpolateBasis`, `interpolateDate`, `interpolateRound`, `piecewise`, `quantize`.
 
-Written by the page, because the bundle has none of them (D40; `d3-regression` is a third-party module outside the official D3 repositories and is not used):
+Written by the page, because the bundle has none of them (register decision D40; `d3-regression` is a third-party module outside the official D3 repositories and is not used):
 
 - Moments and shape: skewness, kurtosis, the standard errors of the mean and of the standard deviation, trimmed statistics, a kernel density estimate.
 - Moving statistics: the running average, the exponential average, the moving standard deviation band, the rate of change, the min-max band of averaged data from the retrieval `min` and `max` operators.
@@ -152,7 +159,7 @@ Written by the page, because the bundle has none of them (D40; `d3-regression` i
 - Tests: chi-square on binned data, Kolmogorov-Smirnov and Anderson-Darling on two samples, the difference of means with its error.
 - Linear algebra: a small matrix module (multiply, invert, solve, Cholesky, the Jacobi eigen decomposition) for the regression, the covariance and the principal component analysis; hierarchical clustering of the correlation matrix (through `hierarchy` and `cluster` for the drawing).
 - Signals: a derived signal from a typed expression parsed by the page (`eval` is forbidden by the content security policy), a change of unit, a threshold with the time beyond it, resampling to a common interval, the pairing of two signals by the value each holds at the other's sample times (through `bisector`), outliers beyond k standard deviations, a peak search with a background estimate, the summary values of an array (maximum and its position, minimum, mean, RMS, sum, centre, FWHM), the centroid, projections and Gaussian size of an image.
-- Still open (Decisions of M63): LOESS and a non-linear fit library vendored later; a typed formula as a user-defined fit function.
+- Still open (register M82, settled before its plan is accepted): LOESS and a non-linear fit library vendored later; a typed formula as a user-defined fit function.
 
 Every written routine is checked on signals of known parameters made with the `random*` generators and on closed forms (R3).
 
@@ -170,7 +177,7 @@ The Export tab of the drawer, after the Phoebus Export panel and the Grafana ins
 - Source: the samples shown; the raw archived samples; optimized data of N bins with the minimum, mean and maximum of each; a linear interpolation at a fixed interval.
 - Format: CSV with one column per signal aligned on time (a sample at or before each time), or one long table (time, signal, value); severity and status included or not; the digits (as stored, fixed decimals, exponential); time as ISO 8601 in the chosen zone or as UNIX milliseconds; the unit in the header.
 - Products: the data as CSV; the statistics table of the view as CSV; a fit result (model, parameters with errors, chi-square per degree of freedom, R²) as CSV or JSON; a derived signal as CSV; the plot as PNG or SVG; the address of the page with every option, copied to the clipboard.
-- Large ranges: the page hands the retrieval's own `getData.csv` and `getData.mat` addresses with the operator and the range, so the server streams the file and the browser holds no copy; the Matlab file comes from the retrieval as it is.
+- Large ranges: the page hands the retrieval's own `getData.csv` and `getData.mat` addresses with the operator and the range, so the server streams the file and the browser holds no copy; the Matlab file comes from the retrieval as it is. The retrieval's CSV holds one PV and has no header line; its columns are `secs,value,severity,status,nanos`. The aligned columns, the ISO 8601 time and the unit in the header of Format belong to the page's own CSV.
 
 ### Data access
 
@@ -194,7 +201,7 @@ The analyzer stays in the retrieval WAR and is served at `/retrieval/ui/viewer/`
 
 ## Register
 
-M62 implements Page and header, Page composition, Drawing options and gestures, Address and Data access; M63 implements Tools by kind of signal; M64 implements Waveforms and images. Each row keeps its own Test Plan; the checks of the page composition belong to M62.
+M62 (phase A) implements Page and header, Page composition and Address; M81 (phase B) implements Drawing options and gestures, Export and the address names of the options it adds; M63 (phase C) implements the tools of one signal and the comparison of two ranges in Tools by kind of signal; M82 (phase D) implements the tools of two and several signals, the fits and the derived signals; M64 (phase E) implements Waveforms and images. Data access serves the Trend tab of M62 and the interval and the one batch of requests after a gesture of M81. Each row keeps its own Test Plan; the checks of the page composition belong to M62.
 
 ## Testing
 
@@ -202,15 +209,17 @@ Every check runs on a local appliance with the shipped soft IOC fixture (`src/re
 
 ## Decisions
 
+D1 to D6 are the decisions of this note. D38, D40 and D46 are decisions of the register. The four Open rows are undecided; the owner decides each, as the row states.
+
 | ID | Decision | Date |
 | --- | --- | --- |
 | D1 | The analyzer is an independent service with the header of the console; not in a frame | 2026-10-15, confirmed 2026-10-19 |
 | D2 | The analyzer reads `mgmtURL` from the retrieval's own `getApplianceInfo` | 2026-10-19 |
 | D3 | The defaults of the options are those of the chart component (step, linear, marks auto, average and band off, window 30), interval automatic, split none | 2026-10-19 |
 | D4 | The Distribution, scatter plot and Summary panels stay on the Browse PVs page as additional information; the analyzer carries the full forms (replaces the decision of 2026-10-15) | 2026-10-19 |
-| D5 | The time axis ticks are those of `d3.scaleTime` as the component draws them; no further work | 2026-10-19 |
+| D5 | The time axis carries the four labels, at fixed fractions of the span in the chosen zone, that the component draws; no further work | 2026-10-19 |
 | D6 | The analyzer carries the same menu as the console pages; an entry pressed on either side navigates to the page on the other side | 2026-10-19 |
-| Open | The page composition (tabs or panels, by kind of analysis or by kind of signal), from a mockup | |
-| Open | The assignment of the drag on the plot: select (as in the simple form) with Shift to pan, or pan with Shift to select, or a mode control on the range strip; the reference tools (Bokeh, Plotly) use the mode control with one drag tool active at a time and the wheel and hover always on | |
-| Open | The labels at the line ends listed under `d3-drag`: removed in favour of the legend, or kept | |
-| Open | The window of the running average and the band: one shared window (`window`) or two | |
+| Open | The page composition (tabs or panels, by kind of analysis or by kind of signal), from a mockup; the owner decides before M62 is accepted | |
+| Open | The assignment of the drag on the plot: select (as in the simple form) with Shift to pan, or pan with Shift to select, or a mode control on the range strip; the reference tools (Bokeh, Plotly) use the mode control with one drag tool active at a time and the wheel and hover always on; the owner decides before the plan of M81 is accepted | |
+| Open | Whether a line carries a label at its end besides its entry in the legend, which names every line in the simple form (register M58, decision of 2026-10-14); the owner decides before the plan of M81 is accepted | |
+| Open | The window of the running average and the band: one shared window (`window`, as the component and the address have it) or two; the owner decides before the plan of M81 is accepted | |
