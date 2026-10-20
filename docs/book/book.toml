@@ -1,7 +1,7 @@
 [book]
 title = "EPICS Archiver Appliance"
 authors = ["EPICS Archiver Appliance contributors"]
-description = "Documentation for the EPICS Archiver Appliance, built and deployed by the Maven modernization fork."
+description = "Documentation for the EPICS Archiver Appliance, built and deployed by this project."
 language = "en"
 text-direction = "ltr"
 src = "src"

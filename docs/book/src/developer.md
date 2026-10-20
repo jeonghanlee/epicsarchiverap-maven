@@ -3,8 +3,8 @@
 ## Scope
 
 This page covers the source layout, the test sets and how to run them,
-the local appliance launcher, the documentation build, and the PB file
-and PB/HTTP formats.
+the local appliance launcher, the documentation build, and the protocol
+buffer (PB) file and PB/HTTP formats.
 
 **Out of scope:** the details of the test wiring, which `TESTING.md` at
 the repository root describes.
@@ -28,16 +28,20 @@ the repository root describes.
 | unit (default) | JDK 21 | `./mvnw test` |
 | one test class | JDK 21 | `./mvnw test -Dtest=PolicyExecutionTest` |
 | `localEpics` | EPICS base and pvxs on `PATH` | `./mvnw test -P localEpics` |
-| `integration` | Tomcat 9 in `TOMCAT_HOME`, and what `localEpics` needs | `./mvnw test -P integration` |
+| `integration` | Tomcat 9 in `TOMCAT_HOME` with a `conf_original` folder, and what `localEpics` needs | `./mvnw test -P integration` |
 
 - The default set leaves out the tests tagged `integration`,
   `localEpics`, `slow` and `flaky`.
-- The EPICS tests start their own IOC with `softIocPVX` (or
-  `softIocPVA`), and the build limits CA and PVA to the loopback
-  interface, so they do not reach IOCs on the network.
+- The EPICS tests start their own IOC with `softIocPVX`, and the build
+  limits Channel Access (CA) and PVAccess (PVA) to the loopback interface, so they do not reach IOCs
+  on the network.
 - The integration tests start Tomcat instances from `TOMCAT_HOME` under
   `target/tomcats/` and deploy the WARs of the current build, so they
-  run after `package`.
+  run after `package`, on the same day and commit as the WARs, from the
+  repository root.
+- Each integration test needs `$TOMCAT_HOME/conf_original`, a copy of the
+  pristine `conf` folder of the Tomcat installation, and a free HTTP port
+  17665.
 - The tests write their stores under `target/test-storage/` and their
   log to `target/arch.log`.
 
@@ -91,14 +95,20 @@ Channel Access and PVAccess discovery default to loopback;
 | ETL | `http://127.0.0.1:17667/etl/` | `instances/etl/logs/console.log` |
 | Retrieval | `http://127.0.0.1:17668/retrieval/` | `instances/retrieval/logs/console.log` |
 
+Only the management root serves a page. The engine, ETL and retrieval roots
+carry no page: those web applications answer under `/bpl/`, and the
+retrieval also under `/data/` and `/ping`.
+
 ### Tomcat selection and options
 
-`--tomcat-home` selects an installation explicitly. Otherwise the launcher
-checks `TOMCAT_HOME`, then `CATALINA_HOME`, standard installation paths,
-and its retained download. An invalid explicit installation is an error.
-When no usable Tomcat 9 is found, the launcher downloads version 9.0.122
-inside the run folder and verifies its Apache SHA-512 checksum before
-extraction. An existing installation remains unchanged.
+`--tomcat-home` selects an installation explicitly. Without it, `TOMCAT_HOME`
+selects one, or `CATALINA_HOME` when `TOMCAT_HOME` is unset or empty. A
+selected installation that is not a usable Tomcat 9 stops the launcher with
+an error. When none is selected, the launcher checks standard installation
+paths and its retained download. When none of them is a usable Tomcat 9, the
+launcher downloads version 9.0.122 inside the run folder and verifies its
+Apache SHA-512 checksum before extraction. An existing installation remains
+unchanged.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -107,6 +117,10 @@ extraction. An existing installation remains unchanged.
 | `--port-base PORT` | `17665` | Four HTTP ports starting at `PORT`; cluster port at `PORT+5` |
 | `--start-timeout SEC` | `180` | Startup timeout, 1 through 86400 seconds |
 | `--stop-timeout SEC` | `300` | Total graceful shutdown timeout, 1 through 86400 seconds |
+| `--property KEY=VALUE` | none | Adds or replaces one line of `config/archappl.properties` in the run folder; repeat the option for more lines |
+
+The launcher writes `config/archappl.properties` from the mgmt WAR at every
+start, so use `--property` instead of editing the file by hand.
 
 ### Folder ownership and shutdown
 
@@ -134,8 +148,8 @@ The browser checks of the console read the records of one soft IOC, which
 `st.cmd` loads `ConsoleChartPVs.db` and one of two files for the four
 records `SR:BPM:03:X`, `SR:BPM:03:Y`, `SR:BPM:04:X` and `SR:BPM:04:Y`:
 `ConsoleChartPVsRecordChange.db` (scalar doubles, the default) or
-`ConsoleChartPVsRecordChangeTypes.db` (the same names as an integer, a
-string, a waveform and an integer), chosen by the `RECORD_CHANGE` variable
+`ConsoleChartPVsRecordChangeTypes.db` (the same names as a waveform, an
+integer, an integer and a string), chosen by the `RECORD_CHANGE` variable
 of the IOC configuration. The `CAV2_*` variables of the same file give
 `SR:RF:CAV2:TEMP` and `SR:RF:CAV2:POWER` another unit, precision and limits.
 
@@ -192,6 +206,7 @@ Prerequisites:
 
    ```text
    IOC NAME             | STATUS   | STARTED           | UDS PATH
+   ----------------------------------------------------------------------------------------------------
    consolechart         | active   | 2026-10-17 23:48  | /run/user/1000/procserv/consolechart/control
    ```
 
@@ -289,19 +304,39 @@ sample
   seconds into the year and its nanoseconds. A file therefore belongs to
   one year, and a scalar double takes about 21 bytes per sample.
 - Samples are in increasing time order, so a file can be searched
-  without an index, and `wc -l` counts its samples.
+  without an index, and `wc -l` gives the number of samples plus one for the
+  header line.
 
 The mgmt WAR ships utilities for PB files under `install/pbutils/`:
 
 | Script | Purpose |
 | --- | --- |
-| `printTimes.sh` | print the timestamps of the samples |
-| `pb2json.sh` | print the samples as JSON |
-| `validate.sh` | check files or folders |
-| `repair.sh` | check files and rewrite a damaged file with its valid samples, optionally keeping a backup |
+| `printTimes.sh <file>...` | print the timestamps of the samples of each file |
+| `pb2json.sh <file>...` | print the samples of each file as JSON |
+| `validate.sh [-v] [-h] <file or folder>...` | check files, and every file under a folder |
+| `repair.sh [-v] [-b] [-h] <file or folder>...` | check files and rewrite a damaged file with its valid samples; `-b` keeps the original as `<file>.bak` |
 
-The scripts expect to run from inside an unpacked mgmt WAR, whose
-`WEB-INF/lib` and `WEB-INF/classes` form their class path.
+For `validate.sh` and `repair.sh`, `-v` turns on verbose logging and `-h`
+prints the options. The scripts need `java` on `PATH`. They find the class
+path in the `WEB-INF/lib` and `WEB-INF/classes` folders of the WAR, relative
+to their own location, so they run only inside an unpacked mgmt WAR. The WAR
+keeps the scripts without the executable bit, so call each one through
+`bash`. The mgmt WAR is `target/aa-<date>-<commit>-mgmt.war`
+([Building](building.md#outputs)). Unpack it into a new folder:
+
+```bash
+unzip -q target/aa-<date>-<commit>-mgmt.war -d <mgmt_dir>
+```
+
+Then call a script by its path in that folder:
+
+```bash
+bash <mgmt_dir>/install/pbutils/validate.sh -v <pb_file>
+```
+
+The deployed mgmt web application is such a folder: `webapps/mgmt/` of the
+mgmt Tomcat instance, which is `<run_folder>/instances/mgmt/webapps/mgmt/`
+for the local appliance.
 
 The same class path runs the PB tools that have no script, as
 `java -cp "<WEB-INF>/classes:<WEB-INF>/lib/*" <class> <arguments>`. A
@@ -314,7 +349,7 @@ above.
 | `SlicePBFile <source> <start> <end> <destination>` | copy the samples between two ISO 8601 times into a new file |
 | `MergePBFile <file A> <file B> <destination>` | merge two files of the same PV and year into a new file |
 | `IsSubset <file A> <file B>` | report the timestamps of file A that file B lacks |
-| `PrintFileInfo <files or folder>` | print PV name, year, type and first and last sample time per file |
+| `PrintFileInfo <files or folder>` | print PV name, year, type and path per file |
 | `PrintFirstAndLastTimes <files or folders>` | print the time range of each file |
 | `PrintPBResponse <saved response>` | decode a saved PB/HTTP retrieval response |
 | `ReadAsDBRType <type> <year> <file>` | read a file as the given type without its header, for a damaged header |

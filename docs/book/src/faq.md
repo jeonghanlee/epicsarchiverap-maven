@@ -32,9 +32,10 @@ they keep.
   a 0.1 s PV holds 110. A PV that changes faster than its sampling
   period fills its buffer before the next write; each further update
   then drops the oldest sample in the buffer.
-- **SCAN** keeps only the latest update and writes it once per sampling
-  period, so a PV scanned at 1 s gives one sample per second whatever its
-  update rate.
+- **SCAN** keeps only the latest update and writes at most one sample
+  per sampling period, and only when the update has a new timestamp. A
+  PV scanned at 1 s gives at most one sample per second, and none while
+  its timestamp does not change.
 
 ## How are time zones handled?
 
@@ -47,9 +48,9 @@ names every time a reader meets and its clock.
 
 ## Can one appliance archive the same PV twice?
 
-No. A PV name is archived once; adding it again reports that it is
-already archived or already submitted. Its extra fields are added to
-the existing configuration.
+No. A PV name is archived once; adding it again answers **Already
+submitted**, whether the PV is archived or its request is pending. Its
+extra fields are added to the existing configuration.
 
 ## How do I stop archiving a PV and keep its data?
 

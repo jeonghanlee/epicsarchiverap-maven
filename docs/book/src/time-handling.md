@@ -9,11 +9,11 @@ The time of the data is the timestamp that comes with the value. Two things can 
 - **Device time**: the clock of the instrument, when the instrument supplies a time.
 - **Record processing time**: the time at which an EPICS record processed, taken from the clock of the IOC. The `TSE` and `TSEL` fields of the record select whether the IOC clock, the device or another record supplies it.
 
-The archiver receives one timestamp for each event, in the `DBR_TIME` of a Channel Access monitor or in the `timeStamp` of a PVAccess structure. It cannot tell a device time from a record processing time. The timestamp is stored with every sample as UTC seconds and nanoseconds, and it is the only time that is stored with a sample.
+The archiver receives one timestamp for each event, in the `DBR_TIME` of a Channel Access monitor or in the `timeStamp` of a PVAccess structure. It cannot tell a device time from a record processing time. The timestamp is stored with every sample as UTC seconds and nanoseconds, and it is the only time of the sample itself. After a start-up or a regained connection, the engine adds two fields to the first sample, `cnxlostepsecs` and `cnxregainedepsecs`: the epoch seconds, on the clock of the archiver server, at which the connection was last lost and at which the data came back.
 
 ## The times of the archiver
 
-The archiver stamps three more times with the clock of its own server. None is stored with a sample; each PV keeps only the last value of each.
+The archiver stamps three more times with the clock of its own server. None of the three is stored with a sample; each PV keeps only the last value of each.
 
 | Time | What it is | Name in `getPVDetails` |
 | --- | --- | --- |
@@ -21,7 +21,7 @@ The archiver stamps three more times with the clock of its own server. None is s
 | Recorded | The second at which the engine last passed its sample buffer to the short term store | `What did we last push the data to the short term store?` |
 | Moved | The second at which ETL last moved data between stores, and the time of its next run | `ETL 0 last completed`, `ETL 0 next job runs at` |
 
-`getPVStatus` returns the received time as `lastEvent`, while the Last event column of the Browse PVs page shows the time of the data of the last sample; the two differ by the time the event spent on its way. The time of the data of the last event is `Instant of last event from the IOC - correct or not.` in `getPVDetails`. It covers every event the engine received, kept or dropped for its time; a repeat of the same time stamp does not change it. `getLastKnownTimeStampReport` of the engine web application (`.../engine/bpl/`, not the management interface) returns it for every PV of the engine as epoch seconds under the same key `lastEvent`.
+`getPVStatus` returns the received time as `lastEvent`, while the Last event column of the Browse PVs page shows the time of the data of the last sample; the two differ by the time the event spent on its way. The time of the data of the last event is `Instant of last event from the IOC - correct or not.` in `getPVDetails`. It covers every event the engine kept; an event dropped for its time, and a repeat of the same time stamp, leave it unchanged. `getLastKnownTimeStampReport` of the engine web application (`.../engine/bpl/`, not the management interface) returns it for every PV of the engine as epoch seconds under the same key `lastEvent`.
 
 The archiver also keeps times that describe the PV and not its data, written the same way. Four describe the connection:
 
@@ -49,7 +49,9 @@ Three clocks take part: the IOC and instrument, the archiver server, and the bro
 
 - the time is before 1991-01-01;
 - the time is later than the server clock plus the drift;
-- the time is earlier than the server clock minus the drift, from the second sample of a connection on.
+- the time is earlier than the server clock minus the drift, from the second sample of a connection on;
+- the time is before the time of the last event the engine kept;
+- the time equals the time of the last event the engine kept.
 
 The drift is the key `org.epics.archiverappliance.engine.epics.server_ioc_drift_seconds` of `archappl.properties`, 1800 seconds by default.
 
@@ -58,8 +60,8 @@ The drift is the key `org.epics.archiverappliance.engine.epics.server_ioc_drift_
 The same instant is written three ways.
 
 - **UTC**: epoch seconds and nanoseconds in JSON, CSV and SVG, and the seconds into the year (counted from 00:00:00 UTC of that year) with the nanoseconds in the protocol buffer files; ISO 8601 with a trailing `Z`, to the millisecond, where the code writes an ISO string. A data request states a time as ISO 8601 with `Z` or a numeric offset; `getData`, `getDataAtTime` and the engine calls refuse a time without a zone with HTTP 400 and a message that names the time.
-- **The time of the server**: a string such as `Oct/15/2026 14:24:42 PDT`. It is written in the time zone of the server JVM, with its abbreviation and to the second; the name of the month is English whatever the locale of the server. The text is `Never` when there is no time, and `N/A` for the time of the data of an event that has not arrived. Reports, `getPVStatus`, `getPVDetails` and the `txt` response write it. Beside each such text the management calls also carry the same instant as epoch seconds, so that a client can write it in any zone: a time element of `getPVDetails` has `epochSeconds`, and a time of `getPVStatus` or of a report has a field of its name with `EpochSeconds` appended (`lastEventEpochSeconds`, `creationTimeEpochSeconds`); a time that reads `Never` has none. The `matlab` response adds `isDST`, which is the daylight saving state in that zone.
-- **The time of the viewer**: the time zone of the browser. The charts write dates and times on a 24 hour clock. The tooltip reads `YYYY-MM-DD HH:mm:ss`. The axis labels read `MM-DD HH:mm`, `HH:mm` or `HH:mm:ss`, by the span of the window. The range strip is an interval: the date is written once in front of it when both ends fall on one day, and the year is left off the end when only the year is shared. The System pages write the format of the locale of the browser.
+- **The time of the server**: a string such as `Oct/15/2026 14:24:42 PDT`. It is written in the time zone of the server JVM, with its abbreviation and to the second; the name of the month is English whatever the locale of the server. The text is `Never` when there is no time, and `N/A` for the time of the data of an event that has not arrived. Reports, `getPVStatus`, `getPVDetails` and the `txt` response write it. Beside each such text the management calls also carry the same instant as epoch seconds, so that a client can write it in any zone: a time element of `getPVDetails` has `epochSeconds`, and a time of `getPVStatus` or of a report has a field of its name with `EpochSeconds` appended (`lastEventEpochSeconds`, `creationTimeEpochSeconds`); a time that reads `Never` has none. The `mat` response adds `isDST`, which is the daylight saving state in that zone.
+- **The time of the viewer**: the time zone that the console offers, the browser zone by default, which [Management interface](interface.md#pages) describes. The zone changes how an instant is written, not the instant. The charts write dates and times on a 24 hour clock. The tooltip reads `YYYY-MM-DD HH:mm:ss`. The axis labels read `MM-DD HH:mm`, `HH:mm` or `HH:mm:ss`, by the span of the window. The range strip is an interval: the date is written once in front of it when both ends fall on one day, and the year is left off the end when only the year is shared. The System pages write the format of the locale of the browser.
 
 The archiver has no setting for a time zone. The time zone of the server is the one the JVM takes from the host, so it follows the time zone of the host or the `user.timezone` property of the Tomcat JVM.
 

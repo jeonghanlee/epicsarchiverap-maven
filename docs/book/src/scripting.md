@@ -17,7 +17,11 @@ http://archiver.example.org:17665/mgmt/bpl/<call>?<parameters>
 ```
 
 Most calls take GET parameters and return JSON. Calls that take long
-PV lists also accept POST, with the names in the body.
+PV lists also accept POST, with the names in the body. The `Content-Type`
+decides how the body is read ([POST bodies](retrieval.md#post-bodies)).
+`archivePV` differs: with `application/json` the body is an array of
+objects, each with `pv` and the parameters of that PV; otherwise it reads
+the form or URL parameters.
 
 ## The API reference
 
@@ -35,7 +39,7 @@ authority on names and parameters.
 
 | Call | Parameters | Purpose |
 | --- | --- | --- |
-| `getAllPVs` | `pv` (glob), `limit` | names of the archived PVs |
+| `getAllPVs` | `pv` (glob), `limit` (default 500, `-1` for all) | names of the archived PVs and their aliases |
 | `getPVStatus` | `pv` (glob or comma list) | the state of each PV |
 | `getPVTypeInfo` | `pv` | the archiving configuration of a PV |
 | `archivePV` | `pv`, `samplingperiod` (s, default 1.0), `samplingmethod` (`MONITOR` or `SCAN`, default `MONITOR`), `policy` | start archiving |
@@ -47,7 +51,7 @@ authority on names and parameters.
 | `exportConfig`, `importConfig` | none; `importConfig` takes the export as POST body | the archiving configuration as JSON |
 | `getNamedFlag`, `setNamedFlag` | `name`, `value` | named flags ([Operating](operating.md#named-flags)) |
 | `getLogLevel`, `setLogLevel` | `component`, `logger`, `level` | log levels ([Logging](logging.md)) |
-| `getApplianceInfo` | none | the appliance's identity and URLs |
+| `getApplianceInfo` | `id` (appliance identity, default the appliance that answers) | the appliance's identity and URLs |
 
 ## Examples
 
@@ -89,7 +93,8 @@ work/list-pvs-venv/bin/python "$script" "$bpl" --limit 17
 
 Output contains sorted, unique PV names, one per line. An empty appliance or
 unmatched glob produces no output and exits 0. The script reads archive
-configuration; a listed PV may be paused or disconnected.
+configuration; a listed PV may be paused or disconnected, and an alias name
+is listed like a PV name.
 
 | Argument | Behavior |
 | --- | --- |
@@ -576,7 +581,7 @@ histogram of 20 bins:
 The repository folder
 [`docs/book/src/samples`](https://github.com/jeonghanlee/epicsarchiverap-maven/tree/modernize/docs/book/src/samples)
 also holds Python 3 scripts for recovery and storage configuration, and
-`emailHandler.py` for mail. This fork's tests do not run them. Each script
+`emailHandler.py` for mail. The tests of this project do not run them. Each script
 has its own arguments and dependencies; check its help and calls against
 the API reference before you rely on it.
 
@@ -594,13 +599,13 @@ Use [deletePVList.py](samples/deletePVList.py) with
 [listArchivedPVs.py](samples/listArchivedPVs.py) in the same folder.
 Python 3 needs no third-party package. Set `BPL_URL`, `DELETE_PV` and
 `DELETE_FILE` to an explicit management URL, an archived canonical PV
-and a UTF-8 file path. For several PVs, prepare one name per line instead
-of the single-PV file command below. Blank lines are ignored, surrounding
+and the path of a new UTF-8 file; the `printf` commands below overwrite
+an existing file at that path. For several PVs, prepare one name per line
+instead of the single-PV file command below. Blank lines are ignored, surrounding
 whitespace is stripped, case is preserved and `#` is literal.
 
 The default removes archive configuration and configured aliases while
-retaining stored data. This differs from the previous sample, which always
-requested data deletion. The PV must first be paused:
+retaining stored data. The PV must first be paused:
 
 ```bash
 printf '%s\n' "$DELETE_PV" > "$DELETE_FILE"

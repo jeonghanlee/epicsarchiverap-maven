@@ -28,9 +28,9 @@ What makes this fork distinct from upstream:
 - **Toolchain**: JDK 21 and Tomcat 9.
 - **Scope**: a single-instance appliance (no appliance clustering).
 - **Persistence**: MariaDB and SQLite3 are both shipped and selectable at
-  install through the JNDI DataSource. Access moves to a local method that
-  fits a single host — MariaDB over a Unix domain socket (UDS) rather than
-  TCP, or a serverless SQLite3 file.
+  install through the JNDI DataSource. This repository documents MariaDB over
+  TCP and a serverless SQLite3 file. The deployment of MariaDB over a Unix
+  domain socket (UDS) belongs to the environment repository named below.
 - **Documentation**: a different system from upstream — the mgmt API reference
   is generated from the code into the mgmt WAR, and the narrative docs are an
   mdBook on GitHub Pages (upstream's Sphinx/Read the Docs pipeline is retired).
@@ -45,11 +45,12 @@ which builds against this repository.
 
 ## Prerequisites
 
-- **JDK 21+** with `JAVA_HOME` exported.
+- **JDK 21+**: the `java` on `PATH`, or the install that `JAVA_HOME` names.
 - **Maven Wrapper**: the build runs through `./mvnw`; the wrapper pins the
   Maven version, so no system Maven is required.
 - **Git**: the build reads commit history to name artifacts and generate
-  release notes.
+  release notes. The release notes come from the Git log of
+  `remotes/origin/master`, so the clone needs the `origin/master` branch.
 - **Docker** (documentation only): the mdBook docs build through
   `docs/book/Dockerfile`; Docker is not needed for the WARs.
 
@@ -63,7 +64,8 @@ Run from the repository root:
 ./mvnw -B clean verify             # package plus the dependency and enforcer gates
 ```
 
-Set `JAVA_HOME` to a JDK 21+ install (the exec steps require it):
+To build with a JDK other than the `java` on `PATH`, set `JAVA_HOME` to a
+JDK 21+ install; the Maven Wrapper uses it when it is set:
 
 ```bash
 JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ./mvnw -B clean package
@@ -74,7 +76,8 @@ build and every WAR; compile them on demand with `-Ptools`.
 
 ## Documentation
 
-The package goal builds no documentation. Two independent, Sphinx-free paths:
+The package goal builds the mgmt API reference and does not build the
+narrative docs. Two independent, Sphinx-free paths:
 
 - **mgmt API reference**: generated from the code at `process-classes` (the
   `BPLServlet` registry plus the `@BPLEndpoint` annotations) into the mgmt WAR
@@ -83,8 +86,9 @@ The package goal builds no documentation. Two independent, Sphinx-free paths:
 - **Narrative docs**: an mdBook under `docs/book`, built with the pinned tools
   in `docs/book/Dockerfile` and published to GitHub Pages at
   <https://jeonghanlee.github.io/epicsarchiverap-maven/> by the `pages.yml`
-  workflow. The pages currently carry the migrated upstream content and are
-  being rewritten for this fork. Build or preview it locally:
+  workflow, which runs for pushes to the `modernize` branch that change
+  `docs/book` or the workflow, and on manual dispatch. Build or preview it
+  locally:
 
 ```bash
 docker build -t aa-mdbook docs/book
@@ -101,6 +105,11 @@ docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs/book:/book" aa-mdbook b
 
 ## Continuous Integration
 
-`.github/workflows/maven.yml` runs `./mvnw -B -ntp clean verify` on JDK 21 for
-every push and pull request. `.github/workflows/pages.yml` builds and deploys
-the mdBook when `docs/book` changes.
+`.github/workflows/maven.yml` runs on JDK 21 for every push and pull request.
+It first runs `bash scripts/ui-static-checks.bash` and then
+`./mvnw -B -ntp clean verify`. A push or pull request that changes only
+`docs/milestone-*.md` or `docs/CLOSED_DOORS.md` does not start it.
+
+`.github/workflows/pages.yml` builds and deploys the mdBook for pushes to the
+`modernize` branch that change `docs/book` or the workflow, and on manual
+dispatch. The remote default branch is `master`.

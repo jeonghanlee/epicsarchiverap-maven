@@ -37,6 +37,12 @@ http://archiver.example.org:17668/retrieval/data/getData.json?pv=TEST:PV:1&from=
 | `retiredPVTemplate` | for a PV no longer archived, the name of an archived PV whose configuration is used to read its files | none |
 | `skipExternalServers` | `true` leaves out external data servers ([Redundancy](redundancy.md)) | `false` |
 
+The property `org.epics.archiverappliance.retrieval.DefaultUseReducedPostProcessor`
+sets the reduction of `usereduced` ([Configuration](configuration.md)).
+The shipped `archappl.properties` sets `TwoWeekRaw`, which returns raw
+data for the last two weeks and `firstSample` data for older times. When
+the property is unset, the reduction is `firstSample`.
+
 Times are ISO 8601 instants in UTC, such as `2026-09-24T08:00:00.000Z`,
 or ISO 8601 date times with an offset, such as
 `2026-09-24T01:00:00-07:00`, URL-encoded when needed; the `+` of an
@@ -55,24 +61,56 @@ with these parameters in the URL:
 | Parameter | Meaning | Default |
 | --- | --- | --- |
 | `at` | the instant, ISO 8601 | now |
-| `searchPeriod` | how far back to search for a sample, ISO 8601 period | `P1D` |
+| `searchPeriod` | how far back to search for a sample, a date-based ISO 8601 period such as `P1D` or `P2W`; a period with a time part, such as `PT12H`, returns HTTP 500 | `P1D` |
 | `includeProxies` | `true` also asks external appliances ([Redundancy](redundancy.md)) | `false` |
 
 ```bash
 curl -s -X POST -H "Content-Type: application/json" -d '["TEST:PV:1", "TEST:PV:2"]' "http://archiver.example.org:17668/retrieval/data/getDataAtTime.json?at=2026-09-24T08:00:00.000Z"
 ```
 
-A POST body is read as a JSON array only when the `Content-Type` is
-exactly `application/json`; with any other type, including
-`application/json; charset=utf-8`, the body is read as one name per
-line.
+### POST bodies
+
+The `Content-Type` of a POST decides how the body is read:
+
+| Content-Type | Body |
+| --- | --- |
+| exactly `application/json` | a JSON array of names, or of objects with a `pv` member |
+| `application/x-www-form-urlencoded` | the form field `pv`, a comma-separated list such as `pv=TEST:PV:1,TEST:PV:2`; a body without `pv` returns HTTP 500 |
+| any other type, such as `text/plain` or `application/json; charset=utf-8` | one name per line |
+| none | no names |
+
+`curl -d` without a `Content-Type` header sends
+`application/x-www-form-urlencoded`.
+
+### The getDataAtTime response
+
+The response is a JSON object with one member per PV that has a sample.
+A PV without a sample is left out. The order of the members is not
+fixed. A development appliance answers this request:
+
+```bash
+curl -s -X POST -H "Content-Type: application/json" -d '["SR:BPM:01:X"]' "http://archiver.example.org:17668/retrieval/data/getDataAtTime?at=2026-10-19T12:00:00Z"
+```
+
+with this object:
+
+```json
+{"SR:BPM:01:X":{"severity":0,"val":-0.014319805167865896,"nanos":72657017,"meta":{"HIHI":"0.0","HIGH":"0.0","LOLO":"0.0","PREC":"3","LOPR":"0.0","HOPR":"0.0","DESC":"beam position X","cnxlostepsecs":"0","EGU":"mm","LOW":"0.0","startup":"true","DBRType":"DBR_SCALAR_DOUBLE","cnxregainedepsecs":"1792386553"},"secs":1792411199,"status":0}}
+```
+
+| Member | Content |
+| --- | --- |
+| `secs`, `nanos` | the time of the sample: epoch seconds, and the nanoseconds within that second |
+| `val` | the value; a number, a string, or an array for a waveform |
+| `severity`, `status` | the alarm severity and status numbers |
+| `meta` | `DBRType`, and the metadata fields stored with the sample, such as `EGU` |
 
 ## Formats
 
 | Format | Content type | Content |
 | --- | --- | --- |
-| `json` | `application/json` | a JSON array with one object per PV: `meta` and `data` |
-| `csv` | `text/csv` | one line per sample, one PV only |
+| `json` | `application/json` | a JSON array with one object per PV: `meta` and `data`; a sample in `data` has `secs`, `val`, `nanos`, `severity` and `status`, and `fields` when the sample carries field values |
+| `csv` | `text/csv` | one line per sample, one PV only, without a header line: `secs,value,severity,status,nanos`; an empty line ends the file |
 | `txt` | `text/plain` | readable text, useful for debugging |
 | `mat` | `application/matlab` | a MATLAB file |
 | `raw` | `application/x-protobuf` | the PB/HTTP binary protocol |
@@ -104,7 +142,7 @@ getData.json?pv=mean(TEST:PV:1,3600)
 | `errorbar` | mean with its standard deviation |
 | `linear`, `loess` | interpolated values |
 | `flyers`, `ignoreflyers` | only, or all but, the samples far from the mean; second argument is the number of standard deviations, default 3 |
-| `nth` | every n-th sample; the argument is n |
+| `nth` | every n-th sample; the argument is n, default 900 |
 | `ncount` | the number of samples in the whole range; no argument |
 | `deadBand` | like the record's `ADEL`: a sample is kept when it differs from the last kept one by at least the argument, default 1 |
 | `optimized`, `optimLastSample` | about the given number of points over the range, default 1000 |

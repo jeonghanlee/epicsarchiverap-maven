@@ -3,7 +3,7 @@
 The EPICS Archiver Appliance records the values of EPICS process
 variables (PVs) over Channel Access (CA) and PVAccess (PVA), stores them
 in a chain of storage stages, and serves them back over HTTP. This book
-documents the Maven fork at
+documents this project at
 [jeonghanlee/epicsarchiverap-maven](https://github.com/jeonghanlee/epicsarchiverap-maven),
 which runs the appliance as one single-instance service.
 
@@ -33,7 +33,7 @@ the mgmt web application (see [Scripting](scripting.md)).
 - Provides a web interface and an HTTP management interface to add,
   pause, rename and delete PVs and to watch the appliance's metrics.
 
-## What this fork does not carry
+## What this project does not carry
 
 - Clustering of several appliances. The appliance is one host running
   four web applications.
@@ -53,6 +53,10 @@ the mgmt web application (see [Scripting](scripting.md)).
 | [Management interface](interface.md) | the pages of the web interface, their judgements, limits and site skin |
 | [Logging](logging.md) | where the logs go and how to change log levels |
 | [Retrieving data](retrieval.md) | the data retrieval URLs, formats and post-processing |
+| [Times](time-handling.md) | the time of each sample and report, its clock and how it is written |
 | [Scripting](scripting.md) | the management calls from scripts |
 | [Redundancy and EPICS 7](redundancy.md) | merging data from a second appliance; structured PVA data |
 | [Developer guide](developer.md) | the test platform and the file formats |
+| [FAQ](faq.md) | short answers to common questions |
+| [Glossary](glossary.md) | the terms of the console and of this manual |
+| [License](license.md) | the license conditions of the appliance |

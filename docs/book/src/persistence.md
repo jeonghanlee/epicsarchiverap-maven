@@ -46,7 +46,8 @@ layer use it.
 
 ## Setting up MariaDB
 
-1. Create the database and a user for the appliance:
+1. Create the database and a user for the appliance, as the database
+   administrator:
 
    ```sql
    CREATE DATABASE archappl;
@@ -60,7 +61,8 @@ layer use it.
    mysql -u archappl -p archappl < install_scripts/archappl_mysql.sql
    ```
 
-3. Define the DataSource in the mgmt instance's `conf/context.xml`:
+3. Define the DataSource in the mgmt instance's `conf/context.xml`, as a
+   `<Resource>` element inside the `<Context>` element:
 
    ```xml
    <Resource name="jdbc/archappl"
@@ -89,7 +91,8 @@ layer use it.
    `<tomcat_user>` is the account the Tomcat instances run as.
 
 2. Define the DataSource with one connection, because SQLite locks the
-   file on every write:
+   file on every write. Put the `<Resource>` element inside the
+   `<Context>` element of the mgmt instance's `conf/context.xml`:
 
    ```xml
    <Resource name="jdbc/archappl"
@@ -126,7 +129,10 @@ form for the chosen backend; for SQLite it is the one above. Its
 and runs as root for SQLite. For SQLite it rewrites `archappl_sqlite.sql`
 with `CREATE ... IF NOT EXISTS` and loads it with `sqlite3` as the
 service account, so a second run is harmless. The steps above are the
-manual equivalent.
+manual equivalent, with one difference for MariaDB: the deployment path
+creates the database with `CHARACTER SET utf8mb4` and `IF NOT EXISTS`,
+and rewrites the schema to `CREATE TABLE IF NOT EXISTS` with
+`DEFAULT CHARSET=utf8mb4`.
 
 ## Checking the schema
 

@@ -32,8 +32,10 @@ not a separate supported procedure.
 - JDK 21.
 - Apache Tomcat 9.
 - A configuration database: MariaDB or SQLite ([Persistence](persistence.md)).
-- Storage for the three stores, and network access to the IOCs over CA
-  and PVA.
+- Storage for the three stores: the short term store (STS), the medium
+  term store (MTS) and the long term store (LTS).
+- Network access to the IOCs over Channel Access (CA) and PVAccess
+  (PVA).
 
 ### Tomcat instances
 
@@ -55,12 +57,13 @@ ${DEPLOY_DIR}/retrieval/  conf/  logs/  temp/  webapps/retrieval.war  work/
    the port of that web application in `appliances.xml`, give the
    shutdown port a value unique on the host, and remove the AJP
    connector.
-3. Copy each WAR from the release bundle into its instance's `webapps/`
-   under its plain name (`mgmt.war`, and so on). Tomcat takes the context
+3. Copy each WAR from the release bundle ([Building](building.md#outputs))
+   into its instance's `webapps/` under its plain name (`mgmt.war`, and so on). Tomcat takes the context
    path from the file name, and the URLs in `appliances.xml` expect
    `/mgmt`, `/engine`, `/etl` and `/retrieval`.
 4. In the mgmt instance's `conf/context.xml`, define the configuration
-   database DataSource ([Persistence](persistence.md)).
+   database DataSource as a `<Resource>` element inside the `<Context>`
+   element ([Persistence](persistence.md)).
 
 The examples in this book use these ports:
 
@@ -75,7 +78,8 @@ The examples in this book use these ports:
 ### appliances.xml
 
 `appliances.xml` describes the appliance: its identity and the URLs of
-its four web applications.
+its four web applications. This project supports one appliance per
+installation, not several appliances run as a cluster.
 
 ```xml
 <appliances>
@@ -94,8 +98,8 @@ its four web applications.
 - `identity` must equal the identity the appliance finds for itself: the
   `ARCHAPPL_MYIDENTITY` Java system property or environment variable,
   or the host's fully qualified name when neither is set.
-- The host part of `cluster_inetport` must be `localhost` or the host's
-  fully qualified name.
+- The host part of `cluster_inetport` must be `localhost`, the host's
+  fully qualified name or an IP address.
 - `retrieval_url` is used by the other web applications;
   `data_retrieval_url` is the URL that data clients use.
 
@@ -125,8 +129,13 @@ CATALINA_HOME=${TOMCAT_HOME} CATALINA_BASE=${DEPLOY_DIR}/mgmt ${TOMCAT_HOME}/bin
 ```
 
 Start `mgmt` first, then `engine`, `etl` and `retrieval`, each as its own
-process, and stop them in the reverse order. Until all four have
-started, the web interface answers with HTTP 503.
+process. Stop them in the order `engine`, `retrieval`, `etl`, `mgmt`,
+which the launcher of epicsarchiverap-env (`archappl.bash`) uses. The
+stop order is not the reverse of the start order.
+
+Until all four have started, the pages under `/mgmt/ui/` answer with
+HTTP 503 and the calls of the business process layer (BPL) answer with
+HTTP 500.
 
 ### Checking the deployment
 

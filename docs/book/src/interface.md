@@ -3,13 +3,20 @@
 The management web interface of the appliance: the pages, what each
 judgement shows and where its value comes from, the limits it keeps, and
 how its files reach the WARs and take the site skin. The pages call the
-server through the BPL actions that the [Developer guide](developer.md)
-documents; they need no server change of their own.
+server through the business process layer (BPL) actions that
+[Scripting](scripting.md) describes; they need no server change of their
+own.
 
 The pages use no jQuery, no framework and no build tool. Every full page
 carries a content security policy, and the charts are drawn with D3.
 
 ## Pages
+
+The addresses of the pages are relative to the base address of the
+management web application, for example
+`http://archiver.example.org:17665/mgmt/ui/index.html`
+([Installing](installing.md)). The data viewer is served by the retrieval
+web application, at `http://archiver.example.org:17668/retrieval/ui/viewer/archViewer.html`.
 
 | Page | Address | For | Content |
 | :--- | :--- | :--- | :--- |
@@ -18,9 +25,9 @@ carries a content security policy, and the charts are drawn with D3.
 | System: Overview | `system.html` | Everyone | Three verdict lines and one row per measure with its value, its status and a link to the detail; the **i** button of a measure opens its meaning |
 | System: Operations | `operations.html` | The person who looks after the appliance | Samples, dropped samples, write path, stores and ETL, processes, configuration |
 | System: Retrieval performance | `retrieval.html` | A person whose data requests are slow | What the server reports and a request measured in the browser |
-| System: External servers | `external.html` | Administrators | The other EPICS Archiver Appliance clusters whose data this appliance serves: add or remove one |
+| System: External servers | `external.html` | Administrators | The other EPICS Archiver Appliance installations whose data this appliance serves: add or remove one |
 | Analyzer | `analyzer.html` | Everyone | The Analyzer menu entry; forwards to the data viewer of the retrieval web application |
-| Help | `help.html` | Everyone | How to use each page, the PV states, the API reference and a link to this manual; it needs no network beyond the appliance |
+| Help | `help.html` | Everyone | How to use each page (moving around, Archive PVs, Browse PVs, System, Analyzer), a link to the management API reference of the appliance and a link to this manual, which needs access to the internet |
 | Data viewer | `/retrieval/ui/viewer/archViewer.html` | Everyone | Charts per unit for the PVs of the address |
 
 The right end of the menu bar of every page holds the time zone of the
@@ -124,7 +131,7 @@ The state of a PV and the actions in its row:
 
 | State | Actions in the row |
 | :--- | :--- |
-| Being archived, Disconnected | Pause; More, which holds Change sampling, Maintenance and Stop archiving; Details |
+| Being archived, Disconnected, Appliance Down | Pause; More, which holds Change sampling, Maintenance and Stop archiving; Details |
 | Paused | Resume; More; Details |
 | Initial sampling, Appliance assigned | Cancel request; Details |
 | Held | Resume, which makes the engine search for the name again; Cancel request; Details |
@@ -170,13 +177,13 @@ State column says what a lost sample is and what to do about each cause:
 | State | The state word of the PV and, when events were lost, `N lost`, where N is the sum of `eventsDropped` of the reports `getPVsByDroppedEventsTimestamp`, `getPVsByDroppedEventsBuffer` and `getPVsByDroppedEventsTypeChange`. The column is shown only while a PV is not in its normal state, which is Being archived with no lost event. A PV whose type changed reads Paused soon after, because the engine pauses it, and its Details window says why |
 | Trend | A small line of the chosen range, for every PV of the table whether or not its Plot box is on; none for an array PV |
 | Value | The value of the newest sample at or before the end of the chart window, with its unit, aligned on the decimal point. An array reads `array of N`. A PV with no sample in the 30 days before the end of the window has an empty cell with `no sample in 30 days` as its title |
-| Last event | The date and time of that sample, which is the time of the data and not the time at which the archiver received it, written in the time zone of the browser; the title holds the instant in UTC to the millisecond |
+| Last event | The date and time of that sample, which is the time of the data and not the time at which the archiver received it, written in the time zone chosen in the menu bar; the title holds the instant in UTC to the millisecond and the zone in which the cell is shown |
 | Std dev | The standard deviation of the points of the Trend; shown only while the Standard deviation band of the chart options is on |
 | Actions and Details | The buttons of the state of the PV, listed under [Browse PVs page](#browse-pvs-page) |
 
 Value and Last event come from one call of `getDataAtTime` for all the PVs of the table. While the window ends now the page leaves the instant out and the server answers with the newest sample; for a window that ends earlier the page sends the end of the window. A window of 10 minutes or less shows the same sample as the last one that `getData` returns for it; a longer window draws a mean in its last interval, which is not a sample.
 
-The **Details** button opens a window with the groups below. A value is read by the exact name of the call that holds it, `getPVStatus`, `getPVTypeInfo` or `getPVDetails`; a time of those calls also comes as epoch seconds (`epochSeconds` in an element of `getPVDetails`, `lastEventEpochSeconds` beside `lastEvent`), which a client uses to write it in another zone. A name that the call does not hold reads *not provided*; for a PVA PV these are the unit and the host. A value that is present and empty, a pair of limits that are both 0 or both NaN, and a limit that is NaN read *not set*; for a CA record without a unit the call returns an empty string, so its unit reads *not set*. A time is written as the server writes it, in the time zone of the server, under the heading of its kind: the time of the data, received, recorded, moved, and the times of the connection, of the settings of the PV and of the last request for its data.
+The **Details** button opens a window with the groups below. A value is read by the exact name of the call that holds it, `getPVStatus`, `getPVTypeInfo` or `getPVDetails`; a time of those calls also comes as epoch seconds (`epochSeconds` in an element of `getPVDetails`, `lastEventEpochSeconds` beside `lastEvent`), which a client uses to write it in another zone. A name that the call does not hold reads *not provided*; for a PVA PV these are the unit and the host. A value that is present and empty, a pair of limits that are both 0 or both NaN, and a limit that is NaN read *not set*; for a CA record without a unit the call returns an empty string, so its unit reads *not set*. A time that comes with its epoch seconds is written in the time zone chosen in the menu bar, and any other time as the server writes it, in the time zone of the server, under the heading of its kind: the time of the data, received, recorded, moved, and the times of the connection, of the settings of the PV and of the last request for its data.
 
 ![The Details window of a PV](images/browse-details.png)
 
@@ -288,7 +295,7 @@ reported and is never shown as Normal.
 | :--- | :--- | :--- | :--- |
 | Days left in the stores | Fewer than 30 days | Fewer than 7 days | Free space divided by the data the archiver adds per day |
 | Free share of a device | Below 5 % | Below 3 % | Prometheus node exporter alert defaults |
-| Write time of the engine | Above 50 % of the write period | 100 % or more | Samples are lost when the writer needs more than its period |
+| Write time of the engine | 50 % of the write period or more | 100 % or more | Samples are lost when the writer needs more than its period |
 | Lowest heap after a collection | 70 % of the maximum, or a rise of 5 points in a day | 90 % | The live set of the application, not the instantaneous heap |
 | A PV disconnected | For more than an hour | No PV connected | A shorter loss is often a restart |
 | An ETL pass | Overran its interval, late, or a failed job | Busy for 200 % of its interval | The measures the ETL reports |
@@ -326,7 +333,7 @@ matters; and why a long range is slower.
 
 The tab lists the servers whose data this appliance serves, each with its
 URL and its indexes. **Add a server…** takes the `data_retrieval_url` of
-another EPICS Archiver Appliance cluster and connects it; **Remove…**
+another EPICS Archiver Appliance installation and connects it; **Remove…**
 stops serving one. The **i** button beside the heading explains the list,
 and the one in each window says what the address is and what a removal
 changes. The upload of Channel Archiver configuration files, the
@@ -344,7 +351,7 @@ type are not in the interface; their calls remain
 | Status of the PVs of the table | Every 3 s while a request is unfinished or an action is recent, every 20 s otherwise; with the Refresh control on Off, only in the first two cases |
 | Value, Last event and lost events of the table | At the period of the Refresh control (10 s, 30 s or 1 min); the Trend and the chart no more often than every 30 s |
 | System: Overview, Operations, Retrieval performance | Every 20 s, 30 s and 30 s while the page is visible |
-| A request measured on the Retrieval performance page | The whole answer is read into the page, about 100 bytes per sample (a week of a PV at 1 Hz is about 60 MB); the page says so next to the form |
+| A request measured on the Retrieval performance page | The whole answer is read into the page, about 100 bytes per sample (a week of a PV at 1 Hz is about 60 MB); the card of the Measure heading says so |
 
 Measured on one host with 100 PVs at 1 Hz, ten minutes of samples each:
 every scan row is filled in 0.65 s or less, and the slowest data request
@@ -357,7 +364,7 @@ takes under 50 ms.
 | Supported | The current releases of Firefox, Edge and Safari; no jQuery, no framework and no build tool. Checked in Firefox, Edge and the WebKitGTK engine of Safari, not in the Safari application |
 | Content security policy | `script-src 'self'` on every page: no inline script, event-handler attribute or style attribute, and no outside host |
 | `connect-src` | `'self'`, and `http:` and `https:` on the Browse PVs page and the Retrieval performance page, which read the data retrieval address the appliance reports |
-| Stored in the browser | The snapshot of the names; nothing else |
+| Stored in the browser | The snapshot of the names (IndexedDB database `aa-browse-names`), the time zone of the console (`aa.timeZone`) and the period of the Refresh control (`aa.browse.refresh`), both in local storage; nothing else |
 | Data inserted into a page | Only as text, never as markup |
 
 ## Files and site skin
@@ -369,7 +376,7 @@ build copies each `staticcontent` folder whole into its WAR:
 | :--- | :--- | :--- |
 | `mgmt/staticcontent/` | `/mgmt/ui/` | The pages, `css/` and `js/` of the management interface |
 | `retrieval/staticcontent/viewer/` | `/retrieval/ui/viewer/` | The data viewer |
-| `staticcontent/` | `ui/comm/` of every WAR | `css/main.css` (the site skin), `css/chart.css`, `js/aa/` (the shared chart code) and `js/vendor/` (D3) |
+| `staticcontent/` | `ui/comm/` of every WAR | `css/main.css` (the site skin), `css/chart.css`, `img/` (the header and site logos), `js/aa/` (the shared chart code) and `js/vendor/` (D3) |
 
 The chart library is D3 7.9.0 (ISC): `js/vendor/d3.min.js` is
 `dist/d3.min.js` of the npm tarball `d3-7.9.0.tgz`, `d3.SOURCE.txt` beside
@@ -378,22 +385,36 @@ it records the tarball integrity and the SHA-256 of the file, and
 management pages and the viewer; a change to it changes both.
 
 The pages take their colors, fonts and spacing from the tokens of
-`css/main.css`, so a site changes the look by supplying its own
-`css/main.css` with the same tokens, through the site folder that
-[Building](building.md#building-for-a-site) describes:
+`css/main.css`. A site supplies its own `css/main.css` through the site
+folder that [Building](building.md#building-for-a-site) describes. That
+file replaces the whole default stylesheet, so it defines every token of
+the table; a token it leaves out is undefined on the pages that use it.
+Several tokens are defined from others in the default file, such as
+`--bg: var(--c-bg)`:
 
 | Token | Use |
 | :--- | :--- |
-| `--c-brand`, `--c-accent`, `--c-accent-dark`, `--c-accent-soft` | The site header, links and selection |
-| `--c-bg`, `--c-surface`, `--c-border`, `--c-border-strong` | Page and rule colors |
-| `--c-text`, `--ink-2`, `--ink-3` | Text, which keeps a contrast of at least 4.5 to 1 on the page |
-| `--c-danger`, `--alarm`, `--warn` | The alert color and the attention color, used only for judgements and disconnections |
-| `--font-sans`, `--font-mono` | Fonts |
+| `--c-brand`, `--c-accent`, `--c-accent-dark`, `--c-accent-soft` | The site header, links, buttons and selection |
+| `--accent`, `--accent-ink`, `--focus-bg` | The accent of the page stylesheets, the text on an accent background, and the selected row |
+| `--c-bg`, `--c-surface`, `--c-border`, `--c-border-strong` | Page, panel and rule colors |
+| `--bg`, `--rule`, `--grid` | The page background, rules and chart grid lines of the page stylesheets |
+| `--c-text`, `--c-muted`, `--ink`, `--ink-2`, `--ink-3` | Text |
+| `--c-danger`, `--alarm`, `--warn` | The alert color, which `--alarm` also uses for error text and destructive buttons, and the attention color (`--warn`) |
+| `--font-sans`, `--font-mono`, `--sans`, `--mono` | Fonts |
+| `--radius`, `--shadow-sm`, `--shadow-md` | Corner radius and shadows |
+
+The `main.css` of this repository also defines `--c-danger-soft`,
+`--c-stripe` and `--c-hover`, which no stylesheet uses. The CI contrast
+check reads `--ink`, `--ink-2`, `--ink-3`, `--accent`, `--warn` and
+`--alarm` against `--bg` and `--focus-bg` in the default `main.css` and
+requires at least 4.5 to 1. A site file keeps the same contrast; the
+check does not read it.
 
 The build replaces the marker blocks `site_header`, `site_logo`,
-`site_navbar` and `site_footer` of every management page with those of
-`index.html`, and a site's `template_changes.html` replaces them in turn,
-so every page keeps the four blocks.
+`site_navbar` and `site_footer` of every management page that carries
+them with those of `index.html`; the forwarding pages carry none. A
+site's `template_changes.html` replaces them in turn, so every other
+management page keeps the four blocks.
 
 ## Checks
 
@@ -412,4 +433,5 @@ Three checks guard the interface files:
   `d3.SOURCE.txt` records, the PV name pattern, the contrast of the text
   colors, and the form of the [information cards](#information-cards);
   twenty-three broken copies of the tree must each be refused for their
-  own reason. Run it locally with `bash scripts/ui-static-checks.bash`.
+  own reason. Run it locally with `bash scripts/ui-static-checks.bash`; it
+  needs `python3` and `sha256sum`.

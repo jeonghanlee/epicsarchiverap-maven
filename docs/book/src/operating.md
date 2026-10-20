@@ -23,12 +23,12 @@ bar, named by task; the entry of the page in view is marked:
 | Archive PVs | the Archive PVs page | archive a PV and pause, resume or stop it |
 | Browse PVs | the Browse PVs page | find PVs, list them with their value and last event, plot them, act on them; the reports are the **Show** list of the Find panel |
 | System | System: Overview | status monitoring: the verdict on the appliance, then Operations and Retrieval performance |
-| Help | the help page | how to use each page, the PV states, the management API reference ([Scripting](scripting.md)) and a link to this manual |
+| Help | the help page | how to use each page, the management API reference ([Scripting](scripting.md)) and a link to this manual, which needs access to the internet |
 | Analyzer | the data viewer | the data viewer of the retrieval web application ([Retrieving data](retrieval.md#the-data-viewer)) |
 
 On a screen 720 px wide or narrower the entries fold behind a **Menu**
 button and open as one column. The **External servers** tab of System
-lists the other archiver clusters this appliance serves data for. The
+lists the other archiver installations this appliance serves data for. The
 addresses of the earlier pages (`reports.html`, `metrics.html`,
 `storage.html`, `appliance.html`, `integration.html`) forward to their
 place.
@@ -123,8 +123,8 @@ explains rename, change of type and consolidation before it asks.
 | Change sampling | the PV is archived or paused | sets the method and the period; a running PV takes them at once and the stored data does not change |
 | Stop archiving | the PV is archived or paused | pauses the PV, removes it from the archiver and, when ticked, deletes its stored data |
 | Cancel request | the PV is in Initial sampling or Appliance assigned | cancels the archive request |
-| Rename | none; the PV is paused first | copies the settings and the data to the new name; both names stay paused until each is checked and resumed |
-| Change type | none; the PV is paused first | converts the stored data of every store to the new type, in place; it asks for the confirmation that a backup exists |
+| Rename | none; the PV is paused first | copies the settings and the data to the new name; both names stay paused until you resume the new one, once its data is checked, and stop the old one |
+| Change type | none; the PV is paused first | converts the stored data of every store to the new type, in place; it asks for the confirmation that a backup exists; the PV stays paused, and a refusal shows its reason in the window |
 | Consolidate data | none; the PV is paused first | moves the data of the earlier stores up to the chosen store |
 
 **Pause all selected**, **Resume all selected** and **Stop archiving all
@@ -179,10 +179,13 @@ When a store runs full, ETL follows the `OutOfSpaceHandling` key
 
 ## Monitoring
 
-- **Logs:** watch for ERROR and FATAL lines, and for `OutOfMemoryError`,
-  with `journalctl -p err` ([Logging](logging.md)). An error in the engine
-  or ETL needs attention; one in retrieval or mgmt may come from a bad
-  request.
+- **Logs:** watch for ERROR and FATAL lines with `journalctl -p err`
+  ([Logging](logging.md)). An error in the engine or ETL needs attention;
+  one in retrieval or mgmt may come from a bad request. Search for
+  `OutOfMemoryError` with no priority filter, because a line without a
+  priority prefix arrives at priority 6 ([Known
+  limits](logging.md#known-limits)) and `-p err` misses it:
+  `journalctl -u epicsarchiverap-maven.service | grep OutOfMemoryError`.
 - **Free space** of each store, from **Stores** on the System Operations
   page or the host.
 - **Disconnected PVs**, from the **Disconnected now** selection of the
@@ -198,7 +201,10 @@ When a store runs full, ETL follows the `OutOfSpaceHandling` key
   selection lists them. Either rename the paused PV and archive it again
   under its name, which keeps the old data under the new name, or
   convert its archived data with **Change type** on the paused PV, which
-  rewrites the data (back it up first), and then resume it.
+  rewrites the data (back it up first). The window reports `<PV> is stored
+  as <type>` when the call succeeds. Before you resume the PV, check the
+  **Data type** in **Details** and read back a sample of the stored data;
+  if the data did not change, rename the PV and archive it again.
 
 ## Aliases
 
@@ -223,9 +229,22 @@ loaded at startup from a properties file named by the
 ## Backup
 
 - **The configuration database** holds the archiving configuration of
-  every PV. Back it up with the database's own tools, for example
-  `mysqldump` for MariaDB or a copy of the file for SQLite while the
-  appliance is stopped.
+  every PV ([Persistence](persistence.md#what-the-database-holds)). For
+  MariaDB, dump the database that
+  [Setting up MariaDB](persistence.md#setting-up-mariadb) creates:
+
+  ```bash
+  mysqldump -u archappl -p archappl > archappl.sql
+  ```
+
+  For SQLite, stop the appliance and copy the database file of the
+  DataSource URL ([Setting up SQLite](persistence.md#setting-up-sqlite)),
+  `archappl.sqlite` in that example, with `archappl.sqlite-wal` and
+  `archappl.sqlite-shm` when they exist.
+- **The configuration files** are `appliances.xml`
+  ([Installing](installing.md#appliancesxml)), `policies.py` and
+  `archappl.properties` ([Configuration](configuration.md)). Copy them
+  with the other backups.
 - **The stores** hold the samples as ordinary files, one per PV and
   partition, and can be backed up with file tools.
 - The `exportConfig` call returns the `PVTypeInfo` records of the
@@ -235,10 +254,19 @@ loaded at startup from a properties file named by the
 
 ## Recovering a lost appliance
 
-Install a new host with the same identity in `appliances.xml`, restore
-the configuration database from its backup, restore or remount the
-stores, and start the appliance; it archives the PVs of the restored
-configuration. Giving the new host the IP address of the old one avoids
+Install a new host with the same identity in `appliances.xml`
+([Installing](installing.md#appliancesxml)) and restore the configuration
+files. Restore the configuration database from its backup: for MariaDB,
+load the dump into the empty database that [Setting up
+MariaDB](persistence.md#setting-up-mariadb) creates:
+
+```bash
+mysql -u archappl -p archappl < archappl.sql
+```
+
+For SQLite, put the copied file at the path of the DataSource URL. Restore
+or remount the stores, and start the appliance; it archives the PVs of the
+restored configuration. Giving the new host the IP address of the old one avoids
 clients holding a cached address.
 
 ## Inspecting the CA and PVA traffic
@@ -248,6 +276,16 @@ connections and subscriptions:
 
 ```bash
 tcpdump -i <interface> 'host <ioc> and host <appliance>' -w capture.pcap
+```
+
+The filter keeps the packets between the two hosts. A search that the
+appliance sends to a broadcast address, or to an address list that does
+not name the IOC, is not between them and the filter misses it. To keep
+the CA searches as well, add the UDP port of the IOC (`<ca_port>`, 5064 by
+default):
+
+```bash
+tcpdump -i <interface> '(host <ioc> and host <appliance>) or udp port <ca_port>' -w capture.pcap
 ```
 
 The [cashark](https://github.com/mdavidsaver/cashark/) plugin decodes CA

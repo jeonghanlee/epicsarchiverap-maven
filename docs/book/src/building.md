@@ -11,9 +11,10 @@ this repository, and building them for a site.
 
 ## Requirements
 
-- JDK 21, with `JAVA_HOME` exported.
+- JDK 21: the `java` on `PATH`, or the install that `JAVA_HOME` names.
 - A Git clone of this repository: the build names its outputs after the
-  commit ID and writes `RELEASE_NOTES` from the Git log.
+  commit ID and writes `RELEASE_NOTES` from the Git log of
+  `remotes/origin/master`, so the clone needs that remote-tracking branch.
 - No system Maven: the committed Maven Wrapper (`./mvnw`) downloads
   Maven 3.9.16.
 
@@ -33,7 +34,10 @@ this repository, and building them for a site.
 - `verify` does the same and then runs the dependency checks
   (dependency convergence, upper-bound versions, duplicate classes, and
   unused or undeclared dependencies). The continuous integration (CI)
-  workflow runs `./mvnw -B -ntp clean verify` on every push.
+  workflow first runs `bash scripts/ui-static-checks.bash`, which checks
+  the interface files, and then `./mvnw -B -ntp clean verify`. It runs on
+  every push except one that changes only `docs/milestone-*.md` and
+  `docs/CLOSED_DOORS.md`.
 
 ## Outputs
 
@@ -45,7 +49,7 @@ ID.
 | --- | --- |
 | `aa-<date>-<commit>-mgmt.war` | the mgmt web application |
 | `aa-<date>-<commit>-engine.war` | the engine web application |
-| `aa-<date>-<commit>-etl.war` | the ETL web application |
+| `aa-<date>-<commit>-etl.war` | the web application of ETL, the process that moves data between stores |
 | `aa-<date>-<commit>-retrieval.war` | the retrieval web application |
 | `aa-<date>-<commit>.tar.gz` | the release bundle, below |
 | `tomcat-log4j/` | the log4j jars for Tomcat's own logging ([Logging](logging.md)) |
@@ -75,7 +79,7 @@ order:
 
 | Site file | Result in the build |
 | --- | --- |
-| `template_changes.html` | Each block between `<!-- @begin(name) -->` and `<!-- @end(name) -->` replaces the block of the same name in every management page, before the files below are copied. The pages carry the blocks `site_header`, `site_logo`, `site_navbar` and `site_footer`, and the index page also `site_contact_text`; a block the pages do not carry has no effect. The page header frame, `<div class="pageheader">`, stays outside the blocks: `site_header` holds only the header logo on the left, as `<span><img ... /></span>`, and `site_logo` only the site logo on the right, as `<span id="siteimages"><img ... /></span>` with an optional link around the image; the size rules of the stylesheet apply to these forms. A block that carries its own `<div class="pageheader">` puts a second header inside the first. A site that fills only `site_logo` keeps the default header logo; `src/sitespecific/tests/template_changes.html` fills both. |
+| `template_changes.html` | Each block between `<!-- @begin(name) -->` and `<!-- @end(name) -->` replaces the block of the same name in every management page, before the files below are copied. The pages carry the blocks `site_header`, `site_logo`, `site_navbar` and `site_footer`; a block the pages do not carry has no effect. The page header frame, `<div class="pageheader">`, stays outside the blocks: `site_header` holds only the header logo on the left, as `<span><img ... /></span>`, and `site_logo` only the site logo on the right, as `<span id="siteimages"><img ... /></span>` with an optional link around the image; the size rules of the stylesheet apply to these forms. A block that carries its own `<div class="pageheader">` puts a second header inside the first. A site that fills only `site_logo` keeps the default header logo; `src/sitespecific/tests/template_changes.html` fills both. |
 | `img/` with its subfolders | Copied to `ui/comm/img/` of the mgmt and retrieval WARs; a file of the same path replaces the default image. The default set is `archiverheader.svg` (the header logo), `wordmark.svg` (the header logo below 360 px) and `sitelogo.svg` (the default site logo). The stylesheet sizes both logos by height: 44 px, 30 px at 720 px and below, and the site logo 24 px at 380 px and below. `scripts/logo/make_header_logo.py` and `scripts/logo/make_site_logo.py` regenerate the three images into `src/main/org/epics/archiverappliance/staticcontent/img`, or into the folder given as their argument; they need fontTools and the Inter Display fonts of the Debian package `fonts-inter`. |
 | `css/main.css` | Copied to `ui/comm/css/main.css` of the mgmt and retrieval WARs, replacing the default stylesheet. |
 | `classpathfiles/` | Copied into `WEB-INF/classes` of all four WARs, so the web applications find `policies.py`, `archappl.properties` and, if present, `appliances.xml` there. |

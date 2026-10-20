@@ -70,6 +70,16 @@ The root level comes from the `ARCHAPPL_ROOT_LOGGER_LEVEL` environment
 variable and defaults to `INFO`. Setting it to `WARN` drops INFO lines
 from every component.
 
+A JVM reads the environment variables of this page only when it starts. A
+deployment made with epicsarchiverap-env sets them in the `archappl.conf`
+that the service loads. The operator sets `ARCHAPPL_ROOT_LOGGER_LEVEL`, and
+`ARCHAPPL_LOG4J_SITE_FILE` (the absolute path of the copy on the appliance
+host, which `archappl.conf` carries as `LOG4J_CONFIGURATION_FILE`), in the
+site configuration file `CONFIG_SITE.local` of that repository. The
+operator regenerates `archappl.conf` with `make conf.archapplproperties`
+and applies it with the stop, install and start procedure of the
+repository, which restarts the instances.
+
 The shipped file lists the loggers operators most often tune, commented
 out:
 
@@ -82,10 +92,15 @@ out:
 | `org.epics.archiverappliance.retrieval` | data retrieval requests |
 | `com.hazelcast` | the embedded cluster library |
 
+This project does not support running several appliances as a cluster; an
+installation is one appliance. The `cluster` and `com.hazelcast` loggers
+name the cluster code of the software itself.
+
 To change a logger's level, copy the shipped `log4j2.xml`, edit the copy,
-and point the `LOG4J_CONFIGURATION_FILE` environment variable at it. The
-file carries `monitorInterval="30"`, so log4j2 rereads the copy and an
-edited level takes effect within 30 seconds, without a restart. Every WAR
+and point the `LOG4J_CONFIGURATION_FILE` environment variable at it, as
+described above. Once the instances run with that variable, the file
+carries `monitorInterval="30"`, so log4j2 rereads the copy and an edited
+level takes effect within 30 seconds, without a restart. Every WAR
 ships the same `log4j2.xml`, whatever the site the build was made for.
 
 ## Changing a level while the appliance runs
@@ -126,8 +141,9 @@ curl -s "http://localhost:17665/mgmt/bpl/setLogLevel?component=engine&logger=org
 ## File fallback without a collector
 
 On a host with no journal (a container or a developer machine), the
-shipped `log4j2.xml` carries a commented `RollingFile` appender. After
-it is enabled in a copy of the file:
+shipped `log4j2.xml` carries a commented `RollingFile` appender and a
+commented `AppenderRef` to it in the root logger. After both are
+uncommented in a copy of the file:
 
 - each JVM writes `logs/archappl.log` under its `CATALINA_BASE`, with its
   own timestamp on every line;
