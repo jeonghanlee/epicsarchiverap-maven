@@ -84,7 +84,8 @@ more, a typed threshold and a properties setting.
 
 One input takes a PV name or a pasted list with one name per line. The
 sampling is left to the policy of the site; a folded **Sampling** choice
-sets the method, the period, a policy or a controlling PV for every name.
+sets the period, the method, a policy or a controlling PV for every name.
+The method and the controlling PV take effect only together with a period, which replaces the choice of the policy; the method is then the one chosen, or Monitor.
 On **Archive** the page first searches every valid name on the network
 through `searchPV` (the management forwards the call to the engine of
 the appliance, which opens a channel of its own for five seconds and

@@ -24,7 +24,7 @@ import org.json.simple.JSONValue;
 @BPLEndpoint(
         summary = "Get a list of PVs for this appliance that are paused as a JSON array /",
         params = {
-            @BPLParam(name = "limit", description = "Limit the list to this many PVs; an integer of at least 1. Optional, if unspecified, there are no limits enforced.")
+            @BPLParam(name = "limit", description = "Limit the list to this many PVs; an integer from 1 to 2147483647, else HTTP 400. Optional, if unspecified, there are no limits enforced.")
         })
 public class GetPausedPVsForThisAppliance implements BPLAction {
 	private static Logger logger = LogManager.getLogger(GetPausedPVsForThisAppliance.class.getName());

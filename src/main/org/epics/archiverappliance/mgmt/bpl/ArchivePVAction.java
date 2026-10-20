@@ -74,9 +74,9 @@ import javax.servlet.http.HttpServletResponse;
         summary = "Archive one or more PV's.",
         params = {
             @BPLParam(name = "pv", description = "The name of the pv to be archived. If archiving more than one PV, use a comma separated list. You can also send the PV list as part of the POST body using standard techniques. If you need to specify different archiving parameters for each PV, send the data as a JSON array (remember to send the content type correctly)."),
-            @BPLParam(name = "samplingperiod", description = "The sampling period to be used. Optional, default value is 1.0 seconds."),
-            @BPLParam(name = "samplingmethod", description = "The sampling method to be used. For now, this is one of SCAN or MONITOR. Optional, default value is MONITOR."),
-            @BPLParam(name = "controllingPV", description = "The controlling PV for coditional archiving. Optional; if unspecified, we do not use conditional archiving."),
+            @BPLParam(name = "samplingperiod", description = "The sampling period to be used. Optional; if unspecified, the policy of the site chooses the sampling method and period, and samplingmethod and controllingPV are ignored."),
+            @BPLParam(name = "samplingmethod", description = "The sampling method to be used. For now, this is one of SCAN or MONITOR. Optional, default value is MONITOR; it counts only together with samplingperiod."),
+            @BPLParam(name = "controllingPV", description = "The controlling PV for conditional archiving. Optional; if unspecified, the request sets no controlling PV. It counts only together with samplingperiod."),
             @BPLParam(name = "policy", description = "Override the policy execution process and use this policy instead. Optional; if unspecified, we go thru the normal policy execution process."),
             @BPLParam(name = "appliance", description = "Optional; you can specify an appliance in a cluster. If specified (value is the identity of the appliance), the sampling and archiving are done on the specified appliance.")
         })

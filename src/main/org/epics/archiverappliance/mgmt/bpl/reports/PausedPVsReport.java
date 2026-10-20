@@ -33,7 +33,7 @@ import org.json.simple.JSONArray;
 @BPLEndpoint(
         summary = "Return a list of PVs that are currently paused.",
         params = {
-            @BPLParam(name = "limit", description = "Limit this report to this many PVs per appliance in the cluster. Optional, if unspecified, there are no limits enforced.")
+            @BPLParam(name = "limit", description = "Limit this report to this many PVs per appliance; an integer from 1 to 2147483647, else HTTP 400. Optional, if unspecified, there are no limits enforced.")
         })
 public class PausedPVsReport implements BPLAction {
 	private static Logger logger = LogManager.getLogger(PausedPVsReport.class.getName());

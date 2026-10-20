@@ -62,7 +62,9 @@ analyzer** under the table opens every PV of the table.
    method and the period of each PV. To choose them, open **Sampling**
    and set **Monitor** (store each change) or **Scan** (store at a fixed
    period), the period in seconds, a policy by name, or a controlling
-   PV. The choice applies to every name.
+   PV. The choice applies to every name. Without a period the method
+   and the controlling PV are not used; a period replaces the choice of
+   the policy, and the method is then the one you set, or Monitor.
 3. Select **Archive**. The page first searches every name on the
    network through the engine (five seconds for each, a few at a time,
    and the count of names searched is shown meanwhile). A name a server
@@ -122,7 +124,7 @@ explains rename, change of type and consolidation before it asks.
 | Pause, Resume | the PV is archived | stops or restarts sampling; the configuration and the stored data stay |
 | Change sampling | the PV is archived or paused | sets the method and the period; a running PV takes them at once and the stored data does not change |
 | Stop archiving | the PV is archived or paused | pauses the PV, removes it from the archiver and, when ticked, deletes its stored data |
-| Cancel request | the PV is in Initial sampling or Appliance assigned | cancels the archive request |
+| Cancel request | the PV is in Initial sampling, Appliance assigned or Held | cancels the archive request |
 | Rename | none; the PV is paused first | copies the settings and the data to the new name; both names stay paused until you resume the new one, once its data is checked, and stop the old one |
 | Change type | none; the PV is paused first | converts the stored data of every store to the new type, in place; it asks for the confirmation that a backup exists; the PV stays paused, and a refusal shows its reason in the window |
 | Consolidate data | none; the PV is paused first | moves the data of the earlier stores up to the chosen store |
