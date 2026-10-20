@@ -47,7 +47,8 @@ authority on names and parameters.
 | `changeArchivalParameters` | `pv`, `samplingperiod`, `samplingmethod` | change sampling |
 | `deletePV` | `pv`, `deleteData` (`true` or `false`, default `false`) | stop archiving; the PV must be paused |
 | `renamePV` | `pv`, `newname` | copy paused configuration and data to an unused name; retain both names |
-| `getNeverConnectedPVs`, `getCurrentlyDisconnectedPVs`, `getPausedPVsReport` | none | the reports |
+| `getNeverConnectedPVs`, `getCurrentlyDisconnectedPVs` | none | the reports |
+| `getPausedPVsReport` | `limit` (an integer of at least 1, applied to each appliance; default all) | the paused PVs; any other `limit` answers HTTP 400 |
 | `exportConfig`, `importConfig` | none; `importConfig` takes the export as POST body | the archiving configuration as JSON |
 | `getNamedFlag`, `setNamedFlag` | `name`, `value` | named flags ([Operating](operating.md#named-flags)) |
 | `getLogLevel`, `setLogLevel` | `component`, `logger`, `level` | log levels ([Logging](logging.md)) |

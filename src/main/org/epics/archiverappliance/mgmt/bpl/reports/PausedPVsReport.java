@@ -17,6 +17,7 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.mgmt.bpl.GetPausedPVsForThisAppliance;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
@@ -40,13 +41,18 @@ public class PausedPVsReport implements BPLAction {
 	public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService) throws IOException {
 		String limit = req.getParameter("limit");
 		logger.info("Paused PVs report for " + (limit == null ? "default limit " : ("limit " + limit)));
+		int parsedLimit;
+		try {
+			parsedLimit = GetPausedPVsForThisAppliance.parseLimit(limit);
+		} catch(IllegalArgumentException ex) {
+			logger.warn("Bad limit for the paused pvs report: " + ex.getMessage());
+			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, ex.getMessage());
+			return;
+		}
 		LinkedList<String> pausedPVForThisApplianceURLs = new LinkedList<String>();
 		for(ApplianceInfo info : configService.getAppliancesInCluster()) {
 			String mgmtURL = info.getMgmtURL();
-			String pausedPVForThisApplianceURL = mgmtURL + "/getPausedPVsForThisAppliance" + (limit == null ? "" : ("?limit=" + limit));
-			if(limit != null) {
-				pausedPVForThisApplianceURL = pausedPVForThisApplianceURL + "?limit=" + limit;
-			}
+			String pausedPVForThisApplianceURL = mgmtURL + "/getPausedPVsForThisAppliance" + (limit == null ? "" : ("?limit=" + parsedLimit));
 			pausedPVForThisApplianceURLs.add(pausedPVForThisApplianceURL);
 		}
 		
