@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.retrieval.postprocessors;
 
 import java.util.LinkedList;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +35,12 @@ public class PostProcessors {
 		private InheritValuesFromPreviousBins inheritValuesFromPreviousBins = InheritValuesFromPreviousBins.INHERIT;
 	}
 	
+	/**
+	 * The names that mean raw data or that the server sends to other appliances for its own post processors; none of them has an argument or a registry entry.
+	 */
+	private static final Set<String> RAW_AND_INTERNAL_NAMES = Set.of(
+			DefaultRawPostProcessor.PB_IDENTITY, TwoWeekRaw.TWOWEEK_IDENTITY, ExtraFieldsPostProcessor.EXTRA_FIELDS);
+
 	private static LinkedList<PostProcessorImplementation> postprocessors = new LinkedList<PostProcessorImplementation>();
 	
 	private static void registerPostProcessor(String identity, Class<? extends PostProcessor> clazz) { 
@@ -108,6 +115,86 @@ public class PostProcessors {
 		return null;
 	}
 
+	/**
+	 * Checks the retrieval operator string of a request, for example mean_60, before any data is read.
+	 * A missing or blank string and the names that the server itself sends to other appliances are accepted.
+	 * Otherwise the name before the first underscore must be a registered key and the argument must parse and lie in the domain of the operator.
+	 * This is stricter than {@link #findPostProcessor(String)}, which matches on the start of the string.
+	 * @param postProcessorUserArg The operator string, for example mean_60 or flyers_60_3.5.
+	 * @return null if the string is acceptable, else a message that names the operator and the reason.
+	 */
+	public static String checkPostProcessorUserArg(String postProcessorUserArg) {
+		if(postProcessorUserArg == null || postProcessorUserArg.trim().isEmpty()) {
+			return null;
+		}
+		if(RAW_AND_INTERNAL_NAMES.contains(postProcessorUserArg)) {
+			return null;
+		}
+		int firstUnderscore = postProcessorUserArg.indexOf('_');
+		String name = firstUnderscore < 0 ? postProcessorUserArg : postProcessorUserArg.substring(0, firstUnderscore);
+		Class<? extends PostProcessor> clazz = null;
+		for(PostProcessorImplementation implementation : postprocessors) {
+			if(implementation.key.equals(name)) {
+				clazz = implementation.clazz;
+				break;
+			}
+		}
+		if(clazz == null) {
+			return "The retrieval operator \"" + postProcessorUserArg + "\" is not known.";
+		}
+		if(firstUnderscore < 0) {
+			return null;
+		}
+		String argument = postProcessorUserArg.substring(firstUnderscore + 1);
+		String problem = describeArgumentProblem(clazz, argument);
+		if(problem == null) {
+			return null;
+		}
+		return "The retrieval operator \"" + postProcessorUserArg + "\" has a bad argument \"" + argument + "\": " + problem + ".";
+	}
+
+	private static String describeArgumentProblem(Class<? extends PostProcessor> clazz, String argument) {
+		if(NCount.class.isAssignableFrom(clazz)) {
+			return "the operator takes no argument";
+		}
+		String[] segments = argument.split("_", -1);
+		if(DeadBand.class.isAssignableFrom(clazz)) {
+			if(segments.length != 1) {
+				return "expected one number of at least 0";
+			}
+			try {
+				double value = Double.parseDouble(segments[0]);
+				if(Double.isNaN(value) || Double.isInfinite(value) || value < 0) {
+					return "expected a finite number of at least 0";
+				}
+			} catch(NumberFormatException ex) {
+				return "expected a finite number of at least 0";
+			}
+			return null;
+		}
+		boolean hasDeviations = Fliers.class.isAssignableFrom(clazz) || IgnoreFliers.class.isAssignableFrom(clazz);
+		if(segments.length > (hasDeviations ? 2 : 1)) {
+			return hasDeviations ? "expected an integer of at least 1 and optionally a number above 0" : "expected one integer of at least 1";
+		}
+		try {
+			if(Integer.parseInt(segments[0]) < 1) {
+				return "expected an integer of at least 1";
+			}
+		} catch(NumberFormatException ex) {
+			return "expected an integer of at least 1";
+		}
+		if(segments.length == 2) {
+			try {
+				float numDeviations = Float.parseFloat(segments[1]);
+				if(Float.isNaN(numDeviations) || Float.isInfinite(numDeviations) || numDeviations <= 0) {
+					return "the second argument must be a finite number above 0";
+				}
+			} catch(NumberFormatException ex) {
+				return "the second argument must be a finite number above 0";
+			}
+		}
+		return null;
+	}
 
 	public static final int DEFAULT_SUMMARIZING_INTERVAL = 15*60;
 }

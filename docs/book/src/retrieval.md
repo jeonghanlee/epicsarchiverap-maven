@@ -33,6 +33,7 @@ http://archiver.example.org:17668/retrieval/data/getData.json?pv=TEST:PV:1&from=
 | `to` | end of the range | one hour after now |
 | `timeranges` | comma-separated start and end times of several ranges, instead of `from` and `to` | none |
 | `fetchLatestMetadata` | `true` adds the PV's current metadata from the engine | `false` |
+| `pp` | the operator for each PV whose name carries none ([Post-processing](#post-processing)) | none, raw data |
 | `usereduced` | `true` returns reduced data when no post-processor is given | `false` |
 | `retiredPVTemplate` | for a PV no longer archived, the name of an archived PV whose configuration is used to read its files | none |
 | `skipExternalServers` | `true` leaves out external data servers ([Redundancy](redundancy.md)) | `false` |
@@ -151,6 +152,34 @@ getData.json?pv=mean(TEST:PV:1,3600)
 The statistics operators, `optimized` and `optimLastSample` fill empty
 bins with the previous value; the variants with `Sample` appended, such
 as `meanSample`, leave them empty.
+
+In a request with several PVs, each PV takes the operator in its own name
+or, when its name carries none, the operator of `pp`. The operator of one
+PV never reaches another.
+
+The server checks every operator before it reads data. The name before
+the first underscore must be an operator of the table or its `Sample`
+variant. The argument must be a number in the range of the operator:
+
+| Operator | Argument |
+| --- | --- |
+| `firstSample`, `lastSample`, `firstFill`, `lastFill`, the statistics operators, `caplotbinning` | the bin size, an integer of at least 1 |
+| `flyers`, `ignoreflyers` | the bin size as above, then optionally a finite number above 0 |
+| `nth` | n, an integer of at least 1 |
+| `optimized`, `optimLastSample` | the number of points, an integer of at least 1 |
+| `deadBand` | a finite number of at least 0 |
+| `ncount` | none |
+
+An empty or blank `pp` and `pp=pb` return raw data. `twoweek` and
+`extraFields` are the names that one appliance sends to another; the
+server accepts them and treats them like an empty `pp`. An unknown
+operator, such as `bogus` or `meanx`, and a bad argument, such as `mean_`,
+`mean_0`, `mean_abc`, `mean_60.5` or `nth_-1`, return HTTP 400 on
+`getData` and `getDataForPVs`. The body names the operator and the
+reason. The PVAccess retrieval fails the call with the same message.
+
+`optimLastSample` over a range shorter, in seconds, than its number of
+points answers an empty body.
 
 ## The data viewer
 

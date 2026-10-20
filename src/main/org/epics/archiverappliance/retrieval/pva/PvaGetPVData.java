@@ -233,6 +233,11 @@ public class PvaGetPVData implements PvaAction {
 			logger.info("After parsing the function call syntax pvName is " + pvName + " and postProcessorUserArg is "
 					+ postProcessorUserArg);
 		}
+		String operatorProblem = PostProcessors.checkPostProcessorUserArg(postProcessorUserArg);
+		if (operatorProblem != null) {
+			logger.error(operatorProblem);
+			throw new PvaActionException(operatorProblem);
+		}
 		PostProcessor postProcessor = PostProcessors.findPostProcessor(postProcessorUserArg);
 		PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
 		pmansProfiler.mark("After PVTypeInfo");
@@ -580,11 +585,11 @@ public class PvaGetPVData implements PvaAction {
 
 		// Get a post processor for each PV specified in pvNames
 		// If PV in the form <pp>(<pv>), process it
-		String postProcessorUserArg = reqParameters.get("pp");
+		String requestPostProcessorUserArg = reqParameters.get("pp");
 		List<String> postProcessorUserArgs = new ArrayList<>(pvNames.size());
 		List<PostProcessor> postProcessors = new ArrayList<>(pvNames.size());
 		for (int i = 0; i < pvNames.size(); i++) {
-			postProcessorUserArgs.add(postProcessorUserArg);
+			String postProcessorUserArg = requestPostProcessorUserArg;
 
 			if (pvNames.get(i).contains("(")) {
 				if (!pvNames.get(i).contains(")")) {
@@ -595,16 +600,19 @@ public class PvaGetPVData implements PvaAction {
 				}
 				String[] components = pvNames.get(i).split("[(,)]");
 				postProcessorUserArg = components[0];
-				postProcessorUserArgs.set(i, postProcessorUserArg);
 				pvNames.set(i, components[1]);
-				if (components.length > 2) {
-					for (int j = 2; j < components.length; j++) {
-						postProcessorUserArgs.set(i, postProcessorUserArgs.get(i) + "_" + components[j]);
-					}
+				for (int j = 2; j < components.length; j++) {
+					postProcessorUserArg = postProcessorUserArg + "_" + components[j];
 				}
 				logger.info("After parsing the function call syntax pvName is " + pvNames.get(i)
 						+ " and postProcessorUserArg is " + postProcessorUserArg);
 			}
+			String operatorProblem = PostProcessors.checkPostProcessorUserArg(postProcessorUserArg);
+			if (operatorProblem != null) {
+				logger.error(operatorProblem);
+				throw new PvaActionException(operatorProblem);
+			}
+			postProcessorUserArgs.add(postProcessorUserArg);
 			postProcessors.add(PostProcessors.findPostProcessor(postProcessorUserArg));
 		}
 
@@ -730,7 +738,7 @@ public class PvaGetPVData implements PvaAction {
 			String pvName = pvNames.get(i);
 			pvNamesFromRequests.add(pvName);
 			PVTypeInfo typeInfo = typeInfos.get(i);
-			postProcessorUserArg = postProcessorUserArgs.get(i);
+			String postProcessorUserArg = postProcessorUserArgs.get(i);
 
 			// If a field is specified in a PV name, it will create a post processor for
 			// that
