@@ -7712,6 +7712,7 @@ Out of scope: the zip source of an ETL move (M83); the name `disconnectCheckTime
 
 - D48 (Decision Date 2026-10-19): fixed before the merge of `modernize`; the three behaviors of the scope.
 - D46 (Decision Date 2026-10-19): the open work is closed down before the merge; this row joins it by D48.
+- Spin-off, independent, observed 2026-10-20: issue #54 (Retrieval request can exhaust heap) was found while `retrieval.md` was checked against the kept appliance; it does not block M84 and is not yet a row of this register.
 - Found on 2026-10-19; the first six items were read in the code and the first, second and fifth were observed on the kept appliance, the seventh by a probe over the shipped classes.
 - Behavioral constraints, not ordering: the `curl` checks of T2 and T5 on the kept appliance need the restart of step 9; the figure is taken after step 9 and before the IOC stop of T1.
 
@@ -7759,13 +7760,18 @@ Superseded Plan Artifacts: none
 | T6 | 2026-10-20 00:14 to 01:14 PDT | JDK 21, Tomcat 9.0.121, `softIocPVX` | Pass | `GetPVMetaDataTest`: 2 run, 1 failed on the unfixed WARs (the paused PV, an empty 200), 2 passed on the fixed ones |
 | T7 | 2026-10-20 01:15 PDT | JDK 21, default Maven settings with the exclusion of the slow group lifted | Pass | `PBThreeTierETLPVLookupStopTest`: 4 run, 4 failed on the unfixed lookup (two by the 30-second time limit, two by the missing ERROR), 4 passed on the fixed one, three times in the worktree and once in the checkout (24 s); the 198 tests of the touched ETL classes of the default suite passed |
 | T8 | 2026-10-20 01:08 PDT | JDK 21; the built `target/aa-20261020-a8d07955-mgmt/install/pbutils` and a copy of a PB file | Pass | `scripts/ui-static-checks.bash`: 431 passed, 0 failed. `printTimes.sh`, `validate.sh`, `pb2json.sh` and `repair.sh` print no directory stack line (the unfixed `validate.sh` printed two in a mimic run). No match for `input#delete`. "cluster" remains only in comments (`operations.js` lines 641 and 843, `external.js` line 1), the data key and variables (`operations.js` lines 803, 815, 842) and `getAppliancesInCluster` (line 826) |
-| T9 | 2026-10-20 00:41 to 01:36 PDT | JDK 21, Tomcat 9.0.121 | Pass for the default suite and the book; the integration set was not run as a whole | `./mvnw -B -ntp clean verify`: 1107 tests, 0 failures, 0 errors, 0 skipped, 10 min 26 s. The five integration classes of the plan (T2, T3, T5, T6) passed as above. The book built with the pinned image with 380 links and images and no broken one; the Operations figure shows the corrected column. The integration profile as a whole (64 classes, hours) was not run |
+| T9 | 2026-10-20 00:41 to 01:36 PDT; the integration set 15:23 to 18:30 PDT | JDK 21, Tomcat 9.0.121 | Pass | `./mvnw -B -ntp clean verify`: 1107 tests, 0 failures, 0 errors, 0 skipped, 10 min 26 s. The five integration classes of the plan (T2, T3, T5, T6) passed as above. The book built with the pinned image with 380 links and images and no broken one; the Operations figure shows the corrected column. The integration profile as a whole ran on the WARs built from `aa3df1ee`, with the kept appliance stopped for the window: 76 classes, 130 tests, Failures 0, Errors 0, Skipped 0, BUILD SUCCESS, total time 3 h 07 min. The kept appliance was started again by its launcher and read `ready` with 131 PVs |
 
 Notes of the run. The integration run reached the kept appliance: the PVAccess classes find the RPC services by name search, the kept appliance answered, and 25 PVs named `PV:...:PvaGetPVDataTest:...` were archived there. They were paused and deleted with their data at 2026-10-20 01:01 PDT and `getAllPVs` read 131 again. `PvaGetPVDataTest` was then run with the kept appliance stopped, as `TESTING.md` prescribes, in two windows (01:15 to 01:26 PDT and 01:28 to 01:37 PDT); `TESTING.md` now says so. The kept appliance was stopped and started four times in all, at 00:58 and 01:04 PDT for the new WARs and the cleared counters, and in the two windows, always by its own launcher with a clean stop and a ready status after 36 seconds. Deleting a paused PV leaves the engine's paused PV count raised until the next restart: `ArchiveEngine` increments it at the pause and decrements it only at the resume.
 
+Documentation rounds of 2026-10-20: the pages and notes that M84 touches (`retrieval.md`, `scripting.md`, `configuration.md`, `interface.md`, `operating.md`, `developer.md`, `design-etl-pass-scheduler.md`, `TESTING.md`, the `archappl.properties` comment, three `@BPLParam` texts and two console hints) were read against the code and the kept appliance in 24 review passes, the last without a finding above the floor; they landed in `b5c46f5a`, `42c4a30a` and `aa3df1ee`. They now state what the appliance answered: the empty JSON array, not an empty body, for `optimLastSample` over a short range, per format; the `Sample` variants; the argument bounds; the first `pp`; the calls for a `Held` request. The ETL classes `ETLLookupPassTest` (5), `ETLPassDriverTest` (43), `PBThreeTierETLPVLookupStopTest` (4) and `ETLPassInProgressTest` (4) passed with Failures 0, Errors 0 and Skipped 0 on the working tree before these commits. A probe of `optimLastSample_2000000` over 80 days on the kept appliance exhausted the heap of its retrieval JVM and stopped it; the kept appliance was restarted once at the owner's approval and answered again with 131 PVs. That defect is issue #54 and is not part of M84.
+
 ##### Closure Evidence
 
-- none
+- Landing, observed 2026-10-20 15:19 PDT after `git fetch`: `HEAD` and `origin/modernize` are both `aa3df1ee248b1f32bcd8203b1e3234ef4d200c28` and `git diff HEAD origin/modernize` is empty. The eleven commits of M84 (`e14ce54e`, `ddbe515e`, `d6c3b345`, `0f122f0d`, `0505ff5e`, `5ea93773`, `b3549e1a`, `b438deb0`, `b5c46f5a`, `42c4a30a`, `aa3df1ee`) and the register commit `365d3c39` are contained in `origin/modernize`.
+- CI: for `aa3df1ee` the Maven run 39503807663 succeeded (2026-10-20T22:08:49Z) and the Deploy docs to GitHub Pages run 39503807634 succeeded (2026-10-20T21:52:44Z); for `365d3c39` the Maven run 39396955208 and the Pages run 39396955226 succeeded.
+- Integration set, observed 2026-10-20 18:30 PDT (run from 15:23 PDT) at `aa3df1ee`: `MAVEN_OPTS=-Xmx1g ./mvnw -o -B -ntp test -P integration -DargLine=-Xmx2g -DforkCount=1 -DreuseForks=true` after `./mvnw -o -B -ntp -DskipTests clean package`, with the kept appliance stopped (the PVAccess classes find the RPC services by name search). Result: 76 classes, 130 tests, Failures 0, Errors 0, Skipped 0, BUILD SUCCESS, total time 3 h 07 min. The same command rechecks it.
+- Open before Complete: the body of issue #53 is synced with the shipped behavior and #53 is closed, and its closed state is observed here.
 
 ##### GitHub Projection
 
@@ -7775,7 +7781,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-19 21:30 PDT; `gh issue view` read #53 OPEN with label bug, assignee jeonghanlee and ten open boxes (updated 2026-10-20T04:05:20Z).
+Last Compared: 2026-10-20 15:19 PDT; `gh issue view` read #53 OPEN and #54 OPEN with label bug and assignee jeonghanlee; the body of #53 has not been synced since 2026-10-19.
 
 ## Backlog
 
