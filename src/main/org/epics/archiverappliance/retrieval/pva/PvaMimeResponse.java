@@ -12,7 +12,6 @@ import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Floats;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Shorts;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Event;
@@ -38,6 +37,8 @@ import org.epics.pva.data.nt.PVATimeStamp;
 
 import java.io.OutputStream;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -55,7 +56,10 @@ public class PvaMimeResponse implements MimeResponse {
 
     private ArchDBRTypes streamDBRType;
     private PVAStructure resultStruct;
-    private PVAny pvValueStruct;
+    private final List<String> labels = new ArrayList<>();
+    private final List<PVAny> values = new ArrayList<>();
+    private final List<PVAStructure> samples = new ArrayList<>();
+    private PVAStructure elementType;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -111,10 +115,12 @@ public class PvaMimeResponse implements MimeResponse {
                 .alarm(alarmInfo(evnt))
                 .timeStamp(timeInfo(evnt))
                 .build();
-        if (this.pvValueStruct.get() == null) {
-            this.pvValueStruct.setValue(new PVAStructureArray("result", s.cloneType("element_type")));
+        if (elementType == null) {
+            elementType = s.cloneType("element_type");
+        } else if (!s.cloneType(elementType.getName()).equals(elementType)) {
+            throw new ElementTypeException(s, elementType);
         }
-        appendStructureArray(this.pvValueStruct.get(), s);
+        samples.add(s);
     }
 
     private PVAAlarm alarmInfo(DBRTimeEvent evnt) {
@@ -136,43 +142,39 @@ public class PvaMimeResponse implements MimeResponse {
 
     @Override
 	public void close() {
+		finishPV();
+        if (!labels.isEmpty()) {
+            PVAStringArray resultLabels = resultStruct.get("labels");
+            resultLabels.set(labels.toArray(String[]::new));
+        }
+        if (!values.isEmpty()) {
+            PVAAnyArray resultValues = resultStruct.get("value");
+            resultValues.set(values.toArray(PVAny[]::new));
+        }
 	}
 
 	@Override
     public void processingPV(BasicContext retrievalContext, String pv, Instant start, Instant end, EventStreamDesc streamDesc) {
+		finishPV();
 		if (firstPV) {
 			firstPV = false;
 		}
 		RemotableEventStreamDesc remoteDesc = (RemotableEventStreamDesc) streamDesc;
 		this.streamDBRType = remoteDesc.getArchDBRType();
 
-		// Process the stream description to create the appropriate label/s
-		PVAStringArray labels = resultStruct.get("labels");
-        appendStringArray(labels, pv);
-
-		PVAAnyArray value = resultStruct.get("value");
-		this.pvValueStruct = new PVAny("any");
-        extendPVAnyArray(value, this.pvValueStruct);
+        labels.add(pv);
+        values.add(new PVAny("any"));
+		elementType = null;
 
 		closePV = true;
 	}
 
-    private void appendStringArray(PVAStringArray pvaStringArray, String newString) {
-        String[] elements = pvaStringArray.get();
-        String[] newElements = ArrayUtils.add(elements, newString);
-        pvaStringArray.set(newElements);
-    }
-
-    private void appendStructureArray(PVAStructureArray pvaStructureArray, PVAStructure newStructure) throws ElementTypeException {
-        PVAStructure[] elements = pvaStructureArray.get();
-        PVAStructure[] newElements = ArrayUtils.add(elements, newStructure);
-        pvaStructureArray.set(newElements);
-    }
-
-    private void extendPVAnyArray(PVAAnyArray pvaAnyArray, PVAny newValue) {
-        PVAny[] elements = pvaAnyArray.get();
-        PVAny[] newElements = ArrayUtils.add(elements, newValue);
-        pvaAnyArray.set(newElements);
+    private void finishPV() {
+        if (samples.isEmpty()) return;
+        // Every sample was type-checked on arrival; publish the complete array once.
+        values.set(values.size() - 1, new PVAny("any",
+                new PVAStructureArray("result", elementType, samples.toArray(PVAStructure[]::new))));
+        samples.clear();
     }
 
 	public void swicthingToStream(EventStream strm) {
@@ -181,6 +183,14 @@ public class PvaMimeResponse implements MimeResponse {
 
     public void setOutputStruct(PVAStructure resultStruct) {
         this.resultStruct = resultStruct;
+        labels.clear();
+        values.clear();
+        samples.clear();
+        elementType = null;
+        PVAStringArray resultLabels = resultStruct.get("labels");
+        labels.addAll(Arrays.asList(resultLabels.get()));
+        PVAAnyArray resultValues = resultStruct.get("value");
+        if (resultValues.get() != null) values.addAll(Arrays.asList(resultValues.get()));
     }
 
 }
