@@ -120,6 +120,40 @@ service unit that starts the instances:
 
 The other variables are listed in [Configuration](configuration.md).
 
+Include `-XX:+ExitOnOutOfMemoryError` and `-XX:+HeapDumpOnOutOfMemoryError`
+in each instance's `JAVA_OPTS`, with `-XX:HeapDumpPath` pointing to that
+instance's writable logs directory. These options terminate a JVM after an
+OOM and retain diagnostic data; they do not prevent memory exhaustion.
+A heap dump can be larger than the configured heap, and repeated failures
+create additional files, so provide space and a retention policy for them.
+Each independently managed instance exits on its own; the development
+launcher stops the whole appliance when any component exits.
+
+Retrieval memory protection is activated during web application startup.
+It uses the maximum heap to calculate request and pressure limits. Keep
+explicit collection enabled: `-XX:+DisableExplicitGC` prevents the guard
+from requesting collection to recover admission after a load ends.
+Validate the memory limits with the intended heap, collector and concurrent
+HTTP/PVAccess workload before production use.
+
+HTTP data retrieval also checks a request deadline independently of Tomcat's
+background interrupt. Set `archappl.valve.stuckThresholdSeconds` and
+`archappl.valve.interruptThresholdSeconds` as JVM system properties before
+startup; their defaults are 600 and 900 seconds. When both are positive,
+retrieval uses the larger value as its duration limit from servlet entry.
+Setting either to zero or a negative value disables this deadline as well
+as the valve's interruption path. Restart the instance after changing these
+properties; editing a valve attribute directly or changing it through JMX
+does not update the application's deadline.
+
+The request and its local `getDataAtTimeForAppliance` workers share cancellation
+state. An expired request is rejected with HTTP 503 before the response is
+committed; after commit, the incomplete response ends as a transport failure.
+Checks run while processing events, writing output and completing the response.
+They take effect after a blocking I/O operation returns, so the duration limit
+does not guarantee immediate termination of a blocked socket write. This HTTP
+deadline does not apply to PVAccess calls.
+
 ### Starting and stopping
 
 Each instance runs in the foreground with `catalina.sh run`:

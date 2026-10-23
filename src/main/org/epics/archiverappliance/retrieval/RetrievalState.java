@@ -27,6 +27,34 @@ public class RetrievalState {
     private static final Logger logger = LogManager.getLogger(RetrievalState.class.getName());
     private final ConfigService configService;
     private int engineWriteThreadInSeconds = 60;
+    private volatile RetrievalMemoryProtection memoryProtection;
+
+    /** Configure the shared HTTP/PVA guard before requests are accepted. */
+    public synchronized void configureMemoryProtection(RetrievalMemoryProtection.Settings settings) {
+        if (memoryProtection != null) throw new IllegalStateException("Retrieval memory protection already configured");
+        memoryProtection = new RetrievalMemoryProtection(settings);
+    }
+
+    /** Returns no scope when explicit memory settings have not been configured. */
+    public RetrievalMemoryProtection.Request beginMemoryRequest() {
+        return beginMemoryRequest(() -> false);
+    }
+
+    /** Worker scopes observe cancellation without sharing the caller's allocation counter. */
+    public RetrievalMemoryProtection.Request beginMemoryRequest(java.util.function.BooleanSupplier cancelled) {
+        RetrievalMemoryProtection protection = memoryProtection;
+        return protection == null ? null : protection.begin(cancelled);
+    }
+
+    public RetrievalMemoryProtection.Request beginMemoryRequest(RetrievalMemoryProtection.Cancellation cancellation) {
+        RetrievalMemoryProtection protection = memoryProtection;
+        return protection == null ? null : protection.begin(cancellation);
+    }
+
+    public RetrievalMemoryProtection.Request beginHttpRequest() {
+        RetrievalMemoryProtection protection = memoryProtection;
+        return protection == null ? null : protection.beginHttpRequest();
+    }
 
     public RetrievalState(ConfigService configService) {
         this.configService = configService;

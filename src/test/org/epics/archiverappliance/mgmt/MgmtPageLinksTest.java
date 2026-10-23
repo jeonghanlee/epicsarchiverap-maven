@@ -4,10 +4,19 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXServiceURL;
 
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
@@ -46,8 +55,16 @@ public class MgmtPageLinksTest {
     private static final Pattern HELP_LINK = Pattern.compile("<a href=\"([^\"]+)\" id=\"help\">");
     private static final Pattern WINDOW_OPEN = Pattern.compile("window\\.open\\(\"([^\"]+)\"");
     private static final Pattern FORWARD_TARGET = Pattern.compile("url=([^\"]+)\"|<a href=\"([^\"]+)\"");
+    private static final Pattern HTML_ASSET = Pattern.compile(
+            "<(?:script|link|img|source)\\b[^>]*\\b(?:src|href|srcset)=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CSS_ASSET = Pattern.compile("url\\(\\s*[\"']?([^\\s\"')]+)|@import\\s+[\"']([^\"']+)");
+    private static final Pattern JS_MODULE = Pattern.compile(
+            "(?m)(?:^\\s*(?:import\\s+(?:[\\w\\s{},*]+?\\s+from\\s+)?|export\\s+(?:\\{[^}]*\\}|\\*)\\s+from\\s+)"
+                    + "|\\bimport\\s*\\(\\s*)[\"']([^\"']+)[\"']");
+    private static final int CONCURRENT_ROUNDS = 3;
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
 
-    TomcatSetup tomcatSetup = new TomcatSetup();
+    TomcatSetup tomcatSetup = new TomcatSetup().withJmx();
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -107,6 +124,81 @@ public class MgmtPageLinksTest {
 
     private static HttpResponse<String> get(HttpClient client, String relativePath) throws Exception {
         URI uri = URI.create(ConfigServiceForTests.MGMT_UI_URL + "/" + relativePath);
-        return client.send(HttpRequest.newBuilder(uri).GET().build(), HttpResponse.BodyHandlers.ofString());
+        return client.send(HttpRequest.newBuilder(uri).timeout(REQUEST_TIMEOUT).GET().build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    /**
+     * Measures concurrent page and static dependency requests on the shipped WAR, including CSS references and
+     * JavaScript module imports. This is an HTTP workload; it does not execute browser scripts or their BPL calls.
+     */
+    @Test
+    public void pagesAndTheirStaticDependenciesAnswerConcurrentRequests() throws Exception {
+        HttpClient client = HttpClient.newBuilder().connectTimeout(REQUEST_TIMEOUT).build();
+        List<String> pages = new ArrayList<>(MENU_PAGES);
+        pages.addAll(FORWARDING_PAGES);
+        JMXServiceURL jmx = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://127.0.0.1:"
+                + tomcatSetup.jmxPort("appliance0") + "/jmxrmi");
+        try (JMXConnector connector = JMXConnectorFactory.connect(jmx)) {
+            var connection = connector.getMBeanServerConnection();
+            Set<ObjectName> pools = connection.queryNames(new ObjectName("Catalina:type=ThreadPool,name=\"http-nio-*\""), null);
+            Assertions.assertEquals(1, pools.size(), "One shared HTTP connector is required");
+            ObjectName pool = pools.iterator().next();
+            int workloadMax = 0;
+            for (String page : pages) {
+                Set<URI> targets = staticDependencies(client, URI.create(ConfigServiceForTests.MGMT_UI_URL + "/" + page));
+                if (MENU_PAGES.contains(page)) Assertions.assertTrue(targets.size() > 1, "No static dependencies: " + page);
+                int maximum = 0;
+                long samples = 0;
+                long started = System.nanoTime();
+                for (int round = 0; round < CONCURRENT_ROUNDS; round++) {
+                    List<CompletableFuture<HttpResponse<Void>>> pending = new ArrayList<>();
+                    for (URI target : targets) {
+                        pending.add(client.sendAsync(HttpRequest.newBuilder(target).timeout(REQUEST_TIMEOUT).GET().build(),
+                                HttpResponse.BodyHandlers.discarding()));
+                    }
+                    do {
+                        maximum = Math.max(maximum, ((Number) connection.getAttribute(pool, "currentThreadsBusy")).intValue());
+                        samples++;
+                    } while (!pending.stream().allMatch(CompletableFuture::isDone));
+                    for (CompletableFuture<HttpResponse<Void>> request : pending) {
+                        HttpResponse<Void> response = request.get();
+                        Assertions.assertEquals(200, response.statusCode(), "Concurrent request: " + response.uri());
+                    }
+                }
+                workloadMax = Math.max(workloadMax, maximum);
+                System.out.println("T5 console page " + page + " requests " + targets.size() * CONCURRENT_ROUNDS
+                        + " samples " + samples + " maxBusyThreads " + maximum
+                        + " millis " + (System.nanoTime() - started) / 1_000_000
+                        + " paths " + targets.stream().map(URI::getPath).toList());
+            }
+            Assertions.assertTrue(workloadMax > 0, "The console workload must produce an observed busy thread");
+        }
+    }
+
+    private static Set<URI> staticDependencies(HttpClient client, URI page) throws Exception {
+        Set<URI> targets = new TreeSet<>();
+        ArrayDeque<URI> unread = new ArrayDeque<>();
+        unread.add(page);
+        while (!unread.isEmpty()) {
+            URI target = unread.remove();
+            if (!targets.add(target)) continue;
+            HttpResponse<String> response = client.send(HttpRequest.newBuilder(target).timeout(REQUEST_TIMEOUT).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
+            Assertions.assertEquals(200, response.statusCode(), "Static dependency: " + target);
+            String path = target.getPath();
+            Pattern references = path.endsWith(".html") ? HTML_ASSET
+                    : path.endsWith(".css") ? CSS_ASSET : path.endsWith(".js") ? JS_MODULE : null;
+            if (references == null) continue;
+            Matcher matcher = references.matcher(response.body());
+            while (matcher.find()) {
+                String value = matcher.group(1);
+                if (value == null) value = matcher.group(2);
+                if (value.startsWith("data:") || value.startsWith("#")) continue;
+                URI dependency = target.resolve(value).normalize();
+                Assertions.assertEquals(page.getAuthority(), dependency.getAuthority(), "Nonlocal static dependency: " + dependency);
+                unread.add(dependency);
+            }
+        }
+        return targets;
     }
 }

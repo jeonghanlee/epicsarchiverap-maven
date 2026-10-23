@@ -24,6 +24,7 @@ import org.epics.archiverappliance.mgmt.pva.actions.PvaActionException;
 import org.epics.archiverappliance.retrieval.DataSourceResolution;
 import org.epics.archiverappliance.retrieval.MismatchedDBRTypeException;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
+import org.epics.archiverappliance.retrieval.RetrievalMemoryProtection;
 import org.epics.archiverappliance.retrieval.RetrievalResult;
 import org.epics.archiverappliance.retrieval.UnitOfRetrieval;
 import org.epics.archiverappliance.retrieval.postprocessors.AfterAllStreams;
@@ -74,7 +75,7 @@ public class PvaGetPVData implements PvaAction {
 	@Override
 	public PVAStructure request(PVAStructure pvArgs, ConfigService configService) throws PvaActionException {
 		this.configService = configService;
-		try {
+		try (RetrievalMemoryProtection.Request scope = configService.getRetrievalRuntimeState().beginMemoryRequest()) {
 			Map<String, String> args = extractQuery(pvArgs);
 			// TODO a better check is needed.
 			if (args.containsKey("pv")) {
@@ -84,8 +85,10 @@ public class PvaGetPVData implements PvaAction {
 					return doGetMultiPV(args, configService);
 				}
 			}
-		} catch (ServletException | IOException | NotValueException e) {
-			e.printStackTrace();
+		} catch (Exception | NotValueException e) {
+            RuntimeException cause = RetrievalMemoryProtection.fail(e);
+            logger.error("PVAccess retrieval request failed", cause);
+            throw new PvaActionException(cause.getMessage(), cause);
 		}
 		return null;
 	}
@@ -318,132 +321,116 @@ public class PvaGetPVData implements PvaAction {
 				new PVAStringArray("labels"), new PVAAnyArray("value"));
 
 		try (BasicContext retrievalContext = new BasicContext(typeInfo.getDBRType(), pvNameFromRequest);
-		     PvaMergeDedupConsumer mergeDedupCountingConsumer = createMergeDedupConsumer(result);
-		     RetrievalExecutorResult executorResult = determineExecutorForPostProcessing(pvName, typeInfo, requestTimes, postProcessor)) {
-			HashMap<String, String> engineMetadata = null;
-			if (fetchLatestMetadata) {
-				// Make a call to the engine to fetch the latest metadata.
-				engineMetadata = fetchLatestMedataFromEngine(pvName, applianceForPV);
-			}
+		     RetrievalExecutorResult executorResult = determineExecutorForPostProcessing(pvName, typeInfo, requestTimes, postProcessor);
+             PvaMergeDedupConsumer mergeDedupCountingConsumer = createMergeDedupConsumer(result)) {
+			try {
+				HashMap<String, String> engineMetadata = null;
+				if (fetchLatestMetadata) {
+					// Make a call to the engine to fetch the latest metadata.
+					engineMetadata = fetchLatestMedataFromEngine(pvName, applianceForPV);
+				}
 
-			LinkedList<Future<RetrievalResult>> retrievalResultFutures = resolveAllDataSources(pvName, typeInfo,
-					postProcessor, applianceForPV, retrievalContext, executorResult);
-			pmansProfiler.mark("After data source resolution");
+				LinkedList<Future<RetrievalResult>> retrievalResultFutures = resolveAllDataSources(pvName, typeInfo,
+						postProcessor, applianceForPV, retrievalContext, executorResult);
+				pmansProfiler.mark("After data source resolution");
 
-			long s1 = System.nanoTime();
-			String currentlyProcessingPV = null;
+				long s1 = System.nanoTime();
+				String currentlyProcessingPV = null;
 
-			List<Future<EventStream>> eventStreamFutures = getEventStreamFuturesFromRetrievalResults(executorResult,
-					retrievalResultFutures);
+				List<Future<EventStream>> eventStreamFutures = getEventStreamFuturesFromRetrievalResults(executorResult,
+						retrievalResultFutures);
 
-			logger.info("Done with the RetrievalResult's; moving onto the individual event stream from each source for "
-					+ pvName);
-			pmansProfiler.mark("After retrieval results");
+				logger.info("Done with the RetrievalResult's; moving onto the individual event stream from each source for "
+						+ pvName);
+				pmansProfiler.mark("After retrieval results");
 
-			for (Future<EventStream> future : eventStreamFutures) {
-				EventStreamDesc sourceDesc = null;
-				try (EventStream eventStream = future.get()) {
-					sourceDesc = null; // Reset it for each loop iteration.
-					sourceDesc = eventStream.getDescription();
-					if (sourceDesc == null) {
-						logger.warn("Skipping event stream without a desc for pv " + pvName);
-						continue;
+				for (Future<EventStream> future : eventStreamFutures) {
+					EventStreamDesc sourceDesc = null;
+					try (EventStream eventStream = future.get()) {
+						sourceDesc = null; // Reset it for each loop iteration.
+						sourceDesc = eventStream.getDescription();
+						if (sourceDesc == null) {
+							logger.warn("Skipping event stream without a desc for pv " + pvName);
+							continue;
+						}
+
+						logger.info("Processing event stream for pv " + pvName + " from source "
+								+ ((eventStream.getDescription() != null) ? eventStream.getDescription().getSource()
+										: " unknown"));
+
+						try {
+							mergeTypeInfo(typeInfo, sourceDesc, engineMetadata);
+						} catch (MismatchedDBRTypeException mex) {
+							logger.error(mex.getMessage(), mex);
+							continue;
+						}
+
+						if (currentlyProcessingPV == null || !currentlyProcessingPV.equals(pvName)) {
+							logger.info("Switching to new PV " + pvName
+									+ " In some mime responses we insert special headers at the beginning of the response. Calling the hook for that");
+							currentlyProcessingPV = pvName;
+							mergeDedupCountingConsumer.processingPV(retrievalContext, currentlyProcessingPV, start, end,
+									(eventStream != null) ? sourceDesc : null);
+						}
+
+						try {
+							// If the postProcessor does not have a consolidated event stream, we send each
+							// eventstream across as we encounter it.
+							// Else we send the consolidatedEventStream down below.
+							if (!(postProcessor instanceof PostProcessorWithConsolidatedEventStream)) {
+								mergeDedupCountingConsumer.consumeEventStream(eventStream);
+								// resp.flushBuffer();
+							}
+						} catch (Exception ex) {
+							mergeDedupCountingConsumer.abort();
+							throw RetrievalMemoryProtection.fail(ex);
+						}
+						pmansProfiler.mark("After event stream " + eventStream.getDescription().getSource());
+					} catch (Exception ex) {
+						mergeDedupCountingConsumer.abort();
+						throw RetrievalMemoryProtection.fail(ex);
 					}
+				}
 
-					logger.info("Processing event stream for pv " + pvName + " from source "
-							+ ((eventStream.getDescription() != null) ? eventStream.getDescription().getSource()
-									: " unknown"));
-
-					try {
-						mergeTypeInfo(typeInfo, sourceDesc, engineMetadata);
-					} catch (MismatchedDBRTypeException mex) {
-						logger.error(mex.getMessage(), mex);
-						continue;
-					}
-
-					if (currentlyProcessingPV == null || !currentlyProcessingPV.equals(pvName)) {
-						logger.info("Switching to new PV " + pvName
-								+ " In some mime responses we insert special headers at the beginning of the response. Calling the hook for that");
-						currentlyProcessingPV = pvName;
-						mergeDedupCountingConsumer.processingPV(retrievalContext, currentlyProcessingPV, start, end,
-								(eventStream != null) ? sourceDesc : null);
-					}
-
-					try {
-						// If the postProcessor does not have a consolidated event stream, we send each
-						// eventstream across as we encounter it.
-						// Else we send the consolidatedEventStream down below.
-						if (!(postProcessor instanceof PostProcessorWithConsolidatedEventStream)) {
+				if (postProcessor instanceof PostProcessorWithConsolidatedEventStream) {
+					try (EventStream eventStream = ((PostProcessorWithConsolidatedEventStream) postProcessor)
+							.getConsolidatedEventStream()) {
+						EventStreamDesc sourceDesc = eventStream.getDescription();
+						if (sourceDesc == null) {
+							logger.error("Skipping event stream without a desc for pv " + pvName + " and post processor "
+									+ postProcessor.getExtension());
+						} else {
 							mergeDedupCountingConsumer.consumeEventStream(eventStream);
 							// resp.flushBuffer();
 						}
-					} catch (Exception ex) {
-						if (ex != null && ex.toString() != null && ex.toString().contains("ClientAbortException")) {
-							// We check for ClientAbortException etc this way to avoid including tomcat jars
-							// in the build path.
-							logger.info("Exception when consuming and flushing data from " + sourceDesc.getSource(),
-									ex);
-						} else {
-							logger.error("Exception when consuming and flushing data from " + sourceDesc.getSource()
-									+ "-->" + ex.toString(), ex);
-						}
-					}
-					pmansProfiler.mark("After event stream " + eventStream.getDescription().getSource());
-				} catch (Exception ex) {
-					if (ex != null && ex.toString() != null && ex.toString().contains("ClientAbortException")) {
-						// We check for ClientAbortException etc this way to avoid including tomcat jars
-						// in the build path.
-						logger.info("Exception when consuming and flushing data from "
-								+ (sourceDesc != null ? sourceDesc.getSource() : "N/A"), ex);
-					} else {
-						logger.error(
-								"Exception when consuming and flushing data from "
-										+ (sourceDesc != null ? sourceDesc.getSource() : "N/A") + "-->" + ex.toString(),
-								ex);
 					}
 				}
-			}
 
-			if (postProcessor instanceof PostProcessorWithConsolidatedEventStream) {
-				try (EventStream eventStream = ((PostProcessorWithConsolidatedEventStream) postProcessor)
-						.getConsolidatedEventStream()) {
-					EventStreamDesc sourceDesc = eventStream.getDescription();
-					if (sourceDesc == null) {
-						logger.error("Skipping event stream without a desc for pv " + pvName + " and post processor "
-								+ postProcessor.getExtension());
-					} else {
-						mergeDedupCountingConsumer.consumeEventStream(eventStream);
+				// If the postProcessor needs to send final data across, give it a chance now...
+				if (postProcessor instanceof AfterAllStreams) {
+					EventStream finalEventStream = ((AfterAllStreams) postProcessor).anyFinalData();
+					if (finalEventStream != null) {
+						mergeDedupCountingConsumer.consumeEventStream(finalEventStream);
 						// resp.flushBuffer();
 					}
 				}
+
+				mergeDedupCountingConsumer.send();
+				pmansProfiler.mark("After writing all eventstreams to response");
+
+				long s2 = System.nanoTime();
+				logger.debug("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
+						+ " in " + ((s2 - s1) / 1_000_000) + "(ms)" + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs
+						+ " events" + " deduping involved " + mergeDedupCountingConsumer.comparedEventsForAllPVs
+						+ " compares.");
+			} catch (Exception ex) {
+				mergeDedupCountingConsumer.abort();
+				throw RetrievalMemoryProtection.fail(ex);
 			}
-
-			// If the postProcessor needs to send final data across, give it a chance now...
-			if (postProcessor instanceof AfterAllStreams) {
-				EventStream finalEventStream = ((AfterAllStreams) postProcessor).anyFinalData();
-				if (finalEventStream != null) {
-					mergeDedupCountingConsumer.consumeEventStream(finalEventStream);
-					// resp.flushBuffer();
-				}
-			}
-
-			mergeDedupCountingConsumer.send();
-			pmansProfiler.mark("After writing all eventstreams to response");
-
-			long s2 = System.nanoTime();
-			logger.debug("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
-					+ " in " + ((s2 - s1) / 1_000_000) + "(ms)" + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs
-					+ " events" + " deduping involved " + mergeDedupCountingConsumer.comparedEventsForAllPVs
-					+ " compares.");
 		} catch (Exception ex) {
-			if (ex != null && ex.toString() != null && ex.toString().contains("ClientAbortException")) {
-				// We check for ClientAbortException etc this way to avoid including tomcat jars
-				// in the build path.
-				logger.debug("Exception when retrieving data ", ex);
-			} else {
-				logger.error("Exception when retrieving data " + "-->" + ex.toString(), ex);
-			}
+			throw RetrievalMemoryProtection.fail(ex);
 		}
+
 		pmansProfiler.mark("After all closes and flushing all buffers");
 
 		// Till we determine all the if conditions where we log this, we log sparingly..
@@ -830,13 +817,8 @@ public class PvaGetPVData implements PvaAction {
 			}
 
 		} catch (Exception ex) {
-			if (ex != null && ex.toString() != null && ex.toString().contains("ClientAbortException")) {
-				// We check for ClientAbortException etc this way to avoid including tomcat jars
-				// in the build path.
-				logger.debug("Exception when retrieving data ", ex);
-			} else {
-				logger.error("Exception when retrieving data " + "-->" + ex.toString(), ex);
-			}
+			mergeDedupCountingConsumer.abort();
+			throw RetrievalMemoryProtection.fail(ex);
 		}
 
 		long s1 = System.nanoTime();
@@ -911,29 +893,13 @@ public class PvaGetPVData implements PvaAction {
 									// TODO
 								}
 							} catch (Exception ex) {
-								if (ex != null && ex.toString() != null && ex.toString().contains("ClientAbortException")) {
-									// We check for ClientAbortException etc this way to avoid including tomcat jars
-									// in the build path.
-									logger.debug(
-											"Exception when consuming and flushing data from " + sourceDesc.getSource(),
-											ex);
-								} else {
-									logger.error("Exception when consuming and flushing data from " + sourceDesc.getSource()
-									+ "-->" + ex.toString(), ex);
-								}
+								mergeDedupCountingConsumer.abort();
+								throw RetrievalMemoryProtection.fail(ex);
 							}
 							pmansProfiler.mark("After event stream " + eventStream.getDescription().getSource());
 						} catch (Exception ex) {
-							if (ex != null && ex.toString() != null && ex.toString().contains("ClientAbortException")) {
-								// We check for ClientAbortException etc this way to avoid including tomcat jars
-								// in the build path.
-								logger.debug("Exception when consuming and flushing data from "
-										+ (sourceDesc != null ? sourceDesc.getSource() : "N/A"), ex);
-							} else {
-								logger.error("Exception when consuming and flushing data from "
-										+ (sourceDesc != null ? sourceDesc.getSource() : "N/A") + "-->" + ex.toString(),
-										ex);
-							}
+							mergeDedupCountingConsumer.abort();
+							throw RetrievalMemoryProtection.fail(ex);
 						}
 					}
 
@@ -965,13 +931,8 @@ public class PvaGetPVData implements PvaAction {
 				}
 			}
 		} catch (Exception ex) {
-			if (ex != null && ex.toString() != null && ex.toString().contains("ClientAbortException")) {
-				// We check for ClientAbortException etc this way to avoid including tomcat jars
-				// in the build path.
-				logger.debug("Exception when retrieving data ", ex);
-			} else {
-				logger.error("Exception when retrieving data " + "-->" + ex.toString(), ex);
-			}
+			mergeDedupCountingConsumer.abort();
+			throw RetrievalMemoryProtection.fail(ex);
 		}
 
 		long s2 = System.nanoTime();
@@ -1168,8 +1129,11 @@ public class PvaGetPVData implements PvaAction {
 	private static RetrievalExecutorResult determineExecutorForPostProcessing(String pvName, PVTypeInfo typeInfo,
 			LinkedList<TimeSpan> requestTimes, PostProcessor postProcessor) {
 		// TODO null is used in place of req however it seems to not be used anywhere
+        RetrievalMemoryProtection.admitCurrent(postProcessor,
+                requestTimes.getFirst().getStartTime(), requestTimes.getLast().getEndTime());
 		long memoryConsumption = postProcessor.estimateMemoryConsumption(pvName, typeInfo,
 				requestTimes.getFirst().getStartTime(), requestTimes.getLast().getEndTime(), null);
+        RetrievalMemoryProtection.estimateCurrent(memoryConsumption);
 		double memoryConsumptionInMB = (double) memoryConsumption / (1024 * 1024);
 		DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
 		logger.debug("Memory consumption estimate from postprocessor for pv " + pvName + " is " + memoryConsumption

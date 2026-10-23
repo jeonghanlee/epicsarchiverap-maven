@@ -1,5 +1,7 @@
 package org.epics.archiverappliance.retrieval.postprocessors;
 
+import org.epics.archiverappliance.retrieval.RetrievalMemoryProtection;
+
 import edu.stanford.slac.archiverappliance.PB.data.PBParseException;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.logging.log4j.LogManager;
@@ -297,7 +299,8 @@ public class CAPlotBinning implements PostProcessor, PostProcessorWithConsolidat
 				this.lastBin = Collections.max(consolidatedData.keySet());
 			}
 			ArrayListEventStream ret = new ArrayListEventStream((int) (lastBin - firstBin + 1), this.srcDesc);
-			for(long curBin = this.firstBin-1; curBin <= this.lastBin; curBin++) { 
+			for(long curBin = this.firstBin-1; curBin <= this.lastBin; curBin++) {
+            RetrievalMemoryProtection.checkCurrent();
 				if(consolidatedData.containsKey(curBin)) { 
 					consolidatedData.get(curBin).outputEvents(ret);
 				}

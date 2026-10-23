@@ -40,6 +40,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
@@ -52,6 +55,7 @@ import com.hazelcast.projection.Projection;
 
 public class GetDataAtTime {
     private static final Logger logger = LogManager.getLogger(GetDataAtTime.class);
+    private static final long HTTP_CANCELLATION_CHECK_MILLIS = 100;
 
     static class Appliance2PVs {
         ApplianceInfo applianceInfo;
@@ -88,7 +92,8 @@ public class GetDataAtTime {
         return gatherer;
     }
 
-    private static Appliance2PVs getDataFromRetrieval(Appliance2PVs gatherer, Instant atTime, Period searchPeriod) {
+    private static Appliance2PVs getDataFromRetrieval(Appliance2PVs gatherer, Instant atTime, Period searchPeriod,
+            GetUrlContent.HttpRequests requests) {
         try {
             HashSet<String> remainingPVs = new HashSet<String>(gatherer.pvsFromAppliance);
             // We only has for PVs that we do not already have the answer for.
@@ -97,7 +102,7 @@ public class GetDataAtTime {
                     gatherer.applianceInfo.getRetrievalURL() + "/../data/getDataAtTimeForAppliance?at="
                             + TimeUtils.convertToISO8601String(atTime)+"&searchPeriod="+searchPeriod.toString(),
                     "pv",
-                    remainingPVs);
+                    remainingPVs, true, requests);
             if (resp == null) return gatherer;
             logger.debug("Done calling retrieval for appliance {} with PVs {} and got data for {}",
                 gatherer.applianceInfo.getIdentity(),
@@ -109,9 +114,36 @@ public class GetDataAtTime {
                 }
             }
         } catch (IOException ex) {
-            logger.error("Exception getting data from the retrieval", ex);
+            throw new CompletionException(ex);
         }
         return gatherer;
+    }
+
+    /** Cancellation aborts the real HTTP requests and waits for their workers before servlet reuse. */
+    private static void awaitRetrievalCalls(CompletableFuture<?> completed, GetUrlContent.HttpRequests requests) {
+        try {
+            while (true) {
+                RetrievalMemoryProtection.checkCancellationNow();
+                try {
+                    completed.get(HTTP_CANCELLATION_CHECK_MILLIS, TimeUnit.MILLISECONDS);
+                    RetrievalMemoryProtection.checkCancellationNow();
+                    return;
+                } catch (TimeoutException waiting) {
+                    // Keep the original servlet deadline while the HTTP response is outstanding.
+                }
+            }
+        } catch (InterruptedException interrupted) {
+            requests.close();
+            completed.handle((result, failure) -> null).join();
+            Thread.currentThread().interrupt();
+            throw RetrievalMemoryProtection.fail(interrupted);
+        } catch (ExecutionException failure) {
+            throw new CompletionException(failure.getCause());
+        } catch (RuntimeException failure) {
+            requests.close();
+            completed.handle((result, error) -> null).join();
+            throw failure;
+        }
     }
 
     private static HashMap<String, HashMap<String, Object>> getDataFromRemoteArchApplicance(
@@ -253,16 +285,30 @@ public class GetDataAtTime {
         pmansProfiler.mark("After engine calls.");
 
         List<CompletableFuture<Appliance2PVs>> retrievalCalls = new LinkedList<CompletableFuture<Appliance2PVs>>();
-        for (ApplianceInfo applianceInfo : configService.getAppliancesInCluster()) {
+        try (var requests = new GetUrlContent.HttpRequests()) {
+            for (ApplianceInfo applianceInfo : configService.getAppliancesInCluster()) {
+                try {
+                    retrievalCalls.add(CompletableFuture.supplyAsync(() -> {
+                        return getDataFromRetrieval(valuesGatherer.get(applianceInfo.getIdentity()), atTime, searchPeriod,
+                                requests);
+                    }));
+                } catch (Throwable t) {
+                    logger.error("Exception adding completable future", t);
+                }
+            }
             try {
-                retrievalCalls.add(CompletableFuture.supplyAsync(() -> {
-                    return getDataFromRetrieval(valuesGatherer.get(applianceInfo.getIdentity()), atTime, searchPeriod);
-                }));
-            } catch (Throwable t) {
-                logger.error("Exception adding completable future", t);
+                awaitRetrievalCalls(CompletableFuture.allOf(toArray(retrievalCalls)), requests);
+            } catch (CompletionException ex) {
+                if (ex.getCause() instanceof GetUrlContent.HttpStatusException failure) {
+                    resp.reset();
+                    resp.setStatus(failure.status());
+                    if (failure.contentType() != null) resp.setContentType(failure.contentType());
+                    resp.getOutputStream().write(failure.body());
+                    return;
+                }
+                throw ex;
             }
         }
-        CompletableFuture.allOf(toArray(retrievalCalls)).join();
         pmansProfiler.mark("After retrieval calls.");
 
         HashMap<String, HashMap<String, Object>> ret = new HashMap<String, HashMap<String, Object>>();
@@ -319,11 +365,7 @@ public class GetDataAtTime {
             }
         }
 
-        try (PrintWriter out = resp.getWriter()) {
-            JSONValue.writeJSONString(ret, out);
-        } catch (Exception ex) {
-            logger.error("Exception getting data", ex);
-        }
+        writeResponse(resp, ret);
 
         logger.info("Retrieval time for " + pvNames.size() + " PVs at " + timeStr + pmansProfiler.toString());
     }
@@ -352,6 +394,7 @@ public class GetDataAtTime {
         }
 
         public boolean test(Event event) {
+            RetrievalMemoryProtection.checkCurrent();
             DBRTimeEvent dbrEvent = (DBRTimeEvent) event;
             // We are cruising backwards in time.
             // At the first sample whose record processing timestamp is before or equal to the specified time, we pick up the value
@@ -408,6 +451,7 @@ public class GetDataAtTime {
             try (EventStream stream = callable.call()) {
                 if (stream == null) continue;
                 for (Event event : stream) {
+                    RetrievalMemoryProtection.checkCurrent();
                     Instant timestamp = event.getEventTimeStamp();
                     if (!timestamp.isAfter(atTime)
                             && (latest == null || timestamp.isAfter(latest.getEventTimeStamp()))) {
@@ -430,6 +474,7 @@ public class GetDataAtTime {
             try (EventStream stream = callable.call()) {
                 if (stream == null) continue;
                 for (Event event : stream) {
+                    RetrievalMemoryProtection.checkCurrent();
                     Instant timestamp = event.getEventTimeStamp();
                     if (timestamp.isBefore(metadataStart) || timestamp.isAfter(sampleTime)) continue;
                     var fields = ((DBRTimeEvent) event).getFields();
@@ -456,6 +501,22 @@ public class GetDataAtTime {
      * @return
      */
     private static PVWithData getDataAtTimeForPVFromStores(String pvName, Instant atTime, Period searchPeriod, ConfigService configService) {
+        return getDataAtTimeForPVFromStores(pvName, atTime, searchPeriod, configService,
+                RetrievalMemoryProtection.currentCancellation());
+    }
+
+    private static PVWithData getDataAtTimeForPVFromStores(String pvName, Instant atTime, Period searchPeriod,
+            ConfigService configService, RetrievalMemoryProtection.Cancellation cancelled) {
+        try (RetrievalMemoryProtection.Request scope = configService.getRetrievalRuntimeState()
+                .beginMemoryRequest(cancelled)) {
+            RetrievalMemoryProtection.checkCurrentNow();
+            PVWithData result = readDataAtTimeForPVFromStores(pvName, atTime, searchPeriod, configService);
+            RetrievalMemoryProtection.checkCurrentNow();
+            return result;
+        }
+    }
+
+    private static PVWithData readDataAtTimeForPVFromStores(String pvName, Instant atTime, Period searchPeriod, ConfigService configService) {
         String nameFromUser = pvName;
 
         PVTypeInfo typeInfo = PVNames.determineAppropriatePVTypeInfo(pvName, configService);
@@ -498,6 +559,9 @@ public class GetDataAtTime {
                     }
                 }
             } catch (Exception ex) {
+                if (ex instanceof RetrievalMemoryProtection.Rejected || RetrievalMemoryProtection.currentFailed()) {
+                    throw RetrievalMemoryProtection.fail(ex);
+                }
                 logger.warn("Getting data at time for PV " + pvName + " from the store " + store + " failed with " + ex
                         + "; the next store is searched");
                 logger.debug("Getting data at time for PV " + pvName + " from the store " + store, ex);
@@ -539,13 +603,26 @@ public class GetDataAtTime {
                 + TimeUtils.convertToHumanReadableString(atTime));
 
         List<CompletableFuture<PVWithData>> retrievalCalls = new LinkedList<CompletableFuture<PVWithData>>();
+        var cancelled = RetrievalMemoryProtection.currentCancellation();
+        if (Thread.currentThread().isInterrupted()) cancelled.cancel();
         for (String pvName : pvNames) {
             retrievalCalls.add(CompletableFuture.supplyAsync(() -> {
-                return getDataAtTimeForPVFromStores(pvName, atTime, searchPeriod, configService);
+                return getDataAtTimeForPVFromStores(pvName, atTime, searchPeriod, configService, cancelled);
             }));
         }
 
-        CompletableFuture.allOf(toArray(retrievalCalls)).join();
+        var completed = CompletableFuture.allOf(toArray(retrievalCalls));
+        try {
+            completed.get();
+        } catch (InterruptedException ex) {
+            cancelled.cancel();
+            // Wait for every worker to leave its scope before the servlet thread can be reused.
+            completed.handle((result, failure) -> null).join();
+            throw RetrievalMemoryProtection.fail(ex);
+        } catch (ExecutionException ex) {
+            throw RetrievalMemoryProtection.fail(ex);
+        }
+        RetrievalMemoryProtection.checkCurrentNow();
         HashMap<String, HashMap<String, Object>> ret = new HashMap<String, HashMap<String, Object>>();
         for (CompletableFuture<PVWithData> res : retrievalCalls) {
             PVWithData pd = res.get();
@@ -554,9 +631,18 @@ public class GetDataAtTime {
             }
         }
 
-        try (PrintWriter out = resp.getWriter()) {
-            JSONValue.writeJSONString(ret, out);
-        }
+        writeResponse(resp, ret);
+    }
+
+    /** Leave a failed response open for the servlet's committed-error path to abort it. */
+    private static void writeResponse(HttpServletResponse resp, Object value) throws IOException {
+        RetrievalMemoryProtection.checkCurrentNow();
+        PrintWriter out = resp.getWriter();
+        JSONValue.writeJSONString(value, out);
+        RetrievalMemoryProtection.checkCancellationNow();
+        out.flush();
+        RetrievalMemoryProtection.checkCancellationNow();
+        out.close();
     }
 
     public static HashMap<String, HashMap<String, Object>> testGetDataAtTimeForPVFromStores(String pvName, Instant atTime, Period searchPeriod, ConfigService configService) {

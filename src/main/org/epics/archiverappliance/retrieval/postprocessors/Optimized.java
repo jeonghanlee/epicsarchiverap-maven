@@ -121,6 +121,7 @@ public class Optimized implements PostProcessor, PostProcessorWithConsolidatedEv
 
     @Override
     public EventStream getConsolidatedEventStream() {
+        if (allEvents == null) throw new IllegalStateException("Optimized input stream was not initialized");
         if (numEvents > allEvents.size()) {
             return statisticsPostProcessor.getConsolidatedEventStream();
         } else {

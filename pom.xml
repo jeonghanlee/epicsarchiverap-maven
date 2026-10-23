@@ -738,6 +738,11 @@
               <webXml>${src.main.dir}/org/epics/archiverappliance/mgmt/WEB-INF/web.xml</webXml>
               <webResources combine.children="append">
                 <resource>
+                  <!-- the valves that limit the requests of this web application -->
+                  <directory>${src.main.dir}/org/epics/archiverappliance/mgmt/META-INF</directory>
+                  <targetPath>META-INF</targetPath>
+                </resource>
+                <resource>
                   <directory>${stage.dir}/org/epics/archiverappliance/staticcontent</directory>
                   <targetPath>ui/comm</targetPath>
                 </resource>
@@ -844,6 +849,11 @@
               <webappDirectory>${project.build.directory}/${project.build.finalName}-retrieval</webappDirectory>
               <webXml>${src.main.dir}/org/epics/archiverappliance/retrieval/WEB-INF/web.xml</webXml>
               <webResources combine.children="append">
+                <resource>
+                  <!-- the valves that limit the requests of this web application -->
+                  <directory>${src.main.dir}/org/epics/archiverappliance/retrieval/META-INF</directory>
+                  <targetPath>META-INF</targetPath>
+                </resource>
                 <resource>
                   <directory>${stage.dir}/org/epics/archiverappliance/retrieval/staticcontent</directory>
                   <targetPath>ui</targetPath>

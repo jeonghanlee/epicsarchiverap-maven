@@ -35,6 +35,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.retrieval.mimeresponses.MimeResponse;
@@ -54,6 +55,48 @@ public class GetUrlContent {
 	public static final String ARCHAPPL_COMPONENT = "ARCHAPPL_COMPONENT";
 	private static final Logger logger = LogManager.getLogger(GetUrlContent.class);
 	private GetUrlContent() {}
+
+    /** Retains a failed HTTP response for forwarding without treating its body as JSON. */
+    public static final class HttpStatusException extends IOException {
+        private final int status;
+        private final String contentType;
+        private final byte[] body;
+
+        private HttpStatusException(int status, String contentType, byte[] body) {
+            super("HTTP response status " + status);
+            this.status = status;
+            this.contentType = contentType;
+            this.body = body;
+        }
+
+        public int status() { return status; }
+        public String contentType() { return contentType; }
+        public byte[] body() { return body; }
+    }
+
+    /** Aborts active HTTP operations and prevents later operations from starting after cancellation. */
+    public static final class HttpRequests implements AutoCloseable {
+        private final HashSet<HttpPost> active = new HashSet<>();
+        private boolean closed;
+
+        private synchronized void add(HttpPost request) throws IOException {
+            if (closed) {
+                request.abort();
+                throw new IOException("HTTP requests have been cancelled");
+            }
+            active.add(request);
+        }
+
+        private synchronized void remove(HttpPost request) {
+            active.remove(request);
+        }
+
+        @Override public synchronized void close() {
+            closed = true;
+            active.forEach(HttpPost::abort);
+            active.clear();
+        }
+    }
 	public static JSONArray getURLContentAsJSONArray(String urlStr) {
 		return getURLContentAsJSONArray(urlStr, true);
 	}
@@ -342,6 +385,18 @@ public class GetUrlContent {
 	 * @throws IOException  &emsp; 
 	 */
 	public static <T> T postStringListAndGetJSON(String url, String paramName, Collection<String> params) throws IOException {
+		return postStringListAndGetJSON(url, paramName, params, false);
+	}
+
+    /** Strict callers require a successful status and a JSON value; legacy callers retain permissive parsing. */
+    public static <T> T postStringListAndGetJSON(String url, String paramName, Collection<String> params,
+            boolean requireSuccess) throws IOException {
+        return postStringListAndGetJSON(url, paramName, params, requireSuccess, null);
+    }
+
+    /** Optional request ownership supports actual connection abort through response consumption. */
+    public static <T> T postStringListAndGetJSON(String url, String paramName, Collection<String> params,
+            boolean requireSuccess, HttpRequests requests) throws IOException {
 		StringWriter buf = new StringWriter();
 		buf.append(paramName);
 		buf.append("=");
@@ -360,18 +415,32 @@ public class GetUrlContent {
 			if(logger.isDebugEnabled()) {
 				logger.debug("About to make a POST with " + url);
 			}
-			HttpResponse response = httpclient.execute(postMethod);
-			HttpEntity entity = response.getEntity();
-			if (entity != null) {
-				logger.debug("Obtained a HTTP entity of length " + entity.getContentLength());
-				// ArchiverValuesHandler takes over the burden of closing the input stream.
-				try(InputStream is = entity.getContent()) {
-					@SuppressWarnings("unchecked")
-					T retval = (T) JSONValue.parse(new InputStreamReader(is));
-					return retval;
+			if (requests != null) requests.add(postMethod);
+			try {
+				HttpResponse response = httpclient.execute(postMethod);
+				HttpEntity entity = response.getEntity();
+				int status = response.getStatusLine().getStatusCode();
+				if (requireSuccess && (status < 200 || status >= 300)) {
+					Header contentType = entity == null ? null : entity.getContentType();
+					throw new HttpStatusException(status, contentType == null ? null : contentType.getValue(),
+							entity == null ? new byte[0] : EntityUtils.toByteArray(entity));
 				}
-			} else {
-				throw new IOException("HTTP response did not have an entity associated with it");
+				if (entity != null) {
+					logger.debug("Obtained a HTTP entity of length " + entity.getContentLength());
+					// ArchiverValuesHandler takes over the burden of closing the input stream.
+					try(InputStream is = entity.getContent()) {
+						@SuppressWarnings("unchecked")
+						T retval = (T) JSONValue.parse(new InputStreamReader(is));
+						if (requireSuccess && retval == null) {
+							throw new IOException("HTTP response did not contain a JSON value");
+						}
+						return retval;
+					}
+				} else {
+					throw new IOException("HTTP response did not have an entity associated with it");
+				}
+			} finally {
+				if (requests != null) requests.remove(postMethod);
 			}
 		}
 	}

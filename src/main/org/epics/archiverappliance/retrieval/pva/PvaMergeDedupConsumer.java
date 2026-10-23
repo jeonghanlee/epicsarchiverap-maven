@@ -7,6 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.pva;
 
+import org.epics.archiverappliance.retrieval.RetrievalMemoryProtection;
+
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import edu.stanford.slac.archiverappliance.PB.data.PBParseException;
@@ -73,6 +75,7 @@ public class PvaMergeDedupConsumer implements EventStreamConsumer, AutoCloseable
 	
 	@Override
 	public void close() {
+		if (aborted || RetrievalMemoryProtection.currentFailed()) return;
 		if(!haveIpushedTheFirstEvent && firstEvent != null) {
 			try {
 				logger.info("Pushing the first event as part of the close as it has not been sent yet.");
@@ -90,6 +93,10 @@ public class PvaMergeDedupConsumer implements EventStreamConsumer, AutoCloseable
 	public PVAStructure send() {
 		return resultStruct;
 	}
+
+    private boolean aborted;
+
+    public void abort() { aborted = true; }
 
 	/*
 	 * Goes through the PB data stream over a period of time. The relevant MIME
@@ -109,6 +116,7 @@ public class PvaMergeDedupConsumer implements EventStreamConsumer, AutoCloseable
 		try {
 			int eventsInCurrentStream = 0;
 			for(Event e : strm) {
+				RetrievalMemoryProtection.checkCurrent();
 				try {
 					eventsInCurrentStream++;
 

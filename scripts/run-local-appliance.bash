@@ -11,7 +11,8 @@ readonly -a COMPONENTS=(mgmt engine etl retrieval)
 readonly -a LOCAL_TOMCATS=(/opt/tomcat9 /opt/tomcat /usr/local/tomcat9 /usr/local/tomcat /usr/share/tomcat9)
 # Keep JVM diagnostics from changing /proc/self/coredump_filter or shared temp files.
 readonly -a JVM_COMMON_OPTIONS=(-XX:-UsePerfData -XX:+UnlockDiagnosticVMOptions
-    -XX:-DumpPrivateMappingsInCore -XX:-DumpSharedMappingsInCore)
+    -XX:-DumpPrivateMappingsInCore -XX:-DumpSharedMappingsInCore
+    -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError)
 
 run_dir=''
 war_dir='target'
@@ -378,7 +379,7 @@ function start_components {
         base="$run_dir/instances/$component"
         printf -v options '%q ' '-Xms32m' '-Xmx256m' '-XX:ActiveProcessorCount=2' "${JVM_COMMON_OPTIONS[@]}" \
             "-Duser.home=$run_dir/home" "-Dorg.sqlite.tmpdir=$base/temp" "-Dpython.cachedir=$base/temp/jython" \
-            "-XX:ErrorFile=$base/logs/hs_err_pid%p.log"
+            "-XX:ErrorFile=$base/logs/hs_err_pid%p.log" "-XX:HeapDumpPath=$base/logs"
         (
             exec 9>&-
             cd -- "$run_dir"

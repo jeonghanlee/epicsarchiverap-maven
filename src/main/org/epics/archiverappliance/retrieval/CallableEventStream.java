@@ -21,7 +21,7 @@ public class CallableEventStream implements Callable<EventStream> {
 	private EventStream theStream = null;
 	
 	public CallableEventStream(EventStream st) {
-		this.theStream = st;
+		this.theStream = RetrievalMemoryProtection.guard(st);
 	}
 
 	@Override

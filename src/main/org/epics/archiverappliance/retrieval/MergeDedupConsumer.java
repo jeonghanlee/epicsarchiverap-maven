@@ -49,9 +49,29 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 	
 	
 	MergeDedupConsumer(MimeResponse mimeresponse, OutputStream os) {
-		this.os = os;
+		this.os = new java.io.FilterOutputStream(os) {
+            @Override public void write(int value) throws java.io.IOException {
+                RetrievalMemoryProtection.checkCancellationNow();
+                out.write(value);
+                RetrievalMemoryProtection.checkCancellationNow();
+            }
+            @Override public void write(byte[] bytes, int offset, int length) throws java.io.IOException {
+                RetrievalMemoryProtection.checkCancellationNow();
+                out.write(bytes, offset, length);
+                RetrievalMemoryProtection.checkCancellationNow();
+            }
+            @Override public void flush() throws java.io.IOException {
+                RetrievalMemoryProtection.checkCancellationNow();
+                out.flush();
+                RetrievalMemoryProtection.checkCancellationNow();
+            }
+            @Override public void close() throws java.io.IOException {
+                flush();
+                out.close();
+            }
+        };
 		this.mimeresponse = mimeresponse;
-		this.mimeresponse.setOutputStream(os);
+		this.mimeresponse.setOutputStream(this.os);
 	}
 	
 	
@@ -89,9 +109,12 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 	
 	@Override
 	public void close() {
+		if (aborted || RetrievalMemoryProtection.currentFailed()) return;
+		RetrievalMemoryProtection.checkCurrentNow();
 		pushRemainingEvents();
 		logNumbersAndCollectTotal();
 		mimeresponse.close();
+		RetrievalMemoryProtection.checkCurrentNow();
 		try { 
 			os.flush();
 		} catch(Throwable t) { 
@@ -104,6 +127,11 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 			logger.debug("Exception closing response", t);
 		}
 	}
+
+    private boolean aborted;
+
+    /** Leave an incomplete response to the servlet container without writing its normal footer. */
+    public void abort() { aborted = true; }
 
     public void processingPV(BasicContext retrievalContext, String PV, Instant start, Instant end, EventStreamDesc streamDesc) {
 		pushRemainingEvents();
@@ -119,6 +147,7 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 		try {
 			int eventsInCurrentStream = 0;
 			for(Event e : strm) {
+				RetrievalMemoryProtection.checkCurrent();
 				try {
 					eventsInCurrentStream++;
 
