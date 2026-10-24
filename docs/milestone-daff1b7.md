@@ -114,7 +114,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M84 | Fix the defects and leftovers of issue #53 | Milestone | Complete | No | D48 | The seven defects and the three leftovers of issue #53 are fixed, each with a test on the shipped path that fails on the old code; the default suite, the integration set and the static checks pass; the book states the new answers; the Operations figure is retaken (landed as aa3df1ee; default suite, static checks and the whole integration set of 76 classes pass, 2026-10-20; issue #53 closed 2026-10-20); [detail](#m84---fix-the-defects-and-leftovers-of-issue-53) |
 | Phase 2 | M85 | Protect the retrieval application against memory exhaustion | Milestone | In progress | No | D49, D50, D52 | With JDK and Tomcat facilities only: the four JVMs exit on an `OutOfMemoryError`, a Tomcat valve limits the concurrent requests of retrieval and management with HTTP 503, and retrieval refuses new requests while the memory after garbage collection is above a threshold, refuses a request whose declared size exceeds the budget and, under memory pressure, stops the requests that allocate the most, in HTTP and PVAccess retrieval, and a stopped request is reported to the client instead of being answered as if complete; the values are set from measurement; tests with a limited heap fail on the old code and pass on the new; the book states the protection; issue #54; [detail](#m85---protect-the-retrieval-application-against-memory-exhaustion) |
 | Phase 2 | M86 | Build the PVAccess answer without copying its array at every event | Milestone | Complete | No | D53, D54 | `PvaMimeResponse` appends each event to its result arrays without copying them, so the cost of a PVAccess answer grows with its events and not with their square; the answer is the same; a test over several event counts fails on the old code and passes on the new; [detail](#m86---build-the-pvaccess-answer-without-copying-its-array-at-every-event) |
-| Phase 2 | M89 | Make VariousPostProcessorTest independent of the date | Milestone | Not started | Yes | D55 | `VariousPostProcessorTest` passes on a date just after a 432000 s bin edge and on a date near the bin midpoint, its raw assertion still sees all 101 samples, and nothing under `src/main` changes; issue #56; [detail](#m89---make-variouspostprocessortest-independent-of-the-date) |
+| Phase 2 | M89 | Make VariousPostProcessorTest independent of the date | Milestone | In progress | No | D55 | `VariousPostProcessorTest` passes on a date just after a 432000 s bin edge and on a date near the bin midpoint, its raw assertion still sees all 101 samples, and nothing under `src/main` changes; issue #56; [detail](#m89---make-variouspostprocessortest-independent-of-the-date) |
 | Phase 2 | M90 | Size the admission tests from measurements of the same run | Milestone | Not started | Yes | D56 | `RetrievalAdmissionNetworkTest` and `PvaMemoryNetworkTest` pass with their default inputs in three consecutive runs on a 512 MiB heap, each with a refusal naming memory admission at a usage between the thresholds, their evidence records the derived inputs, and nothing under `src/main` changes; issue #57; [detail](#m90---size-the-admission-tests-from-measurements-of-the-same-run) |
 | Interface analyzer | M81 | Analyzer phase B: interaction, options and export | Milestone | Not started | No | M62, D40, D46 | The gestures beyond the simple form (the drag tool chosen on the strip, wheel and pinch zoom, undo and redo of the range, two cursors, pinned samples), the options the reference tools offer (line width and style, a gap threshold, a fill between signals, fixed and soft ranges, the averaging interval or raw samples, the min-max band, a split by unit, SI prefixes, a legend table, tooltip modes), the Data tab and the full Export tab, each carried in the address; [detail](#m81---analyzer-phase-b-interaction-options-and-export) |
 | Interface analyzer | M82 | Analyzer phase D: tools for two and several signals | Milestone | Not started | No | M63, D40, D46 | The Correlation tab (pairing by held values, scatter with projections and density, Pearson and Spearman, profile, the fit panel with fixed and bounded parameters) and the Dependency tab (correlation matrix ordered by clustering, ranking by mutual information, multiple regression, principal components), derived signals from a typed expression and a change of unit, the routines checked on signals of known parameters; [detail](#m82---analyzer-phase-d-tools-for-two-and-several-signals) |
@@ -8479,7 +8479,7 @@ Last Compared: none
 Origin: daff1b7 / M89
 Identity History: none
 GitHub Issue: #56 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/56)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -8504,9 +8504,9 @@ Out of scope: the bin midpoint stamp of `SummaryStatsCollectorEventStream` and t
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: owner acceptance 2026-10-24 of the plan as written here and in issue #56
+Implementation Authorization: owner authorization 2026-10-24
 Superseded Plan Artifacts: none
 
 1. Compute the end of the request window in `testRetrievalCount` as the next 432000 s bin edge after now, and the start as now minus one day. Check: T1, T2.
@@ -8524,9 +8524,9 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | pending | | | |
-| T2 | pending | | | |
-| T3 | pending | | | |
+| T1 | 2026-10-24 11:01 to 11:08 PDT (18:01 to 18:08 UTC, 0.75 days into the bin that starts 2026-10-24 00:00 UTC; the bin midpoint 2026-10-26 12:00 UTC is 1.75 days after the old window end) | JDK 21.0.12.1, Tomcat 9.0.121, `softIocPVX` 7.0.10, clone of d5567994 whose `src/main` equals the current tree, corrected test file sha256 f6468728 | Pass: 1 test, 0 failures, 448.8 s; the request window was `2026-10-23T18:08:36Z` to `2026-10-29T00:00:00Z`; the five operators each returned one event and the raw assertion saw its 101 samples. The old test failed on the same date in ten runs (whole set, three reruns on d5567994, one run on 16b1e53c, see M85 / T10 and issue #56) | `work/m89-01/` (`summary.txt`, `run1.log`, `run1.txt`, `test-change.diff`, `SHA256SUMS`) |
+| T2 | pending; earliest 2026-10-25 12:00 UTC to 2026-10-27 12:00 UTC | | | |
+| T3 | 2026-10-24 11:09 PDT | `git diff --stat HEAD -- src/main` on the working tree | Pass: no path under `src/main`; the change is `src/test/org/epics/archiverappliance/retrieval/postprocessor/VariousPostProcessorTest.java`, 11 insertions, 2 deletions | `work/m89-01/test-change.diff` |
 
 ##### Closure Evidence
 
@@ -8570,13 +8570,14 @@ Out of scope: the admission, pressure and budget fractions of the product and th
 ##### Dependencies And Decisions
 
 - D56 (Decision Date 2026-10-24): both tests corrected together in the test only; product thresholds and the baseline difference untouched.
+- Owner direction 2026-10-24, after T2's calibration showed that the PB read hold retains 129 bytes per record for a `mean_1` pair while the answer build retains about seven times more: the held PVAccess pair becomes a raw query, whose path keeps one structure per event while the file is read (545 bytes per record under the same hold, `work/m90-04-raw/`), so the existing read hold at the file boundary reaches the window; `mean_1` stays available as an input. Memory admission itself does not depend on the query: the `mean_1` pair was refused by admission on fc6abd67 at 313.6 MB with both requests in flight (M85 / T8), and the test's only limit is that no hold at the file boundary can keep a `mean_1` pair at its peak. A transport-stage hold was considered and not built. The HTTP test gains an attempt loop because the live set settles by about 30 MB after startup. Deeper variants are not pursued under this row.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
+Plan Status: accepted
+Plan Acceptance: owner acceptance 2026-10-24 of the plan as written here and in issue #57; the transport-stage hold for PVAccess accepted 2026-10-24
+Implementation Authorization: owner authorization 2026-10-24, renewed 2026-10-24 for the transport-stage hold
+Superseded Plan Artifacts: the PVAccess derivation from the PB read hold (first run, `work/m90-01/`)
 
 1. In `RetrievalAdmissionNetworkTest`, read the baseline after the single control, measure the retained bytes per bin while the control body is held, derive the request length for 55 percent and write the three values to `admission-inputs.txt`. Check: T1.
 2. In `PvaMemoryNetworkTest`, apply the same derivation to the default input and make the `readHold` adjustment the default path. Check: T2.
@@ -8594,9 +8595,9 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | pending | | | |
-| T2 | pending | | | |
-| T3 | pending | | | |
+| T1 | 2026-10-24 11:23 to 11:26 PDT, three consecutive runs, plus one run at 11:22 | JDK 21.0.12.1, Tomcat 9.0.121, 512 MiB heap, G1, clone of d5567994 whose `src/main` equals the current tree, corrected test sources copied in | Pass, 4 of 4: each run derived its pair length in the same run (baseline 118.0 MB after collection, 289 bytes per bin from the held calibration response, lengths 306,417 to 306,890 s) and the held pair reached 297.4 to 297.5 MB after collection (55.4 percent) at the first attempt; all four probes answered HTTP 503 with `memory admission` at 297.5 to 297.6 MB, between 268,435,456 and 322,122,547 bytes; both original responses completed with the control's byte count and SHA-256; recovery answered 200 on every path. The first run of the same derivation without the attempt loop (11:14 PDT) landed at 265.5 MB because the server's live set settled by about 30 MB between calibration and pair; the attempt loop corrects that from the pair's own retained memory | `work/m90-01/` (first derivation, failed at 265.5 MB), `work/m90-02/` (attempt loop, one run), `work/m90-03/` (three consecutive runs); each `RetrievalAdmissionNetworkTest-run<k>-evidence/MemoryRequests-*/` holds `admission-inputs.txt`, `admission-outcomes.txt`, `admission-memory.csv`, `gc.log` and `console.log` |
+| T2 | 2026-10-24 11:45 to 11:56 PDT, three consecutive runs of the whole class, plus one run at 11:29 | JDK 21.0.12.1, Tomcat 9.0.121, 512 MiB heap, G1, `softIocPVX` 7.0.10, clone of d5567994 whose `src/main` equals the current tree, corrected test sources copied in, raw pair under `PbReadHold` | Pass, 4 of 4 runs, every run 4 tests and 0 failures (200.2 to 200.7 s): each run measured 544 to 581 bytes per record on a 50,000-record held calibration (baseline 143.3 to 143.6 MB), derived 145,418 to 155,502 s and a first hold of 130,380 to 139,548 records, and the held pair reached 286.0 to 296.2 MB after collection at the first hold; the third request was refused with memory admission at 284.5 to 294.4 MB, between 268,435,456 and 322,122,547 bytes, with both requests in flight; both answers completed with the control's record count and SHA-256; recovery answered; no pressure line. The `mean_1` pair under the same hold measured 129 bytes per record and its derived 649,407 s control was stopped by pressure at 370.8 MB (`work/m90-01/`), which is why the default pair is raw | `work/m90-04-raw/` (first raw run), `work/m90-05/` (three consecutive runs), `work/m90-01/` (`mean_1` under the read hold); each `PvaMemoryNetworkTest-run<k>-evidence/MemoryRequests-*/` holds `pva-admission-inputs.txt`, `pva-admission-outcomes.txt`, `pva-admission-memory.csv`, `pva-admission-client.log`, `pb-read-hold/events.log`, `gc.log` and `console.log` |
+| T3 | 2026-10-24 11:57 PDT | `git diff --stat HEAD -- src/main` on the working tree | Pass: no path under `src/main`; the change is `PbReadHold.java`, `RetrievalMemoryNetworkFixture.java`, `RetrievalAdmissionNetworkTest.java`, `PvaMemoryNetworkTest.java` under `src/test` and the `TESTING.md` description | `work/m90-05/test-change.diff` |
 
 ##### Closure Evidence
 
