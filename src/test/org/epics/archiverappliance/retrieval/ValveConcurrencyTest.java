@@ -29,15 +29,13 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * The valves of the context.xml of the retrieval and management WARs, on the real appliance of the fixture: the
- * concurrency of the SemaphoreValve (requests above it are answered 503 at once) and the StuckThreadDetectionValve (a
- * request that runs longer than its threshold is reported and interrupted). The values come from system properties of
- * the child JVM, the way the attributes of the context.xml read them, and the Engine runs its background processing
- * every second.
+ * concurrency of the SemaphoreValve (requests above it are answered 503 at once) and the application deadline that
+ * retrieval derives from the thresholds of the StuckThreadDetectionValve (a request that runs longer than that is
+ * stopped and answered 503 naming the deadline). The values come from system properties of the child JVM, the way the
+ * attributes of the context.xml read them, and the Engine runs its background processing every second.
  */
 @Tag("integration")
 public class ValveConcurrencyTest {
@@ -52,7 +50,7 @@ public class ValveConcurrencyTest {
     private static final String SLOW_PP = "optimized_2000000";
     private static final int SEARCH_SECONDS = 5;
     private static final long INTERRUPT_MILLIS_LIMIT = 5000;
-    private static final Pattern ACTIVE_MILLIS = Pattern.compile("active for \\[([0-9,]+)\\] milliseconds");
+    private static final String DEADLINE_MESSAGE = "Retrieval request deadline exceeded";
 
     private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
@@ -171,11 +169,11 @@ public class ValveConcurrencyTest {
             for (int i = 0; i < REQUESTS; i++) {
                 pending.add(client.sendAsync(
                                 HttpRequest.newBuilder(URI.create(url0)).timeout(Duration.ofSeconds(120)).GET().build(),
-                                HttpResponse.BodyHandlers.discarding())
+                                HttpResponse.BodyHandlers.ofString())
                         .handle((response, failure) -> new Outcome(
                                 failure == null ? response.statusCode() : -1,
                                 (System.nanoTime() - sent) / 1_000_000,
-                                failure == null ? "" : String.valueOf(failure.getCause() != null ? failure.getCause() : failure))));
+                                failure == null ? response.body() : String.valueOf(failure.getCause() != null ? failure.getCause() : failure))));
             }
             int maxBusy = 0;
             while (!pending.stream().allMatch(CompletableFuture::isDone)) {
@@ -186,49 +184,39 @@ public class ValveConcurrencyTest {
             for (CompletableFuture<Outcome> future : pending) outcomes.add(future.get());
             System.out.println("T5 outcomes " + outcomes + " maxBusyThreads " + maxBusy);
 
-            long refused = outcomes.stream().filter(o -> o.status() == 503).count();
-            long admitted = outcomes.stream().filter(o -> o.status() != 503).count();
+            long refused = outcomes.stream().filter(ValveConcurrencyTest::isConcurrencyRefusal).count();
+            long admitted = outcomes.size() - refused;
             Assertions.assertEquals(REQUESTS - CONCURRENCY, refused, "Requests refused with 503: " + outcomes);
             Assertions.assertEquals(CONCURRENCY, admitted, "Requests admitted: " + outcomes);
             for (Outcome outcome : outcomes) {
-                if (outcome.status() == 503) {
+                if (isConcurrencyRefusal(outcome)) {
                     Assertions.assertTrue(outcome.millis() < REFUSAL_MILLIS_LIMIT,
                             "A request above the concurrency must be refused at once: " + outcome);
                 }
             }
             Assertions.assertTrue(maxBusy >= 1, "The busy threads must have been read while the requests ran");
 
-            // The valve reported the requests that ran past the threshold.
-            long deadline = System.currentTimeMillis() + 10_000;
-            boolean interrupted = false;
-            while (!interrupted && System.currentTimeMillis() < deadline) {
-                interrupted = fixture.consoleLines(APPLIANCE).stream().anyMatch(line -> isRequestValveRecord(line)
-                        && line.contains("has been interrupted because it was active for"));
-                if (!interrupted) Thread.sleep(200);
+            // The admitted requests ran past the valve thresholds; the application deadline, derived from those
+            // thresholds, stopped them and reported the stop to the client within the low-threshold window.
+            List<Outcome> stopped = outcomes.stream().filter(ValveConcurrencyTest::isDeadlineStop).toList();
+            Assertions.assertEquals(CONCURRENCY, stopped.size(), "Requests stopped at the application deadline: " + outcomes);
+            for (Outcome outcome : stopped) {
+                Assertions.assertTrue(outcome.millis() >= STUCK_SECONDS * 1000L && outcome.millis() < INTERRUPT_MILLIS_LIMIT,
+                        "A long request is outside the low-threshold window: " + outcome);
             }
-            System.out.println("T5 stuck-thread lines "
-                    + fixture.consoleLines(APPLIANCE).stream().filter(l -> l.contains("may be stuck") || l.contains("has been interrupted")).count());
-            Assertions.assertTrue(interrupted, "The console holds no line of an interrupted stuck thread");
-            List<String> records = fixture.consoleLines(APPLIANCE).stream()
-                    .filter(ValveConcurrencyTest::isRequestValveRecord).toList();
-            Assertions.assertTrue(records.stream().anyMatch(line -> line.contains("and may be stuck")),
-                    "The long retrieval request has no detection record");
-            for (String line : records) {
-                Matcher active = ACTIVE_MILLIS.matcher(line);
-                Assertions.assertTrue(active.find(), "The valve record has no elapsed time");
-                long elapsed = Long.parseLong(active.group(1).replace(",", ""));
-                Assertions.assertTrue(elapsed >= STUCK_SECONDS * 1000L && elapsed < INTERRUPT_MILLIS_LIMIT,
-                        "The valve record is outside the low-threshold window: " + elapsed);
-                System.out.println("T5 retrieval valve " + (line.contains("has been interrupted") ? "interrupt" : "detection")
-                        + " elapsedMillis " + elapsed);
-            }
+            System.out.println("T5 deadline stops elapsedMillis " + stopped.stream().map(Outcome::millis).toList());
         } finally {
             fixture.tearDown();
         }
     }
 
-    private static boolean isRequestValveRecord(String line) {
-        return line.contains("/retrieval/data/getData.json") && line.contains(SLOW_PP)
-                && (line.contains("and may be stuck") || line.contains("has been interrupted because"));
+    /** A 503 that names the application deadline was admitted by the valve and stopped by the request itself. */
+    private static boolean isDeadlineStop(Outcome outcome) {
+        return outcome.status() == 503 && outcome.message().contains(DEADLINE_MESSAGE);
+    }
+
+    /** Any other 503 is the valve refusing a request above its concurrency. */
+    private static boolean isConcurrencyRefusal(Outcome outcome) {
+        return outcome.status() == 503 && !isDeadlineStop(outcome);
     }
 }
