@@ -40,6 +40,8 @@ public class VariousPostProcessorTest {
 	TomcatSetup tomcatSetup = new TomcatSetup();
 	SIOCSetup siocSetup = new SIOCSetup();
 	String pvName = "UnitTestNoNamingConvention:inactive1";
+	// Bin interval of the _432000 operators below; the request window is aligned to its edges.
+	private static final int BIN_SECONDS = 432000;
 	private static final String MGMT = "http://localhost:17665/mgmt/bpl/";
 
 	// These values were generated from Matlab.
@@ -118,8 +120,13 @@ public class VariousPostProcessorTest {
 	
 	private void testRetrievalCount(String pvName, double[] expectedValues) throws IOException {
 		RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-        Instant end = TimeUtils.plusDays(TimeUtils.now(), 1);
-        Instant start = TimeUtils.minusDays(end, 2);
+        // A bin's summary event is stamped at the bin midpoint and the retrieval drops events after the request end,
+        // so the end is the next bin edge after now: the current bin's event stays inside the window on any date and
+        // the following bin, which has no samples, is stamped after the end and dropped.
+        Instant now = TimeUtils.now();
+        long nextBinEdge = (TimeUtils.convertToEpochSeconds(now) / BIN_SECONDS + 1) * BIN_SECONDS;
+        Instant end = TimeUtils.convertFromEpochSeconds(nextBinEdge, 0);
+        Instant start = TimeUtils.minusDays(now, 1);
 		try(EventStream stream = rawDataRetrieval.getDataForPVS(new String[] { pvName}, start, end, null)) {
 			long previousEpochSeconds = 0;
 			int eventCount = 0;
