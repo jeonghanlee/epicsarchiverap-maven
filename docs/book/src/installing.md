@@ -173,6 +173,16 @@ processing, so an interrupt is late by up to the `backgroundProcessorDelay`
 of the engine, 10 seconds by default. To change a limit, set the system
 property and restart the instance.
 
+The semaphore valve refuses only requests that reach it. When the connector's
+`maxThreads` is below the concurrency, every request gets a thread before the
+valve can count 100, so the valve never refuses and requests above
+`maxThreads` wait in the connector's queue. The deployment template of
+epicsarchiverap-env leaves `maxThreads` at Tomcat's default of 200; the
+development launcher sets it to 40, where the valve does not act. The
+concurrency default is not derived from a load measurement; set it below the
+instance's `maxThreads` and above the concurrent requests the instance is
+expected to serve.
+
 A PVAccess call that a memory check refuses or stops gets no answer, so a
 PVAccess client must set its own call timeout. The valves cover HTTP only,
 and the PVAccess service does not limit its concurrent calls.
