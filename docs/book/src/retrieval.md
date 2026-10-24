@@ -190,9 +190,9 @@ argument must be a number in the range of the operator:
 
 An integer above 2147483647 answers the same message as 0, which names
 "an integer of at least 1". A valid but very large point count, in the millions,
-can also empty the answer without an error, and can exhaust the memory of
-the retrieval application until it stops answering; keep the number of
-points far below that.
+can also empty the answer without an error. A count whose declared size
+exceeds the request budget is refused with HTTP 400; see
+[Limits on a request](#limits-on-a-request).
 
 An empty or blank `pp` and `pp=pb` return raw data. `twoweek` and
 `extraFields` are the names that one appliance sends to another; the
@@ -200,8 +200,9 @@ server accepts them and treats them like an empty `pp`. An unknown
 operator, such as `bogus` or `meanx`, and a bad argument, such as `mean_`,
 `mean_0`, `mean_abc`, `mean_60.5` or `nth_-1`, return HTTP 400 on
 `getData` and `getDataForPVs`. The body is the HTML error page of the
-server, and its Message line names the operator and the reason. The
-PVAccess retrieval fails the call with the same message.
+server, and its Message line names the operator and the reason. A
+PVAccess call with such an operator gets no answer, so the caller ends at
+its own timeout.
 
 `optimLastSample` over a range shorter, in seconds, than its number of
 points answers an empty result; with the default of 1000 points that
@@ -217,6 +218,97 @@ request with several PVs, one PV
 whose `optimLastSample` has more points than the range has seconds makes
 the whole response empty, and nothing in the response tells which PV
 caused it.
+
+## Limits on a request
+
+Four layers limit a request, from the JVM to the single call:
+
+- The JVM options `-XX:+ExitOnOutOfMemoryError` and
+  `-XX:+HeapDumpOnOutOfMemoryError` end a JVM that throws an
+  `OutOfMemoryError` and leave a heap dump. They retain evidence and do not
+  prevent exhaustion. The [installation page](installing.md#environment)
+  gives their handling.
+- Two Tomcat valves on the retrieval and management web applications
+  answer HTTP 503 at once to a request above the concurrency limit and
+  interrupt a request that runs past the interrupt threshold. The
+  [installation page](installing.md#environment) lists their properties.
+- Three memory checks in the retrieval application refuse a request that
+  declares too much, refuse requests while memory is short, and stop the
+  largest allocators while memory is short.
+- A deadline stops an HTTP request that runs too long.
+
+### How the memory checks decide
+
+The checks read the maximum heap of the JVM, so the limits grow with the
+heap. The memory after garbage collection is the usage of the old-generation
+pool at its last collection. The checks apply to every HTTP format and to
+PVAccess retrieval.
+
+| Check | When it runs | Condition | Answer |
+| --- | --- | --- | --- |
+| Declared size | Before the request reads data | The size the operator declares exceeds 20 percent of the maximum heap | HTTP 400 |
+| Admission | Before the request reads data | The memory after collection exceeds 50 percent of the maximum heap | HTTP 503 |
+| Pressure | While the request runs, every 1024 events | The memory after collection exceeds 60 percent of the maximum heap, and the request has allocated more than 1 percent of it | HTTP 503 |
+
+The percentages are defaults. The `retrieval.memory` keys of
+[archappl.properties](configuration.md#archapplproperties) set them.
+
+An operator declares a size when it keeps data for each bin or point:
+`optimized`, `optimLastSample`, `caplotbinning`, `firstFill`, `lastFill`,
+`lastSample`, and the statistics operators `mean`, `median`, `min`, `max`,
+`count`, `std`, `variance`, `popvariance`, `rms`, `jitter`, `kurtosis`,
+`skewness`, `stats`, `errorbar`, `linear`, and `loess`. The declared size is
+the number of bins or points times a byte count for each. A raw read streams
+its data and declares nothing, so it completes while there is no memory
+pressure, even when it is longer than the heap.
+
+Admission refuses every new request while the memory after collection stays
+above its threshold, and accepts requests again once the data that caused the
+state is released. Pressure stops only requests above the allocation floor,
+so a request that allocates little keeps running.
+
+The checks ask the JVM for a collection when the old generation or the memory
+after collection is above the threshold being checked, at most once every 100
+milliseconds. Keep `-XX:+DisableExplicitGC` unset: with it set, the guard
+cannot request a collection to recover admission after a load ends.
+
+### Request deadline for HTTP
+
+HTTP retrieval stops a request that runs past a duration limit measured from
+servlet entry. The limit is the larger of `archappl.valve.stuckThresholdSeconds`
+and `archappl.valve.interruptThresholdSeconds`, 900 seconds by default. The
+checks run while the request reads events, writes output, and waits for the
+HTTP calls that `getDataAtTime` sends to the engine, to the retrieval service
+of each appliance, and to external appliances.
+
+A request that expires before its response starts answers HTTP 503. After the
+response starts, the status is already sent, so the server closes the
+connection. A blocked socket write ends only when the write returns.
+
+### Errors and their status codes
+
+Each refusal names its condition in the message of the HTTP error page:
+
+| Status | Message begins | Meaning |
+| --- | --- | --- |
+| 400 | `Retrieval declared size` | The declared size exceeds the request budget |
+| 503 | `Retrieval memory admission refused` | The memory after collection is above the admission threshold |
+| 503 | `Retrieval memory pressure` | The request was stopped while memory was above the pressure threshold |
+| 503 | `Retrieval request deadline exceeded` | The request ran past its deadline |
+| 503 | `Retrieval request interrupted` | The thread of the request was interrupted |
+| 503 | none; the Tomcat error page | The valve refused a request above the concurrency limit |
+
+When a check stops a request after its response has started, the server closes
+the connection. A client sees a connection that closes before the response is
+complete, and never a complete answer.
+
+### Calls over PVAccess
+
+A PVAccess call that a memory check refuses or stops gets no answer, so the
+caller ends at its own timeout. A PVAccess client must set a call timeout. The
+retrieval log names the condition, and the client library logs a warning whose
+exception carries the message. The valves and the request deadline cover HTTP
+only, and the PVAccess service does not limit its concurrent calls.
 
 ## The data viewer
 

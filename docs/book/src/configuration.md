@@ -107,6 +107,27 @@ stands for both when they are equal. Each key starts with
   `false` proxies the request to that appliance; `true` answers with an
   HTTP redirect to it, which can fail behind a load balancer. Site file
   and unset `false`.
+- `retrieval.memory.budgetFraction`: the largest size a request can
+  declare, as a fraction of the maximum heap; a larger request is refused
+  with HTTP 400. Not in the site file; unset `0.20`.
+- `retrieval.memory.admissionFraction`: the fraction of the maximum heap
+  above which the memory after collection refuses new requests with
+  HTTP 503. Not in the site file; unset `0.50`.
+- `retrieval.memory.pressureFraction`: the fraction of the maximum heap
+  above which the memory after collection stops a running request that has
+  allocated more than the floor. Not in the site file; unset `0.60`.
+- `retrieval.memory.allocationFloorFraction`: the fraction of the maximum
+  heap that a request can allocate before pressure stops it. Not in the
+  site file; unset `0.01`.
+- `retrieval.memory.checkEveryEvents`: the number of events between two
+  pressure checks. Not in the site file; unset `1024`.
+- `retrieval.memory.collectionIntervalMillis`: the shortest time between
+  two collection requests of the checks, in milliseconds. Not in the site
+  file; unset `100`.
+- `retrieval.memory.scalarBinBytes`, `retrieval.memory.vectorBinBytes`,
+  `retrieval.memory.retainedPointBytes`: the bytes the declared size counts
+  for a scalar bin, a vector bin, and a retained point. Not in the site
+  file; unset `112`, `256`, and `176`.
 - `engine.epics.JCAConfigGen.useCAJ`: use the pure Java CA client, the
   only one the engine supports. Site file `true`; unset, the startup
   fails.
@@ -250,7 +271,12 @@ stands for both when they are equal. Each key starts with
 
 The file carries further keys as comments, with a description of each.
 The two `MgmtRuntimeState` keys are read when the management starts, so a
-change needs a restart of the management.
+change needs a restart of the management. The `retrieval.memory` keys are
+read when the retrieval starts, and an invalid value fails that start; the
+log names `Invalid retrieval memory protection settings`. The budget must be
+above 0 and below 1. The admission fraction must be above 0 and below the
+pressure fraction, which must be below 1. The floor must be at least 0 and
+below 1.
 
 ## Policies
 

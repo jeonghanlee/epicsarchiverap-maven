@@ -154,6 +154,29 @@ They take effect after a blocking I/O operation returns, so the duration limit
 does not guarantee immediate termination of a blocked socket write. This HTTP
 deadline does not apply to PVAccess calls.
 
+Two Tomcat valves limit the retrieval and the management web applications.
+Each web application declares them in its `META-INF/context.xml`, and each
+attribute reads a JVM system property:
+
+| System property | Valve attribute | Default |
+| --- | --- | --- |
+| `archappl.valve.concurrency` | `SemaphoreValve` `concurrency` | 100 |
+| `archappl.valve.stuckThresholdSeconds` | `StuckThreadDetectionValve` `threshold` | 600 |
+| `archappl.valve.interruptThresholdSeconds` | `StuckThreadDetectionValve` `interruptThreadThreshold` | 900 |
+
+The semaphore valve answers HTTP 503 at once to a request above the
+concurrency. A valve declared on a context counts every URL of the web
+application, including the calls the other web applications make. The
+stuck-thread valve logs a request that runs past the threshold and interrupts
+it past the interrupt threshold. Tomcat evaluates both in its background
+processing, so an interrupt is late by up to the `backgroundProcessorDelay`
+of the engine, 10 seconds by default. To change a limit, set the system
+property and restart the instance.
+
+A PVAccess call that a memory check refuses or stops gets no answer, so a
+PVAccess client must set its own call timeout. The valves cover HTTP only,
+and the PVAccess service does not limit its concurrent calls.
+
 ### Starting and stopping
 
 Each instance runs in the foreground with `catalina.sh run`:
