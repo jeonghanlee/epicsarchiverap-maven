@@ -5,6 +5,7 @@ import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.retrieval.postprocessors.OptimizedWithLastSample;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.retrieval.postprocessors.PostProcessorWithConsolidatedEventStream;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessors;
 import org.junit.jupiter.api.Test;
 
@@ -113,6 +114,61 @@ class RetrievalMemoryProtectionTest {
                 assertEquals(400, rejected.httpStatus());
                 assertTrue(rejected.getMessage().contains("budget"));
                 assertTrue(request.allocatedSinceStart() < 1024 * 1024);
+            }
+        }
+    }
+
+    /** Fill operators declare one retained event per bin; the vector bin size matches the value passed by settings(). */
+    @Test void rejectsFillOperatorsWhoseBinsExceedTheBudgetBeforeAnyAllocation() throws Exception {
+        long vectorBinBytes = 256;
+        var guard = new RetrievalMemoryProtection(settings(.85, .95, 4, 100));
+        Instant wideEnd = START.plusSeconds(guard.budgetBytes() / vectorBinBytes + 10);
+        for (String operator : new String[] {"firstFill_1", "lastFill_1", "lastSample_1"}) {
+            PostProcessor processor = PostProcessors.findPostProcessor(operator);
+            processor.initialize(operator, "test");
+            try (var request = guard.begin()) {
+                var rejected = assertThrows(RetrievalMemoryProtection.Rejected.class,
+                        () -> request.admit(processor, START, wideEnd, 0), operator);
+                assertEquals(400, rejected.httpStatus(), operator);
+                assertTrue(rejected.getMessage().contains("budget"), operator);
+                assertTrue(request.allocatedSinceStart() < 1024 * 1024, operator);
+            }
+            try (var request = guard.begin()) {
+                assertDoesNotThrow(() -> request.admit(processor, START, START.plusSeconds(120), 0), operator);
+            }
+        }
+    }
+
+    /** The retained events of a fill are built when its iterator is created, so a stop request must reach that point. */
+    @Test void fillOutputConstructionObservesCancellation() throws Exception {
+        Instant fillStart = END.minusSeconds(20);
+        var info = new PVTypeInfo("test", ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1);
+        var guard = new RetrievalMemoryProtection(settings(.85, .95, 4, 100));
+        for (String operator : new String[] {"firstFill_1", "lastFill_1", "lastSample_1"}) {
+            for (boolean cancel : new boolean[] {false, true}) {
+                var cancelled = new java.util.concurrent.atomic.AtomicBoolean();
+                PostProcessor processor = PostProcessors.findPostProcessor(operator);
+                processor.initialize(operator, "test");
+                processor.estimateMemoryConsumption("test", info, fillStart, END, null);
+                try (var request = guard.begin(cancelled::get);
+                        var input = new SimulationEventStream(ArchDBRTypes.DBR_SCALAR_DOUBLE, new SineGenerator(0),
+                                fillStart, END, 1)) {
+                    try (var intermediate = processor.wrap(new CallableEventStream(input)).call()) {
+                        assertNotNull(intermediate.getDescription(), operator);
+                    }
+                    try (var output = ((PostProcessorWithConsolidatedEventStream) processor).getConsolidatedEventStream()) {
+                        cancelled.set(cancel);
+                        if (cancel) {
+                            var rejected = assertThrows(RetrievalMemoryProtection.Rejected.class, output::iterator, operator);
+                            assertEquals(503, rejected.httpStatus(), operator);
+                            assertTrue(rejected.getMessage().contains("interrupted"), operator);
+                        } else {
+                            long events = 0;
+                            for (var event : output) events++;
+                            assertTrue(events > 4, operator + " retained " + events + " events");
+                        }
+                    }
+                }
             }
         }
     }

@@ -13,6 +13,9 @@ import org.epics.archiverappliance.retrieval.postprocessors.OptimizedWithLastSam
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessors;
 import org.epics.archiverappliance.retrieval.postprocessors.SummaryStatsPostProcessor;
+import org.epics.archiverappliance.retrieval.postprocessors.FirstFill;
+import org.epics.archiverappliance.retrieval.postprocessors.LastFill;
+import org.epics.archiverappliance.retrieval.postprocessors.LastSample;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -349,7 +352,8 @@ public final class RetrievalMemoryProtection {
                 bytes = saturatingAdd(ARRAY_HEADER_BYTES, saturatingMultiply(points, ARRAY_REFERENCE_BYTES));
                 bytes = saturatingAdd(bytes, saturatingMultiply(points, settings.retainedPointBytes()));
                 bytes = saturatingAdd(bytes, saturatingMultiply(bins, settings.vectorBinBytes()));
-            } else if (processor instanceof SummaryStatsPostProcessor || processor instanceof CAPlotBinning) {
+            } else if (processor instanceof SummaryStatsPostProcessor || processor instanceof CAPlotBinning
+                    || processor instanceof FirstFill || processor instanceof LastFill || processor instanceof LastSample) {
                 String[] parts = processor.getExtension().split("_");
                 long interval = parts.length > 1 ? Long.parseLong(parts[1]) : PostProcessors.DEFAULT_SUMMARIZING_INTERVAL;
                 long bins = Math.max(0, end.getEpochSecond() / interval - start.getEpochSecond() / interval) + 2;

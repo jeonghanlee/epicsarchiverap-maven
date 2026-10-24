@@ -11,6 +11,7 @@ import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.ChangeInYearsException;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.RemotableOverRaw;
+import org.epics.archiverappliance.retrieval.RetrievalMemoryProtection;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -115,6 +116,7 @@ public class FillsCollectorEventStream implements EventStream, RemotableOverRaw 
 							currentEvent.getSampleValue(), 
 							((AlarmInfo)currentEvent).getStatus(), 
 							((AlarmInfo)currentEvent).getSeverity());
+					RetrievalMemoryProtection.checkCurrent();
 					strm.add(pojoEvent.makeClone());
 					if(currentYear == -1) { 
 						// Initialize the current year as the year of the first bin with a value it it.
