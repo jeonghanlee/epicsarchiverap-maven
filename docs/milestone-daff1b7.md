@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: M89 / T2, run `VariousPostProcessorTest` on the real fixture between 2026-10-25 12:00 UTC and 2026-10-27 12:00 UTC (within one day of the bin midpoint), record the result, close issue #56 and set M89 Complete; M90 is Complete with issue #57 closed on 2026-10-24. Then M85: its T9 and T10 rows are recorded (default set and static checks pass; the whole integration set had three failures, all test defects now corrected under M89 and M90, and has not been rerun after the corrections), and its remaining owner decisions are the acceptance of the T7 and T8 evidence as final and of the candidate settings as defaults. M85 / T7 the third-person review of commit 16b1e53c on 2026-10-23 found R1 (a sparse fill request still exhausts the heap), R2 (the engine stage of getDataAtTime ignores the request deadline) and R3 (the valve regression counts deadline 503 responses as concurrency refusals); corrections for all three are committed and pushed. R1 passed on the real network path for `firstFill_1`, `lastFill_1` and `lastSample_1` (HTTP 400 at declared-size admission, no OutOfMemoryError, JVM alive, identical control answer afterwards) and has two unit tests that each fail without their correction, one for the admission and one for the iterator-construction check; the same three operators were refused the same way at 2 GiB and 4 GiB heaps, while other collectors did not run; `ValveConcurrencyTest` passes on the real fixture after the owner replaced its valve-record assertion with the application deadline stop (2026-10-23); R2 passed its real engine-stage reproduction for the single-appliance outer-proxy case (503 deadline at 1.037 s with the engine response held, no waiting frames, normal recovery). The external-proxy case of getDataAtTime ran against code whose external stage is unchanged and showed the same fault as the engine stage had: with the external response held, the front-end waited at `GetDataAtTime.java:352` (`allOf(...).join()`) past the one-second deadline and answered 503 only after the release. The owner chose to correct that stage under M85 (2026-10-23); with the correction the same case answered 503 naming the deadline at 1.058 seconds while the external response was still held, with no waiting frames, and the engine case, the `firstFill_1` request at 512 MiB and `ValveConcurrencyTest` passed again on the rebuilt WARs aa-20261024-16b1e53c-extproxy-01. Multi-appliance cases are out of scope (D23, D26). The fallback concern was measured: a real snapshot read allocates 13.5 to 25.9 MB, above the 5.12 MB allocation floor of a 512 MiB heap, and a worker scope without an estimate is not stopped under pressure when the allocation counter is unavailable; the owner chose to keep the snapshot workers without an estimate (2026-10-23) and the limit stays recorded. Overlapping fill requests that fit the budget were stopped by the pressure rule on 512 MiB, 2 GiB and 4 GiB heaps for `firstFill_1`, `lastFill_1` and `lastSample_1` on the rebuilt WAR, and on a 512 MiB heap by the pre-fix WAR as well for `firstFill_1`, so that workload does not separate the builds. The wide request is now covered on the rebuilt WAR for all three operators at 512 MiB, 2 GiB and 4 GiB, and the wide request and the pressure workload also ran under the Parallel collector and the generational ZGC at 512 MiB, where ZGC showed 341 allocation stalls and a sampled heap at its maximum without any OutOfMemoryError; these collector results are diagnostic and select nothing. Still unmeasured: the Serial collector and larger heaps under the other collectors. Evidence: work/m85-third-person-review/corrections-01/ and the table under Verification Results of M85. The earlier front-end deadline results and the selected WARs aa-20261023-fc6abd67-front-deadline-01 stay retained. Larger heaps, committed-pressure, final concurrency/console, settings, book and suites remain open. T6 stays closed; T7/T8 remain Partial. The corrections are committed (a27f260a, 9d6a43f9, b1928187) with the register update d4b1abd3 and pushed to origin/modernize on 2026-10-23; no issue update was performed, and #54 last applied at 08:38:35 UTC predates the review and the corrections. M86 stays Complete and M88 / #55 stays Deferred.
+Next session entry point: release scope by D58 (2026-10-24): M85 and M89 close before the release, every other open row after it; the release cycle regroups the remaining rows when it opens. M89 / T2, run `VariousPostProcessorTest` on the real fixture between 2026-10-25 12:00 UTC and 2026-10-27 12:00 UTC (within one day of the bin midpoint), record the result, close issue #56 and set M89 Complete; M90 is Complete with issue #57 closed on 2026-10-24. Then M85: its T9 and T10 rows are recorded (default set and static checks pass; the whole integration set had three failures, all test defects now corrected under M89 and M90, and has not been rerun after the corrections), and its remaining owner decisions are the acceptance of the T7 and T8 evidence as final and of the candidate settings as defaults. M85 / T7 the third-person review of commit 16b1e53c on 2026-10-23 found R1 (a sparse fill request still exhausts the heap), R2 (the engine stage of getDataAtTime ignores the request deadline) and R3 (the valve regression counts deadline 503 responses as concurrency refusals); corrections for all three are committed and pushed. R1 passed on the real network path for `firstFill_1`, `lastFill_1` and `lastSample_1` (HTTP 400 at declared-size admission, no OutOfMemoryError, JVM alive, identical control answer afterwards) and has two unit tests that each fail without their correction, one for the admission and one for the iterator-construction check; the same three operators were refused the same way at 2 GiB and 4 GiB heaps, while other collectors did not run; `ValveConcurrencyTest` passes on the real fixture after the owner replaced its valve-record assertion with the application deadline stop (2026-10-23); R2 passed its real engine-stage reproduction for the single-appliance outer-proxy case (503 deadline at 1.037 s with the engine response held, no waiting frames, normal recovery). The external-proxy case of getDataAtTime ran against code whose external stage is unchanged and showed the same fault as the engine stage had: with the external response held, the front-end waited at `GetDataAtTime.java:352` (`allOf(...).join()`) past the one-second deadline and answered 503 only after the release. The owner chose to correct that stage under M85 (2026-10-23); with the correction the same case answered 503 naming the deadline at 1.058 seconds while the external response was still held, with no waiting frames, and the engine case, the `firstFill_1` request at 512 MiB and `ValveConcurrencyTest` passed again on the rebuilt WARs aa-20261024-16b1e53c-extproxy-01. Multi-appliance cases are out of scope (D23, D26). The fallback concern was measured: a real snapshot read allocates 13.5 to 25.9 MB, above the 5.12 MB allocation floor of a 512 MiB heap, and a worker scope without an estimate is not stopped under pressure when the allocation counter is unavailable; the owner chose to keep the snapshot workers without an estimate (2026-10-23) and the limit stays recorded. Overlapping fill requests that fit the budget were stopped by the pressure rule on 512 MiB, 2 GiB and 4 GiB heaps for `firstFill_1`, `lastFill_1` and `lastSample_1` on the rebuilt WAR, and on a 512 MiB heap by the pre-fix WAR as well for `firstFill_1`, so that workload does not separate the builds. The wide request is now covered on the rebuilt WAR for all three operators at 512 MiB, 2 GiB and 4 GiB, and the wide request and the pressure workload also ran under the Parallel collector and the generational ZGC at 512 MiB, where ZGC showed 341 allocation stalls and a sampled heap at its maximum without any OutOfMemoryError; these collector results are diagnostic and select nothing. Still unmeasured: the Serial collector and larger heaps under the other collectors. Evidence: work/m85-third-person-review/corrections-01/ and the table under Verification Results of M85. The earlier front-end deadline results and the selected WARs aa-20261023-fc6abd67-front-deadline-01 stay retained. Larger heaps, committed-pressure, final concurrency/console, settings, book and suites remain open. T6 stays closed; T7/T8 remain Partial. The corrections are committed (a27f260a, 9d6a43f9, b1928187) with the register update d4b1abd3 and pushed to origin/modernize on 2026-10-23; no issue update was performed, and #54 last applied at 08:38:35 UTC predates the review and the corrections. M86 stays Complete and M88 / #55 stays Deferred.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). M65 (the information cards of every page, and the Operations page composed again for a reader new to the appliance) is Complete on 2026-10-18 at 14f083e9 with both workflows green. The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -179,6 +179,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | D54 | Assign M86 to Phase 2 and execute its response-construction allocation and equivalence plan before selecting the next M85 / T8 admission input. The scalar control exposed a client responsiveness shutdown during synchronous response construction. Memory settings and connection timeouts stay unchanged; M87 remains in the Backlog. | 2026-10-22 |
 | D55 | `VariousPostProcessorTest` is corrected in the test only: its request end becomes the next 432000 s bin edge after now and its start stays at now minus one day, so the one summary event of the current bin, stamped at the bin midpoint, is inside the window on any date. The product behaviour behind it, the bin event stamped at the bin midpoint by `SummaryStatsCollectorEventStream` and the request-end filter of `MergeDedupConsumer`, is not changed under this row and waits for a separate issue. Found in the whole integration set of M85 / T10. | 2026-10-24 |
 | D56 | The two admission tests, `RetrievalAdmissionNetworkTest` and `PvaMemoryNetworkTest`, are corrected in the test only and together: each derives its request length from the baseline and the bytes retained per bin measured in the same run instead of a fixed constant, so the held pair lands in the middle of the admission window on any baseline. The product thresholds and the cause of the 31 MB baseline difference between 2026-10-22 and 2026-10-24 are not touched. Found in the whole integration set of M85 / T10; no run showed a wrong product decision. | 2026-10-24 |
+| D57 | The retrieval memory protection keeps its shipped defaults (budget 0.20, admission 0.50, pressure 0.60, allocation floor 0.01, a check every 1024 events, a collection request at most every 100 ms) and the valve defaults (concurrency 100, stuck 600 s, interrupt 900 s); the connector `maxThreads` stays at Tomcat's default in the deployment template and at 40 in the development launcher. The valve concurrency is recorded as not derived from a load measurement, and the book states that a valve above `maxThreads` never refuses. The T7 and T8 results of M85 are accepted as final within their recorded scope: on every measured configuration (HTTP and PVAccess; 512 MiB, 2 GiB and 4 GiB under G1; fill-operator pressure under Parallel and ZGC at 512 MiB) abnormal or excessive requests were refused or stopped, no run produced an OutOfMemoryError or a JVM exit, and recovery followed. The measurement of the thread and valve limits under combined load and the unmeasured qualification cells (Serial collector; Parallel and ZGC at 2 GiB and 4 GiB; pressure after commit; overshoot and headroom at the defaults; summary-pair admission at larger heaps) move to M91 / issue #58. The product question behind issue #56, the midpoint stamp of a summary bin against the request-end filter, moves to M92 / issue #59. | 2026-10-24 |
+| D58 | Release scope of the Maven appliance: the protection of retrieval against memory exhaustion (M85, issue #54) and the date correction of its summary test (M89, issue #56) close before the release; every other open row and issue is worked after the release at its own pace. Open at this decision: M91 / #58, M92 / #59, M88 / #55, M83 / #52, M76 / #48, M69 / #41, the analyzer rows M62, M63, M64, M81 and M82 / #39, the rows M40, M41, M55 and M61 without an issue, M66 blocked by G8, and the two deviations of M73 that had no row, #45 and #47, which enter the Backlog as M93 and M94. The release cycle regroups these rows when it opens. | 2026-10-24 |
 
 ### Conceptual-integrity findings
 
@@ -7849,6 +7851,8 @@ Out of scope: a library for concurrency or rate limiting (D50); a fixed upper bo
 - Behavioral constraint: the values depend on the heap of the deployment, so they are fixed only after T1 has measured the consumers, T5 the busy threads and T6 the overshoot of the in-flight check; T3 runs before the checks of step 6 exist, because those checks stop the query before the heap is exhausted.
 - GC-request decision (Decision Date 2026-10-22): use current old-generation usage as an additional trigger for the rate-limited explicit collection in admission and in-flight checks. Keep collection usage as the only memory value deciding rejection, retain the shared collection interval and allocation floor, and preserve collection-based recovery after load is released. This is the accepted and authorized option 1; production threshold selection remains step 7. Verify stale collection usage with real JVM allocations, garbage recovery without rejection, rate limiting, the real PB pressure matrix, and fractional behavior at different heaps.
 - HTTP cancellation decision (Decision Date 2026-10-22): option 1 is accepted and implementation is authorized. HTTP retrieval owns a monotonic deadline from servlet entry, using the positive maximum of the existing stuck and interrupt threshold system properties (600/900 seconds by default); either nonpositive setting disables it, matching valve enablement. A request-local cancellation state persists after an interrupt is consumed and is shared with the per-appliance getDataAtTime workers without resetting the deadline. Check cancellation at event, output and completion boundaries; return 503 before commit and abort an incomplete response after commit. Retain standard valves and WAR-only deployment. This changes T7 from requiring a valve interrupt before every stop to requiring deadline enforcement independently of a background tick, plus a case with an actual consumed interrupt. A cooperative check cannot terminate a permanently blocked I/O operation; stopping within five seconds is qualified only for the bounded reader-pause cases. No watchdog, forced socket closure, PVA deadline or memory-policy change is authorized by this decision.
+- D57 (Decision Date 2026-10-24): the shipped memory and valve defaults are accepted as the defaults of step 7 without a further measurement; the valve concurrency is recorded as not derived from a load measurement and the book states the relation to `maxThreads`; T7 and T8 are accepted as final within their recorded scope because the goal of the row, no OutOfMemoryError or JVM exit under abnormal or excessive requests, refusal of such requests and recovery, is met on every measured configuration; the unmeasured cells move to M91 / #58 and the product question of #56 to M92 / #59.
+- D58 (Decision Date 2026-10-24): this row and M89 close before the release; every other open row is worked after it.
 - T6 closure and T7/T8 scope decision (Decision Date 2026-10-22): close T6 on its completed class, endpoint-preparation and measurement evidence, including 25 functional checks at 2 GiB. The corrected-code PB pressure matrices ran at 256 MiB, not 2 GiB. Carry the retained OOM, measured overshoot and unqualified production settings into step 7 and T7/T8 without claiming that the historical OOM was fixed. Incorporate the JDK memory-threshold facilities and GC behavior documented below into the real HTTP/PVAccess qualification. This decision authorizes that preparation and qualification; it does not select a different production collector or replace polling with a notification listener.
 - Work ordering proposed on 2026-10-21: finish T5 at step 5 using the existing valve and fixture code; finish T6 at step 6 with explicit measurement settings and an observed setting that stops accumulating work without an OutOfMemoryError; use the completed T1, T5 and T6 measurements to choose the shipped values in step 7, then run T7 and T8. T5 does not require the step 6 request check or the final values, and T6 does not require a value that step 7 has yet to choose. The full-integration measurement at step 5 supplies input to step 7; the final full-suite regression remains T10.
 - Behavioral dependencies of the revised checks: the request's stop at the next interrupt check belongs to T6 (the protection class) and T7 (the real HTTP path); normal console requests at the selected concurrency and the repeated valve scenarios belong to T7; normal integration traffic at the selected concurrency belongs to T10. These checks remain required for M85 completion after T5 closes.
@@ -7966,8 +7970,8 @@ Startup activation, coupled launcher/installation options and the initial real-n
 | T4 | 2026-10-21 13:54 PDT | JDK 21.0.12.1, Tomcat 9.0.121, the real `scripts/run-local-appliance.bash` in a temporary run folder on port base 25665, the four WARs of the newest build | Pass | `src/test/pythontests/test_launcher_component_exit.py` (1 test, 38 s) and the note below |
 | T5 | 2026-10-21 19:49 to 23:05 PDT; restoration verified 23:09 PDT | JDK 21.0.12.1, Tomcat 9.0.121, aa-20261022-e5bc67ff WARs; overload concurrency 2, retrieval stuck/interrupt/Engine delay 1 s; whole-set and console measurements use placeholder defaults | Pass (T5 as revised on 2026-10-21) | Full integration: 78 classes, 135 tests, 0 failures/errors/skips, 3 h 08 min 40 s. Retrieval: three 503 responses in 4 to 5 ms, request-specific detection/interrupt at 1,209 to 2,353 ms. Management: two real searches completed in 5,021 ms, three 503 responses in 4 ms, recovery 200. All 91 started child lifetimes have sampler records: 90 complete normal captures with 38,034 samples, aggregate maximum busy 4 and maximum sample gap 334 ms; the deliberate child-exit diagnostic is retained separately (6 samples, incomplete connection capture). Console: 15 pages, 459 concurrent page/static requests all 200; tighter-loop maximum busy 10 in the full run and 24 in the successful rehearsal. Evidence: work/m85-t5-_vhp_jei/final-verification.json, full.log, full-reports, full-busy.tsv, console-reports and state.json; original rehearsal failure retained in short-reports |
 | T6 | 2026-10-22 01:53 to 01:54 PDT; endpoint/measurement repeat at 02:33 PDT | JDK 21.0.12.1, G1, 256 MiB test JVM with ExitOnOutOfMemoryError; explicit settings only | Pass; T6 closed on 2026-10-22 within the recorded class/measurement and endpoint-preparation scope, including the later 2 GiB functional checks. Historical pressure OOM remains unresolved; production activation and qualification belong to step 7 and T7/T8 | Final repeat: RetrievalMemoryProtectionTest 11, PvaMemoryProtectionTest 1, RetrievalMemoryProtectionMeasurementTest 4, RetrievalProtectedRequestTest 7; no failures/errors/skips. Twelve pressure conditions stopped without OOM; maximum heap overshoot 40,271,306 bytes and minimum headroom 53,681,104 bytes. HTTP servlet and PVA action tests run the real PB-store/postprocessor paths; only the HTTP transport boundary is substituted. Actual TCP truncation and PVA client timeout are unexecuted T7/T8 checks. Evidence: work/m85-step6-evidence. Earlier evidence remains in work/m85-t6-evidence/final. The 2026-10-22 08:28 PDT GC-trigger correction and heap-specific checks are recorded below in work/m85-current-usage-fix; its latest measurements supersede the prior maximum for final-setting selection. |
-| T7 | 2026-10-22 09:55 to 2026-10-23 08:09 PDT | JDK 21.0.12.1, Tomcat 9.0.121, G1, built WARs, DefaultConfigService; pressure at fixed 512 MiB, 2 GiB and 4 GiB heaps; controls at 512 MiB and 1 GiB | Partial; front-end pressure and subordinate snapshot HTTP deadline/cancellation pass at 512 MiB after minimal corrections; original failures retained; other wait paths, larger cases and final contract remain open | Eighteen declared-size refusals across nine formats at each pressure-profile heap. Eight overlapping accumulating requests at 512 MiB and 2 GiB, twelve at 4 GiB, stopped with pressure-specific HTTP failures without JVM exit and recovered. The same fixed optimized and optimLastSample query was refused at 512 MiB and completed at 1 GiB. Raw CSV returned all 2,592,000 expected records; normal multi-PV and getDataAtTime paths passed. Retrieval precommit interruption and both context overload checks passed at the low test thresholds. The earlier raw output completed after a consumed valve interrupt. The accepted deadline correction now returns precommit 503 and aborts committed CSV both before a valve tick and after a consumed write interrupt; same-thread JFR and normal recovery passed. Two accumulating requests remained active in the admission-to-pressure window at 512 MiB and 2 GiB; all four HTTP entry paths returned memory-specific 503, both original CSV bodies matched their single-request control, and all four paths recovered. The failed preparation and console-observation assertions remain retained. At 00:39 and 00:42 PDT the identical multi-PV input returned eight pressure-specific 503 responses and recovered without OOM; both runs stopped during input accumulation, leaving new iterator pressure exposure unverified. At 00:41 PDT the corrected snapshot request returned pressure-specific 503; JFR records eleven GetDataPredicate.test pressure exceptions and same-JVM recovery passed. At 01:28 PDT the sparse multi-PV case also passed: all eight pressure exceptions occur inside the iterator bin loop, confirmed by JFR, followed by same-JVM recovery. At 01:45 PDT front-end snapshot pressure propagation failed: actual worker pressure was followed by HTTP 200 and an empty object, although both normal recovery paths passed without OOM. At 01:57 PDT the accepted minimal correction passed the same unchanged front-end test: pressure-specific HTTP 503 with the actual worker reason, checked-status JFR and both normal recovery paths without OOM. At 02:16 PDT the real front-end deadline case failed its response-bound and HTTP-wait termination assertions: at 5.045 seconds both waits remained, and deadline-specific 503 arrived at 5.058 seconds only after explicit transport release. Baseline, actual subordinate response and recovery passed without OOM. At 08:07 PDT the unchanged deadline regression passed: deadline-specific 503 and no target frames before release by 1.054 seconds, with JFR proving actual HTTP connection closure and normal recovery. At 08:09 PDT the unchanged pressure regression also passed with matching worker reason and both recovery paths. Measurements and remaining conditions below; source/WAR and available store identities retained under work/m85-t7-network. |
-| T8 | 2026-10-22 09:55 to 2026-10-23 00:03 PDT | Same G1 runtime; isolated PVA discovery, actual TCP RPC; eight independent connections at 512 MiB and 2 GiB, twelve at 4 GiB for pressure; three connections for controlled admission, including a Debian 13.4 VM at 4 GiB | Partial; bounded pressure, declared-size client-message/refusal, recovery, raw control and scaling checks passed; 512 MiB mean_1 admission and controlled raw admission at 512 MiB/2 GiB/4 GiB passed; remaining transport and final qualification remain open | Both optimized variants at 2147483647 produced server budget failures and the current library failure/timeout behavior, followed by data on the same connection. Independent RPC threads overlapped under pressure and existing-connection recovery passed at all three heaps. The fixed query changed from refusal at 512 MiB to success at 1 GiB. The bounded raw control returned 5,001 records; the earlier 30,001-record timeout remains a failed larger control. Actual client exception messages for both declared-size refusals and recovery without reconnect passed at 512 MiB. The 10,001-bin fitting pair completed and recovered below admission; the 20,001-bin single control reconnected and timed out before a pair was submitted. The FINE-log diagnostic identifies the client responsiveness shutdown after 32,886 ms; the single control still timed out and the admission pair did not run. After M86, the 120,001-bin scalar case passed the complete 512 MiB admission contract with the actual third-request client/server reason, two matching original replies, quiescence and same-connection recovery. The first 2 GiB / 480,001-bin control failed with BufferOverflowException and timeout. With the authorized 32 MiB server send buffer, all six single controls through 800,001 bins completed without encoding failure. The 480,001-bin pair completed and recovered below admission; 600,001 and 700,001-bin probes returned normally after GC; 725,001, 750,001 and 800,001-bin pairs encountered pressure. The subsequent probe-observation correction continues after a normal third response and requires the actual refusal usage to be inside the admission-to-pressure interval. Its 512 MiB full admission regression passed; the 2 GiB / 700,001-bin continuation and 720,001-bin above-pressure negative check ran through the real path. At 710,001 and 725,001 bins the actual refusal is in range but only one original handler is observed at the client-side check. The identical 710,001-bin repeat completed both matching replies and same-channel recovery without a third probe or refusal; admission exposure remains Incomplete. These mean_1 runs did not establish a complete 2 GiB pass. The subsequent filesystem-controlled raw cases passed at 512 MiB and 2 GiB: two real PB readers remain held across the actual third-request admission refusal, then both original replies and same-channel recovery complete. The controlled raw 4 GiB VM run also passed with 1,900,001 records, two held readers and a third-request refusal at 2,175,201,168 bytes, followed by both matching replies and same-channel recovery. Its earlier starting-hold candidate failed the no-reconnect assertion and remains Failed. The raw result is separate from the unresolved larger-heap mean_1 window. Pressure-specific client-message assertions now pass at 512 MiB, 2 GiB and 4 GiB, with natural handler completion and 8/8/12 existing channels recovering without reconnect. Final qualification remains open; all earlier native failures are retained. |
+| T7 | 2026-10-22 09:55 to 2026-10-23 08:09 PDT | JDK 21.0.12.1, Tomcat 9.0.121, G1, built WARs, DefaultConfigService; pressure at fixed 512 MiB, 2 GiB and 4 GiB heaps; controls at 512 MiB and 1 GiB | Accepted as final by the owner on 2026-10-24 (D57) within the recorded scope; the cells not measured move to M91. Coverage of the plan was partial: front-end pressure and subordinate snapshot HTTP deadline/cancellation pass at 512 MiB after minimal corrections; original failures retained; other wait paths, larger cases and final contract remain open | Eighteen declared-size refusals across nine formats at each pressure-profile heap. Eight overlapping accumulating requests at 512 MiB and 2 GiB, twelve at 4 GiB, stopped with pressure-specific HTTP failures without JVM exit and recovered. The same fixed optimized and optimLastSample query was refused at 512 MiB and completed at 1 GiB. Raw CSV returned all 2,592,000 expected records; normal multi-PV and getDataAtTime paths passed. Retrieval precommit interruption and both context overload checks passed at the low test thresholds. The earlier raw output completed after a consumed valve interrupt. The accepted deadline correction now returns precommit 503 and aborts committed CSV both before a valve tick and after a consumed write interrupt; same-thread JFR and normal recovery passed. Two accumulating requests remained active in the admission-to-pressure window at 512 MiB and 2 GiB; all four HTTP entry paths returned memory-specific 503, both original CSV bodies matched their single-request control, and all four paths recovered. The failed preparation and console-observation assertions remain retained. At 00:39 and 00:42 PDT the identical multi-PV input returned eight pressure-specific 503 responses and recovered without OOM; both runs stopped during input accumulation, leaving new iterator pressure exposure unverified. At 00:41 PDT the corrected snapshot request returned pressure-specific 503; JFR records eleven GetDataPredicate.test pressure exceptions and same-JVM recovery passed. At 01:28 PDT the sparse multi-PV case also passed: all eight pressure exceptions occur inside the iterator bin loop, confirmed by JFR, followed by same-JVM recovery. At 01:45 PDT front-end snapshot pressure propagation failed: actual worker pressure was followed by HTTP 200 and an empty object, although both normal recovery paths passed without OOM. At 01:57 PDT the accepted minimal correction passed the same unchanged front-end test: pressure-specific HTTP 503 with the actual worker reason, checked-status JFR and both normal recovery paths without OOM. At 02:16 PDT the real front-end deadline case failed its response-bound and HTTP-wait termination assertions: at 5.045 seconds both waits remained, and deadline-specific 503 arrived at 5.058 seconds only after explicit transport release. Baseline, actual subordinate response and recovery passed without OOM. At 08:07 PDT the unchanged deadline regression passed: deadline-specific 503 and no target frames before release by 1.054 seconds, with JFR proving actual HTTP connection closure and normal recovery. At 08:09 PDT the unchanged pressure regression also passed with matching worker reason and both recovery paths. Measurements and remaining conditions below; source/WAR and available store identities retained under work/m85-t7-network. |
+| T8 | 2026-10-22 09:55 to 2026-10-23 00:03 PDT | Same G1 runtime; isolated PVA discovery, actual TCP RPC; eight independent connections at 512 MiB and 2 GiB, twelve at 4 GiB for pressure; three connections for controlled admission, including a Debian 13.4 VM at 4 GiB | Accepted as final by the owner on 2026-10-24 (D57) within the recorded scope; the summary-pair admission at larger heaps moves to M91, and the raw pair passed at 512 MiB, 2 GiB and 4 GiB. Coverage of the plan was partial: bounded pressure, declared-size client-message/refusal, recovery, raw control and scaling checks passed; 512 MiB mean_1 admission and controlled raw admission at 512 MiB/2 GiB/4 GiB passed; remaining transport and final qualification remain open | Both optimized variants at 2147483647 produced server budget failures and the current library failure/timeout behavior, followed by data on the same connection. Independent RPC threads overlapped under pressure and existing-connection recovery passed at all three heaps. The fixed query changed from refusal at 512 MiB to success at 1 GiB. The bounded raw control returned 5,001 records; the earlier 30,001-record timeout remains a failed larger control. Actual client exception messages for both declared-size refusals and recovery without reconnect passed at 512 MiB. The 10,001-bin fitting pair completed and recovered below admission; the 20,001-bin single control reconnected and timed out before a pair was submitted. The FINE-log diagnostic identifies the client responsiveness shutdown after 32,886 ms; the single control still timed out and the admission pair did not run. After M86, the 120,001-bin scalar case passed the complete 512 MiB admission contract with the actual third-request client/server reason, two matching original replies, quiescence and same-connection recovery. The first 2 GiB / 480,001-bin control failed with BufferOverflowException and timeout. With the authorized 32 MiB server send buffer, all six single controls through 800,001 bins completed without encoding failure. The 480,001-bin pair completed and recovered below admission; 600,001 and 700,001-bin probes returned normally after GC; 725,001, 750,001 and 800,001-bin pairs encountered pressure. The subsequent probe-observation correction continues after a normal third response and requires the actual refusal usage to be inside the admission-to-pressure interval. Its 512 MiB full admission regression passed; the 2 GiB / 700,001-bin continuation and 720,001-bin above-pressure negative check ran through the real path. At 710,001 and 725,001 bins the actual refusal is in range but only one original handler is observed at the client-side check. The identical 710,001-bin repeat completed both matching replies and same-channel recovery without a third probe or refusal; admission exposure remains Incomplete. These mean_1 runs did not establish a complete 2 GiB pass. The subsequent filesystem-controlled raw cases passed at 512 MiB and 2 GiB: two real PB readers remain held across the actual third-request admission refusal, then both original replies and same-channel recovery complete. The controlled raw 4 GiB VM run also passed with 1,900,001 records, two held readers and a third-request refusal at 2,175,201,168 bytes, followed by both matching replies and same-channel recovery. Its earlier starting-hold candidate failed the no-reconnect assertion and remains Failed. The raw result is separate from the unresolved larger-heap mean_1 window. Pressure-specific client-message assertions now pass at 512 MiB, 2 GiB and 4 GiB, with natural handler completion and 8/8/12 existing channels recovering without reconnect. Final qualification remains open; all earlier native failures are retained. |
 | T9 | 2026-10-23 PDT (build and link check), pages committed 2026-10-24 | Docker image `aa-mdbook` (mdBook 0.4.52), `scripts/ui-static-checks.bash` host, `check_book_links.py` over the built pages | Pass: the book builds; 20 pages, 699 internal links, 0 broken. `retrieval.md` gains the section "Limits on a request" (how the memory checks decide, the HTTP request deadline, errors and status codes, calls over PVAccess) and two corrected sentences; `installing.md` gains the valve table and the PVAccess timeout paragraph after the HTTP deadline paragraph; `configuration.md` lists the nine `retrieval.memory.*` keys with defaults and the restart and invalid-value rule. Landed as commit 7cd3fcca on `origin/modernize` | commit 7cd3fcca; `docs/book/src/retrieval.md`, `installing.md`, `configuration.md` |
 | T10 | 2026-10-23 22:17 PDT to 2026-10-24 01:35 PDT (whole integration set), 2026-10-24 (default set, static checks, reruns) | Fresh clone `/data/gitsrc/aa-verify-d5567994` at d5567994 (product code identical to the current tree), JDK 21.0.12.1, Tomcat 9.0.121, `softIocPVX` 7.0.10, `MAVEN_OPTS=-Xmx1g`, `-DargLine=-Xmx2g -DforkCount=1 -DreuseForks=true`, no other appliance or IOC on the host | Default set: `./mvnw -o -B -ntp clean verify` BUILD SUCCESS, 1145 tests, 0 failures, 0 errors, 0 skipped, 11:15 min; `bash scripts/ui-static-checks.bash` 431 passed, 0 failed. Whole integration set: 152 tests, 3 failures, 0 errors, 0 skipped, 3 h 18 min; the 149 others passed. The three failures repeated three times each on d5567994 and once on 16b1e53c before the M85 corrections, so none is caused by M85: `VariousPostProcessorTest` sees no summary event on a date whose 5 day bin midpoint lies after its window end (M89, issue #56), and `RetrievalAdmissionNetworkTest` and the admission case of `PvaMemoryNetworkTest` size their held pair from constants that the settled server baseline no longer satisfies (M90, issue #57); every admission refusal that was reached was correct. With the corrected tests (commits 5efbd25b and 5d52077d) the three classes pass: `VariousPostProcessorTest` once on the failing date, `RetrievalAdmissionNetworkTest` four of four, `PvaMemoryNetworkTest` four of four runs of the whole class (see M89 / T1 and M90 / T1, T2). The whole set has not been rerun after the corrections | `work/m85-third-person-review/corrections-01/t10-01/` (`t10-integration.log`, `whole-set-reports/`, `batch_integration.bash`), `work/t10-rerun-01/` (three reruns on d5567994), `work/t10-prefix-01/` (one run on 16b1e53c), `work/m89-01/`, `work/m90-01/` to `work/m90-05/`; each folder has `SHA256SUMS` |
 
@@ -8625,6 +8629,10 @@ Last Compared: 2026-10-24 19:10 UTC
 | | M83 | Delete the moved partition of a zip store that is an ETL source | Milestone | Not started | Yes | D47 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m83---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
 | | M87 | Bound the concurrent calls of the PVAccess retrieval service | Milestone | Not started | Yes | D53 | The retrieval PVAccess service runs at most a measured number of calls at a time and refuses the next with a message in its log; a test with more long calls than that, on separate connections, fails on the old code and passes on the new; [detail](#m87---bound-the-concurrent-calls-of-the-pvaccess-retrieval-service) |
 | | M88 | Verify signal storage and important-signal delivery under client overload | Milestone | Deferred | No | | Long-term plan, deferred on 2026-10-22: verify signal storage first, important-signal storage and delivery second, and client request handling last; issue #55; [detail](#m88---verify-signal-storage-and-important-signal-delivery-under-client-overload) |
+| | M91 | Measure the thread and valve limits and the remaining qualification cells of the retrieval protection | Milestone | Not started | Yes | D57 | A measured table of busy threads, response times, memory decisions and valve refusals against concurrency under combined console and retrieval load, at 512 MiB and 2 GiB and under two `maxThreads` values; the valve default recorded with the rule that produced it in the register, the book and `TESTING.md`, with a test that runs at that default; each unmeasured qualification cell measured or recorded as not measured with the reason; issue #58; [detail](#m91---measure-the-thread-and-valve-limits-and-the-remaining-qualification-cells-of-the-retrieval-protection) |
+| | M92 | Decide the stamping and filtering rule of summary bins at the window edges | Milestone | Open | No | D57 | A recorded decision on whether a bin whose samples lie inside the requested window is returned when its midpoint stamp lies after the window end, checked against the archive viewers and the Python clients; if the rule changes, such a bin is returned regardless of the request time and `VariousPostProcessorTest` passes with its original one-day window; if it stays, the retrieval page of the book states it; issue #59; [detail](#m92---decide-the-stamping-and-filtering-rule-of-summary-bins-at-the-window-edges) |
+| | M93 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D58 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m93---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
+| | M94 | Carry the changed limits of a record into the type information at reconnect | Milestone | Not started | Yes | D58 | After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` holds the new limits within one reconnect and the Details window shows them, the unit and the precision keep being updated, and the suite passes with a test that reconnects a PV with changed limits; issue #47; [detail](#m94---carry-the-changed-limits-of-a-record-into-the-type-information-at-reconnect) |
 
 M78, M79 and M80, entered on 2026-10-19 from the store defects, moved to the Milestone table by D46 the same day (see Assignment History); M83 was entered on 2026-10-19 by D47 and waits for a later release; M86 and M87 were entered on 2026-10-21 by D53 from the audit of M85.
 
@@ -8836,6 +8844,271 @@ Observed Labels: enhancement
 Observed Milestone: none
 Observed Assignee: jeonghanlee
 Last Compared: 2026-10-23T06:26:19.445179+00:00; issue #55 read back with exact draft-body equality; remote updatedAt 2026-10-23T06:25:39Z.
+
+#### M91 - Measure the thread and valve limits and the remaining qualification cells of the retrieval protection
+
+Origin: daff1b7 / M91
+Identity History: none
+GitHub Issue: #58 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/58)
+Status: Not started
+
+##### Summary
+
+The retrieval memory protection of M85 passed its functional checks on HTTP and PVAccess at 512 MiB, 2 GiB and 4 GiB under G1 with no OutOfMemoryError or JVM exit. Two groups of measurements remain. First, the thread and valve limits: the retrieval `SemaphoreValve` concurrency 100 and the connector `maxThreads` (Tomcat's default 200 in the deployment template, 40 in the development launcher) are not derived from a measurement; every busy-thread maximum recorded so far (4 in the whole integration set, 13 for fifteen console pages with their static files, 8 and 12 for eight and twelve overlapping heavy retrievals, 9 for the snapshot worker cases, 3 for the admission tests) equals the number of requests the test sent, no run combined console and heavy retrievals, and no run drove the concurrency to saturation or to a valve refusal at the default. Second, the qualification cells the plan of M85 named and the runs did not cover: the Serial collector; Parallel and generational Z at 2 GiB and 4 GiB; pressure after the response is committed; overshoot above the pressure threshold and headroom to the heap maximum at the shipped defaults; memory admission of a held summary (`mean_1`) pair at 2 GiB and 4 GiB, which needs a hold at the transport stage because the file read hold keeps 129 bytes per record against about 900 when the answer is built.
+
+##### Scope
+
+- A long-running measurement that sends console and heavy retrieval requests together and raises the concurrency step by step, recording busy threads, response times, memory decisions and valve refusals at each step, on 512 MiB and 2 GiB heaps, under the deployment `maxThreads` and under 40.
+- The valve default decided from that table by a stated rule and recorded in the register, the book (installing page) and `TESTING.md`, with a test that runs at the chosen default rather than at a lowered threshold.
+- Each qualification cell above measured and recorded, or recorded as not measured with the reason; the summary-pair admission needs a transport-stage hold in the test, for example a forwarding proxy that stops delivering the server's answer.
+
+Out of scope: bounding the number of concurrent PVAccess calls (M87); changing the memory thresholds without a measurement that motivates it; the cause of the 31 MB baseline difference between 2026-10-22 and 2026-10-24.
+
+##### Completion Criteria
+
+- The measurement table exists with its evidence folder named, for two heaps and two `maxThreads` values.
+- The valve default and the connector recommendation are recorded with their rule in the three documents, and the test at the default passes.
+- Every qualification cell is measured or recorded as not measured with the reason.
+
+##### Dependencies And Decisions
+
+- D57 (Decision Date 2026-10-24): the shipped defaults stay; the measurements move here from M85.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. A load driver in the test code that mixes console page requests and heavy retrievals and raises the concurrency in steps, sampling `currentThreadsBusy`, response times and the console lines of the memory protection and the valve. Check: T1.
+2. The rule and the chosen default, applied to the WAR declaration and the three documents, with the valve test run at the default. Check: T2.
+3. The qualification cells, one run each, recorded in the Verification Results. Check: T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration, measurement | The load driver at 512 MiB and 2 GiB, `maxThreads` 200 and 40, concurrency raised until the connector saturates or the valve refuses | JDK 21, Tomcat 9.0.121, built WARs | A table of busy threads, response times, memory decisions and refusals per step; no OutOfMemoryError |
+| T2 | Integration | `ValveConcurrencyTest` and the console check at the chosen default | same | The valve refuses above the default and admits below it; the console pages answer 200 below it |
+| T3 | Integration, measurement | The qualification cells: Serial; Parallel and ZGC at 2 GiB and 4 GiB; pressure after commit; overshoot and headroom at the defaults; summary-pair admission at 2 GiB and 4 GiB with a transport-stage hold | same, with the collectors and heaps named | Each cell recorded with its result, or recorded as not measured with the reason |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+| T2 | pending | | | |
+| T3 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Measure thread and valve limits under load
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN (2026-10-24 19:57 UTC)
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-24 19:57 UTC
+
+#### M92 - Decide the stamping and filtering rule of summary bins at the window edges
+
+Origin: daff1b7 / M92
+Identity History: none
+GitHub Issue: #59 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/59)
+Status: Open
+
+##### Summary
+
+`SummaryStatsCollectorEventStream` stamps the event of each bin at the bin midpoint and `MergeDedupConsumer.java:154` drops every event stamped after the requested end. When the bin is longer than the time between the request end and the last sample, the event of the last bin lies after the end and is dropped: a `mean_432000` request whose window ends inside the current five-day bin returns no event for that bin although its samples are inside the window (observed 2026-10-24 with `VariousPostProcessorTest`, 101 samples, HTTP 200 and an empty stream; the raw retrieval returned all 101). The test was corrected in 5efbd25b by ending its request at the next bin edge (M89, issue #56); the product behaviour is unchanged and the rule has not been decided.
+
+##### Scope
+
+- Decide whether a bin whose samples lie inside the requested window is returned when its midpoint stamp lies outside the window, and with which timestamp (midpoint, bin start or window end); whether the inherited first bin follows the same rule; what the archive viewers and the Python clients expect.
+- If the rule changes: the retrieval returns one event for such a bin regardless of the request time, the raw retrieval is unchanged, and `VariousPostProcessorTest` passes with its original one-day window again. If it stays: the retrieval page of the book states it.
+
+Out of scope: the test window of `VariousPostProcessorTest` (M89); post-processors that are not summaries.
+
+##### Completion Criteria
+
+- The decision is recorded with the clients it was checked against.
+- The product or the book reflects the decision as stated in Scope.
+
+##### Dependencies And Decisions
+
+- D57 (Decision Date 2026-10-24): entered from M89; the row stays Open until the owner decides the rule.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Read how the archive viewers and the Python clients consume summary bins at the window edges and present the choices to the owner. Check: T1.
+2. Apply the decided rule to the product or the book. Check: T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Review | The consumers of summary bins read against the three choices | repository and client sources | A decision record naming the clients checked |
+| T2 | Integration or book | If the rule changes, `VariousPostProcessorTest` with its original one-day window on a date just after a bin edge; if it stays, the book build with the stated rule | JDK 21, Tomcat 9.0.121, `softIocPVX`; or the `aa-mdbook` image | One event per operator on any date; or the page states the rule |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+| T2 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Summary bin event stamped past the request end
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN (2026-10-24 19:57 UTC)
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-24 19:57 UTC
+
+#### M93 - Let a type change to a string or a waveform type succeed
+
+Origin: daff1b7 / M93
+Identity History: none
+GitHub Issue: #45 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/45)
+Status: Not started
+
+##### Summary
+
+`changeTypeForPV` cannot change a numeric PV to a string or to a waveform type: it answers HTTP 500, leaves the PV paused with its old type, and a PV resumed without the change goes on dropping every event of the new type, so the signal stops being recorded until the operator deletes the PV and archives it again. Observed on 2026-10-17 and 2026-10-18 on the soft IOC of `src/resources/test/st.cmd` restarted with `RECORD_CHANGE=Types` (filed as a deviation of M73). `ChangeTypeForPV` converts the stored history through `etl/conversion/ThruNumberAndStringConversion.java`, whose sample conversion supports the numeric scalar types only; the `DBR_SCALAR_STRING` branch calls `getStringValue(0)` on a numeric sample and the `default` branch throws `UnsupportedOperationException` for every other target.
+
+##### Scope
+
+- The type change succeeds for every target type. Where the stored history cannot be converted into the new type (a number into a string, a scalar into a waveform), the history stays as it is under the old type and the new type starts from the instant of the change; where a conversion is defined (number to number), it is kept.
+- The call reports its result in its JSON answer and in the engine log.
+
+Out of scope: an automatic type change by the engine without an operator call; the console page that offers the change.
+
+##### Completion Criteria
+
+- `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns HTTP 200, the PV resumes as Being archived with the new type in `getPVTypeInfo`, and the dropped-events count stops growing.
+- The samples stored before the change stay readable through `getData`, and a window across the change returns both the earlier and the later samples.
+- The record-change checks on the soft IOC with `RECORD_CHANGE=Types` pass for all four records.
+
+##### Dependencies And Decisions
+
+- D58 (Decision Date 2026-10-24): worked after the release.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. `ChangeTypeForPV` keeps the history under the old type when no conversion is defined and starts the new type at the change, instead of converting or failing. Check: T1, T2.
+2. The JSON answer and the engine log carry the result. Check: T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit | `ChangeTypeForPV` with a numeric history and each target type | JDK 21 | Numeric targets convert as before; string and waveform targets keep the history and start the new type; no exception |
+| T2 | Integration | The record-change checks with `RECORD_CHANGE=Types` on the soft IOC, both calls, resume, retrieval across the change | JDK 21, Tomcat 9.0.121, `softIocPVX` | HTTP 200, new type in `getPVTypeInfo`, dropped-events count constant, earlier and later samples returned |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+| T2 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Type change to string or waveform fails
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN (2026-10-24)
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-24
+
+#### M94 - Carry the changed limits of a record into the type information at reconnect
+
+Origin: daff1b7 / M94
+Identity History: none
+GitHub Issue: #47 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/47)
+Status: Not started
+
+##### Summary
+
+When a PV reconnects, the engine reads the unit and the precision of its record again but keeps the display, warning, alarm and control limits that it stored at the archive request, so after the limits of a record change and the IOC restarts, `getPVTypeInfo` and the Details window of the Browse PVs page keep the old limits while the IOC reports the new ones. Observed on 2026-10-17 and 2026-10-18 on the soft IOC of `src/resources/test/st.cmd` (filed as a deviation of M73). `MetaInfo.updateTypeInfo` in `src/main/org/epics/archiverappliance/config/MetaInfo.java` compares and writes only the unit, the precision and the host name; the limits that `applyBasicInfo` reads from the control DBR on every connection are never carried into the stored type information after the first time.
+
+##### Scope
+
+- `MetaInfo.updateTypeInfo` compares the display, warning, alarm and control limits of the connection with the stored type information and writes them when they differ, under the same rate limit as the unit and the precision, with one INFO line in the engine log naming the PV and the fields that changed.
+
+Out of scope: a change of the limits while the channel stays connected and the property subscription is off; the fields carried in the samples by the property subscription.
+
+##### Completion Criteria
+
+- After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` of the PV holds the new limits within one reconnect, and the Details window shows them.
+- The unit and the precision keep being updated as before.
+- The suite passes, including a test that reconnects a PV with changed limits.
+
+##### Dependencies And Decisions
+
+- D58 (Decision Date 2026-10-24): worked after the release.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. `MetaInfo.updateTypeInfo` compares and writes the limits with the unit and the precision, and logs the changed fields. Check: T1, T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit | `MetaInfo.updateTypeInfo` with a connection whose limits differ from the stored type information | JDK 21 | The limits are written, the unit and the precision as before, one log line names the fields |
+| T2 | Integration | A PV archived from the soft IOC, the IOC restarted with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` after the reconnect | JDK 21, Tomcat 9.0.121, `softIocPVX` | The new limits within one reconnect |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+| T2 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Display limits not read again at reconnect
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN (2026-10-24)
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-24
 
 ## Assignment History
 
