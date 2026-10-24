@@ -114,6 +114,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M84 | Fix the defects and leftovers of issue #53 | Milestone | Complete | No | D48 | The seven defects and the three leftovers of issue #53 are fixed, each with a test on the shipped path that fails on the old code; the default suite, the integration set and the static checks pass; the book states the new answers; the Operations figure is retaken (landed as aa3df1ee; default suite, static checks and the whole integration set of 76 classes pass, 2026-10-20; issue #53 closed 2026-10-20); [detail](#m84---fix-the-defects-and-leftovers-of-issue-53) |
 | Phase 2 | M85 | Protect the retrieval application against memory exhaustion | Milestone | In progress | No | D49, D50, D52 | With JDK and Tomcat facilities only: the four JVMs exit on an `OutOfMemoryError`, a Tomcat valve limits the concurrent requests of retrieval and management with HTTP 503, and retrieval refuses new requests while the memory after garbage collection is above a threshold, refuses a request whose declared size exceeds the budget and, under memory pressure, stops the requests that allocate the most, in HTTP and PVAccess retrieval, and a stopped request is reported to the client instead of being answered as if complete; the values are set from measurement; tests with a limited heap fail on the old code and pass on the new; the book states the protection; issue #54; [detail](#m85---protect-the-retrieval-application-against-memory-exhaustion) |
 | Phase 2 | M86 | Build the PVAccess answer without copying its array at every event | Milestone | Complete | No | D53, D54 | `PvaMimeResponse` appends each event to its result arrays without copying them, so the cost of a PVAccess answer grows with its events and not with their square; the answer is the same; a test over several event counts fails on the old code and passes on the new; [detail](#m86---build-the-pvaccess-answer-without-copying-its-array-at-every-event) |
+| Phase 2 | M89 | Make VariousPostProcessorTest independent of the date | Milestone | Not started | Yes | D55 | `VariousPostProcessorTest` passes on a date just after a 432000 s bin edge and on a date near the bin midpoint, its raw assertion still sees all 101 samples, and nothing under `src/main` changes; issue #56; [detail](#m89---make-variouspostprocessortest-independent-of-the-date) |
+| Phase 2 | M90 | Size the admission tests from measurements of the same run | Milestone | Not started | Yes | D56 | `RetrievalAdmissionNetworkTest` and `PvaMemoryNetworkTest` pass with their default inputs in three consecutive runs on a 512 MiB heap, each with a refusal naming memory admission at a usage between the thresholds, their evidence records the derived inputs, and nothing under `src/main` changes; issue #57; [detail](#m90---size-the-admission-tests-from-measurements-of-the-same-run) |
 | Interface analyzer | M81 | Analyzer phase B: interaction, options and export | Milestone | Not started | No | M62, D40, D46 | The gestures beyond the simple form (the drag tool chosen on the strip, wheel and pinch zoom, undo and redo of the range, two cursors, pinned samples), the options the reference tools offer (line width and style, a gap threshold, a fill between signals, fixed and soft ranges, the averaging interval or raw samples, the min-max band, a split by unit, SI prefixes, a legend table, tooltip modes), the Data tab and the full Export tab, each carried in the address; [detail](#m81---analyzer-phase-b-interaction-options-and-export) |
 | Interface analyzer | M82 | Analyzer phase D: tools for two and several signals | Milestone | Not started | No | M63, D40, D46 | The Correlation tab (pairing by held values, scatter with projections and density, Pearson and Spearman, profile, the fit panel with fixed and bounded parameters) and the Dependency tab (correlation matrix ordered by clustering, ranking by mutual information, multiple regression, principal components), derived signals from a typed expression and a change of unit, the routines checked on signals of known parameters; [detail](#m82---analyzer-phase-d-tools-for-two-and-several-signals) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
@@ -175,6 +177,8 @@ This register covers the minimal modernization of the existing Java appliance on
 | D52 | The memory bound of a request is the size it declares, checked at admission against a budget, and the memory pressure while it runs, the usage of the old generation after collection against a second threshold; the allocation of the request thread only chooses which request stops under pressure. The cumulative allocation of a thread is not a budget, because it counts bytes allocated and not bytes held: a raw read of 2,592,000 events allocated 105 MB and completed on a 64 MB heap (measured 2026-10-21 on JDK 21 with the real plain PB store), so such a budget stops ordinary streaming requests and cannot tell them from a request that accumulates. The estimate stays as the fallback where the JVM does not support thread allocation measurement. | 2026-10-21 |
 | D53 | The two findings of the audit of M85 that its loops do not cover enter the Backlog as rows: the PVAccess answer that copies its array at every event and is held whole (M86), and the PVAccess server that bounds neither the calls at a time nor their duration (M87). Neither blocks M85 or the merge of `modernize`; the owner assigns them to a table when the order is chosen. | 2026-10-21 |
 | D54 | Assign M86 to Phase 2 and execute its response-construction allocation and equivalence plan before selecting the next M85 / T8 admission input. The scalar control exposed a client responsiveness shutdown during synchronous response construction. Memory settings and connection timeouts stay unchanged; M87 remains in the Backlog. | 2026-10-22 |
+| D55 | `VariousPostProcessorTest` is corrected in the test only: its request end becomes the next 432000 s bin edge after now and its start stays at now minus one day, so the one summary event of the current bin, stamped at the bin midpoint, is inside the window on any date. The product behaviour behind it, the bin event stamped at the bin midpoint by `SummaryStatsCollectorEventStream` and the request-end filter of `MergeDedupConsumer`, is not changed under this row and waits for a separate issue. Found in the whole integration set of M85 / T10. | 2026-10-24 |
+| D56 | The two admission tests, `RetrievalAdmissionNetworkTest` and `PvaMemoryNetworkTest`, are corrected in the test only and together: each derives its request length from the baseline and the bytes retained per bin measured in the same run instead of a fixed constant, so the held pair lands in the middle of the admission window on any baseline. The product thresholds and the cause of the 31 MB baseline difference between 2026-10-22 and 2026-10-24 are not touched. Found in the whole integration set of M85 / T10; no run showed a wrong product decision. | 2026-10-24 |
 
 ### Conceptual-integrity findings
 
@@ -8469,6 +8473,144 @@ Observed State: none, no issue yet
 Observed Labels: none
 Observed Milestone: none
 Last Compared: none
+
+#### M89 - Make VariousPostProcessorTest independent of the date
+
+Origin: daff1b7 / M89
+Identity History: none
+GitHub Issue: #56 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/56)
+Status: Not started
+
+##### Summary
+
+`VariousPostProcessorTest.testPostProcessors` requests `mean_432000`, `median_432000`, `std_432000`, `jitter_432000` and `variance_432000` over a window of now minus one day to now plus one day and expects one summary event. `SummaryStatsCollectorEventStream` stamps the event of a bin at the bin midpoint (`binNum * intervalSecs + intervalSecs / 2`), and `MergeDedupConsumer.java:154` drops every event stamped after the request end. With a 432000 s (five day) bin the midpoint lies after now plus one day during the first 1.5 days and the last 1.5 days of the bin, so the test sees zero events on about three days out of five. Observed in the whole integration set of M85 / T10: passed on 2026-10-22 03:32 UTC (midpoint 2026-10-21 12:00 UTC inside the window), failed with `Expecting 1 got 0 for pv mean_432000(UnitTestNoNamingConvention:inactive1)` in every run from 2026-10-24 05:46 UTC (midpoint 2026-10-26 12:00 UTC after the window end), on the fixed tree d5567994, three reruns each, and on 16b1e53c before the M85 corrections. The raw retrieval of the same 101 samples passes in the same run, and the server answers HTTP 200 with a stream that holds no event.
+
+##### Scope
+
+- In `VariousPostProcessorTest.testRetrievalCount`, the request end becomes the next 432000 s bin edge after now, `((now / 432000) + 1) * 432000` in epoch seconds, and the request start stays at now minus one day, computed from now rather than from the end.
+- The five summary operators of the test share the one window; the raw assertion of the same test uses it too.
+
+Out of scope: the bin midpoint stamp of `SummaryStatsCollectorEventStream` and the request-end filter of `MergeDedupConsumer` (product behaviour, a separate issue); the comment in the same test about a day that yields two values for the bin size.
+
+##### Completion Criteria
+
+- `VariousPostProcessorTest` passes on a date just after a 432000 s bin edge and on a date within one day of a bin midpoint.
+- The raw retrieval assertion of the test still sees all 101 samples.
+- No change under `src/main`.
+
+##### Dependencies And Decisions
+
+- D55 (Decision Date 2026-10-24): the test window is corrected; the product behaviour behind it waits for a separate issue.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Compute the end of the request window in `testRetrievalCount` as the next 432000 s bin edge after now, and the start as now minus one day. Check: T1, T2.
+2. Confirm the change touches the test alone. Check: T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | `VariousPostProcessorTest` on the real fixture on a date whose now lies more than one day before the midpoint of the current 432000 s bin | JDK 21, Tomcat 9.0.121, `softIocPVX` | Fails on the old test with zero events; passes on the corrected test with one event per operator and 101 raw samples |
+| T2 | Integration | `VariousPostProcessorTest` on the real fixture on a date whose now lies within one day of the midpoint of the current bin | same | Passes with one event per operator; no regression on the dates the old test passed |
+| T3 | Static | `git diff --stat` of the change | any | No path under `src/main` |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+| T2 | pending | | | |
+| T3 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: VariousPostProcessorTest fails on some dates
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN (2026-10-24)
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-24
+
+#### M90 - Size the admission tests from measurements of the same run
+
+Origin: daff1b7 / M90
+Identity History: none
+GitHub Issue: #57 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/57)
+Status: Not started
+
+##### Summary
+
+`RetrievalAdmissionNetworkTest.thirdRequestIsRefusedBetweenThresholdsAndRecoversAfterTwoComplete` and `PvaMemoryNetworkTest.twoFittingRequestsRefuseAThirdAndCompleteBeforeRecovery` size their load with a fixed input (`QUERY_FRACTION = 0.065` at 112 bytes per bin; `archappl.memory.test.pvaAdmissionSeconds`, default 10000) and require the old generation after collection to lie between 50 and 60 percent of the maximum heap while two accumulating requests are held, a 53.7 MB window on a 512 MiB heap. Compared on identical JVM, options, store, request and response, the HTTP test landed at 291.7 MB on 2026-10-22 (baseline before load 118.0 MB) and at 233.0 to 264.7 MB in four runs on 2026-10-24 (baseline 86.8 MB); the two requests added 173.8 MB and 177.9 MB. The PVAccess default input leaves the pair at most 89 MB after collection, so it never shows admission; the documented input 120000 lands at the window edge (313 MB on fc6abd67, 322.9 MB above pressure on d5567994, or a refusal after one request had finished). Both fail with `Incomplete exposure` before any refusal is attempted; every refusal that was reached was correct. Found in the whole integration set of M85 / T10 on d5567994 and repeated on 16b1e53c.
+
+##### Scope
+
+- `RetrievalAdmissionNetworkTest`: measure the old generation after collection before load and the bytes retained per bin from the single control while its body is held; derive the request length that puts the pair at 55 percent of the maximum heap; record baseline, bytes per bin and derived length in the evidence folder.
+- `PvaMemoryNetworkTest`: the same derivation for the default path; the existing `readHold` adjustment loop, which grows the held records until the pair is above the admission threshold, becomes the mechanism that reaches the window when the derivation lands short.
+- The refusal, drain and recovery assertions of both tests stay as they are.
+
+Out of scope: the admission, pressure and budget fractions of the product and their startup log; the cause of the 31 MB baseline difference between the two dates; bounding the number of concurrent PVAccess calls (M87).
+
+##### Completion Criteria
+
+- Both tests pass with their default inputs on the current tree in three consecutive runs on a 512 MiB heap, each with a refusal that names memory admission and a measured usage between the two thresholds.
+- Each evidence folder records the baseline, the bytes per bin and the derived request length of that run.
+- No change under `src/main`.
+
+##### Dependencies And Decisions
+
+- D56 (Decision Date 2026-10-24): both tests corrected together in the test only; product thresholds and the baseline difference untouched.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. In `RetrievalAdmissionNetworkTest`, read the baseline after the single control, measure the retained bytes per bin while the control body is held, derive the request length for 55 percent and write the three values to `admission-inputs.txt`. Check: T1.
+2. In `PvaMemoryNetworkTest`, apply the same derivation to the default input and make the `readHold` adjustment the default path. Check: T2.
+3. Confirm the change touches test code alone. Check: T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | `RetrievalAdmissionNetworkTest` with default inputs, three consecutive runs | JDK 21, Tomcat 9.0.121, 512 MiB heap, G1 | Three passes; each refusal is HTTP 503 with `memory admission` at a collection usage between 268,435,456 and 322,122,547 bytes; evidence holds baseline, bytes per bin and derived length |
+| T2 | Integration | `PvaMemoryNetworkTest` with default inputs, three consecutive runs | same, `softIocPVX` | Three passes of the admission case; refusal in the client log at a usage between the thresholds; the other three cases unchanged |
+| T3 | Static | `git diff --stat` of the change | any | No path under `src/main` |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+| T2 | pending | | | |
+| T3 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Admission tests rely on a fixed input size
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN (2026-10-24)
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-24
 
 ## Backlog
 
