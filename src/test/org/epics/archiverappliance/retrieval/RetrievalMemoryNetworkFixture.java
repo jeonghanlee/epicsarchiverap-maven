@@ -50,6 +50,12 @@ public final class RetrievalMemoryNetworkFixture implements AutoCloseable {
     }
 
     public RetrievalMemoryNetworkFixture(Integer backgroundSeconds, String... options) throws Exception {
+        this(backgroundSeconds, Boolean.getBoolean("archappl.memory.test.pvaReadHold"), options);
+    }
+
+    /** The read hold compiles the LD_PRELOAD library and delays the server's sequential reads of the generated PB file. */
+    public RetrievalMemoryNetworkFixture(Integer backgroundSeconds, boolean withReadHold, String... options)
+            throws Exception {
         String name = "MemoryRequests-" + UUID.randomUUID();
         evidence = Path.of("target", "memory-network", name).toAbsolutePath();
         Files.createDirectories(evidence);
@@ -63,7 +69,7 @@ public final class RetrievalMemoryNetworkFixture implements AutoCloseable {
         if (backgroundSeconds != null) tomcat.withEngineBackgroundProcessorDelay(backgroundSeconds);
         try {
             GenerateData.generateSineForPV(PV, 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, FROM, TO);
-            if (Boolean.getBoolean("archappl.memory.test.pvaReadHold")) {
+            if (withReadHold) {
                 readHold = new PbReadHold(evidence, Path.of(ConfigServiceForTests.getDefaultPBTestFolder(),
                         "MemoryQualification", "SineV1:2011.pb"));
                 tomcat.withEnvironment(readHold.environment());

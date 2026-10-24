@@ -42,6 +42,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Exercises RPC through the built retrieval WAR on an isolated discovery port. */
 @Tag("integration")
 public class PvaMemoryNetworkTest {
+    /** Heap fraction the held pair aims at: the middle of the admission window between 0.50 and 0.60. */
+    private static final double TARGET_FRACTION = Double.parseDouble(
+            System.getProperty("archappl.memory.test.pvaAdmissionTargetFraction", "0.55"));
     private static final Pattern ADMISSION_REFUSAL = Pattern.compile(
             "Retrieval memory admission refused: collection usage (\\d+) exceeds threshold (\\d+)");
 
@@ -133,13 +136,15 @@ public class PvaMemoryNetworkTest {
 
     @Test
     public void twoFittingRequestsRefuseAThirdAndCompleteBeforeRecovery() throws Exception {
-        withServer((server, port) -> {
-            int seconds = Integer.getInteger("archappl.memory.test.pvaAdmissionSeconds", 10000);
-            String processor = Boolean.getBoolean("archappl.memory.test.pvaRawAdmission") ? "" : "mean_1";
-            PVAURI load = new PVAURI("name", "pva", null, PvaGetPVData.NAME, Map.of(
-                    "pv", RetrievalMemoryNetworkFixture.PV, "pp", processor,
-                    "from", RetrievalMemoryNetworkFixture.FROM.toString(),
-                    "to", RetrievalMemoryNetworkFixture.FROM.plusSeconds(seconds).toString()));
+        withServer(true, (server, port) -> {
+            Integer configuredSeconds = Integer.getInteger("archappl.memory.test.pvaAdmissionSeconds");
+            // The held pair is a raw query: the raw path keeps one structure per event while the PB file is read, so
+            // the read hold retains the pair's memory. A summary query such as mean_1 keeps only its bins during the
+            // read and builds its structures after it, where no hold at the file boundary reaches them; the memory
+            // admission itself does not depend on the query, and mean_1 stays available as an input.
+            String processor = Boolean.parseBoolean(System.getProperty("archappl.memory.test.pvaRawAdmission", "true"))
+                    ? "" : "mean_1";
+            assertNotNull(server.readHold, "The admission case holds the PB readers of its requests");
             long maximum = server.memory.getHeapMemoryUsage().getMax();
             ThreadMXBean threads = ManagementFactory.newPlatformMXBeanProxy(server.connector.getMBeanServerConnection(),
                     ManagementFactory.THREAD_MXBEAN_NAME, ThreadMXBean.class);
@@ -156,10 +161,6 @@ public class PvaMemoryNetworkTest {
             AtomicReference<Throwable> samplingFailure = new AtomicReference<>();
             var sampler = Executors.newSingleThreadScheduledExecutor();
             long started = System.nanoTime();
-            Files.writeString(server.evidence.resolve("pva-admission-inputs.txt"),
-                    "query=" + load + "\nmaxHeap=" + maximum + "\nclients=3\nrequestSeconds=120\n"
-                    + "clientConnectionTimeoutSeconds=" + PVASettings.EPICS_PVA_CONN_TMO + "\n"
-                    + "clientLogLevel=" + System.getProperty("archappl.memory.test.pvaClientLogLevel", "WARNING") + "\n");
             try (var log = new ClientLog(server.evidence.resolve("pva-admission-client.log"))) {
                 for (int i = 0; i < 3; i++) {
                     var client = new PVAClient();
@@ -193,6 +194,45 @@ public class PvaMemoryNetworkTest {
                     }
                 }, 0, 50, TimeUnit.MILLISECONDS);
 
+                // The pair is sized from this run: the old generation after collection before any load (baseline)
+                // and the bytes one held answer retains per record, measured on a calibration request whose PB
+                // reader is held after a fixed number of records. The target is the middle of the admission window.
+                phase.set("calibration");
+                server.memory.gc();
+                long baseline = server.oldPool.getCollectionUsage().getUsed();
+                int calibrationSeconds = Integer.getInteger("archappl.memory.test.pvaCalibrationSeconds", 60000);
+                int calibrationRecords = calibrationSeconds * 5 / 6;
+                server.readHold.holdAfterRecords(calibrationRecords);
+                var calibration = channels.getFirst().invoke(load(processor, calibrationSeconds));
+                long calibrationHeldBy = System.nanoTime() + Duration.ofSeconds(10).toNanos();
+                while (server.readHold.heldReaders() != 1 && System.nanoTime() < calibrationHeldBy) Thread.sleep(10);
+                assertEquals(1, server.readHold.heldReaders(), "The calibration PB reader must reach the hold");
+                server.readHold.assertHealthy();
+                server.memory.gc();
+                long heldByOne = server.oldPool.getCollectionUsage().getUsed();
+                server.readHold.release();
+                assertEquals(calibrationSeconds + 1, answer(calibration.get(120, TimeUnit.SECONDS)).records(),
+                        "Every one-second bin of the calibration query must arrive after the release");
+                double bytesPerRecord = (double) (heldByOne - baseline) / calibrationRecords;
+                assertTrue(bytesPerRecord > 0,
+                        "Incomplete exposure: a held answer must retain memory: " + heldByOne + " against " + baseline);
+                int targetRecords = (int) ((maximum * TARGET_FRACTION - baseline) / (2 * bytesPerRecord));
+                int seconds = configuredSeconds != null ? configuredSeconds : targetRecords + targetRecords / 10 + 2000;
+                assertTrue(targetRecords > 0 && seconds < Duration.between(RetrievalMemoryNetworkFixture.FROM,
+                        RetrievalMemoryNetworkFixture.TO).getSeconds(), "Derived query must fit the generated store");
+                PVAURI load = load(processor, seconds);
+                outcomes.add("baseline=" + baseline + " calibrationRecords=" + calibrationRecords
+                        + " calibrationCollected=" + heldByOne + " bytesPerRecord=" + bytesPerRecord
+                        + " targetRecords=" + targetRecords + " seconds=" + seconds);
+                Files.writeString(server.evidence.resolve("pva-admission-inputs.txt"),
+                        "query=" + load + "\nmaxHeap=" + maximum + "\nbaselineCollected=" + baseline
+                        + "\ncalibrationSeconds=" + calibrationSeconds + "\ncalibrationRecords=" + calibrationRecords
+                        + "\ncalibrationCollected=" + heldByOne + "\nbytesPerRecord=" + bytesPerRecord
+                        + "\ntargetFraction=" + TARGET_FRACTION + "\ntargetRecords=" + targetRecords
+                        + "\nseconds=" + seconds + "\nclients=3\nrequestSeconds=120\n"
+                        + "clientConnectionTimeoutSeconds=" + PVASettings.EPICS_PVA_CONN_TMO + "\n"
+                        + "clientLogLevel=" + System.getProperty("archappl.memory.test.pvaClientLogLevel", "WARNING") + "\n");
+
                 phase.set("single-control");
                 long singleStarted = System.nanoTime();
                 var single = channels.getFirst().invoke(load);
@@ -204,7 +244,7 @@ public class PvaMemoryNetworkTest {
                 assertData(channels.getFirst());
 
                 phase.set("two-requests");
-                int holdRecords = Integer.getInteger("archappl.memory.test.pvaHoldRecords", seconds * 9 / 10);
+                int holdRecords = Integer.getInteger("archappl.memory.test.pvaHoldRecords", targetRecords);
                 if (server.readHold != null) server.readHold.holdAfterRecords(holdRecords);
                 long loadStarted = System.nanoTime();
                 long finishBy = loadStarted + Duration.ofSeconds(120).toNanos();
@@ -334,6 +374,13 @@ public class PvaMemoryNetworkTest {
         });
     }
 
+    private static PVAURI load(String processor, int seconds) {
+        return new PVAURI("name", "pva", null, PvaGetPVData.NAME, Map.of(
+                "pv", RetrievalMemoryNetworkFixture.PV, "pp", processor,
+                "from", RetrievalMemoryNetworkFixture.FROM.toString(),
+                "to", RetrievalMemoryNetworkFixture.FROM.plusSeconds(seconds).toString()));
+    }
+
     private static PVAURI query(String processor) {
         return new PVAURI("name", "pva", null, PvaGetPVData.NAME, Map.of(
                 "pv", RetrievalMemoryNetworkFixture.PV, "pp", processor,
@@ -356,6 +403,10 @@ public class PvaMemoryNetworkTest {
     }
 
     private static void withServer(NetworkCase test) throws Exception {
+        withServer(Boolean.getBoolean("archappl.memory.test.pvaReadHold"), test);
+    }
+
+    private static void withServer(boolean withReadHold, NetworkCase test) throws Exception {
         int port;
         try (DatagramSocket reservation = new DatagramSocket(0)) { port = reservation.getLocalPort(); }
         List<String> serverOptions = new ArrayList<>(List.of(
@@ -373,7 +424,7 @@ public class PvaMemoryNetworkTest {
         PVASettings.EPICS_PVA_NAME_SERVERS = "";
         PVASettings.EPICS_PVA_AUTO_ADDR_LIST = false;
         PVASettings.EPICS_PVA_BROADCAST_PORT = port;
-        try (var server = new RetrievalMemoryNetworkFixture(serverOptions.toArray(String[]::new))) {
+        try (var server = new RetrievalMemoryNetworkFixture(null, withReadHold, serverOptions.toArray(String[]::new))) {
             var runtime = ManagementFactory.newPlatformMXBeanProxy(
                     server.connector.getMBeanServerConnection(), ManagementFactory.RUNTIME_MXBEAN_NAME,
                     java.lang.management.RuntimeMXBean.class);

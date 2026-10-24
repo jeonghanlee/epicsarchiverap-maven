@@ -54,6 +54,11 @@ public final class PbReadHold implements AutoCloseable {
         Files.writeString(directory.resolve("selected-" + records + ".txt"), "records=" + records + "\noffset=" + offset + "\n");
     }
 
+    /** Removes the hold position; held readers resume within one poll interval and a later hold sets a new one. */
+    public void release() throws IOException {
+        Files.deleteIfExists(directory.resolve("limit"));
+    }
+
     public int heldReaders() throws IOException {
         long limit = Long.parseLong(Files.readString(directory.resolve("limit")));
         try (var entries = Files.list(directory)) {
