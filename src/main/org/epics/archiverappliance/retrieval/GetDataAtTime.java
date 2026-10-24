@@ -69,13 +69,14 @@ public class GetDataAtTime {
         }
     }
 
-    private static Appliance2PVs getDataFromEngine(Appliance2PVs gatherer, Instant atTime) {
+    private static Appliance2PVs getDataFromEngine(Appliance2PVs gatherer, Instant atTime,
+            GetUrlContent.HttpRequests requests) {
         try {
             HashMap<String, HashMap<String, Object>> resp = GetUrlContent.postStringListAndGetJSON(
                     gatherer.applianceInfo.getEngineURL() + "/getDataAtTime?at="
                             + TimeUtils.convertToISO8601String(atTime),
                     "pv",
-                    gatherer.pvsFromAppliance);
+                    gatherer.pvsFromAppliance, false, requests);
             if (resp == null) return gatherer;
             logger.debug("Done calling engine for appliance {} with PVs {} and got data for {} PVs ",
                 gatherer.applianceInfo.getIdentity(),
@@ -147,7 +148,8 @@ public class GetDataAtTime {
     }
 
     private static HashMap<String, HashMap<String, Object>> getDataFromRemoteArchApplicance(
-            String applianceRetrievalURL, LinkedList<String> remainingPVs, Instant atTime) {
+            String applianceRetrievalURL, LinkedList<String> remainingPVs, Instant atTime,
+            GetUrlContent.HttpRequests requests) {
         try {
             if (remainingPVs.size() <= 0) {
                 return null;
@@ -155,7 +157,7 @@ public class GetDataAtTime {
             HashMap<String, HashMap<String, Object>> resp = GetUrlContent.postStringListAndGetJSON(
                     applianceRetrievalURL + "?at=" + TimeUtils.convertToISO8601String(atTime) + "&includeProxies=false",
                     "pv",
-                    remainingPVs);
+                    remainingPVs, false, requests);
             if (resp == null) return null;
             logger.debug("Done calling remote appliance at " + applianceRetrievalURL + " and got PV count "
                     + +((resp != null) ? resp.size() : 0));
@@ -272,16 +274,18 @@ public class GetDataAtTime {
         pmansProfiler.mark("After filtering calls.");
 
         List<CompletableFuture<Appliance2PVs>> engineCalls = new LinkedList<CompletableFuture<Appliance2PVs>>();
-        for (ApplianceInfo applianceInfo : configService.getAppliancesInCluster()) {
-            try {
-                engineCalls.add(CompletableFuture.supplyAsync(() -> {
-                    return getDataFromEngine(valuesGatherer.get(applianceInfo.getIdentity()), atTime);
-                }));
-            } catch (Throwable t) {
-                logger.error("Exception adding completable future", t);
+        try (var requests = new GetUrlContent.HttpRequests()) {
+            for (ApplianceInfo applianceInfo : configService.getAppliancesInCluster()) {
+                try {
+                    engineCalls.add(CompletableFuture.supplyAsync(() -> {
+                        return getDataFromEngine(valuesGatherer.get(applianceInfo.getIdentity()), atTime, requests);
+                    }));
+                } catch (Throwable t) {
+                    logger.error("Exception adding completable future", t);
+                }
             }
+            awaitRetrievalCalls(CompletableFuture.allOf(toArray(engineCalls)), requests);
         }
-        CompletableFuture.allOf(toArray(engineCalls)).join();
         pmansProfiler.mark("After engine calls.");
 
         List<CompletableFuture<Appliance2PVs>> retrievalCalls = new LinkedList<CompletableFuture<Appliance2PVs>>();
@@ -334,19 +338,22 @@ public class GetDataAtTime {
                 if (remainingPVs.size() > 0) {
                     List<CompletableFuture<HashMap<String, HashMap<String, Object>>>> proxyCalls =
                             new LinkedList<CompletableFuture<HashMap<String, HashMap<String, Object>>>>();
-                    for (String serverUrl : externalServers.keySet()) {
-                        String index = externalServers.get(serverUrl);
-                        if (index.equals("pbraw")) {
-                            logger.debug("Adding external EPICS Archiver Appliance " + serverUrl);
-                            proxyCalls.add(CompletableFuture.supplyAsync(() -> {
-                                return getDataFromRemoteArchApplicance(
-                                        serverUrl + "/data/getDataAtTime",
-                                        new LinkedList<String>(remainingPVs),
-                                        atTime);
-                            }));
+                    try (var requests = new GetUrlContent.HttpRequests()) {
+                        for (String serverUrl : externalServers.keySet()) {
+                            String index = externalServers.get(serverUrl);
+                            if (index.equals("pbraw")) {
+                                logger.debug("Adding external EPICS Archiver Appliance " + serverUrl);
+                                proxyCalls.add(CompletableFuture.supplyAsync(() -> {
+                                    return getDataFromRemoteArchApplicance(
+                                            serverUrl + "/data/getDataAtTime",
+                                            new LinkedList<String>(remainingPVs),
+                                            atTime,
+                                            requests);
+                                }));
+                            }
                         }
+                        awaitRetrievalCalls(CompletableFuture.allOf(toArray(proxyCalls)), requests);
                     }
-                    CompletableFuture.allOf(toArray(proxyCalls)).join();
                     pmansProfiler.mark("After calls to remote appliances.");
                     for (CompletableFuture<HashMap<String, HashMap<String, Object>>> proxyCall : proxyCalls) {
                         HashMap<String, HashMap<String, Object>> res = proxyCall.get();
