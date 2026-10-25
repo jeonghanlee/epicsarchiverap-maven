@@ -8,7 +8,7 @@ Git upstream: origin/modernize
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: the work before the release is complete: M85 (issue #54), M89 (issue #56) and M90 (issue #57) are Complete and their issues closed. Open the release cycle, which regroups the remaining rows by D58 (2026-10-24): M91 / #58, M92 / #59, M88 / #55, M83 / #52, M76 / #48, M93 / #45, M94 / #47, M69 / #41, the analyzer rows M62, M63, M64, M81 and M82 / #39, M40, M41, M55 and M61, with M66 blocked by G8. The install and run check of the current commit by the epicsarchiverap-env session is outstanding and its report belongs in M85's Closure Evidence. Earlier plan for T2, `VariousPostProcessorTest` on the real fixture between 2026-10-25 12:00 UTC and 2026-10-27 12:00 UTC (within one day of the bin midpoint), record the result, close issue #56 and set M89 Complete; M90 is Complete with issue #57 closed on 2026-10-24. Then M85: its T9 and T10 rows are recorded (default set and static checks pass; the whole integration set had three failures, all test defects now corrected under M89 and M90, and has not been rerun after the corrections), and its remaining owner decisions are the acceptance of the T7 and T8 evidence as final and of the candidate settings as defaults. M85 / T7 the third-person review of commit 16b1e53c on 2026-10-23 found R1 (a sparse fill request still exhausts the heap), R2 (the engine stage of getDataAtTime ignores the request deadline) and R3 (the valve regression counts deadline 503 responses as concurrency refusals); corrections for all three are committed and pushed. R1 passed on the real network path for `firstFill_1`, `lastFill_1` and `lastSample_1` (HTTP 400 at declared-size admission, no OutOfMemoryError, JVM alive, identical control answer afterwards) and has two unit tests that each fail without their correction, one for the admission and one for the iterator-construction check; the same three operators were refused the same way at 2 GiB and 4 GiB heaps, while other collectors did not run; `ValveConcurrencyTest` passes on the real fixture after the owner replaced its valve-record assertion with the application deadline stop (2026-10-23); R2 passed its real engine-stage reproduction for the single-appliance outer-proxy case (503 deadline at 1.037 s with the engine response held, no waiting frames, normal recovery). The external-proxy case of getDataAtTime ran against code whose external stage is unchanged and showed the same fault as the engine stage had: with the external response held, the front-end waited at `GetDataAtTime.java:352` (`allOf(...).join()`) past the one-second deadline and answered 503 only after the release. The owner chose to correct that stage under M85 (2026-10-23); with the correction the same case answered 503 naming the deadline at 1.058 seconds while the external response was still held, with no waiting frames, and the engine case, the `firstFill_1` request at 512 MiB and `ValveConcurrencyTest` passed again on the rebuilt WARs aa-20261024-16b1e53c-extproxy-01. Multi-appliance cases are out of scope (D23, D26). The fallback concern was measured: a real snapshot read allocates 13.5 to 25.9 MB, above the 5.12 MB allocation floor of a 512 MiB heap, and a worker scope without an estimate is not stopped under pressure when the allocation counter is unavailable; the owner chose to keep the snapshot workers without an estimate (2026-10-23) and the limit stays recorded. Overlapping fill requests that fit the budget were stopped by the pressure rule on 512 MiB, 2 GiB and 4 GiB heaps for `firstFill_1`, `lastFill_1` and `lastSample_1` on the rebuilt WAR, and on a 512 MiB heap by the pre-fix WAR as well for `firstFill_1`, so that workload does not separate the builds. The wide request is now covered on the rebuilt WAR for all three operators at 512 MiB, 2 GiB and 4 GiB, and the wide request and the pressure workload also ran under the Parallel collector and the generational ZGC at 512 MiB, where ZGC showed 341 allocation stalls and a sampled heap at its maximum without any OutOfMemoryError; these collector results are diagnostic and select nothing. Still unmeasured: the Serial collector and larger heaps under the other collectors. Evidence: work/m85-third-person-review/corrections-01/ and the table under Verification Results of M85. The earlier front-end deadline results and the selected WARs aa-20261023-fc6abd67-front-deadline-01 stay retained. Larger heaps, committed-pressure, final concurrency/console, settings, book and suites remain open. T6 stays closed; T7/T8 remain Partial. The corrections are committed (a27f260a, 9d6a43f9, b1928187) with the register update d4b1abd3 and pushed to origin/modernize on 2026-10-23; no issue update was performed, and #54 last applied at 08:38:35 UTC predates the review and the corrections. M86 stays Complete and M88 / #55 stays Deferred.
+Next session entry point: the work before the release is complete: M85 (issue #54), M89 (issue #56) and M90 (issue #57) are Complete and their issues closed. M96 (issue #61, the two metachannel settings) is written in the book and the properties file and completes when its commit lands and #61 closes. Open the release cycle, which regroups the remaining rows by D58 (2026-10-24): M91 / #58, M92 / #59, M95 / #60, M88 / #55, M83 / #52, M76 / #48, M93 / #45, M94 / #47, M69 / #41, the analyzer rows M62, M63, M64, M81 and M82 / #39, M40, M41, M55 and M61, with M66 blocked by G8. The install and run check of the current commit by the epicsarchiverap-env session is outstanding and its report belongs in M85's Closure Evidence. Earlier plan for T2, `VariousPostProcessorTest` on the real fixture between 2026-10-25 12:00 UTC and 2026-10-27 12:00 UTC (within one day of the bin midpoint), record the result, close issue #56 and set M89 Complete; M90 is Complete with issue #57 closed on 2026-10-24. Then M85: its T9 and T10 rows are recorded (default set and static checks pass; the whole integration set had three failures, all test defects now corrected under M89 and M90, and has not been rerun after the corrections), and its remaining owner decisions are the acceptance of the T7 and T8 evidence as final and of the candidate settings as defaults. M85 / T7 the third-person review of commit 16b1e53c on 2026-10-23 found R1 (a sparse fill request still exhausts the heap), R2 (the engine stage of getDataAtTime ignores the request deadline) and R3 (the valve regression counts deadline 503 responses as concurrency refusals); corrections for all three are committed and pushed. R1 passed on the real network path for `firstFill_1`, `lastFill_1` and `lastSample_1` (HTTP 400 at declared-size admission, no OutOfMemoryError, JVM alive, identical control answer afterwards) and has two unit tests that each fail without their correction, one for the admission and one for the iterator-construction check; the same three operators were refused the same way at 2 GiB and 4 GiB heaps, while other collectors did not run; `ValveConcurrencyTest` passes on the real fixture after the owner replaced its valve-record assertion with the application deadline stop (2026-10-23); R2 passed its real engine-stage reproduction for the single-appliance outer-proxy case (503 deadline at 1.037 s with the engine response held, no waiting frames, normal recovery). The external-proxy case of getDataAtTime ran against code whose external stage is unchanged and showed the same fault as the engine stage had: with the external response held, the front-end waited at `GetDataAtTime.java:352` (`allOf(...).join()`) past the one-second deadline and answered 503 only after the release. The owner chose to correct that stage under M85 (2026-10-23); with the correction the same case answered 503 naming the deadline at 1.058 seconds while the external response was still held, with no waiting frames, and the engine case, the `firstFill_1` request at 512 MiB and `ValveConcurrencyTest` passed again on the rebuilt WARs aa-20261024-16b1e53c-extproxy-01. Multi-appliance cases are out of scope (D23, D26). The fallback concern was measured: a real snapshot read allocates 13.5 to 25.9 MB, above the 5.12 MB allocation floor of a 512 MiB heap, and a worker scope without an estimate is not stopped under pressure when the allocation counter is unavailable; the owner chose to keep the snapshot workers without an estimate (2026-10-23) and the limit stays recorded. Overlapping fill requests that fit the budget were stopped by the pressure rule on 512 MiB, 2 GiB and 4 GiB heaps for `firstFill_1`, `lastFill_1` and `lastSample_1` on the rebuilt WAR, and on a 512 MiB heap by the pre-fix WAR as well for `firstFill_1`, so that workload does not separate the builds. The wide request is now covered on the rebuilt WAR for all three operators at 512 MiB, 2 GiB and 4 GiB, and the wide request and the pressure workload also ran under the Parallel collector and the generational ZGC at 512 MiB, where ZGC showed 341 allocation stalls and a sampled heap at its maximum without any OutOfMemoryError; these collector results are diagnostic and select nothing. Still unmeasured: the Serial collector and larger heaps under the other collectors. Evidence: work/m85-third-person-review/corrections-01/ and the table under Verification Results of M85. The earlier front-end deadline results and the selected WARs aa-20261023-fc6abd67-front-deadline-01 stay retained. Larger heaps, committed-pressure, final concurrency/console, settings, book and suites remain open. T6 stays closed; T7/T8 remain Partial. The corrections are committed (a27f260a, 9d6a43f9, b1928187) with the register update d4b1abd3 and pushed to origin/modernize on 2026-10-23; no issue update was performed, and #54 last applied at 08:38:35 UTC predates the review and the corrections. M86 stays Complete and M88 / #55 stays Deferred.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). M65 (the information cards of every page, and the Operations page composed again for a reader new to the appliance) is Complete on 2026-10-18 at 14f083e9 with both workflows green. The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -116,6 +116,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M86 | Build the PVAccess answer without copying its array at every event | Milestone | Complete | No | D53, D54 | `PvaMimeResponse` appends each event to its result arrays without copying them, so the cost of a PVAccess answer grows with its events and not with their square; the answer is the same; a test over several event counts fails on the old code and passes on the new; [detail](#m86---build-the-pvaccess-answer-without-copying-its-array-at-every-event) |
 | Phase 2 | M89 | Make VariousPostProcessorTest independent of the date | Milestone | Complete | No | D55 | `VariousPostProcessorTest` passes on a date just after a 432000 s bin edge and on a date near the bin midpoint, its raw assertion still sees all 101 samples, and nothing under `src/main` changes; issue #56; [detail](#m89---make-variouspostprocessortest-independent-of-the-date) |
 | Phase 2 | M90 | Size the admission tests from measurements of the same run | Milestone | Complete | No | D56 | `RetrievalAdmissionNetworkTest` and `PvaMemoryNetworkTest` pass with their default inputs in three consecutive runs on a 512 MiB heap, each with a refusal naming memory admission at a usage between the thresholds, their evidence records the derived inputs, and nothing under `src/main` changes; issue #57; [detail](#m90---size-the-admission-tests-from-measurements-of-the-same-run) |
+| Phase 2 | M96 | Describe the two metachannel start settings of the engine | Milestone | In progress | No | D60 | The configuration page and the default `archappl.properties` explain `maximum_disconnected_channel_percentage_before_starting_metachannels` and `metachannels_to_start_at_a_time` with their defaults 5.0 and 10000 and state whose share of disconnected channels the percentage limits; the book builds with no broken link; issue #61; [detail](#m96---describe-the-two-metachannel-start-settings-of-the-engine) |
 | Interface analyzer | M81 | Analyzer phase B: interaction, options and export | Milestone | Not started | No | M62, D40, D46 | The gestures beyond the simple form (the drag tool chosen on the strip, wheel and pinch zoom, undo and redo of the range, two cursors, pinned samples), the options the reference tools offer (line width and style, a gap threshold, a fill between signals, fixed and soft ranges, the averaging interval or raw samples, the min-max band, a split by unit, SI prefixes, a legend table, tooltip modes), the Data tab and the full Export tab, each carried in the address; [detail](#m81---analyzer-phase-b-interaction-options-and-export) |
 | Interface analyzer | M82 | Analyzer phase D: tools for two and several signals | Milestone | Not started | No | M63, D40, D46 | The Correlation tab (pairing by held values, scatter with projections and density, Pearson and Spearman, profile, the fit panel with fixed and bounded parameters) and the Dependency tab (correlation matrix ordered by clustering, ranking by mutual information, multiple regression, principal components), derived signals from a typed expression and a change of unit, the routines checked on signals of known parameters; [detail](#m82---analyzer-phase-d-tools-for-two-and-several-signals) |
 | Tracking | G8 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No | | ansible-provision supplies real-path readiness evidence for the corrected tools required by M66; [detail](#g8---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
@@ -180,7 +181,9 @@ This register covers the minimal modernization of the existing Java appliance on
 | D55 | `VariousPostProcessorTest` is corrected in the test only: its request end becomes the next 432000 s bin edge after now and its start stays at now minus one day, so the one summary event of the current bin, stamped at the bin midpoint, is inside the window on any date. The product behaviour behind it, the bin event stamped at the bin midpoint by `SummaryStatsCollectorEventStream` and the request-end filter of `MergeDedupConsumer`, is not changed under this row and waits for a separate issue. Found in the whole integration set of M85 / T10. | 2026-10-24 |
 | D56 | The two admission tests, `RetrievalAdmissionNetworkTest` and `PvaMemoryNetworkTest`, are corrected in the test only and together: each derives its request length from the baseline and the bytes retained per bin measured in the same run instead of a fixed constant, so the held pair lands in the middle of the admission window on any baseline. The product thresholds and the cause of the 31 MB baseline difference between 2026-10-22 and 2026-10-24 are not touched. Found in the whole integration set of M85 / T10; no run showed a wrong product decision. | 2026-10-24 |
 | D57 | The retrieval memory protection keeps its shipped defaults (budget 0.20, admission 0.50, pressure 0.60, allocation floor 0.01, a check every 1024 events, a collection request at most every 100 ms) and the valve defaults (concurrency 100, stuck 600 s, interrupt 900 s); the connector `maxThreads` stays at Tomcat's default in the deployment template and at 40 in the development launcher. The valve concurrency is recorded as not derived from a load measurement, and the book states that a valve above `maxThreads` never refuses. The T7 and T8 results of M85 are accepted as final within their recorded scope: on every measured configuration (HTTP and PVAccess; 512 MiB, 2 GiB and 4 GiB under G1; fill-operator pressure under Parallel and ZGC at 512 MiB) abnormal or excessive requests were refused or stopped, no run produced an OutOfMemoryError or a JVM exit, and recovery followed. The measurement of the thread and valve limits under combined load and the unmeasured qualification cells (Serial collector; Parallel and ZGC at 2 GiB and 4 GiB; pressure after commit; overshoot and headroom at the defaults; summary-pair admission at larger heaps) move to M91 / issue #58. The product question behind issue #56, the midpoint stamp of a summary bin against the request-end filter, moves to M92 / issue #59. | 2026-10-24 |
-| D58 | Release scope of the Maven appliance: the protection of retrieval against memory exhaustion (M85, issue #54) and the date correction of its summary test (M89, issue #56) close before the release; every other open row and issue is worked after the release at its own pace. Open at this decision: M91 / #58, M92 / #59, M88 / #55, M83 / #52, M76 / #48, M69 / #41, the analyzer rows M62, M63, M64, M81 and M82 / #39, the rows M40, M41, M55 and M61 without an issue, M66 blocked by G8, and the two deviations of M73 that had no row, #45 and #47, which enter the Backlog as M93 and M94. The release cycle regroups these rows when it opens. | 2026-10-24 |
+| D58 | Release scope of the Maven appliance: the protection of retrieval against memory exhaustion (M85, issue #54) and the date correction of its summary test (M89, issue #56) close before the release; every other open row and issue is worked after the release at its own pace. Open at this decision: M91 / #58, M92 / #59, M95 / #60, M88 / #55, M83 / #52, M76 / #48, M69 / #41, the analyzer rows M62, M63, M64, M81 and M82 / #39, the rows M40, M41, M55 and M61 without an issue, M66 blocked by G8, and the two deviations of M73 that had no row, #45 and #47, which enter the Backlog as M93 and M94. The release cycle regroups these rows when it opens. | 2026-10-24 |
+| D59 | The five candidates that the audit of the retrieval protection and the sweep of 2026-10-24 left unchecked (`FirstSamplePP`, `DeadBand`, `Fliers` and `IgnoreFliers` outside the declared-size check and the in-loop check; the values `Median`, `Kurtosis` and `Skewness` keep per bin against the 112 bytes per bin that the declared size counts; the number of `pv` parameters of `getDataForPVs`, of the names posted to `getDataAtTime` and `getDataAtTimeForAppliance`, and of the `;` separated names of the PVAccess call) are not checked before the merge to master. They enter the Backlog as M95 / issue #60 as long-term work, each to be run as a real request at a 512 MiB heap; `Nth` and `NCount` are bounded by `MAX_COUNT` and are recorded in `docs/CLOSED_DOORS.md` as CD-18; the fill operators of the audit's `Event per bin` row were checked and corrected by a27f260a, and the PVAccess name list is the one candidate that the audit did not name. The owner decided on 2026-10-24 to settle the fate of each candidate after its check. | 2026-10-24 |
+| D60 | The two metachannel start settings of the engine, `maximum_disconnected_channel_percentage_before_starting_metachannels` and `metachannels_to_start_at_a_time`, which the default `archappl.properties` explains only by pointing to `EngineContext` and the book does not name, are described in the book and in the file by the row M96, which the owner moved from the Backlog on 2026-10-25 to be fixed before the merge to master (issue #61). The percentage applies first to the share of disconnected channels of the own appliance (`EngineContext.java:666-668`) and then to every other appliance of the installation (`EngineContext.java:672-690`); with one appliance only the own share counts. | 2026-10-24 |
 
 ### Conceptual-integrity findings
 
@@ -8392,7 +8395,7 @@ The fallback concern of the review (snapshot store workers register no estimate,
 - Landing: the protection is commit 16b1e53c with the corrections a27f260a, 9d6a43f9 and b1928187, the book pages are 7cd3fcca and b86ed99c, the test corrections are 5efbd25b and 5d52077d, and the register entries are 8b53248f and the commits before it; all on `origin/modernize`, observed 2026-10-24 20:40 UTC at 8b53248f with `git diff --stat origin/modernize HEAD` empty after a fetch.
 - Checks: T1 to T6 closed in their recorded scopes; T7 and T8 accepted as final within their recorded scope by D57 (2026-10-24), the cells not measured moved to M91; T9 book build with 20 pages and 0 broken links; T10 default set 1145 tests, static checks 431, whole integration set 152 tests with 0 failures on 2026-10-24 (`work/t10-final-01/`), after the three failures of the first whole-set run were traced to two test defects and corrected under M89 and M90.
 - Issue #54: body synced to the shipped change and its results, closed as completed with a closing comment on 2026-10-25 01:02 UTC, read back CLOSED.
-- Carried: M91 / #58 (thread and valve limits and the unmeasured qualification cells), M92 / #59 (summary bin rule), M89 / #56 (second date check, 2026-10-25 12:00 UTC or later). Decisions D57 and D58 of 2026-10-24.
+- Carried: M91 / #58 (thread and valve limits and the unmeasured qualification cells), M92 / #59 (summary bin rule), M95 / #60 (the five operator candidates of the audit that no check closed), M89 / #56 (second date check, 2026-10-25 12:00 UTC or later). Decisions D57 and D58 of 2026-10-24.
 
 ##### GitHub Projection
 
@@ -8623,6 +8626,69 @@ Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-10-24 19:10 UTC
 
+#### M96 - Describe the two metachannel start settings of the engine
+
+Origin: daff1b7 / M96
+Identity History: none
+GitHub Issue: #61 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/61)
+Status: In progress
+
+##### Summary
+
+`EngineContext` reads two keys that the default `archappl.properties` carries as comments with the line "See `EngineContext` for these two entries" and no description, and that the book does not name: `org.epics.archiverappliance.engine.maximum_disconnected_channel_percentage_before_starting_metachannels` (default 5.0, `EngineContext.java:66`) and `org.epics.archiverappliance.engine.metachannels_to_start_at_a_time` (default 10000, `EngineContext.java:67`). At each run of its check of disconnected channels the engine starts the metadata channels of the PVs that need them only while the share of disconnected channels of the own appliance is below the percentage (`EngineContext.java:666-668`) and, in an installation of several appliances, also the share of every other appliance (`EngineContext.java:672-690`), and it starts at most the second number of them per run (`EngineContext.java:707`); with one appliance, the only kind this project supports, only the own share counts. An operator who meets the keys cannot learn this from the file or the book. Found by the sweep of 2026-10-24; the other keys the book does not name are described in the file and are recorded as CD-16.
+
+##### Scope
+
+- A description of both keys with their defaults, in the keys list of `configuration.md` and in the comment of the default `archappl.properties`, and the sentence that the percentage limits the share of disconnected channels of the own appliance and, with several appliances, of every other one.
+
+Out of scope: any change of the engine behavior or of the defaults.
+
+##### Completion Criteria
+
+- Both keys are described with their defaults and with the statement of whose share of disconnected channels the percentage limits.
+- The book builds with no broken link.
+
+##### Dependencies And Decisions
+
+- D60 (Decision Date 2026-10-24): entered as work after the merge to master; the owner chose on 2026-10-25 to fix it at once, before the merge.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: owner instruction 2026-10-25 to fix the two settings at once
+Implementation Authorization: owner instruction 2026-10-25
+Superseded Plan Artifacts: none
+
+1. Write the two descriptions from the code constants and the loop at `EngineContext.java:672-712`. Check: T1, T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Static | The defaults and the behavior in the text read against `EngineContext.java:66,67,666-712` | repository | Every statement matches the code |
+| T2 | Book | The mdBook build and the link check | `aa-mdbook` image | The book builds with no broken link |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-25 | Repository at c85c67bb plus the uncommitted change of this row | Pass: the defaults 5.0 and 10000 (`EngineContext.java:66,67`), the check of the own appliance (666-668), of every other appliance (672-690), the limit per run (707) and the effect of the site file's `0` of the disconnect timeout (`checkChannelDisconnectTime`, 727-766: no channel is added to the disconnected list when the timeout is 0) match the text; the default `archappl.properties` parses to the same 18 keys and values as before, so the change is comment-only | `git diff docs/book/src/configuration.md src/sitespecific/default/classpathfiles/archappl.properties` |
+| T2 | 2026-10-25 | `aa-mdbook` image | Pass: the book builds, 20 pages, 707 internal links, 0 broken; the two keys are in `configuration.html` | the build output of that run |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Describe two metachannel settings
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN (2026-10-25)
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-25
+
 ## Backlog
 
 ### Work
@@ -8637,6 +8703,7 @@ Last Compared: 2026-10-24 19:10 UTC
 | | M92 | Decide the stamping and filtering rule of summary bins at the window edges | Milestone | Open | No | D57 | A recorded decision on whether a bin whose samples lie inside the requested window is returned when its midpoint stamp lies after the window end, checked against the archive viewers and the Python clients; if the rule changes, such a bin is returned regardless of the request time and `VariousPostProcessorTest` passes with its original one-day window; if it stays, the retrieval page of the book states it; issue #59; [detail](#m92---decide-the-stamping-and-filtering-rule-of-summary-bins-at-the-window-edges) |
 | | M93 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D58 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m93---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
 | | M94 | Carry the changed limits of a record into the type information at reconnect | Milestone | Not started | Yes | D58 | After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` holds the new limits within one reconnect and the Details window shows them, the unit and the precision keep being updated, and the suite passes with a test that reconnects a PV with changed limits; issue #47; [detail](#m94---carry-the-changed-limits-of-a-record-into-the-type-information-at-reconnect) |
+| | M95 | Check the retrieval operators outside the declared-size check | Milestone | Not started | Yes | D59 | Each of the five candidates, `FirstSamplePP`, `DeadBand`, `Fliers` and `IgnoreFliers`; the per-bin values of `Median`, `Kurtosis` and `Skewness`; the number of `pv` parameters of `getDataForPVs`; the names posted to `getDataAtTime`; the `;` separated names of the PVAccess call, has a recorded real-request result at a 512 MiB heap, refused with a named condition or completed without exhausting the heap, and every candidate that exhausted it has a correction with a test that fails without it; issue #60; [detail](#m95---check-the-retrieval-operators-outside-the-declared-size-check) |
 
 M78, M79 and M80, entered on 2026-10-19 from the store defects, moved to the Milestone table by D46 the same day (see Assignment History); M83 was entered on 2026-10-19 by D47 and waits for a later release; M86 and M87 were entered on 2026-10-21 by D53 from the audit of M85.
 
@@ -9114,10 +9181,80 @@ Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-10-24
 
+#### M95 - Check the retrieval operators outside the declared-size check
+
+Origin: daff1b7 / M95
+Identity History: none
+GitHub Issue: #60 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/60)
+Status: Not started
+
+##### Summary
+
+The audit of the retrieval protection (M85 / T2, 2026-10-21) classified candidates as hypotheses with a next check; the fill operators of its `Event per bin` row were checked and corrected (a27f260a), and the others neither ran nor were carried to a later row until D59; the fifth candidate below, the PVAccess name list, comes from the sweep of 2026-10-24. The declared-size estimate of `RetrievalMemoryProtection.Request.admit` covers `Optimized`, `OptimizedWithLastSample`, the `SummaryStatsPostProcessor` subclasses, `CAPlotBinning`, `FirstFill`, `LastFill` and `LastSample`; the in-flight check runs where `checkCurrent` is called (`MergeDedupConsumer`, `PvaMergeDedupConsumer`, `SummaryStatsCollectorEventStream`, `FillsCollectorEventStream`, `CAPlotBinning`, `OptimizedWithLastSample`, `GetDataAtTime`, and `DataRetrievalServlet` once before and once after it handles a request, lines 276 to 310). Outside both, read in the code on 2026-10-24 and not run: `FirstSamplePP`, `DeadBand`, `Fliers` and `IgnoreFliers` copy the events of their source streams into an `ArrayListEventStream` inside their own `wrap` loops (`FirstSamplePP.java:64-77`, `DeadBand.java:72-130`, `Fliers.java:66-76`, `IgnoreFliers.java:75-85`); `Median`, `Kurtosis` and `Skewness` keep every value of a bin in a `DescriptiveStatistics` while a scalar summary bin is counted at `scalarBinBytes`, 112 bytes by default; `getDataForPVs` (`DataRetrievalServlet.java:756`), `getDataAtTime`, `getDataAtTimeForAppliance` and the PVAccess call (`PvaGetPVData.java:452`) take a list of names with no limit found, while the declared sizes of one request add up in its single budget and a raw read declares nothing. `Nth` and `NCount` are bounded by `MAX_COUNT` (`Nth.java:31`), recorded as CD-18.
+
+##### Scope
+
+- Run each candidate as a real request through a built appliance at a 512 MiB heap, started through `RetrievalMemoryNetworkFixture` (heap from `archappl.memory.test.heap`, default 512m; a generated 1 Hz store of `MemoryQualification:SineV1` over 30 days; the Memory admission tests paragraph of `TESTING.md` describes it): `median_3600` over 30 days next to `mean_3600`; `firstSample`, `deadBand`, `flyers` and `ignoreflyers` over the raw range of one PV (the operator names are case sensitive, and a name that matches no operator is refused as unknown, which is not a result for the candidate); `getDataForPVs` with many `pv` parameters; `getDataAtTime` with a list of 10,000 names; the PVAccess call with a long list. Record the status, the memory after collection and whether the JVM stayed alive.
+- For a candidate that exhausts the heap or ends the JVM, extend the declared-size estimate or add the in-loop check at the place named above, with a test that fails without it; for one that is refused or completes safely, record it as examined.
+
+Out of scope: the thread and valve limits and the other qualification cells (M91); bounding the concurrent PVAccess calls (M87); a change of the memory thresholds without a measurement that motivates it.
+
+##### Completion Criteria
+
+- Each of the five candidates has a recorded real-request result at 512 MiB: refused, meaning HTTP 400 or 503 with the name of the condition in the response; or completed, meaning HTTP 200 with the whole answer and the JVM still running; or exhausted, meaning an `OutOfMemoryError` in the console log or the JVM ended. A refusal for an operator name that matches no operator is not a result. For the PVAccess call there is no HTTP status: refused means the retrieval log names the condition and the client ends at its own timeout, and completed means the whole answer arrives.
+- Every candidate that exhausted the heap has a correction with a test that fails without it and passes with it.
+- The retrieval page of the book names the operators that declare no size, if any remain.
+
+##### Dependencies And Decisions
+
+- D59 (Decision Date 2026-10-24): long-term, not checked before the merge to master.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. A request harness that sends each candidate at a 512 MiB heap and records the status, the memory after collection and the JVM state. Check: T1.
+2. For each candidate that exhausts the heap, the estimate or the in-loop check and its test. Check: T2.
+3. The book page. Check: T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration, measurement | The five candidates as real requests at a 512 MiB heap through `RetrievalMemoryNetworkFixture`, in the forms named in Scope | JDK 21, Tomcat 9.0.121, built WARs, `softIocPVX` | A recorded result for each: refused with 400 or 503 and a named condition, or completed without exhausting the heap; no OutOfMemoryError that ends the JVM |
+| T2 | Integration | For each candidate that exhausted the heap, the same request on the corrected code and on the code before it | same | Fails without the correction and is refused or completes with it |
+| T3 | Book | The mdBook build and the link check with the retrieval page naming the operators that declare no size | `aa-mdbook` image | The book builds with no broken link |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+| T2 | pending | | | |
+| T3 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Check retrieval operators outside the size check
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN (2026-10-24)
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-24
+
 ## Assignment History
 
 | Date | ID | From | To | Sync Commit | Note |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-25 | M96 | Backlog | Milestone (Phase 2) | this synchronization commit | The owner chose to fix the two settings before the merge (D60); entered in the Backlog on 2026-10-24 from the sweep, and the row and its detail moved together. |
 | 2026-10-22 | M86 | Backlog | Milestone (Phase 2) | pending commit | Assigned by D54 before the next T8 workload selection; row and complete detail moved together in the working tree. |
 | 2026-10-19 | M78 | Backlog | Milestone (Phase 2) | this synchronization commit | Moved by D46 to land before the merge of modernize; entered in the Backlog the same day from issue #49. |
 | 2026-10-19 | M79 | Backlog | Milestone (Phase 2) | this synchronization commit | Moved by D46 to land before the merge of modernize; entered in the Backlog the same day from issue #50. |
