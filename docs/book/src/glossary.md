@@ -29,6 +29,7 @@ a card; this page holds the same definitions for the manual.
 | IOC | Input Output Controller: the EPICS server that holds the records whose values the PVs are. |
 | LTS | Long term store: the last of the three stores. ETL moves data into it from the MTS. |
 | Management | The process that holds the settings of the PVs, answers the console and the BPL calls, and opens the `cluster_inetport` endpoint that the other processes of the appliance connect to. |
+| Metadata channel | A channel that the engine opens to read an extra field archived with a PV. The engine starts the metadata channels of a PV after the channel of its value has connected, a few PVs at a time; see [Configuration](configuration.md#archapplproperties). |
 | mgmt | The name of the management web application in addresses, folders and logs, for example `/mgmt/bpl`. See Management. |
 | Move | The transfer of data from one store to the next: from the short term store to the medium term store, or from the medium term store to the long term store. The ETL runs each move as passes at a fixed interval. |
 | MTS | Medium term store: the second of the three stores. ETL moves data into it from the STS and out of it into the LTS. |

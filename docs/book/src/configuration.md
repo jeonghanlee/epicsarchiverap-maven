@@ -260,6 +260,20 @@ stands for both when they are equal. Each key starts with
   engine counts it as disconnected, which decides when the engine starts
   the metadata channels; the name says minutes and the code reads seconds.
   `0` turns the count off. Site file `0`; unset `10`.
+- `engine.maximum_disconnected_channel_percentage_before_starting_metachannels`:
+  the percentage of disconnected channels below which the engine starts the
+  metadata channels, the channels that read the extra fields archived with a
+  PV. At each run of its check of disconnected channels the engine tests the
+  share of the channels of this appliance that count as disconnected, by the
+  rule of `engine.util.EngineContext.disconnectCheckTimeoutInMinutes`, and
+  with several appliances also the share of every other appliance; it
+  starts the metadata channels only when every share is below the
+  percentage. With the site file's `0` of that timeout no channel counts as
+  disconnected, so the percentage never holds them back. Site file (a
+  comment) and unset `5.0`.
+- `engine.metachannels_to_start_at_a_time`: the most PVs whose metadata
+  channels the engine starts in one run of that check; the other PVs wait
+  for the next run. Site file (a comment) and unset `10000`.
 - `engine.archivePVSonStartup.determineLastKnownEventFromStores`: `false`
   starts a PV from the server time, not from the last stored sample.
   Site file `false`; unset `true`.
