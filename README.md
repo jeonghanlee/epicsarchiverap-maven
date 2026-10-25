@@ -86,7 +86,7 @@ narrative docs. Two independent, Sphinx-free paths:
 - **Narrative docs**: an mdBook under `docs/book`, built with the pinned tools
   in `docs/book/Dockerfile` and published to GitHub Pages at
   <https://jeonghanlee.github.io/epicsarchiverap-maven/> by the `pages.yml`
-  workflow, which runs for pushes to the `modernize` branch that change
+  workflow, which runs for pushes to the `master` branch that change
   `docs/book` or the workflow, and on manual dispatch. Build or preview it
   locally:
 
@@ -111,5 +111,5 @@ It first runs `bash scripts/ui-static-checks.bash` and then
 `docs/milestone-*.md` or `docs/CLOSED_DOORS.md` does not start it.
 
 `.github/workflows/pages.yml` builds and deploys the mdBook for pushes to the
-`modernize` branch that change `docs/book` or the workflow, and on manual
-dispatch. The remote default branch is `master`.
+`master` branch that change `docs/book` or the workflow, and on manual
+dispatch.

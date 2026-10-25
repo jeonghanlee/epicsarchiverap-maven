@@ -81,7 +81,7 @@ Prerequisites:
    The file is not removed at a stop, and after a kill or a reboot the PID
    may belong to another process. Send the signal only after you have
    checked that the command line of the PID holds the run folder; the
-   [Tomcat integration tests](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#tomcat-integration-tests)
+   [Tomcat integration tests](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/master/TESTING.md#tomcat-integration-tests)
    section of the test procedure describes the check and the values of the
    `status` file.
 
@@ -284,7 +284,7 @@ docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs/book:/book" aa-mdbook b
 ```
 
 The image pins mdBook 0.4.52 and mdbook-admonish 1.20.0. The output is
-`docs/book/book/`. A push to `modernize` that changes `docs/book/`
+`docs/book/book/`. A push to `master` that changes `docs/book/`
 publishes the book on GitHub Pages.
 
 ## PB files

@@ -119,7 +119,7 @@ or source edits.
 
 First start an appliance with the [local launcher](developer.md#run-a-local-appliance),
 or export `BPL_URL` with an existing appliance's management BPL URL. The local
-launcher starts with no archived PVs. The [test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-listing-example)
+launcher starts with no archived PVs. The [test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/master/TESTING.md#python-listing-example)
 loads the shipped IOC fixture and archives 600 PVs with an `M17LIST:` prefix.
 Then run these commands from the repository root:
 
@@ -253,7 +253,7 @@ of 0.001 seconds. Its HTTP transport honors the curl proxy environment,
 ignores curl configuration files, and does not follow redirects.
 It preserves the supplied URL path, including braces and brackets.
 
-The [test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#archive-and-status-examples)
+The [test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/master/TESTING.md#archive-and-status-examples)
 uses the shipped IOC fixture to reproduce these states and sampling checks.
 
 ## Pause and resume archiving
@@ -281,7 +281,7 @@ management and engine responses. Status queries report `Paused` and
 `Being archived` once those states are visible. Repeat the separate status
 query if needed; the mutation commands return without polling. Request
 acceptance and status do not prove stored data. The
-[real verification procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-pause-and-resume-examples)
+[real verification procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/master/TESTING.md#python-pause-and-resume-examples)
 checks unchanged stored data before resume, the baseline and resumed PB
 persistence. The first current value received after resume keeps its IOC
 timestamp, which can fall within the pause interval. That timestamp does
@@ -373,7 +373,7 @@ retry. A failed nonempty PB file must not be treated as an empty archive.
 Exit 0 means all pairs were accepted, exit 1 means a preflight or operation
 failed, and exit 2 means invalid local input or overlapping identities.
 `--timeout` defaults to 30 seconds and accepts values greater than zero and
-at most 86400 seconds. The [real verification procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-rename-example)
+at most 86400 seconds. The [real verification procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/master/TESTING.md#python-rename-example)
 checks source retention and exact copied records through actual retrieval
 and PB readers, including filesystem failures during copying.
 
@@ -388,7 +388,7 @@ report once and requires no PV file.
 Start the [local appliance](developer.md#run-a-local-appliance) and an IOC,
 then archive its PVs using the archive procedure above. Set `BPL_URL` to
 the direct management URL. The
-[disconnection test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-disconnection-example)
+[disconnection test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/master/TESTING.md#python-disconnection-example)
 provides the shipped IOC setup and checks actual IOC loss and recovery.
 From the repository root, read the report and its literal filters:
 
@@ -645,7 +645,7 @@ histogram of 20 bins:
 ## Other sample scripts
 
 The repository folder
-[`docs/book/src/samples`](https://github.com/jeonghanlee/epicsarchiverap-maven/tree/modernize/docs/book/src/samples)
+[`docs/book/src/samples`](https://github.com/jeonghanlee/epicsarchiverap-maven/tree/master/docs/book/src/samples)
 also holds Python 3 scripts for recovery and storage configuration, and
 `emailHandler.py` for mail. The tests of this project do not run them. Each script
 has its own arguments and dependencies; check its help and calls against
@@ -709,7 +709,7 @@ and aliases only after confirming both responses.
 Configuration-only deletion leaves unconfigured PB data;
 normal retrieval becomes unavailable, so empty retrieval cannot establish
 data erasure. Save store roots and inspect actual retained files before
-recovery. The [real verification procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/modernize/TESTING.md#python-deletion-example)
+recovery. The [real verification procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/master/TESTING.md#python-deletion-example)
 checks both modes with actual PB readers after orderly shutdown.
 
 HTTP errors, validation failures, redirects, timeout and unusable responses
