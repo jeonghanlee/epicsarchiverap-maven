@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>appliance archiver - Operations</title>
+    <link rel="stylesheet" href="comm/css/main.css" />
+    <link rel="stylesheet" href="comm/css/chart.css" />
+    <link rel="stylesheet" href="css/system.css" />
+    <script src="comm/js/vendor/d3.min.js" defer></script>
+    <script type="module" src="js/operations.js"></script>
+    <script src="js/menu.js" defer></script>
+    <script type="module" src="comm/js/aa/timezone.js"></script>
+  </head>
+  <body>
+    <div class="pageheader">
+      <!-- @begin(site_header) -->
+      <span><picture><source media="(max-width: 359px)" srcset="comm/img/wordmark.svg" /><img src="comm/img/archiverheader.svg" alt="Archiver Appliance" /></picture></span>
+      <!-- @end(site_header) -->
+      <!-- @begin(site_logo) -->
+      <span id="siteimages"><img src="comm/img/sitelogo.svg" alt="Store signals, analyze in place" /></span>
+      <!-- @end(site_logo) -->
+    </div>
+
+    <!-- @begin(site_navbar) -->
+    <div class="navbar">
+      <nav class="nav" aria-label="Main menu">
+        <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Menu" />
+        <label class="menu-button" for="menu-toggle">Menu</label>
+        <ul class="mainmenu" id="mainmenu">
+          <li><a href="archive.html">Archive PVs</a></li>
+          <li><a href="index.html">Browse PVs</a></li>
+          <li><a href="system.html" data-pages="system.html operations.html retrieval.html external.html">System</a></li>
+          <li><a href="help.html" id="help">Help</a></li>
+          <li><a href="analyzer.html">Analyzer</a></li>
+        </ul>
+      </nav>
+    </div>
+    <!-- @end(site_navbar) -->
+
+    <main class="system">
+      <nav class="tabs" aria-label="System pages">
+        <a href="system.html" data-page="system.html">Overview</a>
+        <a href="operations.html" data-page="operations.html" aria-current="page">Operations</a>
+        <a href="retrieval.html" data-page="retrieval.html">Retrieval performance</a>
+        <a href="external.html" data-page="external.html">External servers</a>
+        <select id="applianceChoice" aria-label="Appliance" hidden></select>
+      </nav>
+      <p id="problem" class="error" role="status"></p>
+
+      <h1>Operations</h1>
+      <section aria-labelledby="samplesHeading" id="samples">
+        <h2><span id="samplesHeading">Samples</span></h2>
+        <p class="lead">Are samples coming in from every PV?</p>
+        <div class="columns">
+          <div>
+            <h3>Counts</h3>
+            <table class="grid plain" id="counts"><tbody></tbody></table>
+          </div>
+          <div>
+            <h3><span id="dropoutHeading">PVs that drop out most</span></h3>
+            <table class="grid plain" id="lostConnections">
+              <thead><tr><th>PV</th><th class="r">Drops</th><th>Connected now</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <h3 id="hostsHeading">Disconnected PVs by host</h3>
+        <p id="hostsNote" class="sub"></p>
+        <p id="hostsResult" class="sub" role="status"></p>
+        <div class="scroll">
+          <table class="grid hosts" id="hosts">
+            <thead>
+              <tr><th>Host</th><th class="r">PVs</th><th>Lost at</th><th>Name prefix</th><th>Show</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="droppedHeading" id="dropped">
+        <h2><span id="droppedHeading">Samples lost</span></h2>
+        <p class="lead">Did the engine discard any sample, and why?</p>
+        <div class="scroll">
+          <table class="grid plain" id="droppedTable">
+            <thead><tr><th>Cause</th><th class="r">PVs</th><th>Worst PV</th><th class="r">Dropped</th><th>Then</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="writeHeading" id="write">
+        <h2><span id="writeHeading">Writing to disk</span></h2>
+        <p class="lead">Does the engine write its samples faster than they arrive?</p>
+        <div class="columns">
+          <div>
+            <table class="grid plain" id="writeTable"><tbody></tbody></table>
+          </div>
+          <div>
+            <h3><span id="fastestHeading">Fastest PVs</span></h3>
+            <table class="grid plain" id="fastest">
+              <thead><tr><th>PV</th><th class="r">Samples per s</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="storesHeading" id="stores">
+        <h2><span id="storesHeading">Stores</span></h2>
+        <p class="lead">Is there room, and does data move on?</p>
+        <p id="daysLeft" class="sub"></p>
+        <div id="storage" class="bars devices"></div>
+        <h3><span id="movesHeading">Moves between stores</span></h3>
+        <div class="scroll">
+          <table class="grid plain" id="etl"><thead></thead><tbody></tbody></table>
+        </div>
+        <h3><span id="ratesHeading">Rates at the archive requests</span></h3>
+        <table class="grid plain" id="plan"><tbody></tbody></table>
+        <h3 id="usageHeading">Largest users of storage, by name prefix</h3>
+        <div class="segmented" role="group" aria-label="Size of a block">
+          <button type="button" id="usageStored" aria-pressed="true">Stored data</button>
+          <button type="button" id="usageRate" aria-pressed="false">Event rate</button>
+        </div>
+        <p id="usageNote" class="sub"></p>
+        <div id="usageChart" class="treemap"></div>
+      </section>
+
+      <section aria-labelledby="processesHeading" id="processes">
+        <h2><span id="processesHeading">Processes</span></h2>
+        <p class="lead">Do the four processes run, and does their memory stay low?</p>
+        <div class="scroll">
+          <table class="grid plain" id="processTable">
+            <thead>
+              <tr><th>Process</th><th>Started</th><th class="r">Uptime</th><th class="r">Heap now</th><th>Floor</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="processNote" class="sub"></p>
+        <div id="process" class="process"></div>
+      </section>
+
+      <section aria-labelledby="configHeading" id="configuration">
+        <h2><span id="configHeading">Configuration in effect</span></h2>
+        <p class="lead">What does this installation run with, and which values judge the measures?</p>
+        <table class="grid plain" id="config"><tbody></tbody></table>
+      </section>
+
+    </main>
+
+    <dialog id="confirmDialog" aria-labelledby="confirmTitle">
+      <form id="confirmForm">
+        <h2 id="confirmTitle"></h2>
+        <p class="muted" id="confirmText"></p>
+        <p id="confirmError" class="error" role="status"></p>
+        <div class="dialog-actions">
+          <button type="submit" id="confirmSubmit">Pause</button>
+          <button type="button" id="confirmCancel" class="quiet">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+
+      <!-- @begin(site_footer) -->
+      <div class="pagefooter"></div>
+      <!-- @end(site_footer) -->
+  </body>
+</html>

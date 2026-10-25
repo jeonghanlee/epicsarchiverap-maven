@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ChannelArchiver.EngineConfigParser;
@@ -33,6 +34,7 @@ import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Import a Channel Archiver configuration sent as the body of the POST.")
 public class ImportChannelArchiverConfigAction implements BPLAction {
 	private static final Logger logger = LogManager.getLogger(ImportChannelArchiverConfigAction.class);
 

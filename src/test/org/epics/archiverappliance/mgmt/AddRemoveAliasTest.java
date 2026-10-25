@@ -1,8 +1,8 @@
 package org.epics.archiverappliance.mgmt;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.awaitility.Awaitility;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.SIOCSetup;
@@ -11,153 +11,130 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.retrieval.client.RawDataRetrievalAsEventStream;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 
 /**
- * Check addAlias and removeAlias functionality.
- * We test after the PV workflow is complete. 
- *  
- * @author mshankar
- *
+ * Check addAlias and removeAlias through the mgmt BPL, replacing the browser-driven flow. Archive a
+ * PV, then confirm data is retrievable only under the real name until an alias is added, and no
+ * longer under the alias once it is removed. Verifies the server workflow rather than the UI.
  */
 @Tag("integration")
 @Tag("localEpics")
 public class AddRemoveAliasTest {
-	private static Logger logger = LogManager.getLogger(AddRemoveAliasTest.class.getName());
-	TomcatSetup tomcatSetup = new TomcatSetup();
-	SIOCSetup siocSetup = new SIOCSetup();
-	WebDriver driver;
+    private static Logger logger = LogManager.getLogger(AddRemoveAliasTest.class.getName());
+    private static final String MGMT = "http://localhost:17665/mgmt/bpl/";
+    private static final String REAL = "UnitTestNoNamingConvention:sine";
+    private static final String ALIAS = "UnitTestNoNamingConvention:arandomalias";
+    TomcatSetup tomcatSetup = new TomcatSetup();
+    SIOCSetup siocSetup = new SIOCSetup();
 
-	@BeforeAll
-	public static void setupClass() {
-		WebDriverManager.firefoxdriver().setup();
-	}
+    @BeforeEach
+    public void setUp() throws Exception {
+        siocSetup.startSIOCWithDefaultDB();
+        tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
+    }
 
-	@BeforeEach
-	public void setUp() throws Exception {
-		siocSetup.startSIOCWithDefaultDB();
-		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
-		driver = new FirefoxDriver();
-	}
+    @AfterEach
+    public void tearDown() throws Exception {
+        tomcatSetup.tearDown();
+        siocSetup.stopSIOC();
+    }
 
-	@AfterEach
-	public void tearDown() throws Exception {
-		driver.quit();
-		tomcatSetup.tearDown();
-		siocSetup.stopSIOC();
-	}
+    private static String enc(String pv) {
+        return URLEncoder.encode(pv, StandardCharsets.UTF_8);
+    }
 
-	@Test
-	public void testSimpleArchivePV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
-		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
-		 String pvNameToArchive = "UnitTestNoNamingConvention:sine";
-		 pvstextarea.sendKeys(pvNameToArchive);
-		 WebElement archiveButton = driver.findElement(By.id("archstatArchive"));
-		 logger.debug("About to submit");
-		 archiveButton.click();
-		 // We have to wait for a few minutes here as it does take a while for the workflow to complete.
-		 // In addition, we are also getting .HIHI etc the monitors for which get established many minutes after the beginning of archiving 
-		 Thread.sleep(15*60*1000);
-		 WebElement checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
-		 checkStatusButton.click();
-		 Thread.sleep(2*1000);
-		 WebElement statusPVName = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(1)"));
-		 String pvNameObtainedFromTable = statusPVName.getText();
-		 String expectedPVName = "UnitTestNoNamingConvention:sine";
-		 Assertions.assertTrue(expectedPVName.equals(pvNameObtainedFromTable), "Expecting PV name to be " + expectedPVName + "; instead we get " + pvNameObtainedFromTable);
-		 WebElement statusPVStatus = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(2)"));
-		 String pvArchiveStatusObtainedFromTable = statusPVStatus.getText();
-		 String expectedPVStatus = "Being archived";
-		 Assertions.assertTrue(expectedPVStatus.equals(pvArchiveStatusObtainedFromTable), "Expecting PV archive status to be " + expectedPVStatus + "; instead it is " + pvArchiveStatusObtainedFromTable);
-		 
-		 SIOCSetup.caput("UnitTestNoNamingConvention:sine.HIHI", 2.0);
-		 Thread.sleep(2*1000);
-		 SIOCSetup.caput("UnitTestNoNamingConvention:sine.HIHI", 3.0);
-		 Thread.sleep(2*1000);
-		 SIOCSetup.caput("UnitTestNoNamingConvention:sine.HIHI", 4.0);
-		 Thread.sleep(2*1000);
-		 logger.info("Done updating UnitTestNoNamingConvention:sine.HIHI");
-		 Thread.sleep(2*60*1000);
-		 
-		 // Test retrieval of data using the real name and the aliased name
-		 testRetrievalCount("UnitTestNoNamingConvention:sine", true);
-		 testRetrievalCount("UnitTestNoNamingConvention:arandomalias", false);
-		 testRetrievalCount("UnitTestNoNamingConvention:sine.HIHI", true);
-		 testRetrievalCount("UnitTestNoNamingConvention:arandomalias.HIHI", false);
-		 
-		 String addAliasURL = "http://localhost:17665/mgmt/bpl/addAlias" 
-		 + "?pv="+ URLEncoder.encode("UnitTestNoNamingConvention:sine", "UTF-8")
-		 + "&aliasname="+ URLEncoder.encode("UnitTestNoNamingConvention:arandomalias", "UTF-8");
-		 JSONObject addAliasStatus = GetUrlContent.getURLContentAsJSONObject(addAliasURL);
-		 logger.debug("Add alias response " + addAliasStatus.toJSONString());
-		 
-		 Thread.sleep(2*1000);
+    private static String statusOf(String pv) {
+        JSONArray status = GetUrlContent.getURLContentAsJSONArray(MGMT + "getPVStatus?pv=" + enc(pv));
+        if (status == null || status.isEmpty()) {
+            return "(absent)";
+        }
+        return String.valueOf(((JSONObject) status.get(0)).get("status"));
+    }
 
-		 testRetrievalCount("UnitTestNoNamingConvention:sine", true);
-		 testRetrievalCount("UnitTestNoNamingConvention:arandomalias", true);
-		 testRetrievalCount("UnitTestNoNamingConvention:sine.HIHI", true);
-		 testRetrievalCount("UnitTestNoNamingConvention:arandomalias.HIHI", true);
-		 
-		 String removeAliasURL = "http://localhost:17665/mgmt/bpl/removeAlias" 
-		 + "?pv="+ URLEncoder.encode("UnitTestNoNamingConvention:sine", "UTF-8")
-		 + "&aliasname="+ URLEncoder.encode("UnitTestNoNamingConvention:arandomalias", "UTF-8");
-		 JSONObject removeAliasStatus = GetUrlContent.getURLContentAsJSONObject(removeAliasURL);
-		 logger.debug("Remove alias response " + removeAliasStatus.toJSONString());
-		 
-		 Thread.sleep(2*1000);
+    private int retrievalCount(String pvName) throws IOException {
+        RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream(
+                "http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");
+        Instant end = TimeUtils.plusDays(TimeUtils.now(), 3);
+        Instant start = TimeUtils.minusDays(end, 6);
+        try (EventStream stream = rawDataRetrieval.getDataForPVS(new String[] {pvName}, start, end, null)) {
+            long previousEpochSeconds = 0;
+            int eventCount = 0;
+            if (stream != null) {
+                for (Event e : stream) {
+                    long actualSeconds = e.getEpochSeconds();
+                    Assertions.assertTrue(actualSeconds >= previousEpochSeconds);
+                    previousEpochSeconds = actualSeconds;
+                    eventCount++;
+                }
+            }
+            logger.info("Got " + eventCount + " event for pv " + pvName);
+            return eventCount;
+        }
+    }
 
-		 testRetrievalCount("UnitTestNoNamingConvention:sine", true);
-		 testRetrievalCount("UnitTestNoNamingConvention:arandomalias", false);
-		 testRetrievalCount("UnitTestNoNamingConvention:sine.HIHI", true);
-		 testRetrievalCount("UnitTestNoNamingConvention:arandomalias.HIHI", false);
+    @Test
+    public void testSimpleArchivePV() throws Exception {
+        // Archive the real PV and wait until it is being archived.
+        String archivePVUrl = MGMT + "archivePV?pv=" + enc(REAL);
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(2))
+                .pollInterval(Duration.ofSeconds(5))
+                .ignoreExceptions()
+                .until(() -> GetUrlContent.getURLContentAsJSONArray(archivePVUrl) != null);
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(5))
+                .pollInterval(Duration.ofSeconds(10))
+                .ignoreExceptions()
+                .until(() -> "Being archived".equals(statusOf(REAL)));
 
-	}
+        // The .HIHI meta field is monitored a little after the main channel connects; drive it and
+        // wait until both the value stream and the meta field have captured data.
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(6))
+                .pollInterval(Duration.ofSeconds(10))
+                .ignoreExceptions()
+                .until(() -> {
+                    SIOCSetup.caput(REAL + ".HIHI", 2.0);
+                    SIOCSetup.caput(REAL + ".HIHI", 3.0);
+                    SIOCSetup.caput(REAL + ".HIHI", 4.0);
+                    return retrievalCount(REAL) > 0 && retrievalCount(REAL + ".HIHI") > 0;
+                });
 
-	/**
-	 * Make sure we get some data when retriving under the given name
-	 * @param pvName
-	 * @param expectingData - true if we are expecting any data at all.
-	 * @throws IOException
-	 */
-	private void testRetrievalCount(String pvName, boolean expectingData) throws IOException {
-		 RawDataRetrievalAsEventStream rawDataRetrieval = new RawDataRetrievalAsEventStream("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
-		Instant end = TimeUtils.plusDays(TimeUtils.now(), 3);
-		Instant start = TimeUtils.minusDays(end, 6);
-		try(EventStream stream = rawDataRetrieval.getDataForPVS(new String[] { pvName}, start, end, null)) {
-			 long previousEpochSeconds = 0;
-			 int eventCount = 0;
+        // Before the alias exists, nothing is retrievable under the alias name.
+        Assertions.assertEquals(0, retrievalCount(ALIAS), "No data expected under the alias before it is added");
+        Assertions.assertEquals(0, retrievalCount(ALIAS + ".HIHI"), "No data expected under the alias field before it is added");
 
-			 // We are making sure that the stream we get back has times in sequential order...
-			 if(stream != null) {
-				 for(Event e : stream) {
-					 long actualSeconds = e.getEpochSeconds();
-					 Assertions.assertTrue(actualSeconds >= previousEpochSeconds);
-					 previousEpochSeconds = actualSeconds;
-					 eventCount++;
-				 }
-			 }
+        // Add the alias; data becomes retrievable under both the real name and the alias.
+        GetUrlContent.getURLContentAsJSONObject(
+                MGMT + "addAlias?pv=" + enc(REAL) + "&aliasname=" + enc(ALIAS));
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(1))
+                .pollInterval(Duration.ofSeconds(2))
+                .ignoreExceptions()
+                .until(() -> retrievalCount(ALIAS) > 0 && retrievalCount(ALIAS + ".HIHI") > 0);
+        Assertions.assertTrue(retrievalCount(REAL) > 0, "Real name still retrievable after adding the alias");
 
-			 logger.info("Got " + eventCount + " event for pv " + pvName);
-			 if(expectingData) { 
-				 Assertions.assertTrue(eventCount > 0, "When asking for data using " + pvName + ", event count is 0. We got " + eventCount);
-			 } else { 
-				 Assertions.assertTrue(eventCount == 0, "When asking for data using " + pvName + ", event count is 0. We got " + eventCount);
-			 }
-		 }
-	}
+        // Remove the alias; it no longer resolves to any data.
+        GetUrlContent.getURLContentAsJSONObject(
+                MGMT + "removeAlias?pv=" + enc(REAL) + "&aliasname=" + enc(ALIAS));
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(1))
+                .pollInterval(Duration.ofSeconds(2))
+                .ignoreExceptions()
+                .until(() -> retrievalCount(ALIAS) == 0 && retrievalCount(ALIAS + ".HIHI") == 0);
+        Assertions.assertTrue(retrievalCount(REAL) > 0, "Real name still retrievable after removing the alias");
+    }
 }

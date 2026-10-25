@@ -1,0 +1,828 @@
+/* Time series and sparklines, shared by the management Browse PVs page and the data viewer. */
+
+svg .spark {
+    fill: none;
+    stroke: var(--ink-2);
+    stroke-width: 1.2;
+}
+
+svg .spark-end {
+    fill: var(--accent);
+}
+
+svg .spark-end.alarm {
+    fill: var(--alarm);
+}
+
+/* distribution and scatter */
+
+.plot {
+    position: relative;
+    min-height: 60px;
+}
+
+.plot svg text {
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    fill: var(--ink-3);
+}
+
+.plot svg .bar {
+    fill: var(--ink-3);
+}
+
+.plot svg .mean {
+    stroke: var(--accent);
+    stroke-width: 2;
+}
+
+.plot svg .dot {
+    fill: var(--ink-3);
+    fill-opacity: 0.6;
+}
+
+/* chart */
+
+.chart {
+    position: relative;
+    min-height: 120px;
+    overflow-x: auto;
+}
+
+.chart svg text {
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    fill: var(--ink-3);
+}
+
+.chart svg .axis-key {
+    fill: transparent;
+    stroke: none;
+    outline: none;
+}
+
+.chart svg .axis-key:focus-visible {
+    stroke: var(--accent);
+    stroke-width: 2;
+}
+
+.chart svg .grid {
+    stroke: var(--grid);
+    stroke-width: 1;
+}
+
+.chart svg .axis-line {
+    stroke: var(--ink-3);
+    stroke-width: 1;
+}
+
+.chart svg .unit {
+    fill: var(--ink-2);
+    font-weight: 600;
+}
+
+.chart svg .line {
+    fill: none;
+    stroke: var(--ink-2);
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+}
+
+.chart svg .line.quiet {
+    stroke: var(--ink-3);
+    stroke-width: 1;
+    opacity: 0.5;
+}
+
+.chart svg .line.focus {
+    stroke: var(--accent);
+    stroke-width: 2;
+}
+
+.chart svg .alarm {
+    fill: var(--alarm);
+}
+
+.chart svg .cross {
+    stroke: var(--ink-3);
+    stroke-width: 1;
+}
+
+.chart svg .label {
+    fill: var(--ink-2);
+}
+
+.chart svg .label.focus {
+    fill: var(--accent);
+    font-weight: 600;
+}
+
+.tip {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+    padding: 6px 8px;
+    background: var(--bg);
+    border: 1px solid var(--ink-3);
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.tip .alarm-text {
+    color: var(--alarm);
+}
+
+
+.chart svg .dot {
+    fill: var(--bg);
+    stroke: var(--ink-2);
+    stroke-width: 1.2;
+}
+
+.chart svg .dot.focus {
+    stroke: var(--accent);
+}
+
+.chart svg .brush {
+    fill: var(--accent);
+    opacity: 0.15;
+    pointer-events: none;
+}
+
+.chart svg {
+    cursor: crosshair;
+}
+
+/* legend under a chart */
+
+.chart .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+    margin: 8px 0 0;
+    font-size: 0.875rem;
+}
+
+.chart .legend .item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 4px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.chart .legend .item:hover {
+    background: var(--grid);
+}
+
+.chart .legend .item[aria-pressed="false"] {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+.chart .legend .unit {
+    color: var(--ink-3);
+    font-family: var(--sans);
+}
+
+.chart .legend svg {
+    cursor: pointer;
+}
+
+/* Y projection and the table of statistics under a chart */
+
+.chart svg .proj {
+    fill-opacity: 0.18;
+    stroke-width: 1;
+}
+
+.chart svg .proj-mean {
+    stroke-width: 2;
+}
+
+.chart-stats-wrap {
+    overflow-x: auto;
+    margin-top: 12px;
+}
+
+.chart-stats {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.chart-stats-wrap .chart-stats-title {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.chart-stats th,
+.chart-stats td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--grid);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.chart-stats th:not(:first-child):not(:last-child),
+.chart-stats td.num {
+    text-align: right;
+}
+
+.chart-stats td.num {
+    font-family: var(--mono);
+}
+
+.chart-stats .swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    border-radius: 3px;
+}
+
+/* running average, band, notes and the options panel */
+
+.chart svg .average {
+    fill: none;
+    stroke: var(--ink-2);
+    stroke-width: 3;
+    stroke-linejoin: round;
+    opacity: 0.8;
+}
+
+.chart svg .band {
+    fill: var(--ink-2);
+    fill-opacity: 0.14;
+    stroke: none;
+}
+
+.chart .chart-note {
+    margin: 8px 0 0;
+    color: var(--ink-3);
+    font-size: 0.875rem;
+}
+
+/* The options panel of a chart: tabs over a white window. */
+
+.opt-panel {
+    margin: 6px 0 8px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.opt-panel[hidden],
+.opt-body[hidden] {
+    display: none;
+}
+
+.opt-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 6px 12px 0;
+    border-bottom: 1px solid var(--c-border);
+}
+
+/* A tab is a plain button; the selectors are as specific as the site rule for buttons so that its fill and hover do not apply. */
+button.opt-tab,
+button.opt-tab:hover {
+    padding: 6px 14px;
+    margin: 0;
+    background: none;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    color: var(--ink-2);
+    font: inherit;
+    cursor: pointer;
+}
+
+button.opt-tab:hover {
+    background: var(--c-accent-soft);
+}
+
+button.opt-tab[aria-selected="true"],
+button.opt-tab[aria-selected="true"]:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+.opt-body {
+    padding: 12px 14px;
+}
+
+.opt-body .chart-stats-wrap {
+    margin-top: 0;
+}
+
+.opt-body:empty {
+    display: none;
+}
+
+.opt-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.opt-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 24px;
+}
+
+.opt-row .opt-info {
+    margin-left: auto;
+}
+
+.opt-controls label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+
+.opt-controls select {
+    width: auto;
+}
+
+/* The range strip above a chart: the time window as an interval, the controls that move it, and one control for each value axis. */
+.range-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 16px;
+    min-height: 38px;
+    margin: 0 0 6px;
+    padding: 2px 6px;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: #fafcfc;
+}
+
+.strip-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+}
+
+.strip-window,
+.strip-range {
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.strip-window {
+    margin-left: 6px;
+}
+
+/* The zone of the window, after the interval. */
+.strip-zone {
+    margin-left: 6px;
+    font-size: 0.875rem;
+    color: var(--ink-2, #555);
+    white-space: nowrap;
+}
+
+.strip-range {
+    margin: 0 8px 0 2px;
+}
+
+.strip-spacer {
+    flex: 1;
+}
+
+.strip-tool {
+    all: unset;
+    position: relative;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 4px;
+    border-radius: 6px;
+    color: var(--accent);
+    cursor: pointer;
+}
+
+/* The touch rules of the pages make a button 44 px high; a control of the strip keeps its size and widens its tap area. */
+.range-strip button.strip-tool {
+    min-width: 28px;
+    min-height: 0;
+}
+
+.strip-tool::before {
+    content: "";
+    position: absolute;
+    inset: -8px -2px;
+}
+
+.strip-tool svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.strip-label {
+    color: var(--ink);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.strip-tool:hover,
+.strip-tool:focus-visible {
+    background: var(--focus-bg);
+}
+
+.strip-tool:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.strip-tool.dim {
+    color: #a9b6ba;
+    cursor: default;
+}
+
+.strip-tool.dim .strip-label {
+    color: #a9b6ba;
+}
+
+.strip-tip {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 40;
+    display: none;
+    padding: 5px 9px;
+    border-radius: 6px;
+    background: var(--c-brand);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: var(--shadow-md);
+}
+
+.strip-tool:hover .strip-tip,
+.strip-tool:focus-visible .strip-tip {
+    display: block;
+}
+
+/*
+ * The information control of a measure: a 24 px raised circle that holds an italic "i" drawn as an SVG path, inside a
+ * 32 px tap area. Quiet gray at rest, teal on hover and focus, dark brand while its card is open.
+ */
+button.info {
+    all: unset;
+    position: relative;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin: -2px 0 -2px 6px;
+    border: 1px solid var(--c-border);
+    border-radius: 50%;
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+    color: var(--c-muted);
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+/* The touch rules of the pages make a button 44 px high; this control keeps its round look and gets the tap area instead. */
+button.info,
+.browse button.info,
+.system button.info {
+    min-width: 0;
+    min-height: 0;
+}
+
+button.info::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+}
+
+@media (max-width: 720px) {
+    button.info::after {
+        inset: -10px;
+    }
+}
+
+/* The control of a table row: smaller and quiet until it is pointed at, so a column of them is not noise. */
+button.info.small {
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
+    box-shadow: none;
+    opacity: 0.55;
+}
+
+button.info.small:hover,
+button.info.small:focus-visible,
+button.info.small.on {
+    opacity: 1;
+}
+
+button.info.small svg {
+    width: 12px;
+    height: 12px;
+}
+
+.card.narrow {
+    width: 300px;
+}
+
+button.info svg {
+    width: 15px;
+    height: 15px;
+    fill: currentColor;
+    pointer-events: none;
+}
+
+button.info:hover,
+button.info:focus-visible {
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 3px var(--c-accent-soft);
+    color: var(--c-accent);
+}
+
+button.info.on,
+button.info[aria-expanded="true"] {
+    border-color: var(--c-brand);
+    background: var(--c-brand);
+    box-shadow: var(--shadow-sm);
+    color: #fff;
+}
+
+button.info:focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 2px;
+}
+
+.card {
+    position: absolute;
+    z-index: 300;
+    width: 340px;
+    padding: 14px 16px 10px;
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    background: var(--c-surface);
+    color: var(--c-text);
+    box-shadow: var(--shadow-md);
+    font-size: 0.9375rem;
+    font-weight: 400;
+    line-height: 1.45;
+    text-align: left;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.card::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+    left: var(--arrow, 18px);
+    width: 12px;
+    height: 12px;
+    border-top: 1px solid var(--c-border);
+    border-left: 1px solid var(--c-border);
+    background: var(--c-surface);
+    transform: rotate(45deg);
+}
+
+.card.above::before {
+    top: auto;
+    bottom: -7px;
+    border: 0;
+    border-right: 1px solid var(--c-border);
+    border-bottom: 1px solid var(--c-border);
+}
+
+/* A card that fits on neither side of its button lies within the window, scrolls inside and points at nothing. */
+.card.free {
+    overflow-y: auto;
+}
+
+.card.free::before {
+    display: none;
+}
+
+.card h4 {
+    margin: 0 0 6px;
+    color: var(--c-brand);
+    font-size: 1rem;
+}
+
+.card p {
+    margin: 0 0 8px;
+}
+
+.card .act {
+    color: var(--c-muted);
+    font-size: 0.875rem;
+}
+
+.card .foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid var(--c-border);
+    font-size: 0.875rem;
+}
+
+.card .foot a {
+    font-weight: 600;
+}
+
+.nobreak {
+    white-space: nowrap;
+}
+
+.card .foot button.close {
+    min-height: 32px;
+    margin: 0;
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--c-accent);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.card .foot button.close:hover {
+    background: var(--c-accent-soft);
+    color: var(--c-accent-dark);
+}
+
+button.info {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.card.wide {
+    width: 420px;
+}
+
+.card dl.rows {
+    margin: 0 0 8px;
+}
+
+.card dl.rows dt {
+    margin-top: 8px;
+    color: var(--c-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.card dl.rows dd {
+    margin: 2px 0 0;
+}
+
+/* The row of a chart with its Options button, analyzer link and Enlarge chart button, and the large window of the chart. */
+a.plain-link {
+    display: inline-block;
+    margin: 8px 0 0;
+    color: var(--accent);
+    font-size: 0.9375rem;
+}
+
+@media (max-width: 600px) {
+    a.plain-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+}
+
+
+.inspect-head,
+.chart-dialog-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 16px;
+}
+
+button.opt-toggle,
+button.opt-toggle:hover {
+    margin: 0 auto;
+    padding: 4px 8px;
+    background: none;
+    border: 0;
+    border-radius: var(--radius);
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+button.opt-toggle:hover {
+    background: var(--c-accent-soft);
+}
+
+/* The mark of a collapsed and of an open panel is a small triangle drawn with borders. */
+.opt-toggle::after {
+    content: "";
+    display: inline-block;
+    margin-left: 8px;
+    border: 5px solid transparent;
+    border-left-color: currentColor;
+    vertical-align: middle;
+}
+
+.opt-toggle[aria-expanded="true"]::after {
+    margin-bottom: -5px;
+    border-left-color: transparent;
+    border-top-color: currentColor;
+}
+
+.chart-tools button.plain,
+.chart-dialog-head button.plain {
+    background: none;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    padding: 4px 0;
+    margin: 0;
+    color: var(--accent);
+    cursor: pointer;
+}
+
+.chart-tools button.plain:hover,
+.chart-dialog-head button.plain:hover {
+    border-bottom-color: currentColor;
+}
+
+dialog.chart-dialog {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    border: 0;
+    border-radius: 0;
+}
+
+
+.chart-dialog-box {
+    padding: 14px 20px 20px;
+}
+
+.chart-dialog-head {
+    margin-bottom: 8px;
+}
+
+.chart-tools a.plain-link,
+.chart-dialog-head a.plain-link {
+    margin-right: 18px;
+    font-weight: 600;
+}
+
+/* The chart area keeps a small gap above the chart whether or not the Options panel is open. */
+.chart-area {
+    display: flow-root;
+}
+
+.chart-area > .chart {
+    margin-top: 4px;
+}

@@ -14,6 +14,9 @@ import org.epics.archiverappliance.common.ProcessMetricsReport;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.mgmt.bpl.AbortArchiveRequest;
 import org.epics.archiverappliance.mgmt.bpl.AbortArchiveRequestForAppliance;
+import org.epics.archiverappliance.mgmt.bpl.ResumeArchiveRequest;
+import org.epics.archiverappliance.mgmt.bpl.ResumeArchiveRequestForAppliance;
+import org.epics.archiverappliance.mgmt.bpl.SearchPV;
 import org.epics.archiverappliance.mgmt.bpl.AddAliasAction;
 import org.epics.archiverappliance.mgmt.bpl.AddExternalArchiverServer;
 import org.epics.archiverappliance.mgmt.bpl.AddExternalArchiverServerArchives;
@@ -35,6 +38,7 @@ import org.epics.archiverappliance.mgmt.bpl.GetAllExpandedPVNames;
 import org.epics.archiverappliance.mgmt.bpl.GetAllPVs;
 import org.epics.archiverappliance.mgmt.bpl.GetApplianceInfo;
 import org.epics.archiverappliance.mgmt.bpl.GetAppliancesInCluster;
+import org.epics.archiverappliance.mgmt.bpl.GetComponentLogLevel;
 import org.epics.archiverappliance.mgmt.bpl.GetMatchingPVsForAppliance;
 import org.epics.archiverappliance.mgmt.bpl.GetPVStatusAction;
 import org.epics.archiverappliance.mgmt.bpl.GetPVTypeInfo;
@@ -63,6 +67,7 @@ import org.epics.archiverappliance.mgmt.bpl.ResetFailoverCaches;
 import org.epics.archiverappliance.mgmt.bpl.ReshardPV;
 import org.epics.archiverappliance.mgmt.bpl.RestartArchiveWorkflowThreadForAppliance;
 import org.epics.archiverappliance.mgmt.bpl.ResumeArchivingPV;
+import org.epics.archiverappliance.mgmt.bpl.SetComponentLogLevel;
 import org.epics.archiverappliance.mgmt.bpl.SkipAliasCheckAction;
 import org.epics.archiverappliance.mgmt.bpl.UnarchivedPVsAction;
 import org.epics.archiverappliance.mgmt.bpl.UploadChannelArchiverConfigAction;
@@ -101,8 +106,10 @@ import org.epics.archiverappliance.mgmt.policy.GetPolicyList;
 import org.epics.archiverappliance.mgmt.policy.GetPolicyText;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -133,7 +140,10 @@ public class BPLServlet extends HttpServlet {
         addAction("/consolidateDataForPV", ConsolidatePBFilesForOnePV.class);
         addAction("/deletePV", DeletePV.class);
         addAction("/abortArchivingPV", AbortArchiveRequest.class);
+        addAction("/searchPV", SearchPV.class);
         addAction("/abortArchivingPVForThisAppliance", AbortArchiveRequestForAppliance.class);
+        addAction("/resumeArchiveRequest", ResumeArchiveRequest.class);
+        addAction("/resumeArchiveRequestForThisAppliance", ResumeArchiveRequestForAppliance.class);
         addAction("/changeArchivalParameters", ChangeArchivalParamsAction.class);
         addAction("/getPVDetails", PVDetails.class);
         addAction("/getApplianceInfo", GetApplianceInfo.class);
@@ -201,6 +211,8 @@ public class BPLServlet extends HttpServlet {
         addAction("/getApplianceProperties", GetApplianceProps.class);
         addAction("/webAppReady", WebappReady.class);
         addAction("/getProcessMetrics", ProcessMetricsReport.class);
+        addAction("/getLogLevel", GetComponentLogLevel.class);
+        addAction("/setLogLevel", SetComponentLogLevel.class);
         addAction("/getProcessMetricsDataForAppliance", ProcessMetricsChartData.class);
         addAction("/refreshPVDataFromChannelArchivers", RefreshPVDataFromChannelArchivers.class);
         addAction("/getMatchingPVsForThisAppliance", GetMatchingPVsForAppliance.class);
@@ -265,22 +277,29 @@ public class BPLServlet extends HttpServlet {
     }
 
     /**
-     * The main method here is used only to generate documentation for the scripting guide.
-     * No other functionality is provided
-     * @param args  &emsp;
-     * @throws IOException  &emsp;
+     * Every registered path in registration order. The generated API reference
+     * lists actions in this order.
+     * @return an unmodifiable ordered list of paths
      */
-    public static void main(String[] args) throws IOException {
-        System.out.println("#Path mappings for mgmt BPLs");
-        for (String path : actionsSequenceForDocs) {
-            Class<? extends BPLAction> classObj = getActions.get(path);
-            if (classObj == null) {
-                classObj = postActions.get(path);
-            }
-            if (classObj == null) {
-                System.err.println("Invalid registration for " + path);
-            }
-            System.out.println(path + "=" + classObj.getName());
-        }
+    public static List<String> getRegisteredPaths() {
+        return Collections.unmodifiableList(actionsSequenceForDocs);
+    }
+
+    /**
+     * The action class registered for a path under GET.
+     * @param path the BPL path
+     * @return the action class, or null when the path has no GET action
+     */
+    public static Class<? extends BPLAction> getGetAction(String path) {
+        return getActions.get(path);
+    }
+
+    /**
+     * The action class registered for a path under POST.
+     * @param path the BPL path
+     * @return the action class, or null when the path has no POST action
+     */
+    public static Class<? extends BPLAction> getPostAction(String path) {
+        return postActions.get(path);
     }
 }

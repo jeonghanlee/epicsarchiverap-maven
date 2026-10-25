@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -19,6 +20,7 @@ import org.json.simple.JSONValue;
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Get various appliance properties as name/value constructs mostly for the UI.")
 public class GetApplianceProps implements BPLAction {
 	private static Logger logger = LogManager.getLogger(GetApplianceProps.class.getName());
 	@Override

@@ -72,11 +72,16 @@ public class PvaGetPVDataTest {
 
     @AfterAll
     public static void tearDown() throws Exception {
-        pvaMgmtChannel.close();
-        pvaRetrievalChannel.close();
-        tomcatSetup.tearDown();
-        pvaServer.close();
-        pvaClient.close();
+        Assertions.assertAll("PVA retrieval fixture cleanup",
+                () -> { if (pvaMgmtChannel != null) pvaMgmtChannel.close(); },
+                () -> { if (pvaRetrievalChannel != null) pvaRetrievalChannel.close(); },
+                () -> { if (pvaClient != null) pvaClient.close(); },
+                () -> { if (pvaServer != null) pvaServer.close(); },
+                tomcatSetup::tearDown);
+        pvaMgmtChannel = null;
+        pvaRetrievalChannel = null;
+        pvaClient = null;
+        pvaServer = null;
     }
 
     /**
@@ -254,5 +259,145 @@ public class PvaGetPVDataTest {
 
         // Check data is expected
         Assertions.assertEquals(expectedData, actualData);
+    }
+
+    /**
+     * An operator that the server does not know, or with a bad argument, fails the call on the single and on the
+     * multi PV path, as a request pp and in the function-call form, while a valid operator on the same archived PVs
+     * returns data. The PVA client library hands the message of a failed RPC to its log and not to the caller, so the
+     * call is asserted to fail and the message is the one of PostProcessorsValidationTest.
+     */
+    @Test
+    public void testBadOperatorFailsTheCall() throws Exception {
+        String randomModifier = String.valueOf(UUID.randomUUID());
+        String pvNameA = "PV:A:" + PvaGetPVDataTest.class.getSimpleName() + ":operator:" + randomModifier;
+        String pvNameB = "PV:B:" + PvaGetPVDataTest.class.getSimpleName() + ":operator:" + randomModifier;
+        Instant instant = Instant.now();
+        List<PVAStructure> structures = new ArrayList<>();
+        List<PVADouble> values = new ArrayList<>();
+        List<PVATimeStamp> timeStamps = new ArrayList<>();
+        List<ServerPV> serverPVs = new ArrayList<>();
+        for (String name : List.of(pvNameA, pvNameB)) {
+            PVADouble value = new PVADouble("value", 10.0);
+            PVATimeStamp timeStamp = new PVATimeStamp(instant);
+            PVAStructure structure = new PVAStructure(
+                    name,
+                    "epics:nt/NTScalar:1.0",
+                    value,
+                    timeStamp,
+                    new PVAStructure("alarm", "alarm_t", new PVAInt("status", 0), new PVAInt("severity", 0)));
+            values.add(value);
+            timeStamps.add(timeStamp);
+            structures.add(structure);
+            serverPVs.add(pvaServer.createPV(name, structure));
+        }
+        Thread.sleep(1000);
+        archivePVsViaPVAccess(List.of(pvNameA, pvNameB));
+
+        Thread.sleep(100);
+        Instant updateInstant = Instant.now();
+        for (int i = 0; i < structures.size(); i++) {
+            values.get(i).set(6.0);
+            timeStamps.get(i).set(updateInstant);
+            serverPVs.get(i).update(structures.get(i));
+        }
+        // Wait for the writer to write the data
+        Thread.sleep(30 * 1000);
+
+        Assertions.assertFalse(
+                valuesByPV(retrieve("mean_60(" + pvNameA + ");" + pvNameB)).get(pvNameB).isEmpty(),
+                "A valid operator returns data of the archived PVs");
+
+        for (String operator : List.of("bogus", "mean_abc", "mean_0")) {
+            assertCallFails(Map.of("pv", pvNameA, "pp", operator));
+            assertCallFails(Map.of("pv", pvNameA + ";" + pvNameB, "pp", operator));
+            assertCallFails(Map.of("pv", operator + "(" + pvNameA + ")"));
+            assertCallFails(Map.of("pv", pvNameB + ";" + operator + "(" + pvNameA + ")"));
+        }
+    }
+
+    private static void assertCallFails(Map<String, String> query) {
+        PVAURI getPVDataURI = new PVAURI("name", "pva", null, PvaGetPVData.NAME, query);
+        Assertions.assertThrows(
+                Exception.class,
+                () -> pvaRetrievalChannel.invoke(getPVDataURI).get(5, TimeUnit.SECONDS),
+                "The call with " + query + " did not fail");
+    }
+
+    private static Map<String, Map<Instant, String>> valuesByPV(PVAStructure result) {
+        String[] labels = ((PVAStringArray) result.get("labels")).get();
+        PVAny[] anyArray = ((PVAAnyArray) result.get("value")).get();
+        Map<String, Map<Instant, String>> valuesByPV = new HashMap<>();
+        for (int i = 0; i < labels.length; i++) {
+            Map<Instant, String> values = new HashMap<>();
+            PVAStructureArray structureArray = anyArray[i].get();
+            for (PVAStructure structure : structureArray.get()) {
+                values.put(
+                        PVATimeStamp.getTimeStamp(structure).instant(),
+                        structure.get("value").toString());
+            }
+            valuesByPV.put(labels[i], values);
+        }
+        return valuesByPV;
+    }
+
+    private static PVAStructure retrieve(String pvQuery) throws Exception {
+        Map<String, String> query = new HashMap<>();
+        query.put("pv", pvQuery);
+        PVAURI getPVDataURI = new PVAURI("name", "pva", null, PvaGetPVData.NAME, query);
+        return pvaRetrievalChannel.invoke(getPVDataURI).get(20, TimeUnit.SECONDS);
+    }
+
+    /**
+     * The operator of the first PV of a multi PV request does not reach the PV after it: the second PV has the
+     * values and the timestamps of its own single request.
+     */
+    @Test
+    public void testOperatorOfAPVDoesNotReachTheNextPV() throws Exception {
+        String randomModifier = String.valueOf(UUID.randomUUID());
+        String pvNameA = "PV:A:" + PvaGetPVDataTest.class.getSimpleName() + ":" + randomModifier;
+        String pvNameB = "PV:B:" + PvaGetPVDataTest.class.getSimpleName() + ":" + randomModifier;
+        Instant instant = Instant.now();
+        List<PVADouble> values = new ArrayList<>();
+        List<PVATimeStamp> timeStamps = new ArrayList<>();
+        List<PVAStructure> structures = new ArrayList<>();
+        List<ServerPV> serverPVs = new ArrayList<>();
+        for (String name : List.of(pvNameA, pvNameB)) {
+            PVADouble value = new PVADouble("value", 10.0);
+            PVATimeStamp timeStamp = new PVATimeStamp(instant);
+            PVAStructure structure = new PVAStructure(
+                    name,
+                    "epics:nt/NTScalar:1.0",
+                    value,
+                    timeStamp,
+                    new PVAStructure("alarm", "alarm_t", new PVAInt("status", 0), new PVAInt("severity", 0)));
+            values.add(value);
+            timeStamps.add(timeStamp);
+            structures.add(structure);
+            serverPVs.add(pvaServer.createPV(name, structure));
+        }
+        Thread.sleep(1000);
+        archivePVsViaPVAccess(List.of(pvNameA, pvNameB));
+
+        Thread.sleep(100);
+        Instant updateInstant = Instant.now();
+        for (int i = 0; i < structures.size(); i++) {
+            values.get(i).set(6.0);
+            timeStamps.get(i).set(updateInstant);
+            serverPVs.get(i).update(structures.get(i));
+        }
+        // Wait for the writer to write the data
+        Thread.sleep(30 * 1000);
+
+        Map<Instant, String> expectedB =
+                valuesByPV(retrieve(pvNameB)).get(pvNameB);
+        Assertions.assertEquals(2, expectedB.size());
+
+        Map<String, Map<Instant, String>> binnedAThenB = valuesByPV(retrieve("mean_60(" + pvNameA + ");" + pvNameB));
+        Assertions.assertEquals(expectedB, binnedAThenB.get(pvNameB));
+        Map<String, Map<Instant, String>> functionFormAThenB = valuesByPV(retrieve("mean(" + pvNameA + ",60);" + pvNameB));
+        Assertions.assertEquals(expectedB, functionFormAThenB.get(pvNameB));
+        Map<String, Map<Instant, String>> bThenA = valuesByPV(retrieve(pvNameB + ";mean_60(" + pvNameA + ")"));
+        Assertions.assertEquals(expectedB, bThenA.get(pvNameB));
     }
 }

@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.UserSpecifiedSamplingParams;
@@ -19,12 +21,14 @@ import org.json.simple.JSONValue;
 
 /**
  *
- * @epics.BPLAction - For PVs that are still in the archive PV workflow, skip the alias check where we examine the .NAME field to determine the real name. This is useful if you have pCAS servers that overload the .NAME field for something else. 
- * @epics.BPLActionParam pv - The name of the pv as it is in the archive PV workflow.
- * @epics.BPLActionEnd
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "For PVs that are still in the archive PV workflow, skip the alias check where we examine the .NAME field to determine the real name. This is useful if you have pCAS servers that overload the .NAME field for something else.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv as it is in the archive PV workflow.")
+        })
 public class SkipAliasCheckAction implements BPLAction {
 	private static Logger logger = LogManager.getLogger(SkipAliasCheckAction.class.getName());
 

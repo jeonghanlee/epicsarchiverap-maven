@@ -31,6 +31,7 @@ import java.time.Instant;
 class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 	private static Logger logger = LogManager.getLogger(MergeDedupConsumer.class.getName());
     private Instant startTimeStamp;
+    private Instant endTimeStamp;
 	int totalEvents = 0;
 	int skippedEvents = 0;
 	int comparedEvents = 0;
@@ -48,9 +49,29 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 	
 	
 	MergeDedupConsumer(MimeResponse mimeresponse, OutputStream os) {
-		this.os = os;
+		this.os = new java.io.FilterOutputStream(os) {
+            @Override public void write(int value) throws java.io.IOException {
+                RetrievalMemoryProtection.checkCancellationNow();
+                out.write(value);
+                RetrievalMemoryProtection.checkCancellationNow();
+            }
+            @Override public void write(byte[] bytes, int offset, int length) throws java.io.IOException {
+                RetrievalMemoryProtection.checkCancellationNow();
+                out.write(bytes, offset, length);
+                RetrievalMemoryProtection.checkCancellationNow();
+            }
+            @Override public void flush() throws java.io.IOException {
+                RetrievalMemoryProtection.checkCancellationNow();
+                out.flush();
+                RetrievalMemoryProtection.checkCancellationNow();
+            }
+            @Override public void close() throws java.io.IOException {
+                flush();
+                out.close();
+            }
+        };
 		this.mimeresponse = mimeresponse;
-		this.mimeresponse.setOutputStream(os);
+		this.mimeresponse.setOutputStream(this.os);
 	}
 	
 	
@@ -88,9 +109,12 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 	
 	@Override
 	public void close() {
+		if (aborted || RetrievalMemoryProtection.currentFailed()) return;
+		RetrievalMemoryProtection.checkCurrentNow();
 		pushRemainingEvents();
 		logNumbersAndCollectTotal();
 		mimeresponse.close();
+		RetrievalMemoryProtection.checkCurrentNow();
 		try { 
 			os.flush();
 		} catch(Throwable t) { 
@@ -104,10 +128,16 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 		}
 	}
 
+    private boolean aborted;
+
+    /** Leave an incomplete response to the servlet container without writing its normal footer. */
+    public void abort() { aborted = true; }
+
     public void processingPV(BasicContext retrievalContext, String PV, Instant start, Instant end, EventStreamDesc streamDesc) {
 		pushRemainingEvents();
 		logNumbersAndCollectTotal();
 		this.startTimeStamp = start;
+        this.endTimeStamp = end;
 		mimeresponse.processingPV(retrievalContext, PV, start, end, streamDesc);
 		pvName = PV;
 		resetForNextPV();
@@ -117,8 +147,14 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 		try {
 			int eventsInCurrentStream = 0;
 			for(Event e : strm) {
+				RetrievalMemoryProtection.checkCurrent();
 				try {
 					eventsInCurrentStream++;
+
+                    if (endTimeStamp != null && e.getEventTimeStamp().isAfter(endTimeStamp)) {
+                        skippedEvents++;
+                        continue;
+                    }
 					
 					if(!haveIpushedTheFirstEvent && firstEvent == null) {
 						logger.debug("Making a copy of the first event " + TimeUtils.convertToHumanReadableString(e.getEventTimeStamp()));
@@ -176,7 +212,7 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 			}
 			
 			if(eventsInCurrentStream == 0) {
-				logger.info("The stream from " + ((strm.getDescription() != null ) ? strm.getDescription().getSource() : "Unknown") + " was an empty stream.");
+				logger.debug("The stream from " + ((strm.getDescription() != null ) ? strm.getDescription().getSource() : "Unknown") + " was an empty stream.");
 			}
 
 			// We start deduping at the boundaries of event streams. 
@@ -208,7 +244,7 @@ class MergeDedupConsumer implements EventStreamConsumer, AutoCloseable {
 	
 	public void logNumbersAndCollectTotal() {
 		if(pvName != null) {
-			logger.info("Found a total of " + totalEvents 
+			logger.debug("Found a total of " + totalEvents
 					+ " skipping " + skippedEvents + " events"
 					+ " deduping involved " + comparedEvents + " compares for PV "
 					+ pvName);

@@ -16,7 +16,23 @@ public interface Details {
         return obj;
     }
 
+    /**
+     * A detail that holds a time: the text in the zone of the server as its value and, when the time is set, the same
+     * instant as epochSeconds; a time that reads Never has no epochSeconds.
+     */
+    static Map<String, String> timeDetail(String source, String name, long epochSeconds) {
+        Map<String, String> obj = metricDetail(source, name, org.epics.archiverappliance.common.TimeUtils.convertToHumanReadableString(epochSeconds));
+        if (epochSeconds > 0) {
+            obj.put("epochSeconds", Long.toString(epochSeconds));
+        }
+        return obj;
+    }
+
     ConfigService.WAR_FILE source();
+
+    default Map<String, String> timeDetail(String name, long epochSeconds) {
+        return timeDetail(source().toString(), name, epochSeconds);
+    }
 
     default Map<String, String> metricDetail(String name, String value) {
         return metricDetail(source().toString(), name, value);

@@ -24,6 +24,7 @@ import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.engine.pv.EPICS_V3_PV;
 import org.epics.archiverappliance.engine.pv.EPICS_V4_PV;
+import org.epics.archiverappliance.engine.ArchiveEngine;
 import org.epics.archiverappliance.engine.pv.EngineContext;
 import org.epics.archiverappliance.engine.pv.PV;
 import org.epics.archiverappliance.engine.pv.PVFactory;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Base for archived channels. An ArchiveChannel has
@@ -108,6 +110,14 @@ public abstract class ArchiveChannel {
      * The name of the PV that control archiving of this PV.
      */
     private final String controlPVname;
+    /**
+     * The config service, kept for the pause the channel asks for when the type of its record changed.
+     */
+    private final ConfigService configservice;
+    /**
+     * True once the first event of another type was seen: the change is logged and the pause requested only once.
+     */
+    private final AtomicBoolean typeChangeHandled = new AtomicBoolean(false);
     /**
      * The writer/storage plugin that receives the samples.
      * We place samples into SampleBufffer and then the write thread comes along periodically and flushes these samples into this storageplugin.
@@ -189,6 +199,7 @@ public abstract class ArchiveChannel {
             final boolean usePVAccess)
             throws Exception {
         this.name = name;
+        this.configservice = configservice;
         this.SERVER_IOC_DRIFT_SECONDS = Integer.parseInt(configservice.getInstallationProperties().getProperty("org.epics.archiverappliance.engine.epics.server_ioc_drift_seconds", "1800"));
         this.controlPVname = controlPVname;
         this.writer = writer;
@@ -238,7 +249,33 @@ public abstract class ArchiveChannel {
 
             @Override
             public void sampleDroppedTypeChange(PV pv, ArchDBRTypes newCAType) {
-                pvMetrics.incrementInvalidTypeLostEventCount(newCAType);
+                if (pvMetrics.incrementInvalidTypeLostEventCount(newCAType)) {
+                    typeChanged(newCAType);
+                }
+            }
+        });
+    }
+
+    /**
+     * The first event of another type: the record came back under the same name with another type, so nothing more of the PV
+     * can be stored. One WARN line names the change, and the PV is paused from the misc task scheduler, not from the monitor
+     * callback, with the reason saved in its type information.
+     *
+     * @param newType the type of the dropped event
+     */
+    void typeChanged(ArchDBRTypes newType) {
+        if (!typeChangeHandled.compareAndSet(false, true)) {
+            return;
+        }
+        ArchDBRTypes oldType = pvMetrics.getArchDBRTypes();
+        String reason = "type changed from " + oldType + " to " + newType;
+        logger.warn("The type of PV " + name + " changed from " + oldType + " to " + newType
+                + ": its events are dropped and the archiver pauses it");
+        configservice.getEngineContext().getMiscTasksScheduler().execute(() -> {
+            try {
+                ArchiveEngine.pauseArchivingPV(name, reason, configservice);
+            } catch (Exception e) {
+                logger.error("exception pausing PV " + name + " after a change of its type", e);
             }
         });
     }
@@ -410,6 +447,7 @@ public abstract class ArchiveChannel {
     public final void start() throws Exception {
         if (is_running) return;
 
+        buffer.startAcceptingSamples();
         is_running = true;
         need_first_sample = true;
         pvMetrics.setEnable(true);
@@ -566,7 +604,11 @@ public abstract class ArchiveChannel {
         }
         this.pvMetrics.addConnectionLostRegainedFields(timeevent);
 
+        long typeDropsBefore = this.pvMetrics.getInvalidTypeLostEventCount();
         boolean incrementEventCounts = buffer.add(timeevent);
+        if (!incrementEventCounts && typeDropsBefore == 0 && this.pvMetrics.getInvalidTypeLostEventCount() == 1) {
+            typeChanged(timeevent.getDBRType());
+        }
         if (incrementEventCounts) {
             this.pvMetrics.addEventCounts();
             this.pvMetrics.addStorageSize(timeevent);

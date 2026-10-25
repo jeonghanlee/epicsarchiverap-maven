@@ -13,12 +13,14 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.PVNameToKeyMapping;
 import org.epics.archiverappliance.etl.ETLBulkStream;
 import org.epics.archiverappliance.etl.ETLContext;
+import org.epics.archiverappliance.utils.nio.ArchPaths;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +41,9 @@ public class AppendDataStateData {
     private final String rootFolder;
 
     private OutputStream os = null;
+    private String appendPath = null;
+    private long appendStart = 0;
+    private boolean recoveryPending = false;
     private final PlainPBStoragePlugin.CompressionMode compressionMode;
     protected short previousYear = -1;
     protected Instant lastKnownTimeStamp = Instant.ofEpochSecond(0);
@@ -93,7 +98,10 @@ public class AppendDataStateData {
     public int partitionBoundaryAwareAppendData(
             BasicContext context, String pvName, EventStream stream, String extension, String extensionToCopyFrom)
             throws IOException {
+        Instant committedTimestamp = this.lastKnownTimeStamp;
+        short committedYear = this.previousYear;
         try (stream) {
+            restoreFailedAppend(context);
             int eventsAppended = 0;
             for (Event event : stream) {
                 Instant ts = event.getEventTimeStamp();
@@ -122,12 +130,26 @@ public class AppendDataStateData {
                 // logger.debug("Done appending event " + TimeUtils.convertToISO8601String(event.getEventTimeStamp()) +
                 // " into " + previousFileName + " of len " + val.len);
             }
+            this.closeStreams();
             return eventsAppended;
         } catch (Throwable t) {
+            this.recoveryPending = this.appendPath != null;
+            try {
+                this.closeStreams();
+            } catch (IOException closeFailure) {
+                t.addSuppressed(closeFailure);
+            }
+            try {
+                restoreFailedAppend(context);
+            } catch (IOException recoveryFailure) {
+                t.addSuppressed(recoveryFailure);
+            }
+            // Completed partitions survive; retry reopens them and skips their persisted samples.
+            this.lastKnownTimeStamp = committedTimestamp;
+            this.previousYear = committedYear;
+            this.nextPartitionFirstSecond = Instant.ofEpochSecond(0);
             logger.error("Exception appending data for PV " + pvName, t);
             throw new IOException(t);
-        } finally {
-            this.closeStreams();
         }
     }
 
@@ -177,15 +199,45 @@ public class AppendDataStateData {
         }
     }
 
-    public void closeStreams() {
-        // Simply closing the current stream should be good enough for the roll over to work.
-        if (this.os != null)
-            try {
-                this.os.close();
-            } catch (Throwable ignored) {
-            }
-        // Set this to null outside the try/catch so that we are using a new file even if the close fails.
+    public void closeStreams() throws IOException {
+        OutputStream output = this.os;
         this.os = null;
+        try {
+            if (output != null) output.close();
+            if (!this.recoveryPending) this.appendPath = null;
+        } catch (IOException failure) {
+            this.recoveryPending = this.appendPath != null;
+            throw failure;
+        }
+    }
+
+    private void openOutput(Path pvPath, StandardOpenOption mode) throws IOException {
+        boolean exists = Files.exists(pvPath);
+        long start = exists ? Files.size(pvPath) : 0;
+        boolean regular = !exists || Files.isRegularFile(pvPath);
+        String uri = pvPath.toUri().toString();
+        this.os = new BufferedOutputStream(Files.newOutputStream(pvPath, StandardOpenOption.CREATE, mode));
+        // Retain a reopenable path because the caller owns the context's zip filesystems.
+        this.appendPath = regular ? (uri.startsWith(ArchPaths.ZIP_PREFIX) ? uri : pvPath.toString()) : null;
+        this.appendStart = start;
+    }
+
+    private void restoreFailedAppend(BasicContext context) throws IOException {
+        if (!this.recoveryPending) return;
+        Path path = context.getPaths().get(this.appendPath);
+        if (Files.notExists(path) && this.appendStart == 0) {
+            this.appendPath = null;
+            this.recoveryPending = false;
+            return;
+        }
+        try (var channel = Files.newByteChannel(path, StandardOpenOption.WRITE)) {
+            if (channel.size() < this.appendStart) {
+                throw new IOException("Completed PB data was removed from " + path);
+            }
+            channel.truncate(this.appendStart);
+        }
+        this.appendPath = null;
+        this.recoveryPending = false;
     }
 
     /**
@@ -328,13 +380,27 @@ public class AppendDataStateData {
         this.previousYear = info.getDataYear();
         if (info.getLastEvent() != null) {
             this.lastKnownTimeStamp = info.getLastEvent().getEventTimeStamp();
+            truncateCorruptFile(pvPath, info.getTruncationPoint());
         } else {
             logger.error("Cannot determine last known timestamp when updating state for PV " + pvName + " and path "
                     + pvPath.toString());
         }
-        this.os = new BufferedOutputStream(
-                Files.newOutputStream(pvPath, StandardOpenOption.CREATE, StandardOpenOption.APPEND));
+        openOutput(pvPath, StandardOpenOption.APPEND);
         this.previousFileName = pvPath.getFileName().toString();
+    }
+
+    private static void truncateCorruptFile(Path pvPath, long truncationPoint) throws IOException {
+        long fileSize = Files.size(pvPath);
+        if (truncationPoint < fileSize) {
+            logger.warn(
+                    "Incomplete record detected at end of {} (likely a crash mid-write); truncating {} -> {} bytes before appending",
+                    pvPath,
+                    fileSize,
+                    truncationPoint);
+            try (FileChannel fc = FileChannel.open(pvPath, StandardOpenOption.WRITE)) {
+                fc.truncate(truncationPoint);
+            }
+        }
     }
 
     /**
@@ -358,8 +424,7 @@ public class AppendDataStateData {
                             + " of type " + stream.getDescription().getArchDBRType()
                             + " of PBPayload "
                             + stream.getDescription().getArchDBRType().getPBPayloadType());
-        this.os = new BufferedOutputStream(
-                Files.newOutputStream(pvPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
+        openOutput(pvPath, StandardOpenOption.TRUNCATE_EXISTING);
         byte[] headerBytes = LineEscaper.escapeNewLines(EPICSEvent.PayloadInfo.newBuilder()
                 .setPvname(pvName)
                 .setType(stream.getDescription().getArchDBRType().getPBPayloadType())
@@ -385,6 +450,7 @@ public class AppendDataStateData {
     public boolean bulkAppend(
             String pvName, ETLContext context, ETLBulkStream bulkStream, String extension, String extensionToCopyFrom)
             throws IOException {
+        restoreFailedAppend(context);
         Event firstEvent = bulkStream.getFirstEvent(context);
         if (this.shouldISkipEventBasedOnTimeStamps(firstEvent)) {
             logger.error(

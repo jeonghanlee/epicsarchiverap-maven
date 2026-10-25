@@ -79,6 +79,36 @@ public class MultiPVClusterRetrievalTest {
      */
     @Test
     public void multiplePvsAcrossCluster() throws Exception {
+        PlainPBStoragePlugin pbplugin = loadPVsIntoCluster();
+
+        short currentYear = TimeUtils.getCurrentYear();
+        String startString = currentYear + "-11-17T16:00:00.000Z";
+        String endString = currentYear + "-11-17T16:01:00.000Z";
+
+        Instant start = TimeUtils.convertFromISO8601String(startString);
+        Instant end = TimeUtils.convertFromISO8601String(endString);
+
+        Map<String, List<JSONObject>> pvToData = retrieveJsonResults(startString, endString);
+
+        logger.info("Received response from server; now retrieving data using PBStoragePlugin Start: "
+                + TimeUtils.convertToISO8601String(start) + " End: " + TimeUtils.convertToISO8601String(end));
+
+        try (BasicContext context = new BasicContext();
+                EventStream pv1ResultsStream =
+                        new CurrentThreadWorkerEventStream(pvName, pbplugin.getDataForPV(context, pvName, start, end));
+                EventStream pv2ResultsStream = new CurrentThreadWorkerEventStream(
+                        pvName2, pbplugin.getDataForPV(context, pvName2, start, end))) {
+            assert pvToData != null;
+            compareDataAndTimestamps(pvName, pvToData.get(pvName), pv1ResultsStream);
+            compareDataAndTimestamps(pvName2, pvToData.get(pvName2), pv2ResultsStream);
+        }
+    }
+
+    /**
+     * Generates the data of both PVs and loads the type info of the first PV into appliance0 and of the second PV into appliance1.
+     * @return The storage plugin that holds the generated data.
+     */
+    private PlainPBStoragePlugin loadPVsIntoCluster() throws Exception {
         PlainPBStoragePlugin pbplugin = new PlainPBStoragePlugin();
 
         ConfigService configService = new ConfigServiceForTests(-1);
@@ -155,30 +185,59 @@ public class MultiPVClusterRetrievalTest {
             Thread.sleep(5 * 1000);
         } catch (Exception ex) {
         }
+        return pbplugin;
+    }
+
+    /**
+     * A request with usereduced=true for a PV on the other appliance still returns the data of both PVs;
+     * the reduced operator that appliance0 sends to appliance1 has to pass the check of appliance1.
+     */
+    @Test
+    public void useReducedAcrossCluster() throws Exception {
+        loadPVsIntoCluster();
         short currentYear = TimeUtils.getCurrentYear();
         String startString = currentYear + "-11-17T16:00:00.000Z";
         String endString = currentYear + "-11-17T16:01:00.000Z";
 
+        Map<String, List<JSONObject>> pvToData = retrieveJsonResults(startString, endString, "&usereduced=true");
+
+        Assertions.assertNotNull(pvToData, "The request with usereduced=true did not answer 200");
+        Assertions.assertFalse(pvToData.get(pvName).isEmpty(), "No data of " + pvName);
+        Assertions.assertFalse(pvToData.get(pvName2).isEmpty(), "No data of " + pvName2 + " on the other appliance");
+    }
+
+    /**
+     * The names that the server itself sends to the other appliance are accepted as a request pp and return the raw data of both PVs.
+     */
+    @Test
+    public void internalOperatorNamesAcrossCluster() throws Exception {
+        PlainPBStoragePlugin pbplugin = loadPVsIntoCluster();
+        short currentYear = TimeUtils.getCurrentYear();
+        String startString = currentYear + "-11-17T16:00:00.000Z";
+        String endString = currentYear + "-11-17T16:01:00.000Z";
         Instant start = TimeUtils.convertFromISO8601String(startString);
         Instant end = TimeUtils.convertFromISO8601String(endString);
 
-        Map<String, List<JSONObject>> pvToData = retrieveJsonResults(startString, endString);
-
-        logger.info("Received response from server; now retrieving data using PBStoragePlugin Start: "
-                + TimeUtils.convertToISO8601String(start) + " End: " + TimeUtils.convertToISO8601String(end));
-
-        try (BasicContext context = new BasicContext();
-                EventStream pv1ResultsStream =
-                        new CurrentThreadWorkerEventStream(pvName, pbplugin.getDataForPV(context, pvName, start, end));
-                EventStream pv2ResultsStream = new CurrentThreadWorkerEventStream(
-                        pvName2, pbplugin.getDataForPV(context, pvName2, start, end))) {
-            assert pvToData != null;
-            compareDataAndTimestamps(pvName, pvToData.get(pvName), pv1ResultsStream);
-            compareDataAndTimestamps(pvName2, pvToData.get(pvName2), pv2ResultsStream);
+        for (String pp : List.of("twoweek", "extraFields")) {
+            Map<String, List<JSONObject>> pvToData = retrieveJsonResults(startString, endString, "&pp=" + pp);
+            Assertions.assertNotNull(pvToData, "The request with pp=" + pp + " did not answer 200");
+            try (BasicContext context = new BasicContext();
+                    EventStream pv1ResultsStream = new CurrentThreadWorkerEventStream(
+                            pvName, pbplugin.getDataForPV(context, pvName, start, end));
+                    EventStream pv2ResultsStream = new CurrentThreadWorkerEventStream(
+                            pvName2, pbplugin.getDataForPV(context, pvName2, start, end))) {
+                compareDataAndTimestamps(pvName, pvToData.get(pvName), pv1ResultsStream);
+                compareDataAndTimestamps(pvName2, pvToData.get(pvName2), pv2ResultsStream);
+            }
         }
     }
 
     private Map<String, List<JSONObject>> retrieveJsonResults(String startString, String endString) throws IOException {
+        return retrieveJsonResults(startString, endString, "&pp=pb");
+    }
+
+    private Map<String, List<JSONObject>> retrieveJsonResults(
+            String startString, String endString, String extraQuery) throws IOException {
         logger.info("Retrieving data using JSON/HTTP and comparing it to retrieval over PBStoragePlugin");
 
         // Establish a connection with appliance0 -- borrowed from
@@ -187,7 +246,7 @@ public class MultiPVClusterRetrievalTest {
                 + URLEncoder.encode(pvName, StandardCharsets.UTF_8) + "&pv="
                 + URLEncoder.encode(pvName2, StandardCharsets.UTF_8) + "&from="
                 + URLEncoder.encode(startString, StandardCharsets.UTF_8)
-                + "&to=" + URLEncoder.encode(endString, StandardCharsets.UTF_8) + "&pp=pb");
+                + "&to=" + URLEncoder.encode(endString, StandardCharsets.UTF_8) + extraQuery);
         logger.info("Opening this URL: " + obj);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
         con.setRequestMethod("GET");

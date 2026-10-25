@@ -10,6 +10,8 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
@@ -28,13 +30,15 @@ import javax.servlet.http.HttpServletResponse;
  * Of course, you can use the status call but that makes calls to the engine etc and can be stressful if you are checking several thousand PVs
  * All this does is check the configservice...
  *
- * @epics.BPLAction - Given a list of PVs, determine those that are being archived.
- * @epics.BPLActionParam pv - A list of pv names. Send as a CSV using a POST.
- * @epics.BPLActionEnd
  *
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Given a list of PVs, determine those that are being archived.",
+        params = {
+            @BPLParam(name = "pv", description = "A list of pv names. Send as a CSV using a POST.")
+        })
 public class ArchivedPVsAction implements BPLAction {
     private static final Logger logger = LogManager.getLogger(ArchivedPVsAction.class);
 

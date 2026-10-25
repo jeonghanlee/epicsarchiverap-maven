@@ -13,6 +13,9 @@ import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.postprocessors.Mean;
+import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
+import org.epics.archiverappliance.retrieval.postprocessors.PostProcessorWithConsolidatedEventStream;
+import org.epics.archiverappliance.retrieval.postprocessors.PostProcessors;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -112,5 +115,38 @@ public class SummaryStatsPostProcessorTest {
 			}
 
 		}
+	}
+
+	/**
+	 * rms_&lt;secs&gt; resolves through the registry and computes the root mean square per bin.
+	 * Samples alternate between +3 and -3, so every bin has an RMS of 3 and a mean of 0.
+	 */
+	@Test
+	public void testRMSThroughRegistry() throws Exception {
+		short currentYear = TimeUtils.getCurrentYear();
+		String rmsPvName = "Test_SummaryStatsRMS";
+		YearSecondTimestamp startOfSamples = TimeUtils.convertToYearSecondTimestamp(TimeUtils.convertFromISO8601String(currentYear + "-06-01T00:00:00.000Z"));
+		ArrayListEventStream testData = new ArrayListEventStream(0, new RemotableEventStreamDesc(ArchDBRTypes.DBR_SCALAR_DOUBLE, rmsPvName, currentYear));
+		for(int s = 0; s < 10*24; s++) {
+			double value = (s % 2 == 0) ? 3.0 : -3.0;
+			testData.add(new SimulationEvent(startOfSamples.getSecondsintoyear() + s * PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk(), currentYear, ArchDBRTypes.DBR_SCALAR_DOUBLE, new ScalarValue<Double>(value)));
+		}
+
+		String ppArg = "rms_" + PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
+		PostProcessor rmsProcessor = PostProcessors.findPostProcessor(ppArg);
+		Assertions.assertNotNull(rmsProcessor, "No post processor registered for " + ppArg);
+		Assertions.assertEquals("rms", rmsProcessor.getIdentity());
+		rmsProcessor.initialize(ppArg, rmsPvName);
+		Instant start = TimeUtils.convertFromISO8601String(currentYear + "-06-02T00:00:00.000Z");
+		Instant end = TimeUtils.convertFromISO8601String(currentYear + "-06-09T00:00:00.000Z");
+		rmsProcessor.estimateMemoryConsumption(rmsPvName, new PVTypeInfo(rmsPvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, true, 1), start, end, null);
+		rmsProcessor.wrap(CallableEventStream.makeOneStreamCallable(testData, null, false)).call();
+
+		int eventCount = 0;
+		for(Event e : ((PostProcessorWithConsolidatedEventStream) rmsProcessor).getConsolidatedEventStream()) {
+			Assertions.assertEquals(3.0, e.getSampleValue().getValue().doubleValue(), 1e-9, "RMS at " + TimeUtils.convertToISO8601String(e.getEventTimeStamp()));
+			eventCount++;
+		}
+		Assertions.assertTrue(eventCount >= 6, "Expected about 7 daily bins, got " + eventCount);
 	}
 }

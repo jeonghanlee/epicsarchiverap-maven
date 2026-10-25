@@ -95,7 +95,7 @@ def determinePolicy(pvInfoDict):
 			'pb://localhost?name=MTS&rootFolder=${ARCHAPPL_MEDIUM_TERM_FOLDER}&partitionGranularity=PARTITION_DAY&hold=4&gather=1', 
 			'blackhole://localhost?name=LTS'
 			]
-		pvPolicyDict['policyName'] = '2HzPVs'
+		pvPolicyDict['policyName'] = '3DaysMTSOnly'
 	else:
 		pvPolicyDict['samplingPeriod'] = 1.0
 		pvPolicyDict['samplingMethod'] = 'MONITOR'

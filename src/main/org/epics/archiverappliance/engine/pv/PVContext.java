@@ -134,7 +134,7 @@ public class PVContext {
 	/**
 	 * Release a channel.
 	 * 
-	 * @param channel_ref
+	 * @param channel
 	 *            Channel to release.
 	 * @throws CAException
 	 * @throws IllegalStateException
@@ -160,7 +160,7 @@ public class PVContext {
 	 * Add a command to the JCACommandThread.
 	 * @param pvName The name of the PV that this applies to
 	 * @param jcaCommandThreadId The JCA Command thread for this PV.
-	 * @param channel_ref this can be null
+	 * @param theChannel this can be null
 	 * @param msg  &emsp;
 	 * @param command The runnable that will run in the specified command thread 
 	 */

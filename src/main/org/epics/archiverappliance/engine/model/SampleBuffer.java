@@ -42,6 +42,8 @@ public class SampleBuffer {
 	 * previous ArrayListEventStream
 	 */
 	private ArrayListEventStream previousSamples;
+	private boolean writePending;
+	private boolean acceptingSamples = true;
 
 	/**
 	 * year listener for this buffer.
@@ -67,6 +69,10 @@ public class SampleBuffer {
 	 * pVMetrics kept for this sample buffer
 	 */
 	private final PVMetrics pVMetrics;
+	/**
+	 * True once a full buffer dropped a sample in the current write period; one WARN line per period, cleared when the buffer is written.
+	 */
+	private boolean bufferFullLogged = false;
 
 	/** Create sample buffer of given capacity 
 	 *
@@ -103,7 +109,7 @@ public class SampleBuffer {
     * get the combined ArrayListEventStream of the previous and the current
     * @return ArrayListEventStream
     */
-	public ArrayListEventStream getCombinedSamples() {
+	public synchronized ArrayListEventStream getCombinedSamples() {
 		RemotableEventStreamDesc desc = new RemotableEventStreamDesc(
 				archdbrtype, channel_name, (short) 0);
 		ArrayListEventStream combinedSamples = new ArrayListEventStream(
@@ -134,8 +140,35 @@ public class SampleBuffer {
 		synchronized (this) {
 			previousSamples = currentSamples;
 			currentSamples = new ArrayListEventStream(capacity, desc);
-
+			bufferFullLogged = false;
 		}
+	}
+
+	/** Stop buffer input before the final write, including callbacks already in flight. */
+	public synchronized void stopAcceptingSamples() {
+		acceptingSamples = false;
+	}
+
+	public synchronized void startAcceptingSamples() {
+		acceptingSamples = true;
+	}
+
+	public synchronized boolean hasPendingWrite() {
+		return writePending;
+	}
+
+	/** Retain a failed batch until the writer acknowledges its successful append. */
+	public synchronized ArrayListEventStream samplesToWrite() {
+		if (!writePending) {
+			if (currentSamples.isEmpty()) return null;
+			resetSamples();
+			writePending = true;
+		}
+		return previousSamples;
+	}
+
+	public synchronized void samplesWritten() {
+		writePending = false;
 	}
 /**
  * get the previous ArrayListEventStream
@@ -171,7 +204,8 @@ public class SampleBuffer {
 	 * @return boolean true if we need to increment the event count.
 	 */
 	@SuppressWarnings("nls")
-	public boolean add(final DBRTimeEvent value)  {
+	public synchronized boolean add(final DBRTimeEvent value)  {
+		if (!acceptingSamples) return false;
 		boolean retval = true;
 		
 		if(this.archdbrtype != value.getDBRType()) { 
@@ -198,6 +232,12 @@ public class SampleBuffer {
 					// The buffer is full, drop the first sample and increment the bufferFull lost event count. 
 					currentSamples.removeFirst();
 					pVMetrics.addSampleBufferFullLostEventCount();
+					if (!bufferFullLogged) {
+						bufferFullLogged = true;
+						logger.warn("The sample buffer of PV " + channel_name + " is full: capacity " + capacity + " samples for a sampling period of "
+							+ pVMetrics.getSamplingPeriod() + " s, measured event rate " + pVMetrics.getEventRate()
+							+ " events/s; the events that arrive before the next write are dropped and counted");
+					}
 				}
 
 				currentSamples.add(value);

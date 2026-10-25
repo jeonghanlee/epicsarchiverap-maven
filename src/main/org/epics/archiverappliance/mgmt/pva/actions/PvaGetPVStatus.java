@@ -43,7 +43,7 @@ import java.util.Map;
  * <p>
  * epics:nt/NTTable:1.0
  * <ul>
- *    <li>string[] labels [pv,status,appliance,connectionState,lastEvent,samplingPeriod,isMonitored,connectionFirstEstablished,connectionLossRegainCount,connectionLastRestablished]</li>
+ *    <li>string[] labels [pv,status,appliance,connectionState,lastEvent,lastEventEpochSeconds,samplingPeriod,isMonitored,connectionFirstEstablished,connectionLossRegainCount,connectionLastRestablished]</li>
  *    <li>structure value
  *       <ul>
  *         <li>string[] pv [test_0,test_1,test_10,test_100...]</li>
@@ -120,6 +120,7 @@ public class PvaGetPVStatus implements PvaAction {
         LinkedList<String> appliance = new LinkedList<>();
         LinkedList<String> connectionState = new LinkedList<>();
         LinkedList<String> lastEvent = new LinkedList<>();
+        LinkedList<String> lastEventEpochSeconds = new LinkedList<>();
         LinkedList<String> samplingPeriod = new LinkedList<>();
         LinkedList<String> isMonitored = new LinkedList<>();
         LinkedList<String> connectionFirstEstablished = new LinkedList<>();
@@ -131,6 +132,7 @@ public class PvaGetPVStatus implements PvaAction {
             appliance.add(entry.getValue().get("appliance"));
             connectionState.add(entry.getValue().get("connectionState"));
             lastEvent.add(entry.getValue().get("lastEvent"));
+            lastEventEpochSeconds.add(entry.getValue().getOrDefault("lastEventEpochSeconds", ""));
             samplingPeriod.add(entry.getValue().get("samplingPeriod"));
             isMonitored.add(entry.getValue().get("isMonitored"));
             connectionFirstEstablished.add(entry.getValue().get("connectionFirstEstablished"));
@@ -146,6 +148,8 @@ public class PvaGetPVStatus implements PvaAction {
                     .addColumn(new PVAStringArray(
                             "connectionState", connectionState.toArray(new String[connectionState.size()])))
                     .addColumn(new PVAStringArray("lastEvent", lastEvent.toArray(new String[lastEvent.size()])))
+                    .addColumn(new PVAStringArray(
+                            "lastEventEpochSeconds", lastEventEpochSeconds.toArray(new String[lastEventEpochSeconds.size()])))
                     .addColumn(new PVAStringArray(
                             "samplingPeriod", samplingPeriod.toArray(new String[samplingPeriod.size()])))
                     .addColumn(new PVAStringArray("isMonitored", isMonitored.toArray(new String[isMonitored.size()])))

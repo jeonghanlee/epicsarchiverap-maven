@@ -33,7 +33,24 @@ import java.util.HashMap;
  */
 public class GetEngineDataAction implements BPLAction {
 	private static final Logger logger = LogManager.getLogger(GetEngineDataAction.class);
-	
+	private static final String OUTCOME_SERVED = "served";
+	private static final String OUTCOME_EMPTY = "empty";
+	private static final String OUTCOME_FAILED = "failed";
+
+	/** What one request did, for the record written when it ends. */
+	private static final class Result {
+		String outcome = OUTCOME_FAILED;
+		int totalEvents = 0;
+		boolean report = true;
+	}
+
+	/**
+	 * Streams the buffered data of one PV and writes one INFO record when the request ends: the number of events, the
+	 * elapsed time, the PV, the address of the requester and the outcome (served, empty or failed). A PV without a channel
+	 * in this engine answers HTTP 404, and a request without a PV or with a time that cannot be read answers HTTP 400; none of
+	 * them writes the record. A failure
+	 * propagates to the dispatcher, which logs the exception once.
+	 */
 	@Override
 	public void execute(HttpServletRequest req, HttpServletResponse resp,
 			ConfigService configService) throws IOException {
@@ -43,17 +60,41 @@ public class GetEngineDataAction implements BPLAction {
 			return;
 		}
 
+		long requestStart = System.nanoTime();
+		Result result = new Result();
+		try {
+			serve(pvName, req, resp, configService, result);
+		} finally {
+			if(result.report) {
+				logger.info("Found a total of " + result.totalEvents + " in " + ((System.nanoTime() - requestStart) / 1_000_000)
+						+ "(ms) pv=" + pvName + " requester=" + req.getRemoteAddr() + " outcome=" + result.outcome);
+			}
+		}
+	}
+
+	private void serve(String pvName, HttpServletRequest req, HttpServletResponse resp,
+			ConfigService configService, Result result) throws IOException {
+
 		String startTimeStr = req.getParameter("from"); 
 		String endTimeStr = req.getParameter("to");
 		// ISO datetimes are of the form "2011-02-02T08:00:00.000Z" 
         Instant start = null;
-		if(startTimeStr != null) { 
-			start = TimeUtils.convertFromISO8601String(startTimeStr);
-		}
         Instant end = null;
-		if(endTimeStr != null) { 
-			end = TimeUtils.convertFromISO8601String(endTimeStr);
-		}
+        try {
+            if (startTimeStr != null) {
+                start = TimeUtils.convertFromISO8601String(startTimeStr);
+            }
+            if (endTimeStr != null) {
+                end = TimeUtils.convertFromISO8601String(endTimeStr);
+            }
+        } catch (IllegalArgumentException ex) {
+            // A time that cannot be read is a rejected request, like one without a PV: HTTP 400 and no record.
+            result.report = false;
+            String msg = "Cannot parse time " + startTimeStr + " or " + endTimeStr;
+            logger.warn(msg, ex);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+            return;
+        }
 
 		EngineContext engineContext = configService.getEngineContext();
 		if(engineContext.getChannelList().containsKey(pvName)){
@@ -66,10 +107,8 @@ public class GetEngineDataAction implements BPLAction {
 			if(st != null && !st.isEmpty()) {
 				OutputStream os = resp.getOutputStream();
 				try {
-					long s = System.currentTimeMillis();
-					int totalEvents = StreamPBIntoOutput.streamPBIntoOutputStream(st, os, start, end);
-					long e = System.currentTimeMillis();
-					logger.info("Found a total of " + totalEvents + " in " + (e-s) + "(ms)");
+					result.totalEvents = StreamPBIntoOutput.streamPBIntoOutputStream(st, os, start, end);
+					result.outcome = OUTCOME_SERVED;
 				} finally {
 					try { os.flush(); os.close(); } catch(Throwable t) {}
 				}
@@ -89,6 +128,7 @@ public class GetEngineDataAction implements BPLAction {
 						}
 						desc.addHeaders(metaFields);
 						StreamPBIntoOutput.writeHeaderOnly(os, desc);
+						result.outcome = OUTCOME_EMPTY;
 					} finally {
 						try { os.flush(); os.close(); } catch(Throwable t) {}
 					}
@@ -97,6 +137,7 @@ public class GetEngineDataAction implements BPLAction {
 			}
 		}
 
+		result.report = false;
 		logger.debug("No data for PV " + pvName + " in this engine.");
 		resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 		return;

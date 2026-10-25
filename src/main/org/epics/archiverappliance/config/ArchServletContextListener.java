@@ -15,6 +15,7 @@ import javax.servlet.ServletContextListener;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.retrieval.RetrievalMemoryProtection;
 
 /**
  * This is a ServletContextListener expected to be registered in web.xml that serves as the source of dependency injection.
@@ -24,7 +25,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class ArchServletContextListener implements ServletContextListener {
 	private static final Logger logger = LogManager.getLogger(ArchServletContextListener.class);
-	private static final Logger configlogger = LogManager.getLogger("config." + ArchServletContextListener.class);
+	private static final Logger configlogger = LogManager.getLogger("config." + ArchServletContextListener.class.getName());
 	@Override
 	public void contextInitialized(ServletContextEvent sce) {
 		// This should hopefully trigger the log4j2 initialization
@@ -44,7 +45,11 @@ public class ArchServletContextListener implements ServletContextListener {
 				configService = (ConfigService) Class.forName(configServiceImplClassName).getConstructor().newInstance();
 			}
 
-			configService.initialize(sce.getServletContext());			
+			configService.initialize(sce.getServletContext());
+			if (configService.getWarFile() == ConfigService.WAR_FILE.RETRIEVAL) {
+				configService.getRetrievalRuntimeState().configureMemoryProtection(
+						RetrievalMemoryProtection.deploymentSettings(configService.getInstallationProperties()));
+			}
 			sce.getServletContext().setAttribute(ConfigService.CONFIG_SERVICE_NAME, configService);
 		} catch (Exception e) {
 			logger.fatal("Exception initializing config service ", e);

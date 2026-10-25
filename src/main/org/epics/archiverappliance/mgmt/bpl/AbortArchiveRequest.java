@@ -19,6 +19,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
@@ -29,13 +31,15 @@ import org.json.simple.JSONValue;
 /**
  * Abort any pending requests for archiving this PV.
  * 
- * @epics.BPLAction - Abort any pending requests for archiving this PV.
- * @epics.BPLActionParam pv - The name of the PV.
- * @epics.BPLActionEnd
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Abort any pending requests for archiving this PV.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the PV.")
+        })
 public class AbortArchiveRequest implements BPLAction {
 	private static final Logger logger = LogManager.getLogger(AbortArchiveRequest.class);
 

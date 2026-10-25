@@ -137,8 +137,7 @@ public class FailoverMultiStepETLTest {
     private int generateData(String applianceName, Instant ts, int startingOffset) throws IOException {
         int genEventCount = 0;
         StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(
-                "pb://localhost?name=MTS&rootFolder=" + "build/tomcats/tomcat_"
-                        + this.getClass().getSimpleName() + "/" + applianceName + "/mts"
+                "pb://localhost?name=MTS&rootFolder=" + new File(TomcatSetup.getApplianceFolder(this.getClass().getSimpleName(), applianceName), "mts").getPath()
                         + "&partitionGranularity=PARTITION_DAY",
                 configService);
         try (BasicContext context = new BasicContext()) {
@@ -191,8 +190,7 @@ public class FailoverMultiStepETLTest {
         long rtvlEventCount = 0;
         long lastEvEpoch = 0;
         StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(
-                "pb://localhost?name=LTS&rootFolder=" + "build/tomcats/tomcat_"
-                        + this.getClass().getSimpleName() + "/" + applianceName + "/lts"
+                "pb://localhost?name=LTS&rootFolder=" + new File(TomcatSetup.getApplianceFolder(this.getClass().getSimpleName(), applianceName), "lts").getPath()
                         + "&partitionGranularity=PARTITION_YEAR",
                 configService);
         try (BasicContext context = new BasicContext()) {
@@ -243,15 +241,15 @@ public class FailoverMultiStepETLTest {
         System.getProperties()
                 .put(
                         "ARCHAPPL_SHORT_TERM_FOLDER",
-                        "build/tomcats/tomcat_" + this.getClass().getSimpleName() + "/" + "dest_appliance" + "/sts");
+                        new File(TomcatSetup.getApplianceFolder(this.getClass().getSimpleName(), "dest_appliance"), "sts").getPath());
         System.getProperties()
                 .put(
                         "ARCHAPPL_MEDIUM_TERM_FOLDER",
-                        "build/tomcats/tomcat_" + this.getClass().getSimpleName() + "/" + "dest_appliance" + "/mts");
+                        new File(TomcatSetup.getApplianceFolder(this.getClass().getSimpleName(), "dest_appliance"), "mts").getPath());
         System.getProperties()
                 .put(
                         "ARCHAPPL_LONG_TERM_FOLDER",
-                        "build/tomcats/tomcat_" + this.getClass().getSimpleName() + "/" + "dest_appliance" + "/lts");
+                        new File(TomcatSetup.getApplianceFolder(this.getClass().getSimpleName(), "dest_appliance"), "lts").getPath());
 
         long dCount = 0;
         for (Instant ts = startTime; ts.isBefore(endTime); ts = TimeUtils.plusDays(ts, 1)) {

@@ -169,12 +169,15 @@ public class DataRetrievalServlet extends HttpServlet {
             LinkedList<TimeSpan> requestTimes,
             HttpServletRequest req,
             PostProcessor postProcessor) {
+        RetrievalMemoryProtection.admitCurrent(postProcessor,
+                requestTimes.getFirst().getStartTime(), requestTimes.getLast().getEndTime());
         long memoryConsumption = postProcessor.estimateMemoryConsumption(
                 pvName,
                 typeInfo,
                 requestTimes.getFirst().getStartTime(),
                 requestTimes.getLast().getEndTime(),
                 req);
+        RetrievalMemoryProtection.estimateCurrent(memoryConsumption);
         double memoryConsumptionInMB = (double) memoryConsumption / (1024 * 1024);
         DecimalFormat twoSignificantDigits = new DecimalFormat("###,###,###,###,###,###.##");
         logger.debug("Memory consumption estimate from postprocessor for pv " + pvName + " is " + memoryConsumption
@@ -227,13 +230,7 @@ public class DataRetrievalServlet extends HttpServlet {
                 resp.flushBuffer();
             }
         } catch (Exception ex) {
-            if (ex.toString() != null && ex.toString().contains("ClientAbortException")) {
-                // We check for ClientAbortException etc this way to avoid including tomcat jars in the build path.
-                logger.debug("Exception when consuming and flushing data from " + sourceDesc.getSource(), ex);
-            } else {
-                logger.error(
-                        "Exception when consuming and flushing data from " + sourceDesc.getSource() + "-->" + ex, ex);
-            }
+            throw RetrievalMemoryProtection.fail(ex);
         }
     }
 
@@ -256,16 +253,6 @@ public class DataRetrievalServlet extends HttpServlet {
         return fetchLatestMetadata;
     }
 
-    private static boolean useChunkedEncoding(HttpServletRequest req) {
-        boolean useChunkedEncoding = true;
-        String doNotChunkStr = req.getParameter("donotchunk");
-        if (doNotChunkStr != null && !doNotChunkStr.equals("false")) {
-            logger.debug("Turning off HTTP chunked encoding");
-            useChunkedEncoding = false;
-        }
-        return useChunkedEncoding;
-    }
-
     private static boolean useReduced(HttpServletRequest req) {
         boolean useReduced = false;
         String useReducedStr = req.getParameter("usereduced");
@@ -281,6 +268,20 @@ public class DataRetrievalServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (configService.getStartupState() != STARTUP_SEQUENCE.STARTUP_COMPLETE) {
+            resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Retrieval application has not started");
+            return;
+        }
+        try (RetrievalMemoryProtection.Request scope = configService.getRetrievalRuntimeState().beginHttpRequest()) {
+            RetrievalMemoryProtection.checkCurrentNow();
+            doGetRequest(req, resp);
+            RetrievalMemoryProtection.checkCurrentNow();
+        } catch (Exception failure) {
+            respondToFailure(resp, failure);
+        }
+    }
+
+    private void doGetRequest(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         String[] pathnameSplit = req.getPathInfo().split("/");
         String requestName = (pathnameSplit[pathnameSplit.length - 1].split("\\."))[0];
@@ -299,6 +300,20 @@ public class DataRetrievalServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (configService.getStartupState() != STARTUP_SEQUENCE.STARTUP_COMPLETE) {
+            resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Retrieval application has not started");
+            return;
+        }
+        try (RetrievalMemoryProtection.Request scope = configService.getRetrievalRuntimeState().beginHttpRequest()) {
+            RetrievalMemoryProtection.checkCurrentNow();
+            doPostRequest(req, resp);
+            RetrievalMemoryProtection.checkCurrentNow();
+        } catch (Exception failure) {
+            respondToFailure(resp, failure);
+        }
+    }
+
+    private void doPostRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         String[] pathnameSplit = req.getPathInfo().split("/");
         String requestName = (pathnameSplit[pathnameSplit.length - 1].split("\\."))[0];
@@ -329,6 +344,16 @@ public class DataRetrievalServlet extends HttpServlet {
         }
     }
 
+    private static void respondToFailure(HttpServletResponse resp, Exception failure) throws IOException {
+        RuntimeException cause = RetrievalMemoryProtection.fail(failure);
+        logger.error("Retrieval request failed", cause);
+        if (resp.isCommitted()) throw new IOException("Retrieval response interrupted", cause);
+        int status = cause instanceof RetrievalMemoryProtection.Rejected rejected ? rejected.httpStatus()
+                : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+        resp.reset();
+        resp.sendError(status, cause.getMessage());
+    }
+
     private void doGetSinglePV(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         PoorMansProfiler pmansProfiler = new PoorMansProfiler();
@@ -343,9 +368,7 @@ public class DataRetrievalServlet extends HttpServlet {
 
         boolean useReduced = useReduced(req);
         String extension = req.getPathInfo().split("\\.")[1];
-        logger.info("Mime is {}", extension);
-
-        boolean useChunkedEncoding = useChunkedEncoding(req);
+        logger.debug("Mime is {}", extension);
 
         boolean fetchLatestMetadata = isFetchLatestMetadata(req);
 
@@ -393,6 +416,9 @@ public class DataRetrievalServlet extends HttpServlet {
             logger.debug("After parsing the function call syntax pvName is " + pvName + " and postProcessorUserArg is "
                     + postProcessorUserArg);
         }
+
+        String operatorProblem = PostProcessors.checkPostProcessorUserArg(postProcessorUserArg.toString());
+        if (check(operatorProblem != null, operatorProblem, resp, HttpServletResponse.SC_BAD_REQUEST)) return;
 
         logger.debug("postProcessorUserArg times is {}", postProcessorUserArg);
         PostProcessor postProcessor = PostProcessors.findPostProcessor(postProcessorUserArg.toString());
@@ -448,64 +474,69 @@ public class DataRetrievalServlet extends HttpServlet {
         }
 
         try (BasicContext retrievalContext = new BasicContext(typeInfo.getDBRType(), pvNameFromRequest);
-                MergeDedupConsumer mergeDedupCountingConsumer = createMergeDedupConsumer(resp, extension);
                 RetrievalExecutorResult executorResult = determineExecutorForPostProcessing(
-                        pvName, typeInfo, requestTimesOb.requestTimes(), req, postProcessor)) {
-            HashMap<String, String> engineMetadata = null;
-            if (fetchLatestMetadata && typeInfo.getSamplingMethod() != SamplingMethod.DONT_ARCHIVE) {
-                // Make a call to the engine to fetch the latest metadata; skip external servers, template PVs and the
-                // like by checking the sampling method.
-                engineMetadata = fetchLatestMedataFromEngine(pvName, applianceForPV);
-            }
-
-            LinkedList<Future<RetrievalResult>> retrievalResultFutures = resolveAllDataSources(
-                    pvName, typeInfo, postProcessor, applianceForPV, retrievalContext, executorResult, req);
-            pmansProfiler.mark("After data source resolution");
-
-            long s1 = System.currentTimeMillis();
-            String currentlyProcessingPV = null;
-
-            List<Future<EventStream>> eventStreamFutures =
-                    getEventStreamFuturesFromRetrievalResults(executorResult, retrievalResultFutures);
-
-            logger.debug(
-                    "Done with the RetrievalResult's; moving onto the individual event stream from each source for "
-                            + pvName);
-            pmansProfiler.mark("After retrieval results");
-
-            evaluateEventStreamFutures(
-                    resp,
-                    pmansProfiler,
-                    pvName,
-                    requestTimesOb,
-                    postProcessor,
-                    typeInfo,
-                    retrievalContext,
-                    mergeDedupCountingConsumer,
-                    engineMetadata,
-                    currentlyProcessingPV,
-                    eventStreamFutures);
-
-            consolidateEventStream(resp, pvName, postProcessor, mergeDedupCountingConsumer);
-
-            // If the postProcessor needs to send final data across, give it a chance now...
-            if (postProcessor instanceof AfterAllStreams) {
-                EventStream finalEventStream = ((AfterAllStreams) postProcessor).anyFinalData();
-                if (finalEventStream != null) {
-                    mergeDedupCountingConsumer.consumeEventStream(finalEventStream);
-                    resp.flushBuffer();
+                        pvName, typeInfo, requestTimesOb.requestTimes(), req, postProcessor);
+                MergeDedupConsumer mergeDedupCountingConsumer = createMergeDedupConsumer(resp, extension)) {
+            try {
+                HashMap<String, String> engineMetadata = null;
+                if (fetchLatestMetadata && typeInfo.getSamplingMethod() != SamplingMethod.DONT_ARCHIVE) {
+                    // Make a call to the engine to fetch the latest metadata; skip external servers, template PVs and the
+                    // like by checking the sampling method.
+                    engineMetadata = fetchLatestMedataFromEngine(pvName, applianceForPV);
                 }
+
+                LinkedList<Future<RetrievalResult>> retrievalResultFutures = resolveAllDataSources(
+                        pvName, typeInfo, postProcessor, applianceForPV, retrievalContext, executorResult, req);
+                pmansProfiler.mark("After data source resolution");
+
+                long s1 = System.nanoTime();
+                String currentlyProcessingPV = null;
+
+                List<Future<EventStream>> eventStreamFutures =
+                        getEventStreamFuturesFromRetrievalResults(executorResult, retrievalResultFutures);
+
+                logger.debug(
+                        "Done with the RetrievalResult's; moving onto the individual event stream from each source for "
+                                + pvName);
+                pmansProfiler.mark("After retrieval results");
+
+                evaluateEventStreamFutures(
+                        resp,
+                        pmansProfiler,
+                        pvName,
+                        requestTimesOb,
+                        postProcessor,
+                        typeInfo,
+                        retrievalContext,
+                        mergeDedupCountingConsumer,
+                        engineMetadata,
+                        currentlyProcessingPV,
+                        eventStreamFutures);
+
+                consolidateEventStream(resp, pvName, postProcessor, mergeDedupCountingConsumer);
+
+                // If the postProcessor needs to send final data across, give it a chance now...
+                if (postProcessor instanceof AfterAllStreams) {
+                    EventStream finalEventStream = ((AfterAllStreams) postProcessor).anyFinalData();
+                    if (finalEventStream != null) {
+                        mergeDedupCountingConsumer.consumeEventStream(finalEventStream);
+                        resp.flushBuffer();
+                    }
+                }
+
+                pmansProfiler.mark("After writing all eventstreams to response");
+
+                long s2 = System.nanoTime();
+                logger.debug("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
+                        + " in " + ((s2 - s1) / 1_000_000) + "(ms)"
+                        + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs + " events"
+                        + " deduping involved " + mergeDedupCountingConsumer.comparedEventsForAllPVs + " compares.");
+            } catch (Exception ex) {
+                mergeDedupCountingConsumer.abort();
+                throw RetrievalMemoryProtection.fail(ex);
             }
-
-            pmansProfiler.mark("After writing all eventstreams to response");
-
-            long s2 = System.currentTimeMillis();
-            logger.info("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
-                    + " in " + (s2 - s1) + "(ms)"
-                    + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs + " events"
-                    + " deduping involved " + mergeDedupCountingConsumer.comparedEventsForAllPVs + " compares.");
         } catch (Exception ex) {
-            logger.error("Exception when retrieving data ", ex);
+            throw RetrievalMemoryProtection.fail(ex);
         }
         pmansProfiler.mark("After all closes and flushing all buffers");
 
@@ -562,18 +593,7 @@ public class DataRetrievalServlet extends HttpServlet {
                 pmansProfiler.mark(
                         "After event stream " + eventStream.getDescription().getSource());
             } catch (Exception ex) {
-                if (ex.toString() != null && ex.toString().contains("ClientAbortException")) {
-                    // We check for ClientAbortException etc this way to avoid including tomcat jars in the build path.
-                    logger.debug(
-                            "Exception when consuming and flushing data from "
-                                    + (sourceDesc != null ? sourceDesc.getSource() : "N/A"),
-                            ex);
-                } else {
-                    logger.error(
-                            "Exception when consuming and flushing data from "
-                                    + (sourceDesc != null ? sourceDesc.getSource() : "N/A") + "-->" + ex,
-                            ex);
-                }
+                throw RetrievalMemoryProtection.fail(ex);
             }
         }
     }
@@ -676,7 +696,7 @@ public class DataRetrievalServlet extends HttpServlet {
         try {
             end = TimeUtils.fromString(req.getParameter("to"), TimeUtils.plusHours(TimeUtils.now(), 1));
         } catch (IllegalArgumentException ex) {
-            logAndRespond("Cannot parse time" + req.getParameter("to"), ex, resp, HttpServletResponse.SC_BAD_REQUEST);
+            logAndRespond("Cannot parse time " + req.getParameter("to"), ex, resp, HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
         // ISO datetimes are of the form "2011-02-02T08:00:00.000Z"
@@ -684,7 +704,7 @@ public class DataRetrievalServlet extends HttpServlet {
         try {
             start = TimeUtils.fromString(req.getParameter("from"), TimeUtils.minusDays(end, 1));
         } catch (IllegalArgumentException ex) {
-            logAndRespond("Cannot parse time" + req.getParameter("from"), ex, resp, HttpServletResponse.SC_BAD_REQUEST);
+            logAndRespond("Cannot parse time " + req.getParameter("from"), ex, resp, HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
 
@@ -749,15 +769,13 @@ public class DataRetrievalServlet extends HttpServlet {
 
         // Getting MIME type
         String extension = req.getPathInfo().split("\\.")[1];
-        logger.info("Mime is {}", extension);
+        logger.debug("Mime is {}", extension);
 
         if (!StringUtils.equalsAny(extension, "json", "raw", "jplot", "qw")) {
             String msg = "Mime type " + extension + " is not supported. Please use \"json\", \"jplot\" or \"raw\".";
             logAndRespond(msg, null, resp, HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-
-        boolean useChunkedEncoding = useChunkedEncoding(req);
 
         boolean fetchLatestMetadata = isFetchLatestMetadata(req);
 
@@ -791,11 +809,11 @@ public class DataRetrievalServlet extends HttpServlet {
 
         // Get a post processor for each PV specified in pvNames
         // If PV in the form <pp>(<pv>), process it
-        String postProcessorUserArg = req.getParameter("pp");
+        String requestPostProcessorUserArg = req.getParameter("pp");
         List<String> postProcessorUserArgs = new ArrayList<>(pvNames.size());
         List<PostProcessor> postProcessors = new ArrayList<>(pvNames.size());
         for (int i = 0; i < pvNames.size(); i++) {
-            postProcessorUserArgs.add(postProcessorUserArg);
+            String postProcessorUserArg = requestPostProcessorUserArg;
 
             if (pvNames.get(i).contains("(")) {
                 if (check(
@@ -805,16 +823,16 @@ public class DataRetrievalServlet extends HttpServlet {
                         HttpServletResponse.SC_BAD_REQUEST)) return;
                 String[] components = pvNames.get(i).split("[(,)]");
                 postProcessorUserArg = components[0];
-                postProcessorUserArgs.set(i, postProcessorUserArg);
                 pvNames.set(i, components[1]);
-                if (components.length > 2) {
-                    for (int j = 2; j < components.length; j++) {
-                        postProcessorUserArgs.set(i, postProcessorUserArgs.get(i) + "_" + components[j]);
-                    }
+                for (int j = 2; j < components.length; j++) {
+                    postProcessorUserArg = postProcessorUserArg + "_" + components[j];
                 }
                 logger.info("After parsing the function call syntax pvName is " + pvNames.get(i)
                         + " and postProcessorUserArg is " + postProcessorUserArg);
             }
+            String operatorProblem = PostProcessors.checkPostProcessorUserArg(postProcessorUserArg);
+            if (check(operatorProblem != null, operatorProblem, resp, HttpServletResponse.SC_BAD_REQUEST)) return;
+            postProcessorUserArgs.add(postProcessorUserArg);
             postProcessors.add(PostProcessors.findPostProcessor(postProcessorUserArg));
         }
 
@@ -911,7 +929,7 @@ public class DataRetrievalServlet extends HttpServlet {
         for (int i = 0; i < pvNames.size(); i++) {
             String pvName = pvNames.get(i);
             PVTypeInfo typeInfo = typeInfos.get(i);
-            postProcessorUserArg = postProcessorUserArgs.get(i);
+            String postProcessorUserArg = postProcessorUserArgs.get(i);
 
             // If a field is specified in a PV name, it will create a post processor for that
             String fieldName = PVNames.getFieldName(pvName);
@@ -1002,10 +1020,11 @@ public class DataRetrievalServlet extends HttpServlet {
             }
 
         } catch (Exception ex) {
-            logger.error("Exception when retrieving data ", ex);
+            mergeDedupCountingConsumer.abort();
+            throw RetrievalMemoryProtection.fail(ex);
         }
 
-        long s1 = System.currentTimeMillis();
+        long s1 = System.nanoTime();
         String currentlyProcessingPV = null;
 
         /*
@@ -1058,12 +1077,13 @@ public class DataRetrievalServlet extends HttpServlet {
                 }
             }
         } catch (Exception ex) {
-            logger.error("Exception when retrieving data ", ex);
+            mergeDedupCountingConsumer.abort();
+            throw RetrievalMemoryProtection.fail(ex);
         }
 
-        long s2 = System.currentTimeMillis();
-        logger.info("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
-                + " in " + (s2 - s1) + "(ms)"
+        long s2 = System.nanoTime();
+        logger.debug("For the complete request, found a total of " + mergeDedupCountingConsumer.totalEventsForAllPVs
+                + " in " + ((s2 - s1) / 1_000_000) + "(ms)"
                 + " skipping " + mergeDedupCountingConsumer.skippedEventsForAllPVs + " events"
                 + " deduping involved " + mergeDedupCountingConsumer.comparedEventsForAllPVs + " compares.");
 

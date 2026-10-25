@@ -226,8 +226,9 @@ public class LineByteStream implements Closeable {
         while (loopcount < MAX_ITERATIONS_TO_DETERMINE_LINE) {
             if (seekPos < 0) seekPos = 0L;
             this.byteChannel.position(seekPos);
-            lastReadPointer = seekPos;
             readNextBatch();
+            // readNextBatch advances lastReadPointer by the previous batch; the batch just read starts at seekPos.
+            lastReadPointer = seekPos;
             // We are shaving off 2 bytes from the end to skip the last newline if indeed the last line is terminated by
             // a newline.
             for (int i = bytesRead - 2; i >= 0; i--) {

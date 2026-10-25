@@ -21,6 +21,7 @@ package org.epics.archiverappliance.engine.V4;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ArchDBRTypes;
+import org.epics.archiverappliance.engine.model.ArchiveChannel;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.data.SampleValue;
@@ -49,6 +50,7 @@ import static org.epics.archiverappliance.engine.V4.PVAccessUtil.bytesToString;
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.convertBytesToPVAStructure;
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.getReceivedValues;
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.startArchivingPV;
+import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForEventCount;
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.updateStructure;
 
 /**
@@ -118,11 +120,12 @@ public class GenericStructureTest {
 
         var type = ArchDBRTypes.DBR_V4_GENERIC_BYTES;
         MemBufWriter writer = new MemBufWriter(pvName, type);
-        startArchivingPV(pvName, writer, configService, type);
+        ArchiveChannel channel = startArchivingPV(pvName, writer, configService, type);
 
         var entry = updateStructure(pvaStructure, serverPV);
         expectedStructure.put(entry.getKey(), entry.getValue());
 
+        waitForEventCount(channel, expectedStructure.size());
         Map<Instant, SampleValue> actualValues = getReceivedValues(writer, configService);
         Map<Instant, PVAData> convertedActualValues = convertBytesToPVAStructure(actualValues);
 
@@ -157,7 +160,7 @@ public class GenericStructureTest {
 
         var type = ArchDBRTypes.DBR_V4_GENERIC_BYTES;
         MemBufWriter writer = new MemBufWriter(pvName, type);
-        startArchivingPV(pvName, writer, configService, type);
+        ArchiveChannel channel = startArchivingPV(pvName, writer, configService, type);
 
         var entry = updateStructure(pvaStructure, serverPV);
         expectedStructure.put(
@@ -166,6 +169,7 @@ public class GenericStructureTest {
                         entry.getKey(),
                         ((PVAString) ((PVAStructure) entry.getValue().get("structure")).get("level 1")).get()));
 
+        waitForEventCount(channel, expectedStructure.size());
         Map<Instant, SampleValue> actualValues = getReceivedValues(writer, configService);
         Map<Instant, String> jsonActualValues = convertToJSON(actualValues);
 

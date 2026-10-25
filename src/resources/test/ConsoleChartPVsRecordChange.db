@@ -1,0 +1,36 @@
+# The four records of the checks of a record that changes, as the console checks normally use them: scalar doubles. st.cmd loads this file by default (RECORD_CHANGE empty in consolechart.conf).
+record(calc, "SR:BPM:03:X") {
+    field(SCAN, "1 second")
+    field(CALC, "0.003*((RNDM+RNDM+RNDM-1.5)*2)+0.02*SIN(A/1800+2.1)+0.004*SIN(A/90)+0.05*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position X")
+}
+
+record(calc, "SR:BPM:03:Y") {
+    field(SCAN, "1 second")
+    field(CALC, "0.002*((RNDM+RNDM+RNDM-1.5)*2)+0.012*COS(A/2400+2.1)+0.003*SIN(A/70)+0.02*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position Y")
+}
+
+record(calc, "SR:BPM:04:X") {
+    field(SCAN, "1 second")
+    field(CALC, "0.003*((RNDM+RNDM+RNDM-1.5)*2)+0.02*SIN(A/1800+2.8)+0.004*SIN(A/90)+0.05*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position X")
+}
+
+record(calc, "SR:BPM:04:Y") {
+    field(SCAN, "1 second")
+    field(CALC, "0.002*((RNDM+RNDM+RNDM-1.5)*2)+0.012*COS(A/2400+2.8)+0.003*SIN(A/70)+0.02*((A%90)<2)")
+    field(INPA, "SR:TICK")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "beam position Y")
+}

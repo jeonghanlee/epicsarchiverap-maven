@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
@@ -22,13 +24,15 @@ import org.json.simple.JSONValue;
 
 /**
  *
- * @epics.BPLAction - Modify the fields (HIHI, LOLO etc) being archived as part of the PV. PV needs to be paused first.
- * @epics.BPLActionParam pv - The real name of the pv.
- * @epics.BPLActionParam command - A command is a verb followed by a list of fields, all of them comma separated. Possible verbs are <code>add</code>, <code>remove</code> and <code>clear</code>. For example <code>add,ADEL,MDEL</code> will add the fields ADEL and MDEL if they are not already present. <code>clear</code> clears all the fields. You can have any number of commands.  
- * @epics.BPLActionEnd
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Modify the fields (HIHI, LOLO etc) being archived as part of the PV. PV needs to be paused first.",
+        params = {
+            @BPLParam(name = "pv", description = "The real name of the pv."),
+            @BPLParam(name = "command", description = "A command is a verb followed by a list of fields, all of them comma separated. Possible verbs are <code>add</code>, <code>remove</code> and <code>clear</code>. For example <code>add,ADEL,MDEL</code> will add the fields ADEL and MDEL if they are not already present. <code>clear</code> clears all the fields. You can have any number of commands.")
+        })
 public class ModifyMetaFieldsAction implements BPLAction {
 	private static Logger logger = LogManager.getLogger(ModifyMetaFieldsAction.class.getName());
 

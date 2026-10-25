@@ -11,10 +11,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.mgmt.bpl.GetPausedPVsForThisAppliance;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONArray;
@@ -23,26 +26,33 @@ import org.json.simple.JSONArray;
  * Generate a report of PVs that are currently paused.
  * 
  * 
- * @epics.BPLAction - Return a list of PVs that are currently paused. 
- * @epics.BPLActionParam limit - Limit this report to this many PVs per appliance in the cluster. Optional, if unspecified, there are no limits enforced.
- * @epics.BPLActionEnd
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Return a list of PVs that are currently paused.",
+        params = {
+            @BPLParam(name = "limit", description = "Limit this report to this many PVs per appliance; an integer from 1 to 2147483647, else HTTP 400. Optional, if unspecified, there are no limits enforced.")
+        })
 public class PausedPVsReport implements BPLAction {
 	private static Logger logger = LogManager.getLogger(PausedPVsReport.class.getName());
 	@Override
 	public void execute(HttpServletRequest req, HttpServletResponse resp, ConfigService configService) throws IOException {
 		String limit = req.getParameter("limit");
 		logger.info("Paused PVs report for " + (limit == null ? "default limit " : ("limit " + limit)));
+		int parsedLimit;
+		try {
+			parsedLimit = GetPausedPVsForThisAppliance.parseLimit(limit);
+		} catch(IllegalArgumentException ex) {
+			logger.warn("Bad limit for the paused pvs report: " + ex.getMessage());
+			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, ex.getMessage());
+			return;
+		}
 		LinkedList<String> pausedPVForThisApplianceURLs = new LinkedList<String>();
 		for(ApplianceInfo info : configService.getAppliancesInCluster()) {
 			String mgmtURL = info.getMgmtURL();
-			String pausedPVForThisApplianceURL = mgmtURL + "/getPausedPVsForThisAppliance" + (limit == null ? "" : ("?limit=" + limit));
-			if(limit != null) {
-				pausedPVForThisApplianceURL = pausedPVForThisApplianceURL + "?limit=" + limit;
-			}
+			String pausedPVForThisApplianceURL = mgmtURL + "/getPausedPVsForThisAppliance" + (limit == null ? "" : ("?limit=" + parsedLimit));
 			pausedPVForThisApplianceURLs.add(pausedPVForThisApplianceURL);
 		}
 		
@@ -54,7 +64,7 @@ public class PausedPVsReport implements BPLAction {
 			pvDetails.put("pvName", pvName);
 			PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
 			pvDetails.put("instance", typeInfo.getApplianceIdentity());
-			pvDetails.put("modificationTime", TimeUtils.convertToHumanReadableString(typeInfo.getModificationTime()));
+			TimeUtils.putTime(pvDetails, "modificationTime", typeInfo.getModificationTime());
 			retVal.add(pvDetails);
 		}
 		

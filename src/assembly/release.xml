@@ -5,25 +5,34 @@
     <formats>
         <format>tar.gz</format>
     </formats>
-    <includeBaseDirectory>false</includeBaseDirectory> <fileSets>
-        <fileSet>
-            <directory>${project.build.directory}</directory>
-            <outputDirectory>/</outputDirectory>
-            <includes>
-                <include>mgmt.war</include>
-                <include>engine.war</include>
-                <include>etl.war</include>
-                <include>retrieval.war</include>
-            </includes>
-        </fileSet>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <!-- The WARs keep their plain names in the bundle so that Tomcat deploys each at its component context path. -->
+    <files>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}-mgmt.war</source>
+            <destName>mgmt.war</destName>
+        </file>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}-engine.war</source>
+            <destName>engine.war</destName>
+        </file>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}-etl.war</source>
+            <destName>etl.war</destName>
+        </file>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}-retrieval.war</source>
+            <destName>retrieval.war</destName>
+        </file>
+    </files>
+    <fileSets>
 
         <fileSet>
             <directory>${project.basedir}</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
                 <include>LICENSE</include>
-                <include>NOTICE</include>
-                <include>*License.txt</include>
+                <include>LICENCES/**</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -35,34 +44,10 @@
 
 
         <fileSet>
-            <directory>${project.basedir}/docs/docs/source/samples</directory>
-            <outputDirectory>/</outputDirectory>
+            <directory>${project.build.directory}/tomcat-log4j</directory>
+            <outputDirectory>tomcat-log4j</outputDirectory>
             <includes>
-                <include>quickstart.sh</include>
-            </includes>
-            <fileMode>0755</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/docs/docs/source/samples</directory>
-            <outputDirectory>install_scripts</outputDirectory>
-            <includes>
-                <include>sampleStartup.sh</include>
-                <include>deployMultipleTomcats.py</include>
-                <include>addMysqlConnPool.py</include>
-                <include>single_machine_install.sh</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/docs/docs/source/samples/site_specific_content</directory>
-            <outputDirectory>sample_site_specific_content</outputDirectory>
-            <includes>
-                <include>template_changes.html</include>
-            </includes>
-        </fileSet>
-         <fileSet>
-            <directory>${project.basedir}/docs/docs/source/samples/site_specific_content</directory> <outputDirectory>sample_site_specific_content/img</outputDirectory>
-            <includes>
-                <include>*.png</include>
+                <include>*.jar</include>
             </includes>
         </fileSet>
         <fileSet>

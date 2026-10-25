@@ -9,7 +9,9 @@ package org.epics.archiverappliance.retrieval;
 
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.BasicDispatcher;
+import org.epics.archiverappliance.common.GetLogLevel;
 import org.epics.archiverappliance.common.GetVersion;
+import org.epics.archiverappliance.common.SetLogLevel;
 import org.epics.archiverappliance.common.ProcessMetricsReport;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.retrieval.bpl.AreWeArchivingPV;
@@ -54,6 +56,8 @@ public class BPLServlet extends HttpServlet {
         getActions.put("/getMatchingPVs", GetMatchingPVs.class);
         getActions.put("/getProcessMetrics", ProcessMetricsReport.class);
         getActions.put("/getVersion", GetVersion.class);
+        getActions.put("/getLogLevel", GetLogLevel.class);
+        getActions.put("/setLogLevel", SetLogLevel.class);
         getActions.put("/getClientConfig", GetClientConfiguration.class);
         getActions.put("/getMetadata", GetPVMetaData.class);
         getActions.put("/areWeArchivingPV", AreWeArchivingPV.class);

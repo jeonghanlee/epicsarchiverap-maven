@@ -67,7 +67,7 @@ public class RetrievalMetrics implements Details {
     public LinkedList<Map<String, String>> details(ConfigService configService) {
         LinkedList<Map<String, String>> result = new LinkedList<>();
         result.add(metricDetail(NUMBER_OF_RETRIEVAL_REQUESTS, String.valueOf(this.numberOfRequests)));
-        result.add(metricDetail(LAST_RETRIEVAL_REQUEST, TimeUtils.convertToHumanReadableString(lastRequest)));
+        result.add(timeDetail(LAST_RETRIEVAL_REQUEST, lastRequest == null ? 0 : lastRequest.getEpochSecond()));
         result.add(metricDetail(NUMBER_OF_UNIQUE_USERS, String.valueOf(userIdentifiers.size())));
         return result;
     }

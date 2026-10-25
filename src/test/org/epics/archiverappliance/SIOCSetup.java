@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PipedOutputStream;
 import java.io.PrintWriter;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +24,8 @@ import gov.aps.jca.configuration.ConfigurationException;
  */
 public class SIOCSetup {
 	private static Logger logger = LogManager.getLogger(SIOCSetup.class.getName());
+	private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
+	private static final String PVA_LISTEN_ADDRESSES = "224.0.1.1,1@127.0.0.1";
 	Process watchedProcess;
 	PipedOutputStream osforstdin = new PipedOutputStream();
 	PrintWriter writerforstdin = new PrintWriter(new OutputStreamWriter(osforstdin));
@@ -38,13 +42,29 @@ public class SIOCSetup {
 	 * This assumption can be changed; please let me know if this behavior is needed.
 	 */
 	public void startSIOCWithDefaultDB() throws Exception {
-		String path = "src/resources/test/UnitTestPVs.db";
+		startSIOCWithDB("src/resources/test/UnitTestPVs.db");
+	}
+
+	/**
+	 * Start the SIOC with the given database file; the prefix macro applies as for the default database.
+	 * @param path the database file, relative to the root folder of the workspace
+	 * @throws Exception when the file is missing or the process does not start
+	 */
+	public void startSIOCWithDB(String path) throws Exception {
 		File f = new File(path);
 		if(!f.exists()) throw new IOException("Cannot find SIOC database file " + path);
 		
 		logger.info("Starting SIOC with DB file " + f.getAbsolutePath());
 		
-		ProcessBuilder pb = new ProcessBuilder("softIocPVA", "-m", "P=" + prefix, "-d", f.getAbsolutePath());
+		String softIocExecutable = System.getProperty("archappl.softioc", "softIocPVX");
+		ProcessBuilder pb = new ProcessBuilder(softIocExecutable, "-m", "P=" + prefix, "-d", f.getAbsolutePath());
+		// Keep CA and PVA traffic on loopback. PVA also receives the direct multicast searches
+		// sent by the Surefire clients, regardless of which local server starts last.
+		// PVXS adds the group's loopback interface for TCP; an explicit entry would duplicate it.
+		Map<String, String> env = pb.environment();
+		env.put("EPICS_CAS_INTF_ADDR_LIST", "127.0.0.1");
+		env.put("EPICS_CAS_BEACON_ADDR_LIST", "127.0.0.1");
+		env.put("EPICS_PVAS_INTF_ADDR_LIST", PVA_LISTEN_ADDRESSES);
 		pb.redirectErrorStream(true);
 		pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 		pb.redirectInput(ProcessBuilder.Redirect.PIPE);
@@ -52,13 +72,22 @@ public class SIOCSetup {
 	}
 	
 	public void stopSIOC() throws Exception {
-		PrintWriter writer = new PrintWriter(watchedProcess.getOutputStream());
-		writer.println("exit");
-		writer.flush();
-		writer.close();
-		try {Thread.sleep(5*1000);} catch(Exception ex) {}
-		if(watchedProcess.isAlive()) {
+		if (watchedProcess == null || !watchedProcess.isAlive()) return;
+		try (PrintWriter writer = new PrintWriter(watchedProcess.getOutputStream())) {
+			writer.println("exit");
+			writer.flush();
+		}
+		try {
+			if (!watchedProcess.waitFor(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+				watchedProcess.destroyForcibly();
+				if (!watchedProcess.waitFor(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+					throw new IOException("Soft IOC process " + watchedProcess.pid() + " did not stop");
+				}
+			}
+		} catch (InterruptedException ex) {
 			watchedProcess.destroyForcibly();
+			Thread.currentThread().interrupt();
+			throw ex;
 		}
 	}
 	

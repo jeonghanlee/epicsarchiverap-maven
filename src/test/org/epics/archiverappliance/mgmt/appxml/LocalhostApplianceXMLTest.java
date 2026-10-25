@@ -1,25 +1,25 @@
 package org.epics.archiverappliance.mgmt.appxml;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.awaitility.Awaitility;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 
 /**
  * Test various versions of appliances.xml and make sure we can start the config service correctly.
@@ -31,12 +31,6 @@ public class LocalhostApplianceXMLTest {
     private static Logger logger = LogManager.getLogger(LocalhostApplianceXMLTest.class.getName());
     File testFolder = new File(ConfigServiceForTests.getDefaultPBTestFolder() + File.separator + "ApplianceXMLTest");
     TomcatSetup tomcatSetup = new TomcatSetup();
-    WebDriver driver;
-
-    @BeforeAll
-    public static void setupClass() {
-        WebDriverManager.firefoxdriver().setup();
-    }
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -48,6 +42,7 @@ public class LocalhostApplianceXMLTest {
 
     @AfterEach
     public void tearDown() throws Exception {
+        tomcatSetup.tearDown();
         FileUtils.deleteDirectory(testFolder);
     }
 
@@ -68,13 +63,20 @@ public class LocalhostApplianceXMLTest {
         System.getProperties().put(ConfigService.ARCHAPPL_APPLIANCES, appliancesFilename);
 
         tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
-        driver = new FirefoxDriver();
 
-        driver.get("http://localhost:17665/mgmt/ui/index.html");
-        WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
-        Assertions.assertTrue(pvstextarea != null, "Cannot get to the home page...");
-
-        driver.quit();
-        tomcatSetup.tearDown();
+        // GET the home page and confirm it is the Browse PVs page of the console: the page is served only when the
+        // management application booted from the appliances.xml of this test.
+        // Poll for readiness rather than assume the page is deployed the instant Tomcat starts.
+        HttpClient http = HttpClient.newHttpClient();
+        HttpRequest homePage = HttpRequest.newBuilder(URI.create("http://localhost:17665/mgmt/ui/index.html")).GET().build();
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(120))
+                .pollInterval(Duration.ofSeconds(1))
+                .ignoreExceptions()
+                .until(() -> http.send(homePage, HttpResponse.BodyHandlers.ofString()).statusCode() == 200);
+        HttpResponse<String> response = http.send(homePage, HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(200, response.statusCode(), "The mgmt home page was not served after booting from " + appliancesFilename);
+        Assertions.assertTrue(response.body().contains("<main class=\"browse\">"),
+                "The mgmt home page did not contain the expected content");
     }
 }

@@ -17,11 +17,13 @@ import org.epics.archiverappliance.utils.nio.ArchPaths;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.DirectoryIteratorException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -245,6 +247,62 @@ public class PlainPBPathNameUtility {
         }
 
         return retval.toArray(new Path[0]);
+    }
+
+    /** Enumerates exact PV chunks without ETL time selection or suppressed filesystem errors. */
+    public static Path[] getAllPathsForDeletion(
+            ArchPaths paths, String rootFolder, String pvName, String extension,
+            PartitionGranularity granularity, CompressionMode compressionMode, PVNameToKeyMapping pv2key)
+            throws IOException {
+        Path physicalRoot = Paths.get(compressionMode == CompressionMode.ZIP_PER_PV
+                ? rootFolder.substring(ArchPaths.ZIP_PREFIX.length()) : rootFolder);
+        if (!Files.readAttributes(physicalRoot, BasicFileAttributes.class).isDirectory()) {
+            throw new NotDirectoryException(physicalRoot.toString());
+        }
+        if (compressionMode == CompressionMode.ZIP_PER_PV) {
+            Path archive = paths.get(false, physicalRoot.toString(), pv2key.convertPVNameToKey(pvName) + "_pb.zip");
+            try {
+                if (!Files.readAttributes(archive, BasicFileAttributes.class).isRegularFile()) {
+                    throw new IOException("ZIP archive is not a regular file: " + archive);
+                }
+            } catch (NoSuchFileException absent) {
+                return new Path[0];
+            }
+        }
+        Path parent = getParentPath(paths, rootFolder, pvName, granularity, compressionMode, pv2key);
+        DirectoryStream<Path> directory;
+        try {
+            directory = Files.newDirectoryStream(parent);
+        } catch (NoSuchFileException absent) {
+            return new Path[0];
+        }
+        String prefix = getFinalNameComponent(pvName, pv2key);
+        ArrayList<Path> selected = new ArrayList<>();
+        try (directory) {
+            for (Path path : directory) {
+                String name = path.getFileName().toString();
+                if (!name.startsWith(prefix) || !name.endsWith(extension)) continue;
+                StartEndTimeFromName times;
+                try {
+                    times = determineTimesFromFileName(pvName, name, granularity, pv2key);
+                } catch (RuntimeException invalid) {
+                    throw new IOException("Invalid chunk name for " + pvName + ": " + path, invalid);
+                }
+                String expected = prefix + TimeUtils.getPartitionName(times.pathDataStartTime.toInstant(), granularity)
+                        + extension;
+                if (!name.equals(expected)) {
+                    throw new IOException("Unexpected chunk name for " + pvName + ": " + path);
+                }
+                if (!Files.readAttributes(path, BasicFileAttributes.class).isRegularFile()) {
+                    throw new IOException("PV chunk is not a regular file: " + path);
+                }
+                selected.add(path);
+            }
+        } catch (DirectoryIteratorException failure) {
+            throw failure.getCause();
+        }
+        selected.sort(Comparator.comparing(Path::getFileName));
+        return selected.toArray(new Path[0]);
     }
 
     /**

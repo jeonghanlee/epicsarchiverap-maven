@@ -1,71 +1,115 @@
-# EPICS Archiver Appliance with Maven
+# EPICS Archiver Appliance (Maven fork)
 
-A Maven-based build system for the EPICS Archiver Appliance.
-
-**Warning:** This is a specialized Maven configuration, currently under refinement. It will be integrated with [jeonghanlee/epicsarchiverap-env](https://github.com/jeonghanlee/epicsarchiverap-env).
+A Maven-built, single-instance modernization of the EPICS Archiver Appliance,
+maintained independently of the upstream project.
 
 ## Overview
 
-This project provides a Maven `pom.xml` to compile and package the Archiver Appliance. By default, it focuses on artifact generation and may bypass extensive test suites.
+The goal of this fork is to take a long-maintained EPICS Archiver Appliance and,
+on its existing architecture, run it as a single service that is small and
+strong — light in footprint, solid in operation. This is a modernization of the
+existing design, not a re-architecture.
+
+This repository is a fork of the [EPICS Archiver Appliance](https://github.com/archiver-appliance/epicsarchiverap),
+frozen at the `NewHope` baseline and maintained on its own from there. It no
+longer tracks upstream and has left the GitHub fork network: rather than
+merging upstream, it has **selectively adopted upstream patches — primarily
+bug fixes** — through a per-change review, keeping only what fits a
+single-instance appliance. It did not follow upstream's changes to data
+retrieval and selection, keeping the fork's own retrieval behavior instead.
+
+What makes this fork distinct from upstream:
+
+- **Build**: Maven-only through the committed Maven Wrapper (`./mvnw`); the
+  Gradle and Ant builds are removed, and the site-specific files are applied
+  by the Maven build.
+- **Tests**: the test platform was rebuilt on JUnit 5 — hermetic and
+  HTTP-based rather than Selenium (see `TESTING.md`).
+- **Toolchain**: JDK 21 and Tomcat 9.
+- **Scope**: a single-instance appliance (no appliance clustering).
+- **Persistence**: MariaDB and SQLite3 are both shipped and selectable at
+  install through the JNDI DataSource. This repository documents MariaDB over
+  TCP and a serverless SQLite3 file. The deployment of MariaDB over a Unix
+  domain socket (UDS) belongs to the environment repository named below.
+- **Documentation**: a different system from upstream — the mgmt API reference
+  is generated from the code into the mgmt WAR, and the narrative docs are an
+  mdBook on GitHub Pages (upstream's Sphinx/Read the Docs pipeline is retired).
+
+Feature scope is shifting to fit the appliance's role: some capabilities are
+being scaled back (for example appliance clustering and unused storage
+backends), while others the site needs are being reinforced.
+
+The runtime (systemd units, per-site configuration, deployment) is provided by
+[jeonghanlee/epicsarchiverap-env](https://github.com/jeonghanlee/epicsarchiverap-env),
+which builds against this repository.
 
 ## Prerequisites
 
-* **JDK 21+**: Java Development Kit version 21 or newer is required.
-* **Apache Maven**: A recent version (e.g., 3.9.x).
-    * For easy Java/Maven setup, see [jeonghanlee/java-env](https://github.com/jeonghanlee/java-env).
-* **Git**: Required for generating release notes from commit history (this is part of the documentation generation process).
-* **Operating System**:
-    * Core build (JARs/WARs) is generally OS-agnostic.
-    * Sphinx documentation (`build_docs.sh`) is primarily for Linux.
-* **Sphinx Tools**: If building Sphinx documentation (which is enabled by default), ensure Sphinx, Python, and any necessary themes/extensions are installed and configured.
+- **JDK 21+**: the `java` on `PATH`, or the install that `JAVA_HOME` names.
+- **Maven Wrapper**: the build runs through `./mvnw`; the wrapper pins the
+  Maven version, so no system Maven is required.
+- **Git**: the build reads commit history to name artifacts and generate
+  release notes. The release notes come from the Git log of
+  `remotes/origin/master`, so the clone needs the `origin/master` branch.
+- **Docker** (documentation only): the mdBook docs build through
+  `docs/book/Dockerfile`; Docker is not needed for the WARs.
 
-## Build Instructions
+## Build
 
-Execute these commands from the project's root directory (where `pom.xml` is located).
-
-### Standard Build (Package/Install)
-
-This command cleans the project, compiles the code, and packages it into `JAR/WAR` files located in the `target/` directory.
+Run from the repository root:
 
 ```bash
-mvn clean package
+./mvnw -B clean package            # compile, test, and package the WARs
+./mvnw -B clean package -DskipTests # artifacts only, skipping tests
+./mvnw -B clean verify             # package plus the dependency and enforcer gates
 ```
 
-To also install the artifacts into your local Maven repository (for use by other local projects):
+To build with a JDK other than the `java` on `PATH`, set `JAVA_HOME` to a
+JDK 21+ install; the Maven Wrapper uses it when it is set:
 
 ```bash
-mvn clean install
+JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ./mvnw -B clean package
 ```
 
+The developer-only utilities under `src/tools` are excluded from the default
+build and every WAR; compile them on demand with `-Ptools`.
 
-### Controlling Sphinx Documentation Generation
+## Documentation
 
-By default, Sphinx documentation is built as part of the package goal.
+The package goal builds the mgmt API reference and does not build the
+narrative docs. Two independent, Sphinx-free paths:
 
-To skip the Sphinx documentation build (e.g., for a quicker development build after it has been built once):
+- **mgmt API reference**: generated from the code at `process-classes` (the
+  `BPLServlet` registry plus the `@BPLEndpoint` annotations) into the mgmt WAR
+  at `ui/api/index.html` and `ui/api/api.json`, so it always matches the
+  deployed code.
+- **Narrative docs**: an mdBook under `docs/book`, built with the pinned tools
+  in `docs/book/Dockerfile` and published to GitHub Pages at
+  <https://jeonghanlee.github.io/epicsarchiverap-maven/> by the `pages.yml`
+  workflow, which runs for pushes to the `master` branch that change
+  `docs/book` or the workflow, and on manual dispatch. Build or preview it
+  locally:
 
 ```bash
-mvn clean package -Dsphinx.skip=true
+docker build -t aa-mdbook docs/book
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs/book:/book" aa-mdbook build   # output in docs/book/book
 ```
-Note: Several files generated by the `Javadoc/taglet` flow (e.g., `mgmtpathmappings.txt`, `mgmt_scriptables.txt`, `mgmt_scriptables.html`) are created before Sphinx and are required for the successful build of the WAR files. These steps will run even if Sphinx itself is skipped with `-Dsphinx.skip=true`.
-
-
-### Using a Specific `java-env`
-If you use java-env or need to specify the JDK/Maven paths:
-
-```bash
-JAVA_HOME=/opt/java-env/JDK /opt/java-env/MAVEN/bin/mvn clean package
-```
-**Important:** Ensure `JAVA_HOME` points to a **JDK 21+** installation.
 
 ## Output Artifacts
-* Packaged Application (`WARs/JARs`): Found in the `target/` directory.
-* Javadoc API Documentation: Found in the the `target/site/apidocs`.
-* Sphinx HTML Documentation: If built, usually in `docs/docs/build`.
-* Assembly Package: If configured, often found in `target/archappl_<VERSION>.tar.gz` (e.g., `target/archappl_2025-06-05.tar.gz`).
 
-## Troubleshooting
+- **WARs**: `target/aa-<date>-<commit>-{mgmt,engine,etl,retrieval}.war`.
+- **Release assembly**: `target/aa-<date>-<commit>.tar.gz`.
+- **Javadoc**: `target/site/apidocs` (when the javadoc goal is run).
+- **Narrative docs**: rendered to `docs/book/book`, served from GitHub Pages at
+  <https://jeonghanlee.github.io/epicsarchiverap-maven/>.
 
-* Java Version Errors (`UnsupportedClassVersionError`): Ensure your `JAVA_HOME`, `PATH`, and the java command used by Maven all refer to JDK 21 or newer. Check with `java -version`.
-* File Not Found / Other Issues: Run your Maven command with `-e` (for detailed errors) and `-X` (for debug logging) to get more information. For example: `mvn clean package -e -X`.
+## Continuous Integration
 
+`.github/workflows/maven.yml` runs on JDK 21 for every push and pull request.
+It first runs `bash scripts/ui-static-checks.bash` and then
+`./mvnw -B -ntp clean verify`. A push or pull request that changes only
+`docs/milestone-*.md` or `docs/CLOSED_DOORS.md` does not start it.
+
+`.github/workflows/pages.yml` builds and deploys the mdBook for pushes to the
+`master` branch that change `docs/book` or the workflow, and on manual
+dispatch.

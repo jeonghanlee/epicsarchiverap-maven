@@ -124,6 +124,7 @@ public class EngineMetrics implements Details {
         details.add(this.metricDetail(
                 "Time consumed for writing samplebuffers to STS (in secs)",
                 twoSignificantDigits.format(secondsConsumedByWriter)));
+        details.add(this.metricDetail("Write period (in secs)", twoSignificantDigits.format(context.getWritePeriod())));
         if (secondsConsumedByWriter != 0) {
             double writesPerSec = eventRate * context.getWritePeriod() / secondsConsumedByWriter;
             double writeBytesPerSec = (dataRate * context.getWritePeriod() / secondsConsumedByWriter) / (1024 * 1024);

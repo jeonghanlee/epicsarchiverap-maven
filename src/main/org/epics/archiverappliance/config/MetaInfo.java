@@ -146,9 +146,13 @@ public class MetaInfo {
 	private double second=0;
 
 	/**
-	 *  the start time of monitorchange first called  and startTime=System.currentTimeMillis();
+	 *  the start time of monitorchange first called  and startTime=System.currentTimeMillis(); a moment, written as such.
 	 */
 	private long startTime=0L;
+	/**
+	 * The reading of the monotonic clock (System.nanoTime) at the start, from which the elapsed seconds of the rates are measured.
+	 */
+	private long startNanos=0L;
 
 	/**
 	 * store other information include MDEL,ADEL
@@ -209,6 +213,7 @@ public class MetaInfo {
 	 */
 	public void setStartTime(long startTime) {
 		this.startTime=startTime;
+		this.startNanos=System.nanoTime();
 	}
 
 	/**
@@ -451,7 +456,7 @@ public class MetaInfo {
 	 */
 
 	public void computeRate(DBRTimeEvent dbrtimeevent) {
-		long now = System.currentTimeMillis();
+		long now = System.nanoTime();
 		this.count=dbrtimeevent.getSampleValue().getElementCount();
         isVector= count > 1;
 		
@@ -461,9 +466,10 @@ public class MetaInfo {
 			eventCount=0;
 			storageSize=0;
 			startTime= System.currentTimeMillis();
+			startNanos= now;
 			this.second=0.01;
 		} else {
-			this.second= (double) (now - this.startTime) /1000;
+			this.second= (double) (now - this.startNanos) /1_000_000_000;
 		}
 		eventCount++;
 		this.archDBRTypes=dbrtimeevent.getDBRType();
@@ -712,7 +718,7 @@ public class MetaInfo {
 		retVal.put("DRVH", Double.toString(upperCtrlLimit));
 		retVal.put("PREC", Double.toString(precision));
 		if(unit != null) { retVal.put("EGU", unit); } 
-		retVal.put("NELM", Integer.toString(count));
+		retVal.put("EAA_COUNT", Integer.toString(count));
 		for(String fieldName : otherMetaInfo.keySet()) {
 			retVal.put(fieldName, otherMetaInfo.get(fieldName));
 		}

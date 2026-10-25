@@ -1,0 +1,97 @@
+/* The console help page: one column of text with a contents bar and plain tables. */
+
+.help {
+  max-width: 60rem;
+}
+
+.help h1 {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 1.375rem;
+}
+
+.help h2 {
+  margin: 2rem 0 0.5rem;
+  font-size: 1.25rem;
+  scroll-margin-top: 4rem;
+}
+
+.help section {
+  scroll-margin-top: 4rem;
+}
+
+.help .toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  padding: 0.5rem 0 0.75rem;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.help .toc a {
+  font-weight: 600;
+}
+
+.help ol,
+.help ul {
+  max-width: 80ch;
+  padding-left: 1.25rem;
+}
+
+.help li {
+  margin: 0.25rem 0;
+}
+
+.help table {
+  width: 100%;
+  max-width: 60rem;
+  margin: 0.5rem 0 1rem;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.help th,
+.help td {
+  padding: 0.4rem 0.75rem 0.4rem 0;
+  border-bottom: 1px solid var(--c-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.help th {
+  color: var(--c-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.help code {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+.help .lead {
+  color: var(--c-muted);
+}
+
+.help h3 {
+  margin: 1.25rem 0 0.25rem;
+  font-size: 1.0625rem;
+  scroll-margin-top: 4rem;
+}
+
+.help .controls dt {
+  margin-top: 0.75rem;
+  font-weight: 600;
+}
+
+.help .controls dd {
+  margin: 0.15rem 0 0;
+  max-width: 80ch;
+}
+
+.help kbd {
+  padding: 0 0.3rem;
+  border: 1px solid var(--c-border-strong);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}

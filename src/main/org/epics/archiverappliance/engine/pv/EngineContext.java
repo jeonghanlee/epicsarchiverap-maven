@@ -8,6 +8,7 @@
 package org.epics.archiverappliance.engine.pv;
 
 import com.google.common.eventbus.Subscribe;
+import gov.aps.jca.CAException;
 import gov.aps.jca.Channel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,11 +39,13 @@ import org.json.simple.JSONValue;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
@@ -57,6 +60,8 @@ import java.util.concurrent.TimeUnit;
 public class EngineContext {
     private static final Logger logger = LogManager.getLogger(EngineContext.class.getName());
     private static final Logger configlogger = LogManager.getLogger("config." + EngineContext.class.getName());
+    /** Rounds of recreating CA contexts that share a search port before the engine refuses to start. */
+    private static final int MAX_SEARCH_PORT_ROUNDS = 10;
 
     private static double MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS = 5.0;
     private static int METACHANNELS_TO_START_AT_A_TIME = 10000;
@@ -108,7 +113,12 @@ public class EngineContext {
 
     private ScheduledFuture<?> disconnectFuture = null;
 
-    private double sampleBufferCapacityAdjustment = 1.0;
+    public static final String SAMPLE_BUFFER_MARGIN_SECONDS_PROPERTY =
+            "org.epics.archiverappliance.config.PVTypeInfo.sampleBufferMarginSeconds";
+    public static final double DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS = 1.0;
+    public static final double MIN_SAMPLE_BUFFER_MARGIN_SECONDS = 1.0;
+
+    private double sampleBufferMarginSeconds = DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS;
 
     /**
      * An optimization for EngineMetrics. Note; this value may not be all that accurate but should be reasonably accurate.
@@ -141,6 +151,65 @@ public class EngineContext {
     }
 
     /**
+     * Creates the CA command threads, each with an initialized CA context on its own UDP search port,
+     * and returns them unstarted. CAJ binds each search socket to port 0 with SO_REUSEADDR, and the
+     * kernel can give two such sockets one port; unicast search replies then reach only the later-bound
+     * socket and the earlier context's channels never connect. A thread whose port is also held by a
+     * later-bound thread is replaced by a new one, bound after all others, until every port is distinct
+     * or MAX_SEARCH_PORT_ROUNDS rounds have passed.
+     */
+    static JCACommandThread[] createCommandThreads(int count) throws ConfigException {
+        JCACommandThread[] threads = new JCACommandThread[count];
+        int[] ports = new int[count];
+        long[] bindOrder = new long[count];
+        long nextBind = 0;
+        for (int threadNum = 0; threadNum < count; threadNum++) {
+            threads[threadNum] = new JCACommandThread();
+            ports[threadNum] = initializeSearchPort(threads[threadNum], threadNum);
+            bindOrder[threadNum] = nextBind++;
+        }
+        for (int round = 0; round < MAX_SEARCH_PORT_ROUNDS; round++) {
+            Map<Integer, Integer> lastBoundForPort = new HashMap<>();
+            for (int threadNum = 0; threadNum < count; threadNum++) {
+                Integer other = lastBoundForPort.get(ports[threadNum]);
+                if (other == null || bindOrder[threadNum] > bindOrder[other]) {
+                    lastBoundForPort.put(ports[threadNum], threadNum);
+                }
+            }
+            if (lastBoundForPort.size() == count) {
+                return threads;
+            }
+            for (int threadNum = 0; threadNum < count; threadNum++) {
+                if (lastBoundForPort.get(ports[threadNum]) == threadNum) {
+                    continue;
+                }
+                configlogger.warn("CA command thread " + threadNum + " shares search port " + ports[threadNum]
+                        + " with a later-bound thread; recreating its CA context");
+                try {
+                    threads[threadNum].destroyUnstartedContext();
+                } catch (CAException ex) {
+                    throw new ConfigException("Cannot destroy CA context " + threadNum, ex);
+                }
+                threads[threadNum] = new JCACommandThread();
+                ports[threadNum] = initializeSearchPort(threads[threadNum], threadNum);
+                bindOrder[threadNum] = nextBind++;
+            }
+        }
+        configlogger.fatal("CA command threads still share a search port after " + MAX_SEARCH_PORT_ROUNDS
+                + " rounds; refusing to start the engine");
+        throw new ConfigException("CA command threads still share a search port after " + MAX_SEARCH_PORT_ROUNDS
+                + " rounds");
+    }
+
+    private static int initializeSearchPort(JCACommandThread thread, int threadNum) throws ConfigException {
+        try {
+            return thread.initializeContextAndGetSearchPort();
+        } catch (CAException ex) {
+            throw new ConfigException("Cannot initialize CA context " + threadNum, ex);
+        }
+    }
+
+    /**
      * This EngineContext should always be singleton
      * @param configService the config service to initialize the engine context
      */
@@ -151,11 +220,10 @@ public class EngineContext {
         configlogger.info("Creating " + commandThreadCountStr + " command threads as specified by "
                 + commandThreadCountVarName + " in archappl.properties");
         int commandThreadCount = Integer.parseInt(commandThreadCountStr);
-        command_threads = new JCACommandThread[commandThreadCount];
         System.getProperties().setProperty("jca.use_env", "true");
-        for (int threadNum = 0; threadNum < command_threads.length; threadNum++) {
-            command_threads[threadNum] = new JCACommandThread();
-            command_threads[threadNum].start();
+        command_threads = createCommandThreads(commandThreadCount);
+        for (JCACommandThread commandThread : command_threads) {
+            commandThread.start();
         }
 
         MAXIMUM_DISCONNECTED_CHANNEL_PERCENTAGE_BEFORE_STARTING_METACHANNELS = Double.parseDouble(configService
@@ -270,10 +338,8 @@ public class EngineContext {
 
         this.iniV4ChannelProvidert();
 
-        this.sampleBufferCapacityAdjustment = Double.parseDouble(configService
-                .getInstallationProperties()
-                .getProperty("org.epics.archiverappliance.config.PVTypeInfo.sampleBufferCapacityAdjustment", "1.0"));
-        logger.debug("Buffer capacity adjustment is " + this.sampleBufferCapacityAdjustment);
+        this.sampleBufferMarginSeconds = sampleBufferMarginSecondsFrom(configService.getInstallationProperties());
+        logger.debug("Sample buffer margin in seconds is " + this.sampleBufferMarginSeconds);
     }
 
     /**
@@ -730,13 +796,48 @@ public class EngineContext {
     }
 
     /**
-     * Per FRIB/PSI, we have a configuration knob to increase/decrease the sample buffer size used by the engine for all PV's.
-     * This comes from archappl.properties and is a double - by default 1.0 which means we leave the buffer size computation as is.
-     * If you want to increase buffer size globally to 150% of what is normally computed, set this to 1.5
-     * @return sampleBufferCapacityAdjustment  &emsp;
+     * Seconds of write delay every sample buffer absorbs before it drops a sample, from archappl.properties.
+     * A buffer holds the samples expected within one write period plus this margin converted to samples at the
+     * PV's own sampling period, so a late buffer swap costs the same amount of time at every sampling rate.
+     * @return sampleBufferMarginSeconds  &emsp;
      */
-    public double getSampleBufferCapacityAdjustment() {
-        return sampleBufferCapacityAdjustment;
+    public double getSampleBufferMarginSeconds() {
+        return sampleBufferMarginSeconds;
+    }
+
+    /**
+     * Read the sample buffer margin from the installation properties. A missing key gives the default. A finite
+     * value below the minimum is raised to the minimum, and a value that is not a finite number is replaced by
+     * the default. Every case that does not use the configured value as given is logged, so the margin in effect
+     * can be read from the engine log. A bad entry can therefore neither stop the engine nor hand a buffer a
+     * margin smaller than the one the engine guarantees.
+     * @param properties installation properties
+     * @return margin in seconds, at least MIN_SAMPLE_BUFFER_MARGIN_SECONDS
+     */
+    public static double sampleBufferMarginSecondsFrom(Properties properties) {
+        String text = properties.getProperty(SAMPLE_BUFFER_MARGIN_SECONDS_PROPERTY);
+        if (text == null) {
+            logger.info(SAMPLE_BUFFER_MARGIN_SECONDS_PROPERTY + " is not set. Using the default of "
+                    + DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS + " seconds.");
+            return DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS;
+        }
+        double margin;
+        try {
+            margin = Double.parseDouble(text.trim());
+        } catch (NumberFormatException e) {
+            margin = Double.NaN;
+        }
+        if (!Double.isFinite(margin)) {
+            logger.warn(SAMPLE_BUFFER_MARGIN_SECONDS_PROPERTY + " is not a finite number: '" + text + "'. Using "
+                    + DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS + " seconds.");
+            return DEFAULT_SAMPLE_BUFFER_MARGIN_SECONDS;
+        }
+        if (margin < MIN_SAMPLE_BUFFER_MARGIN_SECONDS) {
+            logger.warn(SAMPLE_BUFFER_MARGIN_SECONDS_PROPERTY + " is " + margin + ", below the minimum. Using "
+                    + MIN_SAMPLE_BUFFER_MARGIN_SECONDS + " seconds.");
+            return MIN_SAMPLE_BUFFER_MARGIN_SECONDS;
+        }
+        return margin;
     }
 
     /**

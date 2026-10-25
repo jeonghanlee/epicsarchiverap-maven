@@ -22,12 +22,14 @@ import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.Serial;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,6 +51,10 @@ public class ZipCachedFetchTest {
     String pvName = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + "ZipCachedFetchTest";
     PlainPBStoragePlugin pbplugin;
     short currentYear = TimeUtils.getCurrentYear();
+    /** Seconds between simulated samples; a year at this period still fills every daily partition. */
+    private static final int SIMULATION_PERIOD_SECONDS = 10;
+    private static final long EVENTS_PER_DAY =
+            PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk() / SIMULATION_PERIOD_SECONDS;
     private ConfigService configService;
 
     private static class ZipCachedFetchEventStream extends ArrayListEventStream implements Callable<EventStream> {
@@ -56,6 +62,8 @@ public class ZipCachedFetchTest {
         private static final long serialVersionUID = 8076901507481457453L;
 
         EventStream srcStream;
+        /** Events read from the source before the hourly reduction. */
+        long eventsRead;
 
         ZipCachedFetchEventStream(EventStream srcStream) {
             super(0, (RemotableEventStreamDesc) srcStream.getDescription());
@@ -66,6 +74,7 @@ public class ZipCachedFetchTest {
         public EventStream call() {
             long previousEpochSeconds = 0L;
             for (Event e : srcStream) {
+                eventsRead++;
                 long currEpochSeconds = e.getEpochSeconds();
                 if (currEpochSeconds - previousEpochSeconds
                         > PartitionGranularity.PARTITION_HOUR.getApproxSecondsPerChunk()) {
@@ -100,7 +109,7 @@ public class ZipCachedFetchTest {
                 int startofdayinseconds = day * PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
                 for (int secondintoday = 0;
                         secondintoday < PartitionGranularity.PARTITION_DAY.getApproxSecondsPerChunk();
-                        secondintoday++) {
+                        secondintoday += SIMULATION_PERIOD_SECONDS) {
                     testData.add(new SimulationEvent(
                             startofdayinseconds + secondintoday, currentYear, type, new ScalarValue<Double>((double)
                                     secondintoday)));
@@ -125,12 +134,16 @@ public class ZipCachedFetchTest {
                     currentYear + "-" + format.format(startMonth) + "-01T00:00:00.000Z");
             Instant endTime = TimeUtils.convertFromISO8601String(
                     currentYear + "-" + format.format(endMonth) + "-30T00:00:00.000Z");
-            testParallelFetch(startTime, endTime, months);
-            testSerialFetch(startTime, endTime, months);
+            long parallelEvents = testParallelFetch(startTime, endTime, months);
+            long serialEvents = testSerialFetch(startTime, endTime, months);
+            // The parallel readers take whole partition files, so they read at least what the bounded serial stream reads.
+            Assertions.assertTrue(parallelEvents >= serialEvents,
+                    "Parallel readers read fewer events than the serial stream for " + (months + 1) + " months");
         }
     }
 
-    private void testSerialFetch(Instant startTime, Instant endTime, int months) throws Exception {
+    /** Returns the number of events read; the log also reports how many hourly gaps the stream crossed. */
+    private long testSerialFetch(Instant startTime, Instant endTime, int months) throws Exception {
         try (BasicContext context = new BasicContext()) {
             long st0 = System.currentTimeMillis();
             Path[] paths = PlainPBPathNameUtility.getPathsWithData(
@@ -145,9 +158,11 @@ public class ZipCachedFetchTest {
                     configService.getPVNameToKeyConverter());
             long previousEpochSeconds = 0L;
             long eventCount = 0;
+            long totalEvents = 0;
             try (EventStream st =
                     new MultiFilePBEventStream(paths, pvName, ArchDBRTypes.DBR_SCALAR_DOUBLE, startTime, endTime)) {
                 for (Event e : st) {
+                    totalEvents++;
                     long currEpochSeconds = e.getEpochSeconds();
                     if (currEpochSeconds - previousEpochSeconds > 60 * 60) {
                         eventCount++;
@@ -158,10 +173,14 @@ public class ZipCachedFetchTest {
             long st1 = System.currentTimeMillis();
             logger.info("Time takes for serial fetch is " + (st1 - st0) + "(ms) return " + eventCount + " events for "
                     + (months + 1) + " months");
+            Assertions.assertEquals(Duration.between(startTime, endTime).toDays() * EVENTS_PER_DAY, totalEvents,
+                    "Serial stream did not return every event between the bounds");
+            return totalEvents;
         }
     }
 
-    private void testParallelFetch(Instant startTime, Instant endTime, int months) throws Exception {
+    /** Returns the number of events the parallel readers read before their hourly reduction. */
+    private long testParallelFetch(Instant startTime, Instant endTime, int months) throws Exception {
         ForkJoinPool forkJoinPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors() / 2);
         logger.info("The parallelism in the pool is " + forkJoinPool.getParallelism());
         try (BasicContext context = new BasicContext()) {
@@ -185,6 +204,7 @@ public class ZipCachedFetchTest {
             }
 
             long eventCount = 0;
+            long eventsRead = 0;
             long serialTimeMs = 0;
             long longestWaitTime = 0;
             long totalWaitTime = 0;
@@ -201,6 +221,7 @@ public class ZipCachedFetchTest {
                     e.getEpochSeconds();
                     eventCount++;
                 }
+                eventsRead += ((ZipCachedFetchEventStream) st).eventsRead;
                 long st13 = System.currentTimeMillis();
                 long delta = st13 - st11;
                 serialTimeMs += delta;
@@ -214,6 +235,9 @@ public class ZipCachedFetchTest {
                     + longestWaitTime + " (ms) " + " and a total wait time of " + totalWaitTime + " (ms) ");
 
             forkJoinPool.shutdown();
+            Assertions.assertEquals((long) paths.length * EVENTS_PER_DAY, eventsRead,
+                    "Parallel readers did not read every event of the selected partition files");
+            return eventsRead;
         }
     }
 }

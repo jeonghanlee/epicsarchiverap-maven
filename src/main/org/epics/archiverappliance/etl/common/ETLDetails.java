@@ -7,7 +7,7 @@ import org.epics.archiverappliance.config.ConfigService;
 import java.text.DecimalFormat;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.time.Instant;
 
 public class ETLDetails implements Details {
 
@@ -36,18 +36,16 @@ public class ETLDetails implements Details {
                     "ETL " + lookupItem.getLifetimeorder() + " partition granularity of dest",
                     lookupItem.getETLDest().getPartitionGranularity().toString()));
             if (lookupItem.getLastETLCompleteEpochSeconds() != 0) {
-                statuses.add(metricDetail(
-                        "ETL " + lookupItem.getLifetimeorder() + " last completed",
-                        TimeUtils.convertToHumanReadableString(lookupItem.getLastETLCompleteEpochSeconds())));
+                statuses.add(timeDetail("ETL " + lookupItem.getLifetimeorder() + " last completed", lookupItem.getLastETLCompleteEpochSeconds()));
                 statuses.add(metricDetail(
                         "ETL " + lookupItem.getLifetimeorder() + " last job took (ms)",
                         Long.toString(lookupItem.getLastETLTimeWeSpentInETLInMilliSeconds())));
             }
-            statuses.add(metricDetail(
-                    "ETL " + lookupItem.getLifetimeorder() + " next job runs at",
-                    TimeUtils.convertToHumanReadableString(
-                            lookupItem.getCancellingFuture().getDelay(TimeUnit.SECONDS)
-                                    + (TimeUtils.now().toEpochMilli() / 1000))));
+            ETLPassDriver driver = configService.getETLLookup().getDriverFor(lookupItem);
+            Instant nextPlannedAt = driver == null ? null : driver.getNextPlannedAt();
+            statuses.add(nextPlannedAt == null
+                    ? metricDetail("ETL " + lookupItem.getLifetimeorder() + " next job runs at", "not scheduled")
+                    : timeDetail("ETL " + lookupItem.getLifetimeorder() + " next job runs at", nextPlannedAt.getEpochSecond()));
             if (lookupItem.getNumberofTimesWeETLed() != 0) {
                 statuses.add(metricDetail(
                         "ETL " + lookupItem.getLifetimeorder() + " total time performing ETL(ms)",
@@ -104,7 +102,7 @@ public class ETLDetails implements Details {
                 statuses.add(metricDetail(
                         "ETL Total time spent by executePostETLTasks() in ETL(" + lookupItem.getLifetimeorder()
                                 + ") (ms)",
-                        Long.toString(lookupItem.getTime4runPostProcessors())));
+                        Long.toString(lookupItem.getTime4executePostETLTasks())));
 
             } else {
                 statuses.add(metricDetail(

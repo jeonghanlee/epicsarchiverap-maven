@@ -7,8 +7,6 @@
  *******************************************************************************/
 package org.epics.archiverappliance.etl.common;
 
-import java.util.concurrent.ScheduledFuture;
-
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.etl.ETLDest;
 import org.epics.archiverappliance.etl.ETLSource;
@@ -42,7 +40,7 @@ public class ETLPVLookupItems {
 	private long totalSrcBytes;
 	
 	private int numberofTimesWeETLed = 0;
-	private ScheduledFuture<?> cancellingFuture;
+	private volatile ETLRunReport lastRunReport;
 	
 	private OutOfSpaceHandling outOfSpaceHandling;
 	private long outOfSpaceChunksDeleted = 0;
@@ -113,21 +111,10 @@ public class ETLPVLookupItems {
 		totalTimeWeSpentInETLInMilliSeconds += lastETLTimeWeSpentInETLInMilliSeconds;
 		numberofTimesWeETLed++;
 		lastETLCompleteEpochSeconds = pvETLEndEpochMilliSeconds/1000;
-		metricsForLifetime.timeForOverallETLInMilliSeconds += lastETLTimeWeSpentInETLInMilliSeconds;
-		metricsForLifetime.totalETLRuns = Math.max(numberofTimesWeETLed, metricsForLifetime.totalETLRuns);
-		metricsForLifetime.updateApproximateGlobalLastETLTime(lastETLTimeWeSpentInETLInMilliSeconds);
 	}
 
 	public ArchDBRTypes getDbrType() {
 		return dbrType;
-	}
-	
-	public ScheduledFuture<?> getCancellingFuture() {
-		return cancellingFuture;
-	}
-
-	public void setCancellingFuture(ScheduledFuture<?> cancellingFuture) {
-		this.cancellingFuture = cancellingFuture;
 	}
 	
 	public String toString() { 
@@ -146,16 +133,6 @@ public class ETLPVLookupItems {
 		this.time4runPostProcessors += time4runPostProcessors;
 		this.time4executePostETLTasks += time4executePostETLTasks;
 		this.totalSrcBytes += totalSrcBytes;
-		
-		metricsForLifetime.timeinMillSecond4getETLStreams += time4getETLStreams;
-		metricsForLifetime.timeinMillSecond4checkSizes += time4checkSizes;
-		metricsForLifetime.timeinMillSecond4prepareForNewPartition += time4prepareForNewPartition;
-		metricsForLifetime.timeinMillSecond4appendToETLAppendData += time4appendToETLAppendData;
-		metricsForLifetime.timeinMillSecond4commitETLAppendData += time4commitETLAppendData; 
-		metricsForLifetime.timeinMillSecond4markForDeletion += time4markForDeletion;
-		metricsForLifetime.timeinMillSecond4runPostProcessors += time4runPostProcessors;
-		metricsForLifetime.timeinMillSecond4executePostETLTasks += time4executePostETLTasks;
-		metricsForLifetime.totalSrcBytes += totalSrcBytes;
 	}
 
 	public long getTime4getETLStreams() {
@@ -208,6 +185,17 @@ public class ETLPVLookupItems {
 
 	public long getTime4checkSizes() {
 		return time4checkSizes;
+	}
+
+	/**
+	 * @return what the last ETL job of this PV and transition did, or null before the first job
+	 */
+	public ETLRunReport getLastRunReport() {
+		return lastRunReport;
+	}
+
+	public void setLastRunReport(ETLRunReport lastRunReport) {
+		this.lastRunReport = lastRunReport;
 	}
 
 	/**

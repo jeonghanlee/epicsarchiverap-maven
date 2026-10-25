@@ -71,8 +71,7 @@ public class MergeDataFromExternalStoreTest {
             throws Exception {
         int genEventCount = 0;
         StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(
-                "pb://localhost?name=LTS&rootFolder=" + "build/tomcats/tomcat_"
-                        + this.getClass().getSimpleName() + "/" + applianceName + "/mts"
+                "pb://localhost?name=LTS&rootFolder=" + new File(TomcatSetup.getApplianceFolder(this.getClass().getSimpleName(), applianceName), "mts").getPath()
                         + "&partitionGranularity=PARTITION_DAY",
                 configService);
         try (BasicContext context = new BasicContext()) {

@@ -34,6 +34,8 @@ import org.epics.archiverappliance.etl.StorageMetricsContext;
 import org.epics.archiverappliance.retrieval.CallableEventStream;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.postprocessors.DefaultRawPostProcessor;
+import org.epics.archiverappliance.retrieval.postprocessors.Optimized;
+import org.epics.archiverappliance.retrieval.postprocessors.OptimizedWithLastSample;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessor;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessorWithConsolidatedEventStream;
 import org.epics.archiverappliance.retrieval.postprocessors.PostProcessors;
@@ -84,20 +86,24 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * contains data for a particular instant in time and which chunks contain data for a particular time period.
  * This is a mandatory field.</dd>
  * <dt>compress</dt><dd>This is an optional field that defines the compression mode.
- * The support for zip compression is experimental.
- * If the zip compression is used, the <code>rootfolder</code> is prepended with <code>{@link org.epics.archiverappliance.utils.nio.ArchPaths#ZIP_PREFIX ZIP_PREFIX}</code>.
- * If this is absent in the <code>rootfolder</code>, the initialization code automatically adds it in.
+ * <code>ZIP_PER_PV</code> keeps the files of a PV in one zip archive instead of a folder; the
+ * <code>rootFolder</code> is prepended with <code>{@link org.epics.archiverappliance.utils.nio.ArchPaths#ZIP_PREFIX ZIP_PREFIX}</code>
+ * when it is absent. For the last store of a chain only: a zip store that is the source of an ETL move keeps
+ * the partition it moved, so the data would exist twice.
  * </dd>
  * <dt>hold &amp; gather</dt><dd><code>hold</code> and <code>gather</code> are optional fields that work together
  * to implement high/low watermarks for data transfer. By default, both <code>hold</code> and <code>gather</code>
  * are 0 which leads to data being transferred out of this plugin as soon as the partition boundary is reached.
  * You can <code>hold</code> a certain number of partitions in this store (perhaps because this store is a
  * high performing one).
- * In this case, ETL does not start until the first event in this store is older than <code>hold</code> partitions.
- * Once ETL begins, you can transfer <code>gather</code> partitions at a time.
- * For example, <code>hold=5&amp;gather=3</code> lets you keep at least <code>5-3=2</code> partitions in this store.
- * ETL kicks in once the oldest event is older than than <code>5</code> partitions and data is moved <code>3</code>
- * partitions at a time.
+ * In this case, ETL does not move a file until its first event is <code>hold+1</code> partitions old, counted
+ * from the start of the partition that holds the event: the file of a partition that starts at S moves in the
+ * first pass whose processing time is at or after S + (hold+1) partitions.
+ * <code>gather</code> sets the boundary up to which files move once ETL begins: every file whose first event is
+ * at or before the end of the partition <code>hold-(gather-1)</code> partitions before the processing time moves
+ * in that pass, so a pass on schedule moves <code>gather</code> files and a late pass can move more.
+ * For example, <code>hold=5&amp;gather=3</code> moves the three oldest partitions once the oldest event is 6
+ * partitions old, and a pass on schedule leaves <code>5-3+1=3</code> completed partitions in this store.
  * </dd>
  * <dt>pp</dt><dd>An optional parameter, this contains a list of
  * {@link org.epics.archiverappliance.retrieval.postprocessors.PostProcessor post processing operators}
@@ -106,21 +112,23 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * retrieval performance).
  * Otherwise, the post processor is applied and the data is computed at runtime.
  * To specify multiple post processors, use standard URL syntax like so <code>pp=rms&amp;pp=mean_3600</code>
+ * The cached files of a partition are deleted with its <code>.pb</code> file when ETL moves the partition on
+ * or the PV is deleted. Not combined with <code>reducedata</code> on one store (see below).
  * </dd>
  * <dt>consolidateOnShutdown</dt><dd>This lets you control if ETL should push data to the subsequent store on
  * appserver shutdown. This is useful if you are using a RAMDisk for the short term store.</dd>
  * <dt>reducedata</dt><dd>An optional parameter; use this parameter to reduce the data as you move it into this store.
- * You can use any of the
- * <a href="http://slacmshankar.github.io/epicsarchiver_docs/userguide.html#post_processing">post processors</a>
- * that can be used with the <code>pp</code> argument.
+ * An operator with a bin width in seconds applies, such as <code>firstSample_3600</code> or <code>mean_60</code>;
+ * <code>optimized</code> and <code>optimLastSample</code> are defined by the range of a retrieval request, so
+ * initialization refuses them.
  * For example, if you define the LTS as
  * <code>pb://localhost?name=LTS&amp;rootFolder=${ARCHAPPL_LONG_TERM_FOLDER}&amp;partitionGranularity=PARTITION_YEAR&amp;reducedata=firstSample_3600</code>,
  * then when moving data into this store, ETL will apply the <code>firstSample_3600</code>
  * operator on the raw data to reduce the data and store only the reduced data.
  * The difference between this parameter and the <code>pp</code> parameter is that in the
  * <code>reducedata</code> case, only the reduced data is stored. The raw data is thrown away.
- * If you specify both the <code>pp</code> and the <code>reducedata</code>, you may get unpredictable
- * results because the raw data is necessary to precompute the caches.
+ * A store carries either <code>pp</code> or <code>reducedata</code>; initialization refuses both on one store,
+ * because the raw data is necessary to precompute the caches.
  * </dd>
  * <dt>etlIntoStoreIf</dt><dd>An optional parameter; use this parameter to control if ETL should move data into
  * this store.
@@ -324,11 +332,11 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                             this.compressionMode,
                             this.pv2key);
                 } else {
-                    logger.info("Found " + paths.length + " cached entries for " + pvName + " for post processor "
+                    logger.debug("Found " + paths.length + " cached entries for " + pvName + " for post processor "
                             + extension);
                 }
             }
-            logger.info(desc + " Found " + paths.length + " matching files for pv " + pvName + " in store "
+            logger.debug(desc + " Found " + paths.length + " matching files for pv " + pvName + " in store "
                     + this.getName());
             boolean useSearchForPositions = (this.compressionMode == CompressionMode.NONE);
             boolean doNotuseSearchForPositions = !useSearchForPositions;
@@ -614,6 +622,13 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
 
             if (queryNVPairs.containsKey("reducedata")) {
                 reducedataPostProcessor = queryNVPairs.get("reducedata");
+                checkReducedataOperator(reducedataPostProcessor);
+                if (this.postProcessorUserArgs != null && !this.postProcessorUserArgs.isEmpty()) {
+                    throw new IOException("The store " + name + " carries both reducedata=" + reducedataPostProcessor
+                            + " and pp=" + String.join(",", this.postProcessorUserArgs)
+                            + "; the two are not combined on one store, because the pp caches would be computed"
+                            + " from the reduced data and not from the raw samples");
+                }
             }
 
             if (queryNVPairs.containsKey("consolidateOnShutdown")) {
@@ -703,6 +718,20 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
         return rootFolder;
     }
 
+    /**
+     * Refuses a reducedata operator that is defined by a retrieval range rather than by a bin width: optimized and
+     * optimLastSample take a number of points over the range of a request, which a store does not have, so the ETL
+     * would reduce into the default 15-minute bins whatever the number says.
+     */
+    private static void checkReducedataOperator(String operator) throws IOException {
+        PostProcessor postProcessor = PostProcessors.findPostProcessor(operator);
+        if (postProcessor instanceof Optimized || postProcessor instanceof OptimizedWithLastSample) {
+            throw new IOException("reducedata=" + operator + " does not apply to a store: " + postProcessor.getIdentity()
+                    + " is defined by the range of a retrieval request; use an operator with a bin width in seconds,"
+                    + " such as firstSample_3600 or mean_60");
+        }
+    }
+
     public void setRootFolder(String rootFolder) throws IOException {
         this.rootFolder = rootFolder;
         logger.debug("Setting root folder to " + rootFolder);
@@ -748,6 +777,18 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
 
     public void setPartitionGranularity(PartitionGranularity partitionGranularity) {
         this.partitionGranularity = partitionGranularity;
+    }
+
+    /**
+     * Whether the file was last modified more than (hold + 1) partitions before the given time; a zero-byte or
+     * header-only source file this old is deleted by getETLStreams.
+     */
+    private boolean isOlderThanHeldPartitions(Path path, Instant currentTime) throws IOException {
+        long ageInMillis = currentTime.toEpochMilli() - Files.getLastModifiedTime(path).toMillis();
+        long heldPartitionsInMillis = (long) (this.holdETLForPartions + 1)
+                * this.getPartitionGranularity().getApproxSecondsPerChunk()
+                * 1000L;
+        return ageInMillis > heldPartitionsInMillis;
     }
 
     @Override
@@ -807,12 +848,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                     logger.warn("Path " + path + " is of size zero bytes at time "
                             + TimeUtils.convertToISO8601String(currentTime));
 
-                    long lastModifiedInMillis = Files.getLastModifiedTime(path).toMillis();
-                    long currentTimeInMillis = currentTime.toEpochMilli();
-                    if ((currentTimeInMillis - lastModifiedInMillis)
-                            > ((long) (this.holdETLForPartions + 1)
-                                    * this.getPartitionGranularity().getApproxSecondsPerChunk()
-                                    * 60)) {
+                    if (isOlderThanHeldPartitions(path, currentTime)) {
                         logger.warn("Zero byte file is older than current ETL time by holdETLForPartions; deleting it "
                                 + path.toAbsolutePath());
                         try {
@@ -841,13 +877,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                     if (fileinfo.getFirstEvent() == null) {
                         logger.debug("We seem to have an empty file " + path.toAbsolutePath());
 
-                        long lastModifiedInMillis =
-                                Files.getLastModifiedTime(path).toMillis();
-                        long currentTimeInMillis = currentTime.toEpochMilli();
-                        if ((currentTimeInMillis - lastModifiedInMillis)
-                                > ((long) (this.holdETLForPartions + 1)
-                                        * this.getPartitionGranularity().getApproxSecondsPerChunk()
-                                        * 60)) {
+                        if (isOlderThanHeldPartitions(path, currentTime)) {
                             logger.warn("Empty file is older than current ETL time by holdETLForPartions; deleting it "
                                     + path.toAbsolutePath());
                             try {
@@ -900,9 +930,11 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
             if (sizeFromInfo == -1) {
                 logger.error("We are missing size information from ETLInfo for " + info.getKey());
                 Files.delete(path);
+                deletePostProcessorFiles(path, info.getPvName());
             } else {
                 if (sizeFromInfo == size) {
                     Files.delete(path);
+                    deletePostProcessorFiles(path, info.getPvName());
                 } else {
                     logger.error("The path " + info.getKey()
                             + " has changed since we generate the ETLInfo. Not deleting it this time around. If this persists, please manually remove the file. Current Size "
@@ -912,6 +944,91 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
         } catch (NoSuchFileException ignore) {
         } catch (Exception ex) {
             logger.error("Exception deleting " + info.getKey() + ". Please manually remove this file", ex);
+        }
+    }
+
+    @Override
+    public List<ETLInfo> getETLStreamsForDeletion(String pvName, ETLContext context) throws IOException {
+        Path[] paths = PlainPBPathNameUtility.getAllPathsForDeletion(context.getPaths(), rootFolder, pvName,
+                pbFileExtension, partitionGranularity, compressionMode, pv2key);
+        ArrayList<ETLInfo> infos = new ArrayList<>();
+        for (Path path : paths) {
+            infos.add(new ETLInfo(pvName, null, deletionKey(path), partitionGranularity, null, null, Files.size(path)));
+            // The post-processor files of the partition leave with it, so the explicit deletion lists them too.
+            for (Path ppPath : postProcessorPathsOf(path, pvName)) {
+                if (Files.exists(ppPath)) {
+                    infos.add(new ETLInfo(pvName, null, deletionKey(ppPath), partitionGranularity, null, null, Files.size(ppPath)));
+                }
+            }
+        }
+        return infos;
+    }
+
+    /** The ETLInfo key of a path of this store; ArchPaths reads the decoded ZIP archive and entry paths literally. */
+    private String deletionKey(Path path) {
+        return compressionMode == CompressionMode.ZIP_PER_PV
+                ? "jar:" + path.toUri().getSchemeSpecificPart() : path.toAbsolutePath().toString();
+    }
+
+    /**
+     * The post-processor files beside a .pb file of this store: one per pp operator of the store, named like the .pb
+     * file with the operator's extension in place of the trailing .pb, on the same file system (a folder or a zip
+     * archive). The operator is initialized with its user argument first, because the extension of a binned operator
+     * carries its interval; an operator the registry does not know is logged and skipped.
+     */
+    private List<Path> postProcessorPathsOf(Path pbPath, String pvName) {
+        List<Path> result = new ArrayList<>();
+        if (postProcessorUserArgs == null || postProcessorUserArgs.isEmpty() || pbPath.getFileName() == null) {
+            return result;
+        }
+        String fileName = pbPath.getFileName().toString();
+        if (!fileName.endsWith(pbFileExtension)) {
+            return result;
+        }
+        String base = fileName.substring(0, fileName.length() - pbFileExtension.length());
+        for (String postProcessorUserArg : postProcessorUserArgs) {
+            PostProcessor postProcessor = PostProcessors.findPostProcessor(postProcessorUserArg);
+            if (postProcessor == null) {
+                logger.error("Cannot find post processor for " + postProcessorUserArg);
+                continue;
+            }
+            try {
+                postProcessor.initialize(postProcessorUserArg, pvName);
+            } catch (IOException ex) {
+                logger.error("Cannot initialize post processor " + postProcessorUserArg, ex);
+                continue;
+            }
+            result.add(pbPath.resolveSibling(base + "." + postProcessor.getExtension()));
+        }
+        return result;
+    }
+
+    /** Deletes the post-processor files of a .pb file this store has just deleted; an absent file is not an error. */
+    private void deletePostProcessorFiles(Path pbPath, String pvName) {
+        for (Path ppPath : postProcessorPathsOf(pbPath, pvName)) {
+            try {
+                Files.deleteIfExists(ppPath);
+            } catch (IOException ex) {
+                logger.error("Exception deleting " + ppPath + ". Please manually remove this file", ex);
+            }
+        }
+    }
+
+    @Override
+    public void deleteETLStream(ETLInfo info, ETLContext context) throws IOException {
+        if (info == null || info.getKey() == null || info.getSize() < 0) {
+            throw new IOException("Explicit deletion requires a path and observed size");
+        }
+        Path path = context.getPaths().get(info.getKey());
+        try {
+            long size = Files.size(path);
+            if (size != info.getSize()) {
+                throw new IOException("PV chunk changed before deletion: " + path + "; expected size "
+                        + info.getSize() + ", current size " + size);
+            }
+            Files.delete(path);
+        } catch (NoSuchFileException absent) {
+            // A previously selected chunk that is already absent needs no further removal.
         }
     }
 
@@ -1196,8 +1313,10 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                 FileTime ppPathTime = Files.getLastModifiedTime(actualPPPath);
                 if (logger.isDebugEnabled())
                     logger.debug("Modification time of src " + rawPathTime + " and of pp file " + ppPathTime);
-                if (rawPathTime.compareTo(ppPathTime) > 0) {
-                    logger.debug("Raw file is newer than PP file for " + expectedPPPath);
+                // File times have the resolution of the file system clock, so an equal time does not show that
+                // the PP file already holds the latest raw data; only a strictly newer PP file is trusted.
+                if (rawPathTime.compareTo(ppPathTime) >= 0) {
+                    logger.debug("Raw file is not older than PP file for " + expectedPPPath);
                     ret.add(new PPMissingPaths(rawPath, context.getPaths().get(expectedPPPath)));
                 }
             }

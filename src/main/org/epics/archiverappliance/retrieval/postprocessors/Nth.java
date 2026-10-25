@@ -144,7 +144,7 @@ public class Nth implements PostProcessor, PostProcessorWithConsolidatedEventStr
 	
 	@Override
 	public EventStream getConsolidatedEventStream() {
-		return data;
+		return new ArrayListCollectorEventStream(data);
 	}
 	
 	@Override

@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.PoorMansProfiler;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -32,12 +33,11 @@ import org.json.simple.JSONValue;
 /**
  * Archiving time span. 
  * 
- * @epics.BPLAction - Archiving time span; when we first added the PV to the system, last known timestamp (if available), paused or not. 
- * @epics.BPLActionEnd
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Archiving time span; when we first added the PV to the system, last known timestamp (if available), paused or not.")
 public class TimeSpanReport implements BPLAction {
 	private static final Logger logger = LogManager.getLogger(TimeSpanReport.class);
 

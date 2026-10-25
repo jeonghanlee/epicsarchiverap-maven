@@ -3,6 +3,8 @@ package org.epics.archiverappliance.mgmt.bpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -24,14 +26,16 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  *
- * @epics.BPLAction - Stop archiving the specified PV. The PV needs to be paused first.
- * @epics.BPLActionParam pv - The name of the pv.
- * @epics.BPLActionParam deleteData - Should we delete the data that has already been recorded. Optional, by default, we do not delete the data for this PV. Can be <code>true</code> or <code>false</code>.
- * @epics.BPLActionEnd
  *
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Stop archiving the specified PV. The PV needs to be paused first.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv."),
+            @BPLParam(name = "deleteData", description = "Should we delete the data that has already been recorded. Optional, by default, we do not delete the data for this PV. Can be <code>true</code> or <code>false</code>.")
+        })
 public class DeletePV implements BPLAction {
     private static Logger logger = LogManager.getLogger(DeletePV.class.getName());
 
@@ -119,9 +123,9 @@ public class DeletePV implements BPLAction {
                 + "?pv=" + URLEncoder.encode(pvName, "UTF-8")
                 + "&deleteData=" + Boolean.toString(deleteData);
         logger.info("Stopping archiving pv in engine using URL " + engineDeletePVURL);
-        JSONObject pvEngineStatus = GetUrlContent.getURLContentAsJSONObject(engineDeletePVURL);
+        JSONObject pvEngineStatus = confirmedDeletion(engineDeletePVURL);
         if (pvEngineStatus == null) {
-            infoValues = "Unknown status from engine when stoppping archiving/deleting PV " + pvName + ".";
+            infoValues = "Unconfirmed engine response when stopping archiving/deleting PV " + pvName + ".";
             logger.error(infoValues);
             return infoValues;
         }
@@ -137,7 +141,12 @@ public class DeletePV implements BPLAction {
                 + "&deleteData=" + Boolean.toString(deleteData);
         logger.info("Stopping archiving pv in ETL using URL " + etlDeletePVURL);
 
-        JSONObject etlStatus = GetUrlContent.getURLContentAsJSONObject(etlDeletePVURL);
+        JSONObject etlStatus = confirmedDeletion(etlDeletePVURL);
+        if (etlStatus == null) {
+            infoValues = "Unconfirmed ETL response when stopping archiving/deleting PV " + pvName + ".";
+            logger.error(infoValues);
+            return infoValues;
+        }
         pvStatus.put("ETL end", TimeUtils.convertToHumanReadableString(System.currentTimeMillis() / 1000));
         GetUrlContent.combineJSONObjects(pvStatus, etlStatus);
         logger.debug("Removing pv " + pvName + " from the cluster");
@@ -166,6 +175,22 @@ public class DeletePV implements BPLAction {
                 TimeUtils.convertToHumanReadableString(System.currentTimeMillis() / 1000));
 
         return infoValues;
+    }
+
+    /** Requires a component acknowledgement before management removes configuration or aliases. */
+    private JSONObject confirmedDeletion(String url) {
+        try {
+            JSONObject result = GetUrlContent.getURLContentAsJSONObject(url);
+            if (result == null || !"ok".equals(result.get("status"))) return null;
+            if (result.containsKey("validation")) {
+                Object validation = result.get("validation");
+                if (!(validation instanceof String) || !((String) validation).isEmpty()) return null;
+            }
+            return result;
+        } catch (RuntimeException failure) {
+            logger.error("Unable to confirm deletion response from " + url, failure);
+            return null;
+        }
     }
 
     private void deleteMultiplePVs(HttpServletRequest req, HttpServletResponse resp, ConfigService configService)

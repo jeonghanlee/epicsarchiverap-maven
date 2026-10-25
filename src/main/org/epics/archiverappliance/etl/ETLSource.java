@@ -41,6 +41,16 @@ public interface ETLSource {
      */
     public void markForDeletion(ETLInfo info, ETLContext context);
 
+    /** Enumerates all stored streams for explicit deletion, independent of ordinary ETL selection. */
+    default List<ETLInfo> getETLStreamsForDeletion(String pv, ETLContext context) throws IOException {
+        throw new IOException("Explicit deletion enumeration is unsupported by " + getClass().getName());
+    }
+
+    /** Removes one explicitly selected stream, reporting failures before deletion is acknowledged. */
+    default void deleteETLStream(ETLInfo info, ETLContext context) throws IOException {
+        throw new IOException("Explicit stream deletion is unsupported by " + getClass().getName());
+    }
+
     public PartitionGranularity getPartitionGranularity();
 
     public String getDescription();

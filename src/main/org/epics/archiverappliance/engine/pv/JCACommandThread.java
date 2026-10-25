@@ -35,6 +35,8 @@ public class JCACommandThread extends Thread {
      * which is probably good, but also increases the latency.
      */
     private static final long DELAY_MILLIS = 100;
+    /** Polls of DELAY_MILLIS that shutdown() waits for the command queue to drain: 30 s in all. */
+    private static final int SHUTDOWN_POLLS = 300;
 
     private static final Logger logger = LogManager.getLogger(JCACommandThread.class.getName());
 
@@ -103,7 +105,8 @@ public class JCACommandThread extends Thread {
     }
 
     /**
-     * Stop the thread and wait for it to finish
+     * Queue the destruction of the CA context, wait until the command queue has drained (at most 30 s,
+     * polled at the thread's own cadence) and then stop the thread.
      *
      * @throws InterruptedException  &emsp;
      */
@@ -113,9 +116,8 @@ public class JCACommandThread extends Thread {
 
         destoryContext();
 
-        for (int m = 0; m < 30; m++) {
-            Thread.sleep(1000);
-            if (command_queue.isEmpty()) break;
+        for (int m = 0; m < SHUTDOWN_POLLS && !command_queue.isEmpty(); m++) {
+            Thread.sleep(DELAY_MILLIS);
         }
         run = false;
     }
@@ -123,6 +125,27 @@ public class JCACommandThread extends Thread {
     public Channel createChannel(final String name, final ConnectionListener conn_callback)
             throws IllegalStateException, CAException {
         return this.jca_context.createChannel(name, conn_callback);
+    }
+
+    /**
+     * Initializes this thread's CA context if the constructor has not already done so and returns the
+     * local UDP port of the context's search socket.
+     */
+    public int initializeContextAndGetSearchPort() throws CAException {
+        if (!this.jca_context.isInitialized()) {
+            this.jca_context.initialize();
+        }
+        return this.jca_context.getBroadcastTransport().getChannel().socket().getLocalPort();
+    }
+
+    /** Returns the local UDP port of the initialized context's search socket. */
+    public int getSearchPort() {
+        return this.jca_context.getBroadcastTransport().getChannel().socket().getLocalPort();
+    }
+
+    /** Destroys the CA context of a thread that has not been started. */
+    public void destroyUnstartedContext() throws CAException {
+        this.jca_context.destroy();
     }
 
     public boolean hasContextBeenInitialized() {

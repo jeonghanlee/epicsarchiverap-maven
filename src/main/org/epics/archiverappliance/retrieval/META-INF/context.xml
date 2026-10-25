@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Limits the requests of this web application: the number of requests served at once, above which a request is
+  answered 503 at once, and the requests that run too long, which are interrupted. A valve declared on the context
+  counts every URL of the web application, including the calls the other web applications make.
+  Each attribute reads a system property of the JVM and falls back to the value after ":-"; the values are
+  placeholders until they are chosen from measurement.
+-->
+<Context>
+  <Valve className="org.apache.catalina.valves.SemaphoreValve"
+         concurrency="${archappl.valve.concurrency:-100}"
+         block="false"
+         highConcurrencyStatus="503"/>
+  <Valve className="org.apache.catalina.valves.StuckThreadDetectionValve"
+         threshold="${archappl.valve.stuckThresholdSeconds:-600}"
+         interruptThreadThreshold="${archappl.valve.interruptThresholdSeconds:-900}"/>
+</Context>

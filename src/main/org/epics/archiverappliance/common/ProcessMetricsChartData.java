@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigService.WAR_FILE;
@@ -21,6 +23,11 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+@BPLEndpoint(
+        summary = "Process metrics chart data for the specified appliance, proxied from its engine.",
+        params = {
+            @BPLParam(name = "appliance", description = "The identity of the appliance in the cluster.")
+        })
 public class ProcessMetricsChartData implements BPLAction {
 	private static Logger logger = LogManager.getLogger(ProcessMetricsChartData.class.getName());
 
@@ -60,7 +67,7 @@ public class ProcessMetricsChartData implements BPLAction {
 		GetUrlContent.combineJSONObjectsWithArrays(myProcessMetricsJSON, etlMetricsJSON);
 		GetUrlContent.combineJSONObjectsWithArrays(myProcessMetricsJSON, retrievalMetricsJSON);
 
-		// In the mgmt webapp, we convert this into a jflot friendly json, something like so....
+		// The management pages chart this as a list of series, each a label with [time, value] pairs, like so:
 		// [ 
 		//    { label: "engine_heap", data: [ [22414837000, 25.16], [22414838000, 26.82] ] },
 	    //    { label: "system_load", data: [ [22414837000, 0.36],  [22414838000, 0.13] ] } 
@@ -94,11 +101,10 @@ public class ProcessMetricsChartData implements BPLAction {
 				HashMap<String, String> engineMetric = (HashMap<String, String>) processMetrics.get(i);
 				String timeInEpochSecondsStr = engineMetric.get("timeInEpochSeconds");
 				long epochMillisUTC = Long.parseLong(timeInEpochSecondsStr)*1000;
-				long epochMillisLocalTZ = TimeUtils.convertToLocalEpochMillis(epochMillisUTC);
 				String heapUsedPercentStr = engineMetric.get(yaxisdataelementName);
 				Double heapUsedPercent = Double.parseDouble(heapUsedPercentStr);
 				LinkedList<Number> dataElements = new LinkedList<Number>();
-				dataElements.add(epochMillisLocalTZ);
+				dataElements.add(epochMillisUTC);
 				dataElements.add(heapUsedPercent);
 				data.add(dataElements);
 			}

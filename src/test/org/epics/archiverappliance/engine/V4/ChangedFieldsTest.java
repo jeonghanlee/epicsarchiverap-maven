@@ -277,7 +277,7 @@ public class ChangedFieldsTest {
             for (var v : e.getValue().entrySet()) {
                 if (v.getKey().equals("cnxregainedepsecs")) {
                     Assertions.assertTrue(
-                            Math.abs(Float.parseFloat(v.getValue()) - Float.parseFloat(actualMap.get(v.getKey())))
+                            Math.abs(Long.parseLong(v.getValue()) - Long.parseLong(actualMap.get(v.getKey())))
                                     < 10);
                 } else {
                     Assertions.assertEquals(v.getValue(), actualMap.get(v.getKey()));

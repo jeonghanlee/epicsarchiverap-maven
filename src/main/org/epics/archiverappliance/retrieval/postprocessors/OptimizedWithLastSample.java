@@ -1,5 +1,7 @@
 package org.epics.archiverappliance.retrieval.postprocessors;
 
+import org.epics.archiverappliance.retrieval.RetrievalMemoryProtection;
+
 import edu.stanford.slac.archiverappliance.PB.data.DBR2PBTypeMapping;
 import edu.stanford.slac.archiverappliance.PB.data.PBParseException;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
@@ -128,7 +130,7 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
     @Override
     public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
 
-        intervalSecs = (int) ((end.toEpochMilli() - start.toEpochMilli()) / (1000 * numberOfPoints));
+        intervalSecs = (int) ((end.toEpochMilli() - start.toEpochMilli()) / (1000L * numberOfPoints));
         
         firstBin = TimeUtils.convertToEpochSeconds(start)/intervalSecs;
         lastBin = TimeUtils.convertToEpochSeconds(end)/intervalSecs;
@@ -154,6 +156,7 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
 
     @Override
     public EventStream getConsolidatedEventStream() {
+        if (allEvents == null) throw new IllegalStateException("Optimized input stream was not initialized");
         if (numEvents > allEvents.size()) {
             return customStatsConsolidatedEventStream();
         } else {
@@ -375,6 +378,7 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
         SummaryValue lastValSum = new SummaryValue(list, currentMaxSeverity, currentConnectionChangedEvents);
 
         for (int i = 1; i < nBins; i++) {
+            RetrievalMemoryProtection.checkCurrent();
             consolidatedData.put(lastBinSaved + i, lastValSum);
         }
     }

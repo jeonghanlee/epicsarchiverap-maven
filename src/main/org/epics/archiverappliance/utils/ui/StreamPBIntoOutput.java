@@ -47,9 +47,6 @@ public class StreamPBIntoOutput {
 		long startTimeInEpochSeconds = 0;
 		if(start != null)
 			startTimeInEpochSeconds = TimeUtils.convertToEpochSeconds(start);
-		long endTimeInEpochSeconds = Long.MAX_VALUE;
-		if(end != null)
-			endTimeInEpochSeconds = TimeUtils.convertToEpochSeconds(end);
 		
 		// Write the PB header.
 		assert(st instanceof RemotableOverRaw);
@@ -62,7 +59,7 @@ public class StreamPBIntoOutput {
 			for(Event e : st) {
 				previousYear = writeHeader(previousYear, os, desc, e, startTimeInEpochSeconds);
 				long epochSeconds = e.getEpochSeconds();
-				if(epochSeconds >= startTimeInEpochSeconds && epochSeconds <= endTimeInEpochSeconds) {
+				if(epochSeconds >= startTimeInEpochSeconds && (end == null || !e.getEventTimeStamp().isAfter(end))) {
 					ByteArray val = e.getRawForm();
 					os.write(val.data, val.off, val.len);
 					os.write(LineEscaper.NEWLINE_CHAR);
@@ -70,9 +67,9 @@ public class StreamPBIntoOutput {
 				} else {
 					if(logger.isDebugEnabled()) { 
 						logger.debug("Skipping event" 
-								 + " with timestamp " + TimeUtils.convertToISO8601String(TimeUtils.convertFromEpochSeconds(epochSeconds, 0))
+								 + " with timestamp " + e.getEventTimeStamp()
 								 + " and start " + TimeUtils.convertToISO8601String(TimeUtils.convertFromEpochSeconds(startTimeInEpochSeconds, 0))
-								 + " with end " + TimeUtils.convertToISO8601String(TimeUtils.convertFromEpochSeconds(endTimeInEpochSeconds, 0))
+								 + " with end " + end
 								);
 					}
 				}

@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.exception.AlreadyRegisteredException;
@@ -26,14 +28,16 @@ import org.json.simple.parser.JSONParser;
 /**
  * Updates the type info for a PV. The typeinfo should be sent in the POST body as JSON.
  * 
- * @epics.BPLAction - Updates the typeinfo for the specified PV. Note this merely updates the typeInfo. It does not have any logic to react to changes in the typeinfo. That is, don't assume that the PV is automatically paused just because you changed the isPaused to true. This is meant to be used in conjuction with other BPL to implement site-specific BPL in external code (for example, python). This can also be used to add PVTypeInfo's into the system; support for this is experimental. The new PVTypeInfo's are automatically paused before adding into the system. Logically, you have to specify at least one of override or createnew.
- * @epics.BPLActionParam pv - The name of the pv.
- * @epics.BPLActionParam override - If the PVTypeInfo for this PV already exists, do you want to update it or return an error? By default, this is false.
- * @epics.BPLActionParam createnew - If the PVTypeInfo for this PV does not exist, do you want to create a new one or return an error? By default, this is false.
- * @epics.BPLActionEnd
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Updates the typeinfo for the specified PV. Note this merely updates the typeInfo. It does not have any logic to react to changes in the typeinfo. That is, don't assume that the PV is automatically paused just because you changed the isPaused to true. This is meant to be used in conjuction with other BPL to implement site-specific BPL in external code (for example, python). This can also be used to add PVTypeInfo's into the system; support for this is experimental. The new PVTypeInfo's are automatically paused before adding into the system. Logically, you have to specify at least one of override or createnew.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv."),
+            @BPLParam(name = "override", description = "If the PVTypeInfo for this PV already exists, do you want to update it or return an error? By default, this is false."),
+            @BPLParam(name = "createnew", description = "If the PVTypeInfo for this PV does not exist, do you want to create a new one or return an error? By default, this is false.")
+        })
 public class PutPVTypeInfo implements BPLAction {
 	private static Logger logger = LogManager.getLogger(PutPVTypeInfo.class.getName());
 	

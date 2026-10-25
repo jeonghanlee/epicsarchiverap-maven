@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
@@ -30,6 +31,7 @@ import org.json.simple.JSONValue;
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Restart the archive-PV workflow thread on this appliance.")
 public class RestartArchiveWorkflowThreadForAppliance implements BPLAction {
 	private static final Logger logger = LogManager.getLogger(RestartArchiveWorkflowThreadForAppliance.class);
 

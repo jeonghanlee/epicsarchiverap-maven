@@ -9,6 +9,8 @@ package org.epics.archiverappliance.mgmt.bpl.cahdlers;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.common.BPLAction;
@@ -38,6 +40,16 @@ import java.util.LinkedList;
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Compare retrieved data for a PV against a Channel Archiver server, for testing.",
+        params = {
+            @BPLParam(name = "archiveKey", description = "The archive key on the Channel Archiver server."),
+            @BPLParam(name = "from", description = "The start of the time range, as an ISO 8601 timestamp."),
+            @BPLParam(name = "limit", description = "Optional; the maximum number of entries to return."),
+            @BPLParam(name = "pv", description = "The name of the PV."),
+            @BPLParam(name = "serverURL", description = "The URL of the Channel Archiver server."),
+            @BPLParam(name = "to", description = "The end of the time range, as an ISO 8601 timestamp.")
+        })
 public class CompareWithChannelArchiver implements BPLAction {
 	private static Logger logger = LogManager.getLogger(CompareWithChannelArchiver.class.getName());
 
@@ -70,15 +82,22 @@ public class CompareWithChannelArchiver implements BPLAction {
 
 		// ISO datetimes are of the form "2011-02-02T08:00:00.000Z"
         Instant end = TimeUtils.now();
-		if(endTimeStr != null) {
-			end = TimeUtils.convertFromISO8601String(endTimeStr);
-		}
-
-		// We get one day by default
-        Instant start = TimeUtils.minusDays(end, 1);
-		if(startTimeStr != null) {
-			start = TimeUtils.convertFromISO8601String(startTimeStr);
-		}
+        Instant start;
+        try {
+            if (endTimeStr != null) {
+                end = TimeUtils.convertFromISO8601String(endTimeStr);
+            }
+            // We get one day by default
+            start = TimeUtils.minusDays(end, 1);
+            if (startTimeStr != null) {
+                start = TimeUtils.convertFromISO8601String(startTimeStr);
+            }
+        } catch (IllegalArgumentException ex) {
+            String msg = "Cannot parse time " + startTimeStr + " or " + endTimeStr;
+            logger.warn(msg, ex);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+            return;
+        }
 
 		int limit = 100;
 		if(limitStr != null && !limitStr.equals("")) {

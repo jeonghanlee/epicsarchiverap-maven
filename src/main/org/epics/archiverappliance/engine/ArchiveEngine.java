@@ -63,6 +63,21 @@ public class ArchiveEngine {
 	private static final Logger logger = LogManager.getLogger(ArchiveEngine.class.getName());
 
 	/**
+	 * Compute the sample buffer capacity of a PV: the samples expected within one write period plus a margin
+	 * given in seconds, so that a late buffer swap costs the same amount of time at every sampling rate.
+	 * The margin is at least one sample.
+	 * @param writePeriod seconds between two writes of the same buffer
+	 * @param samplingPeriod seconds between two samples of the PV; must be positive
+	 * @param marginSeconds seconds of write delay the buffer absorbs without dropping a sample
+	 * @return capacity in samples
+	 */
+	public static int computeBufferCapacity(double writePeriod, double samplingPeriod, double marginSeconds) {
+		int expectedSamples = (int) Math.round(Math.max(writePeriod / samplingPeriod, 1.0));
+		int marginSamples = (int) Math.ceil(marginSeconds / samplingPeriod);
+		return expectedSamples + Math.max(marginSamples, 1);
+	}
+
+	/**
 	 * Create the channel for the PV and register it in the places where it needs to be registered.
 	 * @param name  &emsp; 
 	 * @param writer  First destination  
@@ -98,7 +113,7 @@ public class ArchiveEngine {
 			pvSamplingPeriod = PolicyConfig.DEFAULT_MONITOR_SAMPLING_PERIOD;
 		}
 
-		int buffer_capacity = ((int) Math.round(Math.max((write_period/pvSamplingPeriod)*engineContext.getSampleBufferCapacityAdjustment(), 1.0))) + 1;
+		int buffer_capacity = computeBufferCapacity(write_period, pvSamplingPeriod, engineContext.getSampleBufferMarginSeconds());
 		if (buffer_capacity < 2) {
 			logger.debug("Enforcing a minimum capacity for sample buffer size.");
 			buffer_capacity = 2;
@@ -314,6 +329,27 @@ public class ArchiveEngine {
 	 * @param configservice  ConfigService
 	 * @throws Exception error in pausing the channel .
 	 */
+	/**
+	 * Pause a PV on the engine's own decision: the reason is saved in the type information with the paused flag, so that the
+	 * management reads Paused and the Details window shows why; then the channel is paused as for an operator's request.
+	 * The ETL is not told, as it is by the management; it goes on moving the stored data, which stays valid.
+	 *
+	 * @param pvName        Name of the channel (PV)
+	 * @param reason        why the engine pauses it
+	 * @param configservice ConfigService
+	 * @throws Exception when the channel cannot be paused
+	 */
+	public static void pauseArchivingPV(final String pvName, final String reason, ConfigService configservice) throws Exception {
+		PVTypeInfo typeInfo = configservice.getTypeInfoForPV(pvName);
+		if (typeInfo != null && !typeInfo.isPaused()) {
+			typeInfo.setPaused(true);
+			typeInfo.setPauseReason(reason);
+			typeInfo.setModificationTime(TimeUtils.now());
+			configservice.updateTypeInfoForPV(pvName, typeInfo);
+		}
+		pauseArchivingPV(pvName, configservice);
+	}
+
 	public static void pauseArchivingPV(final String pvName, ConfigService configservice) throws Exception {
 		EngineContext engineContext = configservice.getEngineContext();
        // pause the pv
@@ -321,8 +357,12 @@ public class ArchiveEngine {
 		if (channel != null) {
 			channel.shutdownMetaChannels();
 			channel.stop();
-			channel.setPaused(true);
-			engineContext.incrementPausedPVCount();
+			channel.getSampleBuffer().stopAcceptingSamples();
+			if (!channel.isPaused()) {
+				channel.setPaused(true);
+				engineContext.incrementPausedPVCount();
+			}
+			engineContext.getWriteThead().flushChannel(channel);
 			destoryPv(pvName, configservice);
 		}
 	}
@@ -344,6 +384,7 @@ public class ArchiveEngine {
 		ArchiveChannel channel = engineContext.getChannelList().get(pvName);
 		if (channel != null) {
 			channel.stop();
+			engineContext.getWriteThead().flushChannel(channel);
 			channel.start();
 			channel.setPaused(false);
 		} else {
@@ -369,6 +410,7 @@ public class ArchiveEngine {
 		ArchiveChannel channel = engineContext.getChannelList().get(pvName);
 		if (channel != null) {
 			channel.stop();
+			engineContext.getWriteThead().flushChannel(channel);
 			channel.start();
 		} else {
 			// We have not created the channel on startup.

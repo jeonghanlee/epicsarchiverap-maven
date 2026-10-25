@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http: https:; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>appliance archiver - Retrieval performance</title>
+    <link rel="stylesheet" href="comm/css/main.css" />
+    <link rel="stylesheet" href="comm/css/chart.css" />
+    <link rel="stylesheet" href="css/system.css" />
+    <script src="comm/js/vendor/d3.min.js" defer></script>
+    <script type="module" src="js/retrieval.js"></script>
+    <script src="js/menu.js" defer></script>
+    <script type="module" src="comm/js/aa/timezone.js"></script>
+  </head>
+  <body>
+    <div class="pageheader">
+      <!-- @begin(site_header) -->
+      <span><picture><source media="(max-width: 359px)" srcset="comm/img/wordmark.svg" /><img src="comm/img/archiverheader.svg" alt="Archiver Appliance" /></picture></span>
+      <!-- @end(site_header) -->
+      <!-- @begin(site_logo) -->
+      <span id="siteimages"><img src="comm/img/sitelogo.svg" alt="Store signals, analyze in place" /></span>
+      <!-- @end(site_logo) -->
+    </div>
+
+    <!-- @begin(site_navbar) -->
+    <div class="navbar">
+      <nav class="nav" aria-label="Main menu">
+        <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Menu" />
+        <label class="menu-button" for="menu-toggle">Menu</label>
+        <ul class="mainmenu" id="mainmenu">
+          <li><a href="archive.html">Archive PVs</a></li>
+          <li><a href="index.html">Browse PVs</a></li>
+          <li><a href="system.html" data-pages="system.html operations.html retrieval.html external.html">System</a></li>
+          <li><a href="help.html" id="help">Help</a></li>
+          <li><a href="analyzer.html">Analyzer</a></li>
+        </ul>
+      </nav>
+    </div>
+    <!-- @end(site_navbar) -->
+
+    <main class="system">
+      <nav class="tabs" aria-label="System pages">
+        <a href="system.html" data-page="system.html">Overview</a>
+        <a href="operations.html" data-page="operations.html">Operations</a>
+        <a href="retrieval.html" data-page="retrieval.html" aria-current="page">Retrieval performance</a>
+        <a href="external.html" data-page="external.html">External servers</a>
+        <select id="applianceChoice" aria-label="Appliance" hidden></select>
+      </nav>
+      <p id="problem" class="error" role="status"></p>
+
+      <h1>Retrieval performance</h1>
+      <section aria-labelledby="measureHeading">
+        <h2><span id="measureHeading">Measure from this browser</span></h2>
+        <form id="measureForm" class="inline">
+          <label for="measurePV">PV</label>
+          <input id="measurePV" type="text" autocomplete="off" spellcheck="false" required />
+          <label for="measureRange">Range</label>
+          <select id="measureRange">
+            <option value="1">Last hour</option>
+            <option value="24">Last day</option>
+            <option value="168">Last week</option>
+            <option value="720">Last 30 days</option>
+          </select>
+          <button type="submit">Measure</button>
+        </form>
+        <p id="measureError" class="error" role="status"></p>
+        <div class="scroll">
+          <table class="grid plain" id="measurements">
+            <thead>
+              <tr><th>When</th><th>PV</th><th>Range</th><th class="r">Samples</th><th class="r">Size</th><th class="r">First byte</th><th class="r">Complete</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="serverHeading">
+        <h2><span id="serverHeading">What the server says</span></h2>
+        <div class="columns">
+          <div>
+            <table class="grid plain" id="serverFacts"><tbody></tbody></table>
+          </div>
+          <div>
+            <h3><span id="heapHeading">Retrieval heap</span></h3>
+            <div id="heapChart"></div>
+            <p id="heapNote" class="sub"></p>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="dataHeading">
+        <h2><span id="dataHeading">Data available for a PV</span></h2>
+        <form id="dataForm" class="inline">
+          <label for="dataPV">PV</label>
+          <input id="dataPV" type="text" autocomplete="off" spellcheck="false" required />
+          <button type="submit">Look up</button>
+        </form>
+        <p id="dataError" class="error" role="status"></p>
+        <table class="grid plain" id="dataFacts"><tbody></tbody></table>
+      </section>
+
+    </main>
+
+      <!-- @begin(site_footer) -->
+      <div class="pagefooter"></div>
+      <!-- @end(site_footer) -->
+  </body>
+</html>

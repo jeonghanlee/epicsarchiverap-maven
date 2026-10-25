@@ -90,24 +90,26 @@ public class ZipETLTest {
 		Assertions.assertTrue(expectedZipFile.exists(), "Zip file does not seem to exist " + expectedZipFile);
 
 		logger.info("Testing retrieval for zip per pv");
-		int eventCount = 0;
+		int srcEventCount = 0;
 		try(BasicContext context = new BasicContext();
 				EventStream strm = new CurrentThreadWorkerEventStream(pvName, etlSrc.getDataForPV(context, pvName, TimeUtils.getStartOfYear(TimeUtils.getCurrentYear()), TimeUtils.getEndOfYear(TimeUtils.getCurrentYear())))
 				) {
 			if(strm != null) {
 				for(@SuppressWarnings("unused") Event ev : strm) {
-					eventCount++;
+					srcEventCount++;
 				}
 			}
 		}
+		int destEventCount = 0;
 		try(BasicContext context = new BasicContext();
 				EventStream strm = new CurrentThreadWorkerEventStream(pvName, etlDest.getDataForPV(context, pvName, TimeUtils.getStartOfYear(TimeUtils.getCurrentYear()), TimeUtils.getEndOfYear(TimeUtils.getCurrentYear())))
 				) {
 			for(@SuppressWarnings("unused") Event ev : strm) {
-				eventCount++;
+				destEventCount++;
 			}
 		}
-		logger.info("Got " + eventCount + " events");
-        Assertions.assertTrue(eventCount >= (simstream.getNumberOfEvents() - 1), "Retrieval does not seem to return any events " + eventCount);
+		int eventCount = srcEventCount + destEventCount;
+		logger.info("Got " + eventCount + " events, " + srcEventCount + " from the source and " + destEventCount + " from the destination");
+        Assertions.assertTrue(eventCount >= (simstream.getNumberOfEvents() - 1), "Retrieval does not seem to return any events " + eventCount + " (source " + srcEventCount + ", destination " + destEventCount + ")");
 	}
 }

@@ -65,6 +65,9 @@ public class ETLExecutor {
                     "The pv " + pvName + " has entries in PBThreeTierETLPVLookup. Please remove these first");
         }
         PVTypeInfo pvTypeInfo = configService.getTypeInfoForPV(pvName);
+        if (pvTypeInfo == null) {
+            throw new IOException("The pv " + pvName + " has no PVTypeInfo on this appliance.");
+        }
         String[] dataStores = pvTypeInfo.getDataStores();
         if (dataStores == null || dataStores.length < 2) {
             throw new IOException("The pv " + pvName + " has not enough stores.");

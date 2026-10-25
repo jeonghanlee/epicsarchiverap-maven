@@ -1,0 +1,981 @@
+/*
+ * Browse PVs page. The tokens (--ink, --rule, --accent, ...) come from the shared main.css.
+ * Ink goes to the data and to the one thing that needs attention. Regions are separated by
+ * whitespace and thin rules, not by boxes, fills or shadows.
+ */
+
+.browse {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    gap: 24px;
+    max-width: 1560px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+@media (max-width: 900px) {
+    .browse {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.browse section {
+    min-width: 0;
+}
+
+.browse h2 {
+    margin: 0 0 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+}
+
+.browse h3 {
+    margin: 12px 0 2px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.browse .area {
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+}
+
+.browse .sub,
+.browse .hint,
+.browse .muted {
+    color: var(--ink-2);
+    font-size: 0.875rem;
+    margin: 0 0 6px;
+}
+
+.browse .faint {
+    color: var(--ink-3);
+}
+
+.browse .error {
+    color: var(--alarm);
+    margin: 4px 0;
+    min-height: 1em;
+    font-size: 0.875rem;
+}
+
+.num,
+.pv {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.num {
+    white-space: nowrap;
+}
+
+/* A PV name stays on one line inside a table; the table scrolls instead of breaking it. */
+.pvs td.pv,
+.stats td.pv {
+    overflow-wrap: normal;
+    white-space: nowrap;
+}
+
+.pv {
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+}
+
+/* finder */
+
+.search {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 1rem;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid var(--ink-3);
+    border-radius: 0;
+    color: var(--ink);
+}
+
+.search:focus {
+    outline: none;
+    border-bottom-color: var(--accent);
+}
+
+.modes,
+.ranges,
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 8px 0;
+}
+
+.modes-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modes-row .modes {
+    margin: 8px 0;
+}
+
+.modes button,
+.ranges button,
+.chips button {
+    background: none;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    padding: 2px 0;
+    margin: 0;
+    color: var(--ink-2);
+    font: inherit;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.modes button[aria-pressed="true"],
+.ranges button[aria-pressed="true"],
+.chips button[aria-pressed="true"] {
+    color: var(--ink);
+    border-bottom-color: var(--accent);
+}
+
+.ranges button {
+    font-family: var(--mono);
+    font-size: 0.875rem;
+}
+
+.chips .n {
+    margin-left: 4px;
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    color: var(--ink-3);
+}
+
+#report {
+    width: 100%;
+    margin: 4px 0;
+    padding: 6px 8px;
+    font: inherit;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--ink-3);
+    border-radius: 4px;
+}
+
+.report-value {
+    font-size: 0.875rem;
+    color: var(--ink-2);
+}
+
+.count {
+    margin: 8px 0 4px;
+    font-size: 0.875rem;
+    color: var(--ink-2);
+}
+
+/* The two controls of the list (Selected only, Clear selection) sit under the count, styled like the Plot controls of the table. */
+.list-tools {
+    display: flex;
+    gap: 4px 18px;
+    margin: 0 0 4px;
+}
+
+.offer {
+    margin: 4px 0 8px;
+    font-size: 0.9375rem;
+}
+
+.offer a {
+    color: var(--accent);
+}
+
+.results {
+    position: relative;
+    max-height: min(60vh, 520px);
+    overflow-y: auto;
+    border-top: 1px solid var(--rule);
+}
+
+.results .spacer {
+    position: relative;
+}
+
+.results ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.results li {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 30px;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 0 4px;
+    border-bottom: 1px solid var(--grid);
+    cursor: pointer;
+}
+
+.results li:hover,
+.results li[aria-selected="true"] {
+    background: var(--focus-bg);
+}
+
+.results:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.results:focus-visible li.active {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.pvs tbody tr:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.results .pv {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tick {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--ink-3);
+    border-radius: 3px;
+}
+
+li[aria-selected="true"] .tick {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.state-word {
+    font-size: 0.875rem;
+}
+
+.state-word.warn,
+.warn {
+    color: var(--warn);
+    font-weight: 600;
+}
+
+/* board */
+
+/* The refresh control acts on the whole page; it is dim while the window of the chart does not end now. */
+.refresh {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    font-size: 0.875rem;
+    color: var(--ink-2);
+}
+
+.refresh .ranges {
+    margin: 0;
+}
+
+.refresh button.plain {
+    font-size: 0.875rem;
+}
+
+.refresh[data-dim="true"] {
+    opacity: 0.45;
+}
+
+.refresh[data-dim="true"] button {
+    cursor: default;
+}
+
+.bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+}
+
+.bar h2 {
+    margin: 0;
+}
+
+.limits {
+    margin-left: 12px;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--ink-2);
+}
+
+.table-head {
+    margin-bottom: 6px;
+}
+
+.table-head .plot-tools {
+    display: inline-flex;
+    gap: 4px 18px;
+    margin-left: 18px;
+    font-weight: 400;
+}
+
+/*
+ * The note of the Plot limit floats above the heading, in its top margin, and takes no room: a note that took room would push the
+ * table down under the pointer, and the pointer would leave the cell that shows it.
+ */
+.table-head {
+    position: relative;
+}
+
+.plot-note {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 4px);
+    max-width: 100%;
+    padding: 2px 8px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--c-surface);
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--ink-2);
+    pointer-events: none;
+}
+
+.plot-note:empty {
+    display: none;
+}
+
+.scroll {
+    overflow-x: auto;
+}
+
+.pvs,
+.stats {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.pvs th,
+.stats th {
+    padding: 4px 6px 4px 0;
+    text-align: left;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    border-bottom: 1px solid var(--rule);
+}
+
+.pvs td,
+.stats td {
+    padding: 4px 6px 4px 0;
+    border-bottom: 1px solid var(--grid);
+    vertical-align: middle;
+}
+
+.pvs .r,
+.stats th:not(:first-child),
+.stats td:not(:first-child) {
+    text-align: right;
+}
+
+.pvs tbody tr {
+    cursor: pointer;
+}
+
+.pvs tr[data-focus="true"] td {
+    background: var(--focus-bg);
+}
+
+.pvs .empty {
+    color: var(--ink-2);
+    padding: 12px 0;
+}
+
+.pvs th.plot,
+.pvs td.plot {
+    width: 40px;
+    text-align: center;
+    padding-right: 0;
+}
+
+.pvs td.plot input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.pvs td.plot input:disabled {
+    cursor: not-allowed;
+}
+
+/* A Plot box over the limit is disabled and takes neither the pointer nor a tap, so its cell takes them and shows the message. */
+.pvs td.plot.over {
+    cursor: not-allowed;
+}
+
+.pvs td.plot.over input {
+    pointer-events: none;
+}
+
+.pvs .proto-tag {
+    display: inline-block;
+    padding: 0 8px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+}
+
+.pvs td.state .state-word {
+    display: block;
+    white-space: nowrap;
+}
+
+.pvs td.state .lost {
+    display: inline-block;
+    margin: 2px 0 0;
+}
+
+.pvs td.actions-cell,
+.pvs td.details-cell {
+    white-space: nowrap;
+}
+
+.pvs thead th:nth-child(2),
+.pvs td.pv {
+    padding-left: 8px;
+}
+
+/* The Trend line is drawn in a box of 150 by 22; the table shows it a little smaller so that nine columns fit. */
+.pvs td.spark-cell svg {
+    width: 100px;
+    height: auto;
+}
+
+.pvs button.act {
+    margin-right: 3px;
+    padding: 2px 6px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.pvs button.act:hover,
+.pvs button.act[aria-expanded="true"] {
+    background: var(--focus-bg);
+}
+
+.menu {
+    position: absolute;
+    z-index: 300;
+    min-width: 200px;
+    padding: 4px 0;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    background: var(--c-surface);
+    box-shadow: var(--shadow-md);
+}
+
+.menu[hidden] {
+    display: none;
+}
+
+.menu button {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.9375rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.menu button:hover,
+.menu button:focus-visible {
+    background: var(--focus-bg);
+}
+
+.menu button.danger {
+    color: var(--alarm);
+}
+
+/* The Details window: its groups, the kinds of time inside them, and the values that a call does not hold. */
+dialog.details {
+    width: min(760px, calc(100vw - 32px));
+    max-width: none;
+    max-height: calc(100vh - 48px);
+    padding: 0;
+}
+
+dialog.details .dialog-box {
+    max-height: calc(100vh - 48px);
+    padding: 20px;
+    overflow: auto;
+}
+
+.details-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.details-head h2 {
+    margin: 0;
+}
+
+.details-head button.quiet {
+    color: var(--ink-2);
+    background: none;
+    border-color: transparent;
+}
+
+.details-group h3 {
+    margin: 18px 0 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+    font-size: 1rem;
+}
+
+.details-group h4 {
+    margin: 12px 0 2px;
+    font-size: 0.9375rem;
+}
+
+.details-group h5 {
+    margin: 10px 0 2px;
+    color: var(--ink-2);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.details-group .facts {
+    grid-template-columns: minmax(10rem, 3fr) minmax(0, 2fr);
+    margin: 2px 0 6px;
+}
+
+.details-group .facts dt,
+.details-group .facts dd {
+    overflow-wrap: anywhere;
+}
+
+.details-group .facts dd.none,
+.details-group p.none {
+    color: var(--ink-3);
+    font-style: italic;
+}
+
+.maintenance-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.maintenance-list li {
+    margin-top: 12px;
+}
+
+.maintenance-list button.plain {
+    padding: 4px 0;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.maintenance-list button.plain:hover {
+    border-bottom-color: currentColor;
+}
+
+.pvs td.last,
+.pvs td.sdev {
+    font-size: 0.875rem;
+}
+
+.pvs .state-word.paused {
+    color: var(--ink-2);
+    font-weight: 600;
+}
+
+.pvs .lost {
+    margin-left: 8px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--focus-bg);
+    color: var(--warn);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+/* Value: the whole part is right-aligned and the rest left-aligned at the middle of the cell, so the decimal points of the rows line up. */
+.pvs td.value {
+    white-space: nowrap;
+}
+
+.pvs .v {
+    display: grid;
+    grid-template-columns: var(--whole, 4ch) var(--rest, 4ch) calc(var(--unit, 0ch) + 6px);
+    justify-content: end;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 0.875rem;
+}
+
+.pvs .v .whole {
+    text-align: right;
+}
+
+.pvs .v .rest {
+    text-align: left;
+}
+
+.pvs .v .unit {
+    padding-left: 6px;
+    color: var(--ink-2);
+}
+
+.pvs .v .vtext {
+    grid-column: 1 / 3;
+    text-align: right;
+}
+
+.stats td {
+    font-size: 0.875rem;
+}
+
+/* distribution and scatter side by side */
+
+.pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 28px;
+}
+
+@media (max-width: 900px) {
+    .pair {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* detail */
+
+.facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 4px 16px;
+    margin: 8px 0;
+}
+
+.facts dt {
+    color: var(--ink-2);
+}
+
+.facts dd {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+button.danger {
+    color: var(--alarm);
+}
+
+/* dialogs */
+
+dialog {
+    max-width: min(440px, calc(100vw - 32px));
+    padding: 20px;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--ink-3);
+    border-radius: 6px;
+}
+
+dialog::backdrop {
+    background: rgba(0, 20, 26, 0.55);
+}
+
+dialog h2 {
+    margin: 0 0 8px;
+}
+
+dialog label {
+    display: block;
+    margin: 12px 0 4px;
+    font-size: 0.9375rem;
+    color: var(--ink-2);
+}
+
+dialog label.check {
+    color: var(--ink);
+}
+
+dialog select,
+dialog input[type="number"] {
+    width: 100%;
+    padding: 6px 8px;
+    font: inherit;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--ink-3);
+    border-radius: 4px;
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 18px;
+    margin-top: 16px;
+}
+
+.dialog-actions button {
+    padding: 6px 14px;
+    font: inherit;
+    cursor: pointer;
+    color: var(--accent-ink);
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+}
+
+.dialog-actions button.danger {
+    color: var(--bg);
+    background: var(--alarm);
+    border-color: var(--alarm);
+}
+
+.dialog-actions button.quiet {
+    color: var(--ink-2);
+    background: none;
+    border-color: transparent;
+}
+
+.bulk {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 18px;
+    margin: 8px 0 0;
+}
+
+/* The bulk, zoom and refresh buttons read as text, not as filled buttons. */
+.bulk button.plain,
+.plot-tools button.plain,
+.refresh button.plain {
+    background: none;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    padding: 4px 0;
+    margin: 0;
+    color: var(--accent);
+    font: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.bulk button.plain:hover,
+.plot-tools button.plain:hover,
+.refresh button.plain:hover {
+    border-bottom-color: currentColor;
+}
+
+.bulk button.plain.danger {
+    color: var(--alarm);
+    background: none;
+}
+
+.plot-tools button.plain:disabled,
+.refresh button.plain:disabled {
+    color: var(--ink-3);
+    cursor: default;
+    border-bottom-color: transparent;
+}
+
+/* The pressed state of a toggle among the Plot controls (Plotted only) is a solid underline. */
+.plot-tools button.plain[aria-pressed="true"] {
+    border-bottom-color: currentColor;
+    font-weight: 600;
+}
+
+#maintainFields label {
+    display: block;
+    margin: 10px 0 3px;
+    font-size: 0.9375rem;
+    color: var(--ink-2);
+}
+
+#maintainFields input,
+#maintainFields select {
+    width: 100%;
+    max-width: 24rem;
+    font: inherit;
+    padding: 6px 8px;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--ink-3);
+    border-radius: 4px;
+}
+
+@media (max-width: 600px) {
+    .bulk button.plain,
+    .plot-tools button.plain {
+        min-height: 44px;
+    }
+
+    /* Controls are at least 44 px high so a thumb can hit them. */
+    label.check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 44px;
+    }
+
+    .browse button,
+    .browse input,
+    .browse select {
+        min-height: 44px;
+    }
+
+    .results li {
+        height: 44px;
+    }
+
+    /* A row of the table becomes three lines: the Plot box, the name and the value; the protocol, the trend and the state; the last event. */
+    .pvs thead {
+        display: none;
+    }
+
+    .pvs,
+    .pvs tbody {
+        display: block;
+    }
+
+    .pvs tr {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        grid-template-areas: "plot pv value" "proto spark state" ". last sdev" ". actions details";
+        align-items: center;
+        gap: 2px 12px;
+        padding: 8px 4px;
+        border-bottom: 1px solid var(--grid);
+    }
+
+    .pvs tr[data-focus="true"] {
+        background: var(--focus-bg);
+    }
+
+    .pvs tr[data-focus="true"] td {
+        background: transparent;
+    }
+
+    .pvs td {
+        display: block;
+        padding: 0;
+        border: 0;
+    }
+
+    .pvs td[hidden] {
+        display: none;
+    }
+
+    .pvs td.plot {
+        grid-area: plot;
+        text-align: center;
+    }
+
+    .pvs td.pv {
+        grid-area: pv;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pvs td.value {
+        grid-area: value;
+        font-size: 1.125rem;
+        min-width: 0;
+    }
+
+    .pvs td.proto {
+        grid-area: proto;
+        text-align: center;
+    }
+
+    .pvs td.spark-cell {
+        grid-area: spark;
+    }
+
+    .pvs td.state {
+        grid-area: state;
+        text-align: right;
+    }
+
+    .pvs td.last {
+        grid-area: last;
+        text-align: left;
+    }
+
+    .pvs td.sdev {
+        grid-area: sdev;
+        text-align: right;
+    }
+
+    .pvs td.actions-cell {
+        grid-area: actions;
+    }
+
+    .pvs td.details-cell {
+        grid-area: details;
+        text-align: right;
+    }
+
+    .pvs td.empty {
+        grid-column: 1 / -1;
+    }
+
+    .modes button,
+    .ranges button,
+    .chips button {
+        min-height: 44px;
+    }
+}
+
+/* The two notes under the Selected row take no room while they hold no text. */
+#limitNote:empty,
+#actionNote:empty {
+    margin: 0;
+    padding: 0;
+}
+
+/* The headings of the chart row and of the large window sit flush with their buttons. */
+.inspect-head h2,
+.chart-dialog-head h2 {
+    margin: 0;
+}

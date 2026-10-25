@@ -1,0 +1,12 @@
+# The sine PV of UnitTestPVs.db under the same name as an integer record, for the test of the engine pausing a PV
+# whose record came back with another type. The calc record counts seconds; the longin record reads it once a second.
+record(calcout, "$(P)--ArchUnitTest:sine:calc") {
+  field(SCAN, "1 second")
+  field(CALC, "A+1")
+  field(INPA, "$(P)--ArchUnitTest:sine:calc.VAL NPP")
+  field(OUT , "$(P)--ArchUnitTest:sine PP")
+}
+
+record(longin, "$(P)--ArchUnitTest:sine") {
+  field(EGU, "counts")
+}

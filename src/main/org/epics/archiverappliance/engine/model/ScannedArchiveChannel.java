@@ -32,6 +32,7 @@ public class ScannedArchiveChannel extends ArchiveChannel implements Runnable {
 	/**
 	 * Stores the server time when we skip recording values; if the value has not changed when the SCAN comes calling; we record the event.
 	 */
+	// A reading of the monotonic clock in milliseconds (System.nanoTime), compared only with another such reading.
 	private long serverTimeForStragglingScanValuesMillis = -1;
 
 	/** @see ArchiveChannel#ArchiveChannel
@@ -100,7 +101,7 @@ public class ScannedArchiveChannel extends ArchiveChannel implements Runnable {
 				if(isLessThanScanPeriod(lastDBRTimeEvent, latestDBRTimeEvent)) {
 					// logger.debug("Latest event is less than scan periond; skipping for " + this.getName());
 					// We however keep track of the server time when we got a handle event for comparision in the SCAN thread.
-					this.serverTimeForStragglingScanValuesMillis = System.currentTimeMillis();
+					this.serverTimeForStragglingScanValuesMillis = System.nanoTime() / 1_000_000;
 					return true;
 				} else {
 					// logger.debug("Latest event is more than scan periond; recording for " + this.getName());
@@ -133,7 +134,7 @@ public class ScannedArchiveChannel extends ArchiveChannel implements Runnable {
 						return;
 					}
 
-					if(isLessThanScanPeriod(this.serverTimeForStragglingScanValuesMillis, System.currentTimeMillis())) { 
+					if(isLessThanScanPeriod(this.serverTimeForStragglingScanValuesMillis, System.nanoTime() / 1_000_000)) {
 						// logger.debug("Latest event is less than scan period; skipping for " + this.getName());
 						return;
 					} else { 

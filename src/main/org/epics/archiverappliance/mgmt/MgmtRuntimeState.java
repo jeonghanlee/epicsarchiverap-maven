@@ -63,6 +63,13 @@ public class MgmtRuntimeState {
 	 */
 	private int abortArchiveWorkflowInMins = DEFAULT_ABORT_ARCHIVE_REQUEST_TIMEOUT_MINS;
 
+	private static final int DEFAULT_HOLD_ARCHIVE_REQUEST_MINS = 10;
+	/**
+	 * Hold a request whose name no server has answered after this many minutes: the engine stops searching, the request
+	 * stays for the operator to resume or cancel, and it is left out of the abort above. 0 turns the hold off.
+	 */
+	private int holdArchiveRequestInMins = DEFAULT_HOLD_ARCHIVE_REQUEST_MINS;
+
 
 	/**
 	 * Initiate archive PV workflow for PV.
@@ -138,8 +145,76 @@ public class MgmtRuntimeState {
 			this.abortArchiveWorkflowInMins = Integer.parseInt(installationProperties.getProperty(abortArchiveWorkflowStr).trim());
 			configlogger.info("Setting the abort archive PV workflow timeout (in mins) to " + this.abortArchiveWorkflowInMins);
 		}
-		
-		
+
+		String holdArchiveRequestStr = "org.epics.archiverappliance.mgmt.MgmtRuntimeState.holdArchiveRequestInMins";
+		if(installationProperties.containsKey(holdArchiveRequestStr)) {
+			this.holdArchiveRequestInMins = Integer.parseInt(installationProperties.getProperty(holdArchiveRequestStr).trim());
+			configlogger.info("Setting the hold of an archive request whose name no server answers (in mins) to " + this.holdArchiveRequestInMins);
+		}
+	}
+
+	public int getHoldArchiveRequestInMins() {
+		return holdArchiveRequestInMins;
+	}
+
+	/** The request of a PV in the workflow of this appliance, or null. */
+	public ArchivePVState getArchivePVState(String pvName) {
+		return currentPVRequests.get(pvName);
+	}
+
+	/**
+	 * Holds a request still gathering meta information once the hold time has passed since the engine was asked, unless the
+	 * engine reports that the channel connected and is being measured; the engine is told to end its search.
+	 */
+	void holdIfNoServerAnswered(ArchivePVState request) {
+		if (holdArchiveRequestInMins <= 0
+				|| request.getCurrentState() != ArchivePVStateMachine.METAINFO_GATHERING
+				|| request.getMetaInfoRequestedSubmitted() == null
+				|| TimeUtils.now().toEpochMilli() - request.getMetaInfoRequestedSubmitted().toEpochMilli() <= holdArchiveRequestInMins * 60L * 1000L) {
+			return;
+		}
+		String pvName = request.getPvName();
+		if (isBeingMeasuredByEngine(pvName)) {
+			logger.debug("The channel of " + pvName + " connected and is being measured; not holding it this tick");
+			return;
+		}
+		String reason = "No server answered in " + holdArchiveRequestInMins + " minute" + (holdArchiveRequestInMins == 1 ? "" : "s");
+		request.hold(reason);
+		logger.warn("Holding the archive request for " + pvName + ": " + reason);
+		PubSubEvent pubSubEvent = new PubSubEvent("AbortComputeMetaInfo", myIdentity + "_" + ConfigService.WAR_FILE.ENGINE, pvName);
+		configService.getEventBus().post(pubSubEvent);
+	}
+
+	/** Whether the meta gets report of the engine of this appliance shows the channel of the PV measuring; false when it cannot be read. */
+	private boolean isBeingMeasuredByEngine(String pvName) {
+		try {
+			String url = configService.getMyApplianceInfo().getEngineURL() + "/getMetaGetsForThisAppliance";
+			org.json.simple.JSONArray report = org.epics.archiverappliance.utils.ui.GetUrlContent.getURLContentAsJSONArray(url, false);
+			if (report == null) {
+				return false;
+			}
+			for (Object item : report) {
+				if (item instanceof JSONObject row && pvName.equals(row.get("pvName"))) {
+					return "true".equals(String.valueOf(row.get("isScheduled")));
+				}
+			}
+		} catch (Exception ex) {
+			logger.warn("Could not read the meta gets report of the engine for " + pvName, ex);
+		}
+		return false;
+	}
+
+	/** Resumes a held request so that the engine searches for the name again; false when there is no held request. */
+	public boolean resumeArchiveRequest(String pvName) {
+		ArchivePVState request = currentPVRequests.get(pvName);
+		if (request == null) {
+			return false;
+		}
+		boolean resumed = request.resume();
+		if (resumed) {
+			logger.info("Resumed the held archive request for " + pvName);
+		}
+		return resumed;
 	}
 	
 	public void finishedPVWorkflow(String pvName) throws IOException {
@@ -159,7 +234,7 @@ public class MgmtRuntimeState {
 						return;
 					}
 					LinkedList<ArchivePVState> archivePVStates = new LinkedList<ArchivePVState>(currentPVRequests.values());
-					logger.info("Running the archive PV workflow with " + archivePVStates.size() + " requests pending");
+					logger.debug("Running the archive PV workflow with " + archivePVStates.size() + " requests pending");
 					Collections.sort(archivePVStates, new Comparator<ArchivePVState>() {
 						@Override
 						public int compare(ArchivePVState state0, ArchivePVState state1) {
@@ -176,9 +251,12 @@ public class MgmtRuntimeState {
 					while(pvCount < maxRequestsToProcess) {
 						ArchivePVState runWorkFlowForPV = archivePVStates.pop();
 						String pvName = runWorkFlowForPV.getPvName();
+						// The hold comes first: a request whose name no server answered is kept for the operator and never aborted.
+						holdIfNoServerAnswered(runWorkFlowForPV);
 						// It takes a few minutes for the workflow to complete; so you should be setting this to a reasonably high value.
 						if(abortArchiveWorkflowInMins > 0
 								&& ( runWorkFlowForPV.getCurrentState() != ArchivePVStateMachine.START )
+								&& ( runWorkFlowForPV.getCurrentState() != ArchivePVStateMachine.HELD )
 								&& runWorkFlowForPV.getMetaInfoRequestedSubmitted() != null
                                 && (TimeUtils.now().toEpochMilli() - runWorkFlowForPV.getMetaInfoRequestedSubmitted().toEpochMilli()) > abortArchiveWorkflowInMins * 60 * 1000) {
 							try {
@@ -206,7 +284,7 @@ public class MgmtRuntimeState {
 		for(String pvName : currentPVRequests.keySet()) {
 			ArchivePVState pvState = currentPVRequests.get(pvName);
 			if(pvState != null) {
-				neverConnectedRequests.add(new NeverConnectedRequestState(pvName, pvState.getMetaInfoRequestedSubmitted(), pvState.getCurrentState(), pvState.getStartOfWorkflow()));
+				neverConnectedRequests.add(new NeverConnectedRequestState(pvName, pvState.getMetaInfoRequestedSubmitted(), pvState.getCurrentState(), pvState.getStartOfWorkflow(), pvState.getHoldReason()));
 			}
 		}
 		return neverConnectedRequests;
@@ -289,12 +367,18 @@ public class MgmtRuntimeState {
         Instant metInfoRequestSubmitted;
         Instant startOfWorkflow;
 		ArchivePVState.ArchivePVStateMachine currentState;
+		String holdReason;
 
-        public NeverConnectedRequestState(String pvName, Instant metInfoRequestSubmitted, ArchivePVStateMachine currentState, Instant startOfWorkflow) {
+        public NeverConnectedRequestState(String pvName, Instant metInfoRequestSubmitted, ArchivePVStateMachine currentState, Instant startOfWorkflow, String holdReason) {
 			this.pvName = pvName;
 			this.metInfoRequestSubmitted = metInfoRequestSubmitted;
 			this.startOfWorkflow = startOfWorkflow;
 			this.currentState = currentState;
+			this.holdReason = holdReason;
+		}
+		/** The sentence of the hold, empty while the request is not held. */
+		public String getHoldReason() {
+			return holdReason;
 		}
 		public String getPvName() {
 			return pvName;

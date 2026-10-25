@@ -20,6 +20,7 @@ import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.retrieval.ChangeInYearsException;
 import org.epics.archiverappliance.retrieval.RemotableEventStreamDesc;
 import org.epics.archiverappliance.retrieval.RemotableOverRaw;
+import org.epics.archiverappliance.retrieval.RetrievalMemoryProtection;
 import org.epics.archiverappliance.retrieval.postprocessors.SummaryStatsPostProcessor.SummaryValue;
 
 /**
@@ -77,12 +78,14 @@ public class SummaryStatsCollectorEventStream implements EventStream, RemotableO
 	}
 
 	private class SummaryStatsCollectorEventStreamIterator implements Iterator<Event> {
-		ArrayListEventStream strm = new ArrayListEventStream(consolidatedData.size(), desc);
+		ArrayListEventStream strm;
 		short currentYear = -1;
 		int currentEvent = 0;
 		int totalEvents = -1;
 
 		SummaryStatsCollectorEventStreamIterator() {
+			RetrievalMemoryProtection.checkCurrentNow();
+			strm = new ArrayListEventStream(consolidatedData.size(), desc);
 			SummaryValue summaryValue = null;
 			boolean foundValue = false;
 			int nanos = ((intervalSecs % 2) == 0) ? 0 : 500000000;
@@ -102,6 +105,7 @@ public class SummaryStatsCollectorEventStream implements EventStream, RemotableO
 			}
 			
 			for(long binNum = firstBin; binNum <= lastBin; binNum++) {
+				RetrievalMemoryProtection.checkCurrent();
 				if(consolidatedData.containsKey(binNum)) {
 					summaryValue = consolidatedData.get(binNum);
 					foundValue = true;
@@ -152,6 +156,7 @@ public class SummaryStatsCollectorEventStream implements EventStream, RemotableO
 					}
 				}
 			}
+			RetrievalMemoryProtection.checkCurrentNow();
 			totalEvents = strm.size();
 		}
 		
@@ -165,7 +170,7 @@ public class SummaryStatsCollectorEventStream implements EventStream, RemotableO
 			Event next = strm.get(currentEvent);
 			short eventYear = TimeUtils.computeYearForEpochSeconds(next.getEpochSeconds());
 			if(eventYear != currentYear) { 
-				logger.info("Detected a change in years eventYear " + eventYear + " and currentYear is " + eventYear);
+				logger.info("Detected a change in years eventYear " + eventYear + " and currentYear is " + currentYear);
 				SummaryStatsCollectorEventStream.this.desc.setYear(eventYear);
 				short tempCurrentYear = currentYear;
 				currentYear = eventYear;

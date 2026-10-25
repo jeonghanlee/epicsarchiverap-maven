@@ -21,9 +21,12 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Locale;
+import java.util.Map;
 import java.util.List;
 
 /**
@@ -35,7 +38,7 @@ import java.util.List;
  * <li>A long epoch milliseconds - This is the java epoch milliseconds, as returned by System.currentMillis()</li>
  * <li>A JCA timestamp - This is what comes out of JCA</li>
  * <li>A year/secondsintoyear/nanos combination - This is what is used in the protocol buffer storage plugin.</li>
- * <li>A ISO 8601 date time - We use JODA to convert from/to a ISO 8601 string</li>
+ * <li>An ISO 8601 date time - java.time parses and writes it; a string with an offset is accepted as well</li>
  * </ol>
  *
  * This class contains utilities to convert various forms of timestamps to/from the Instant.
@@ -83,16 +86,33 @@ public class TimeUtils {
                 (TimeUtils.getStartOfYearInSeconds(ysts.getYear()) + ysts.getSecondsintoyear()), ysts.getNano());
     }
 
+    /**
+     * Parses an ISO 8601 instant such as 2011-02-01T08:00:00.000Z, or a date time with an offset such as 2012-11-03T00:00:00-07:00.
+     * @param tsstr The timestamp string
+     * @return The instant
+     * @throws IllegalArgumentException if the string is not an ISO 8601 instant
+     */
     public static Instant convertFromISO8601String(String tsstr) {
-        // Sample ISO8601 string 2011-02-01T08:00:00.000Z
-        return Instant.parse(tsstr);
+        try {
+            return Instant.parse(tsstr);
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("Cannot parse ISO 8601 time " + tsstr, ex);
+        }
     }
 
+    /**
+     * Parses an ISO 8601 date time with an offset such as 2012-11-03T00:00:00-07:00.
+     * @param tsstr The timestamp string
+     * @return The instant
+     * @throws IllegalArgumentException if the string is not a date time with an offset
+     */
     public static Instant convertFromDateTimeStringWithOffset(String tsstr) {
-        // Sample string 2012-11-03T00:00:00-07:00
-        DateTimeFormatter fmt = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-        OffsetDateTime dt = OffsetDateTime.parse(tsstr, fmt);
-        return dt.toInstant();
+        try {
+            OffsetDateTime dt = OffsetDateTime.parse(tsstr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return dt.toInstant();
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("Cannot parse time with offset " + tsstr, ex);
+        }
     }
 
     public static long convertToEpochSeconds(Instant ts) {
@@ -131,9 +151,15 @@ public class TimeUtils {
         return convertToISO8601String(ts);
     }
 
+    /**
+     * Writes an instant as text in the time zone of the server, such as Oct/15/2026 14:24:42 PDT; the month is English whatever the
+     * locale of the server.
+     * @param ts The instant; null or the epoch read "Never"
+     * @return The text
+     */
     public static String convertToHumanReadableString(Instant ts) {
         if (ts == null || ts.getEpochSecond() == 0) return "Never";
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MMM/dd/yyyy HH:mm:ss z");
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MMM/dd/yyyy HH:mm:ss z", Locale.ENGLISH);
         return ZonedDateTime.ofInstant(ts, ZoneId.systemDefault()).format(fmt);
     }
 
@@ -141,14 +167,28 @@ public class TimeUtils {
         return convertToHumanReadableString(Instant.ofEpochSecond(epochSeconds));
     }
 
-    public static long convertToLocalEpochMillis(long epochMillis) {
-        if (epochMillis == 0) return 0;
-        return epochMillis
-                + ZoneId.systemDefault()
-                                .getRules()
-                                .getOffset(Instant.ofEpochMilli(epochMillis))
-                                .getTotalSeconds()
-                        * 1000L;
+    /**
+     * Puts the text of a time under the key and, when the time is set, the same instant as epoch seconds under the key with
+     * EpochSeconds appended, so that a client can write the time in another time zone; a time that reads Never has no epoch seconds.
+     * @param map The answer being built
+     * @param key The name of the time
+     * @param epochSeconds The instant; 0 or less reads Never
+     */
+    public static void putTime(Map<String, ? super String> map, String key, long epochSeconds) {
+        map.put(key, convertToHumanReadableString(epochSeconds));
+        if (epochSeconds > 0) {
+            map.put(key + "EpochSeconds", Long.toString(epochSeconds));
+        }
+    }
+
+    /**
+     * The same for an instant; null reads Never.
+     * @param map The answer being built
+     * @param key The name of the time
+     * @param instant The instant, or null
+     */
+    public static void putTime(Map<String, ? super String> map, String key, Instant instant) {
+        putTime(map, key, instant == null ? 0 : instant.getEpochSecond());
     }
 
     public static long getStartOfCurrentYearInSeconds() {
@@ -171,18 +211,22 @@ public class TimeUtils {
     }
 
     public static long getStartOfYearInSeconds(long epochseconds) {
-        // The JODA DateTime constructor takes millis
         return getStartOfYearInSeconds(getYear(Instant.ofEpochSecond(epochseconds)));
     }
 
     /**
-     * In the protocol buffer storage plugin, we send the year as a short
+     * In the protocol buffer storage plugin, we send the year as a short. A year inside the cache is read from it; any other year,
+     * such as one before 1970, is computed as for the int overload.
      *
      * @param year Year
      * @return startOfYearInEpochSeconds  &emsp;
      */
     public static long getStartOfYearInSeconds(short year) {
-        return startOfYearInEpochSeconds[year - START_OF_CACHE_FOR_YEAR_STARTEPOCHSECONDS];
+        int index = year - START_OF_CACHE_FOR_YEAR_STARTEPOCHSECONDS;
+        if (index < 0 || index >= startOfYearInEpochSeconds.length) {
+            return getStartOfYearInSeconds((int) year);
+        }
+        return startOfYearInEpochSeconds[index];
     }
 
     public static Instant getEndOfYear(int year) {
@@ -223,7 +267,6 @@ public class TimeUtils {
      * @return YearForEpochSeconds &emsp;
      */
     public static short computeYearForEpochSeconds(long epochseconds) {
-        // The JODA DateTime constructor takes millis
         return getYear(Instant.ofEpochSecond(epochseconds));
     }
 
@@ -489,7 +532,7 @@ public class TimeUtils {
                 int approxMinutesPerChunk = granularity.getApproxMinutesPerChunk();
                 int startOfPartition_Min = (dateTime.getMinute() / approxMinutesPerChunk) * approxMinutesPerChunk;
                 previousPartitionLastSecond =
-                        dateTime.withMinute(startOfPartition_Min).withSecond(0).minusSeconds(1);
+                        dateTime.withMinute(startOfPartition_Min).withSecond(0).withNano(0).minusSeconds(1);
                 return previousPartitionLastSecond.toInstant();
             }
             default -> throw new UnsupportedOperationException("Invalid Partition type " + granularity);
@@ -574,17 +617,18 @@ public class TimeUtils {
         }
     }
 
+    /**
+     * Parses a time such as 2011-02-02T08:00:00.000Z or 2012-11-03T00:00:00-07:00; an empty string gives the default.
+     * Instant.parse reads a string with an offset on this JDK, so no second parser is needed.
+     * @param timestampString The time, or null or empty for the default
+     * @param defaultTime The instant returned for an empty string
+     * @return The instant
+     * @throws IllegalArgumentException if the string is not an ISO 8601 time
+     */
     public static Instant fromString(String timestampString, Instant defaultTime) throws IllegalArgumentException {
-
-        // ISO datetimes are of the form "2011-02-02T08:00:00.000Z"
-        Instant res = defaultTime;
-        if (!StringUtils.isEmpty(timestampString)) {
-            try {
-                res = convertFromISO8601String(timestampString);
-            } catch (IllegalArgumentException ex) {
-                res = convertFromDateTimeStringWithOffset(timestampString);
-            }
+        if (StringUtils.isEmpty(timestampString)) {
+            return defaultTime;
         }
-        return res;
+        return convertFromISO8601String(timestampString);
     }
 }

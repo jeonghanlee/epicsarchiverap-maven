@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
@@ -19,6 +20,7 @@ import org.epics.archiverappliance.mgmt.MgmtRuntimeState.NeverConnectedRequestSt
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
+@BPLEndpoint(summary = "Report of the PVs on this appliance that have never connected since the appliance started.")
 public class NeverConnectedPVsForThisAppliance implements BPLAction {
 	private static Logger logger = LogManager.getLogger(NeverConnectedPVsForThisAppliance.class.getName());
 
@@ -35,9 +37,16 @@ public class NeverConnectedPVsForThisAppliance implements BPLAction {
 				HashMap<String, String> pvStatus = new HashMap<String, String>();
 				result.add(pvStatus);
 				pvStatus.put("pvName", neverConnectedPV.getPvName());
-				pvStatus.put("requestTime", (neverConnectedPV.getMetInfoRequestSubmitted() != null) ? TimeUtils.convertToHumanReadableString(neverConnectedPV.getMetInfoRequestSubmitted()) : "N/A");
-				pvStatus.put("startOfWorkflow", TimeUtils.convertToHumanReadableString(neverConnectedPV.getStartOfWorkflow()));
+				if (neverConnectedPV.getMetInfoRequestSubmitted() != null) {
+					TimeUtils.putTime(pvStatus, "requestTime", neverConnectedPV.getMetInfoRequestSubmitted());
+				} else {
+					pvStatus.put("requestTime", "N/A");
+				}
+				TimeUtils.putTime(pvStatus, "startOfWorkflow", neverConnectedPV.getStartOfWorkflow());
 				pvStatus.put("currentState", neverConnectedPV.getCurrentState().toString());
+				boolean held = neverConnectedPV.getCurrentState() == org.epics.archiverappliance.mgmt.archivepv.ArchivePVState.ArchivePVStateMachine.HELD;
+				pvStatus.put("status", held ? "Held" : "Initial sampling");
+				pvStatus.put("reason", held ? neverConnectedPV.getHoldReason() : "");
 				pvStatus.put("appliance", myIdentity);
 			}
 			out.println(JSONValue.toJSONString(result));

@@ -467,8 +467,8 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
                                     }
                                 });
                     }
-                    subscription =
-                        theChannel.addMonitor(type, theChannel.getElementCount(), MonitorMask.ARCHIVE.getMask(), this);
+                    subscription = theChannel.addMonitor(
+                            type, theChannel.getElementCount(), MonitorMask.ARCHIVE.getMask(), this);
                 }
             } catch (final Exception ex) {
                 logger.error("exception when subscribing pv " + name, ex);
@@ -565,13 +565,6 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
                         }
                     });
         } else {
-            Monitor sub_copy;
-            synchronized (this) {
-                sub_copy = subscription;
-                state = PVConnectionState.Disconnected;
-                connected = false;
-                subscription = null;
-            }
             PVContext.scheduleCommand(
                     this.name,
                     this.jcaCommandThreadId,
@@ -580,6 +573,13 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
                     new Runnable() {
                         @Override
                         public void run() {
+                            Monitor sub_copy;
+                            synchronized (this) {
+                                sub_copy = subscription;
+                                state = PVConnectionState.Disconnected;
+                                connected = false;
+                                subscription = null;
+                            }
                             if (sub_copy != null) {
                                 try {
                                     sub_copy.clear();
@@ -588,10 +588,10 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
                                 } catch (final Exception ex) {
                                     logger.error("exception when unsubscribing pv " + name, ex);
                                 }
-                            }                                                
+                            }
                             fireDisconnected();
                         }
-                    });            
+                    });
         }
     }
 
@@ -668,17 +668,17 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
         // This runs in a CA thread.
 
         if (!running) {
-            logger.error("Ignoring monitor events that arrive after stop for " + this.name);
+            logger.debug("Ignoring monitor events that arrive after stop for " + this.name);
             this.transientErrorCount++;
             return;
         }
         if (subscription == null) {
-            logger.error("Ignoring monitor events that arrive after we clean up the subscription for " + this.name);
+            logger.debug("Ignoring monitor events that arrive after we clean up the subscription for " + this.name);
             this.transientErrorCount++;
             return;
         }
         if (ev.getStatus() == null || !ev.getStatus().isSuccessful()) {
-            logger.error("Ignoring monitor events that have an invalid CA status for " + this.name);
+            logger.debug("Ignoring monitor events that have an invalid CA status for " + this.name);
             this.transientErrorCount++;
             return;
         }
@@ -883,25 +883,32 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
                 h.put("source", "CA");
                 this.statuses.add(h);
             }
+
+            /** A detail that holds a time: the text and, when the time is set, the same instant as epochSeconds. */
+            void addTime(String k, long epochSeconds) {
+                HashMap<String, String> h = new HashMap<String, String>();
+                h.put("name", k);
+                h.put("value", TimeUtils.convertToHumanReadableString(epochSeconds));
+                h.put("source", "CA");
+                if (epochSeconds > 0) {
+                    h.put("epochSeconds", Long.toString(epochSeconds));
+                }
+                this.statuses.add(h);
+            }
         }
 
         AddDetail ad = new AddDetail(statuses);
         ad.addKV("PV connection state machine state", state.toString());
-        ad.addKV("Last monitor received at", TimeUtils.convertToHumanReadableString(this.lastMonitorSecs));
+        ad.addTime("Last monitor received at", this.lastMonitorSecs);
         ad.addKV("Last monitor had a valid DBR?", Boolean.toString(this.dbrtimeevent != null));
         if (this.dbrtimeevent != null) {
-            ad.addKV(
-                    "Last monitor event timestamp",
-                    TimeUtils.convertToHumanReadableString(this.dbrtimeevent.getEventTimeStamp()));
+            ad.addTime("Last monitor event timestamp", this.dbrtimeevent.getEventTimeStamp().getEpochSecond());
         }
         ad.addKV("Various transient errors", Long.toString(transientErrorCount));
 
-        ad.addKV(
-                "Do we have a CA channel?",
-                Boolean.toString(this.theChannel != null && theChannel != null));
+        ad.addKV("Do we have a CA channel?", Boolean.toString(this.theChannel != null && theChannel != null));
         ad.addKV("Do we have a subscription?", Boolean.toString(this.subscription != null));
-        if (this.theChannel != null
-                && (theChannel instanceof CAJChannel cajChannel)) {
+        if (this.theChannel != null && (theChannel instanceof CAJChannel cajChannel)) {
             ad.addKV("CAJ Searches", Integer.toString(cajChannel.getSearchTries()));
             ad.addKV("CAJ channel ID (CID)", Integer.toString(cajChannel.getChannelID()));
             ad.addKV("CAJ server channel ID (SID)", Integer.toString(cajChannel.getServerChannelID()));
@@ -910,7 +917,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
             }
             ad.addKV("CAJ connection state", cajChannel.getConnectionState().getName());
         }
-        ad.addKV("Daily metadata last saved at", TimeUtils.convertToHumanReadableString(archiveFieldsSavedAtEpSec));
+        ad.addTime("Daily metadata last saved at", archiveFieldsSavedAtEpSec);
         ad.addKV("Do we use DBE_Properties?", Boolean.toString(isDBEProperties));
         ad.addKV("Do we have a DBE Properties subscription?", Boolean.toString(this.dbePropertiesSubscription != null));
         ad.addKV("The internal connected bool", Boolean.toString(this.connected));
@@ -1062,9 +1069,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
                 HashMap<String, String> tempHashMap = new HashMap<>(changedarchiveFieldsData);
                 // dbrtimeevent.s
                 lastEvent.setFieldValues(tempHashMap, true);
-                synchronized (this) {
-                    changedarchiveFieldsData.clear();
-                }
+                changedarchiveFieldsData.clear();
             }
             if (!allarchiveFieldsData.isEmpty()) {
                 long nowES = TimeUtils.getCurrentEpochSeconds();

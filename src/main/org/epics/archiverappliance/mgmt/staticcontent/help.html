@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>appliance archiver - Help</title>
+    <link rel="stylesheet" href="comm/css/main.css" />
+    <link rel="stylesheet" href="css/help.css" />
+    <script src="js/menu.js" defer></script>
+    <script type="module" src="comm/js/aa/timezone.js"></script>
+  </head>
+  <body>
+    <div class="pageheader">
+      <!-- @begin(site_header) -->
+      <span><picture><source media="(max-width: 359px)" srcset="comm/img/wordmark.svg" /><img src="comm/img/archiverheader.svg" alt="Archiver Appliance" /></picture></span>
+      <!-- @end(site_header) -->
+      <!-- @begin(site_logo) -->
+      <span id="siteimages"><img src="comm/img/sitelogo.svg" alt="Store signals, analyze in place" /></span>
+      <!-- @end(site_logo) -->
+    </div>
+
+    <!-- @begin(site_navbar) -->
+    <div class="navbar">
+      <nav class="nav" aria-label="Main menu">
+        <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Menu" />
+        <label class="menu-button" for="menu-toggle">Menu</label>
+        <ul class="mainmenu" id="mainmenu">
+          <li><a href="archive.html">Archive PVs</a></li>
+          <li><a href="index.html">Browse PVs</a></li>
+          <li><a href="system.html" data-pages="system.html operations.html retrieval.html external.html">System</a></li>
+          <li><a href="help.html" id="help">Help</a></li>
+          <li><a href="analyzer.html">Analyzer</a></li>
+        </ul>
+      </nav>
+    </div>
+    <!-- @end(site_navbar) -->
+
+    <main class="page help">
+      <h1>Using the console</h1>
+      <p class="lead">What each button and list of the page in front of you does. The full manual is under <a href="#more">More</a>.</p>
+      <nav class="toc" aria-label="Help contents">
+        <a href="#move-around">Moving around</a>
+        <a href="#archive">Archive PVs</a>
+        <a href="#browse">Browse PVs</a>
+        <a href="#system">System</a>
+        <a href="#analyzer">Analyzer</a>
+        <a href="#more">More</a>
+      </nav>
+
+      <section id="move-around" aria-labelledby="move-around-heading">
+        <h2 id="move-around-heading">Moving around</h2>
+        <dl class="controls">
+          <dt>The menu bar</dt>
+          <dd>Choose a task: <b>Archive PVs</b>, <b>Browse PVs</b>, <b>System</b>, <b>Help</b>, <b>Analyzer</b>. The entry of the page you are on is underlined.</dd>
+          <dt><b>Menu</b> button</dt>
+          <dd>On a narrow screen the entries fold behind it. Tap it to open the list, tap an entry to go there.</dd>
+          <dt>The address</dt>
+          <dd>The Browse PVs page keeps what you selected and the window in its address. Copy the address or bookmark it to come back to the same view.</dd>
+        </dl>
+      </section>
+
+      <section id="archive" aria-labelledby="archive-heading">
+        <h2 id="archive-heading">Archive PVs</h2>
+        <p>Add PVs to the archiver and follow them until they are archived.</p>
+
+        <h3 id="archive-add">Add one PV or a list</h3>
+        <ol>
+          <li>Type one name, or paste a list with one name per line, into <b>Add PVs</b>. The note under the box counts the names and points at any that are not valid PV names.</li>
+          <li>Leave <b>Sampling</b> as it is to let the policy of the site choose the method and the period of each PV. Open it to choose <b>Monitor</b> or <b>Scan</b>, a period, a policy or a controlling PV for every name; a period replaces the choice of the policy, and without a period the method and the controlling PV are not used.</li>
+          <li>Click <b>Archive</b>. Each name is first searched on the network; a name a server answers is archived and appears under <b>Requested in this visit</b> with the answer of the request and its state, and a name no server answers is listed with <b>Archive anyway</b>, for an IOC that is not up yet.</li>
+        </ol>
+
+        <h3 id="archive-follow">Follow the requests</h3>
+        <ol>
+          <li>The state goes from <i>Appliance assigned</i> and <i>Initial sampling</i> to <i>Being archived</i>, which takes a few minutes. The row then shows how the PV is sampled and by which policy.</li>
+          <li>A request whose name no server answers within the hold time of the appliance reads <i>Held</i>, with the reason. Click <b>Resume</b> in its row when the IOC is up, or <b>Cancel request</b>.</li>
+          <li>A PV that is being archived has <b>Pause</b> and <b>Stop archiving…</b>; a paused one has <b>Resume</b>. Select several rows to act on them together; <b>Cancel requests</b> acts on the ones that are waiting.</li>
+        </ol>
+        <p>To look at the data of an archived PV, open it in <a href="#browse">Browse PVs</a>.</p>
+      </section>
+
+      <section id="browse" aria-labelledby="browse-heading">
+        <h2 id="browse-heading">Browse PVs</h2>
+        <p>This entry opens the Browse PVs page: <b>Find</b> on the left, the chart and the table of the PVs you selected on the right. To add PVs, use <a href="#archive">Archive PVs</a>; the link under <b>Find</b> opens it with the name you typed.</p>
+
+        <h3 id="browse-find">Find a PV</h3>
+        <ol>
+          <li>Type in <b>Find</b>. The list below shows the archived PVs that match as you type.</li>
+          <li>Choose how the text matches: <b>Contains</b> (words in any order, such as <code>bpm 02 x</code>), <b>Glob</b> (the whole name with <code>*</code> and <code>?</code>, such as <code>SR:BPM:0?:X</code>) or <b>Regex</b> (a regular expression, such as <code>CAV[12]:TEMP</code>). The <b>i</b> button beside the three modes explains the modes, <b>Show</b> and the prefix buttons.</li>
+          <li>To narrow further, pick a list in <b>Show</b> (for example <i>Disconnected now</i>) or press a prefix button under it; press the same button again to show every PV again.</li>
+        </ol>
+
+        <h3 id="browse-select">Select PVs</h3>
+        <ol>
+          <li>Click a name in the list to select it; click again to clear it. With the keyboard: arrow keys to move, <kbd>Space</kbd> or <kbd>Enter</kbd> to select. Under the count, <b>Selected only</b> shows only the selected PVs in the list until you press it again, and <b>Clear selection</b> clears every selection.</li>
+          <li>Each selected PV gets a row in the table (up to 100) with its protocol, state, trend, value and the time of its last event. The <b>i</b> button beside the count of the table explains the columns; the one in the <b>State</b> column says what a lost sample is and what to do about it.</li>
+          <li>Turn on <b>Plot</b> in a row to draw that PV in the chart (up to 5 at a time). When 5 are on, the other <b>Plot</b> boxes are disabled until you turn one off; point at one, or tap it, to read why. <b>First 5</b>, beside the count of the table, turns on the first five rows and turns off the others; <b>Deselect all</b> turns every <b>Plot</b> box off; <b>Plotted only</b> shows only the rows whose <b>Plot</b> box is on, until you press it again; <b>Clear selection</b> unticks every PV, so the table is empty.</li>
+          <li>Click <b>Details</b> in a row to see what the archiver reports about the PV, in groups.</li>
+        </ol>
+
+        <h3 id="browse-time">Look at another time window</h3>
+        <ol>
+          <li>Click <b>10m</b>, <b>1h</b>, <b>6h</b>, <b>24h</b> or <b>7d</b> above the chart.</li>
+          <li>Drag across the chart to look at that part only. In the line above the chart, <b>Earlier</b> and <b>Later</b> move the window, also before you drag, and <b>Back to the selected range</b> returns. <b>Value</b> and <b>Last event</b> in the table then show the newest sample at or before the end of the window.</li>
+          <li>Hover over the chart to read the values at a time.</li>
+          <li>Beside the range buttons, <b>Refresh</b> chooses how often the page reads again: <b>Off</b>, <b>10 s</b>, <b>30 s</b> or <b>1 min</b>. <b>Refresh now</b> reads once, and <b>Updated</b> gives the time of the last read. A window that ends earlier than now is not refreshed.</li>
+        </ol>
+
+        <h3 id="browse-act">Pause, resume or stop a PV</h3>
+        <ol>
+          <li>Use the buttons in the row of the PV. Only the buttons that fit its state appear: <b>Pause</b> or <b>Resume</b>, <b>More</b>, <b>Cancel request</b> for a request that has not started, or a link to <a href="#archive">Archive PVs</a> for a PV that is not archived.</li>
+          <li><b>More</b> holds <b>Change sampling…</b>, <b>Maintenance…</b> (rename, type change and consolidation; its <b>i</b> button explains the three) and <b>Stop archiving…</b>. Each says what it does before it acts.</li>
+          <li>To act on every PV of the table at once, use <b>Pause all selected…</b>, <b>Resume all selected…</b> or <b>Stop archiving all selected…</b> under the table. Each asks before it acts.</li>
+        </ol>
+
+        <h3 id="browse-viewer">Open PVs in the Analyzer</h3>
+        <p>Click <b>Open in the analyzer</b> above the chart to open the plotted PVs, or <b>Open all selected in the analyzer</b> under the table to open every PV of the table. The analyzer opens with the same PVs and window.</p>
+      </section>
+
+      <section id="system" aria-labelledby="system-heading">
+        <h2 id="system-heading">System</h2>
+        <ol>
+          <li>Read the first lines of <b>Overview</b>: storing samples, reading data and room left, each <b>Normal</b>, <b>Attention</b>, <b>Problem</b> or <b>Not reported</b>.</li>
+          <li>For a measure that is not Normal, read its <b>Detail</b> and click the link in <b>Open</b>. It opens the part of <b>Operations</b> or <b>Retrieval performance</b> that shows the measures behind it.</li>
+          <li>Every <b>i</b> button of the console opens the same kind of card: a question as its title, <b>In short</b> as the answer, then what the item shows, when it is <b>Normal</b>, needs <b>Attention</b> or is a <b>Problem</b>, and <b>What to do</b>. A card of a control explains its items instead.</li>
+          <li>The tabs <b>Overview</b>, <b>Operations</b>, <b>Retrieval performance</b> and <b>External servers</b> switch between the pages. When there are several appliances, a list beside the tabs chooses which one you look at.</li>
+          <li>In <b>Operations</b>, each section answers the question under its heading; the <b>i</b> beside the heading says what the section shows, when it needs attention and what to do, and the small <b>i</b> beside a row says in one sentence what that value is. The treemap at the end of <b>Stores</b> shows which name prefixes use the space; click one to find its PVs in Browse PVs. The table of disconnected PVs by host has <b>PVs</b> to list them, <b>Open in Browse PVs</b> to select them on the Browse PVs page, and <b>Pause these…</b>.</li>
+          <li>A chart on <b>Operations</b> or <b>Retrieval performance</b> has <b>Options</b>, to change the line, the scale and the marks, and <b>Enlarge chart</b>. Your choice stays on the page until you leave it.</li>
+          <li>In <b>Retrieval performance</b>, the <b>i</b> button beside a heading says what is slow and what to do. Type a PV, choose a range and click <b>Measure</b> to time a data request from this browser; <b>Look up</b> shows the stores and the state of one PV.</li>
+          <li>In <b>External servers</b>, click <b>Add a server…</b>, give the retrieval address of another EPICS Archiver Appliance installation and click <b>Connect</b> to serve its data from this appliance too. <b>Remove…</b> beside a server stops that. The <b>i</b> buttons beside the heading and in the two windows say what the address is and what a removal changes.</li>
+        </ol>
+      </section>
+
+      <section id="analyzer" aria-labelledby="analyzer-heading">
+        <h2 id="analyzer-heading">Analyzer</h2>
+        <ol>
+          <li>Type an archived PV in <b>Add a PV</b>; names that match appear as you type. Click <b>Add</b> to plot it. This does not start archiving.</li>
+          <li>Click <b>remove</b> beside a PV to take it off the chart.</li>
+          <li>Click <b>10m</b> to <b>7d</b>, or set <b>From</b> and <b>To</b> and click <b>Show</b>, to choose the time window.</li>
+          <li><b>Copy link</b> copies an address that opens the same view; <b>Download CSV</b> saves the data shown.</li>
+        </ol>
+      </section>
+
+      <section id="more" aria-labelledby="more-heading">
+        <h2 id="more-heading">More</h2>
+        <ul>
+          <li><a href="api/index.html">Management API reference</a>: the calls of this appliance, for scripts, such as archiving many PVs with <code>archivePV</code>.</li>
+          <li><a href="https://jeonghanlee.github.io/epicsarchiverap-maven/">The manual</a>: how the appliance works, installing, configuring and operating it. It needs access to the internet.</li>
+        </ul>
+      </section>
+    </main>
+
+      <!-- @begin(site_footer) -->
+      <div class="pagefooter"></div>
+      <!-- @end(site_footer) -->
+  </body>
+</html>

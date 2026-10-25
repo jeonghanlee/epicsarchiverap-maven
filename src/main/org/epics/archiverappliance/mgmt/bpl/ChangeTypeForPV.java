@@ -12,6 +12,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ArchDBRTypes;
@@ -26,16 +28,18 @@ import org.json.simple.JSONValue;
 
 /**
  * 
- * @epics.BPLAction - Change the type of the PV to the specified type. The PV needs to be paused first. For best results, consolidate all the data to one store. Note, this is actually changing the data so you should make a backup just in case. There is every chance that this may leave the data for this PV in an inconsistent state. It is also possible that the plugin may do nothing in which case you may have to rename the existing PV to a new PV; delete this PV and issue a fresh archival request. 
- * @epics.BPLActionParam pv - The name of the pv.
- * @epics.BPLActionParam newtype - The new type - one of the ArchDBRTypes. For example, DBR_SCALAR_DOUBLE.
- * @epics.BPLActionEnd
  * 
  * Note, this is actually a dangerous function in that it can leave the PV in all kinds of inconsistent states.
  * Use with caution. 
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Change the type of the PV to the specified type. The PV needs to be paused first. For best results, consolidate all the data to one store. Note, this is actually changing the data so you should make a backup just in case. There is every chance that this may leave the data for this PV in an inconsistent state. It is also possible that the plugin may do nothing in which case you may have to rename the existing PV to a new PV; delete this PV and issue a fresh archival request.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv."),
+            @BPLParam(name = "newtype", description = "The new type - one of the ArchDBRTypes. For example, DBR_SCALAR_DOUBLE.")
+        })
 public class ChangeTypeForPV implements BPLAction {
 	private static Logger logger = LogManager.getLogger(ChangeTypeForPV.class.getName());
 

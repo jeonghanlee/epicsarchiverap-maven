@@ -10,18 +10,18 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
 import org.json.simple.JSONValue;
 
 /**
  * 
- * @epics.BPLAction - Get all expanded PV names in the cluster. This is targeted at automation and should return the PV's being archived, the fields, .VAL's, aliases and PV's in the archive workflow. Note this call can return 10's of millions of names.
- * @epics.BPLActionEnd
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Get all expanded PV names in the cluster. This is targeted at automation and should return the PV's being archived, the fields, .VAL's, aliases and PV's in the archive workflow. Note this call can return 10's of millions of names.")
 public class GetAllExpandedPVNames implements BPLAction {
 	private static Logger logger = LogManager.getLogger(GetAllExpandedPVNames.class.getName());
 

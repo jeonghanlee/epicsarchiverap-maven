@@ -41,7 +41,7 @@ public class BasicDispatcher {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        logger.info("Servicing " + requestPath);
+        logger.debug("Servicing " + requestPath);
         switch (requestPath) {
             case "/ping" -> ping(resp, "pong");
             case "/postStartup" -> postStartup(resp, configService);

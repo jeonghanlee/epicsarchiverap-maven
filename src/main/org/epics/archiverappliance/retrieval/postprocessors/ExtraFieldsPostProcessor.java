@@ -24,7 +24,7 @@ import java.util.concurrent.Callable;
  */
 public class ExtraFieldsPostProcessor implements PostProcessor {
 	private static Logger logger = LogManager.getLogger(ExtraFieldsPostProcessor.class.getName());
-	private static final String EXTRA_FIELDS = "extraFields";
+	public static final String EXTRA_FIELDS = "extraFields";
 	private String fieldName;
 	
 	public ExtraFieldsPostProcessor(String extraFieldName) {

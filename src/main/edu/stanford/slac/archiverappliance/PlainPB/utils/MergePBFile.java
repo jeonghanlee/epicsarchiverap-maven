@@ -109,12 +109,12 @@ public class MergePBFile {
     private static void printHelpMsg() {
         System.out.println();
         System.out.println(
-                "Usage: run.sh edu.stanford.slac.archiverappliance.PlainPB.utils.MergePBFile <Absolute Path to Source PB File 1> <Absolute Path to Source PB File 2> <Absolute Path to Dest PB File>");
+                "Usage: java edu.stanford.slac.archiverappliance.PlainPB.utils.MergePBFile <Absolute Path to Source PB File 1> <Absolute Path to Source PB File 2> <Absolute Path to Dest PB File>");
         System.out.println();
         System.out.println(
                 "This utility merges the source PV files into the dest PB file eliminating any duplicate samples.");
         System.out.println(
-                "For example: run.sh edu.stanford.slac.archiverappliance.PlainPB.utils.MergePBFile /src0/ABC/DEF/XYZ\\:2015.pb /src1/ABC/DEF/XYZ\\:2015.pb /dest/ABC/DEF/XYZ\\:2015.pb");
+                "For example: java edu.stanford.slac.archiverappliance.PlainPB.utils.MergePBFile /src0/ABC/DEF/XYZ\\:2015.pb /src1/ABC/DEF/XYZ\\:2015.pb /dest/ABC/DEF/XYZ\\:2015.pb");
         System.out.println("\t-h Prints this help");
         System.out.println("\t-v Turns on verbose logging.");
         System.out.println();

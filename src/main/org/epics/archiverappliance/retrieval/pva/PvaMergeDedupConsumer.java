@@ -7,6 +7,8 @@
  *******************************************************************************/
 package org.epics.archiverappliance.retrieval.pva;
 
+import org.epics.archiverappliance.retrieval.RetrievalMemoryProtection;
+
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import edu.stanford.slac.archiverappliance.PB.data.PBParseException;
@@ -73,6 +75,7 @@ public class PvaMergeDedupConsumer implements EventStreamConsumer, AutoCloseable
 	
 	@Override
 	public void close() {
+		if (aborted || RetrievalMemoryProtection.currentFailed()) return;
 		if(!haveIpushedTheFirstEvent && firstEvent != null) {
 			try {
 				logger.info("Pushing the first event as part of the close as it has not been sent yet.");
@@ -90,6 +93,10 @@ public class PvaMergeDedupConsumer implements EventStreamConsumer, AutoCloseable
 	public PVAStructure send() {
 		return resultStruct;
 	}
+
+    private boolean aborted;
+
+    public void abort() { aborted = true; }
 
 	/*
 	 * Goes through the PB data stream over a period of time. The relevant MIME
@@ -109,6 +116,7 @@ public class PvaMergeDedupConsumer implements EventStreamConsumer, AutoCloseable
 		try {
 			int eventsInCurrentStream = 0;
 			for(Event e : strm) {
+				RetrievalMemoryProtection.checkCurrent();
 				try {
 					eventsInCurrentStream++;
 
@@ -123,7 +131,7 @@ public class PvaMergeDedupConsumer implements EventStreamConsumer, AutoCloseable
 			}
 
 			if(eventsInCurrentStream == 0) {
-				logger.info("The stream from " + ((strm.getDescription() != null ) ? strm.getDescription().getSource() : "Unknown") + " was an empty stream.");
+				logger.debug("The stream from " + ((strm.getDescription() != null ) ? strm.getDescription().getSource() : "Unknown") + " was an empty stream.");
 			}
 
 			// We start deduping at the boundaries of event streams.
@@ -201,7 +209,7 @@ public class PvaMergeDedupConsumer implements EventStreamConsumer, AutoCloseable
 	
 	public void logNumbersAndCollectTotal() {
 		if(pvName != null) {
-			logger.info("Found a total of " + totalEvents 
+			logger.debug("Found a total of " + totalEvents
 					+ " skipping " + skippedEvents + " events"
 					+ " deduping involved " + comparedEvents + " compares for PV "
 					+ pvName);

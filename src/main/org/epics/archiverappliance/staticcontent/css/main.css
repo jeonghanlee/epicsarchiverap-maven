@@ -1,104 +1,443 @@
+/*
+ * Site-wide styles for the management console.
+ * Brand colors are kept: dark teal #00313C and teal #007681.
+ * Element ids and class names used by the page markup and scripts are unchanged.
+ */
+
+:root {
+  --c-brand: #00313c;
+  --c-accent: #007681;
+  --c-accent-dark: #005a63;
+  --c-accent-soft: #e4f0f1;
+  --c-bg: #f3f6f7;
+  --c-surface: #ffffff;
+  --c-border: #d5dde0;
+  --c-border-strong: #b1b3b3;
+  --c-text: #17262b;
+  --c-muted: #5a6b70;
+  --c-danger: #b3261e;
+  --c-danger-soft: #fbeceb;
+  --c-stripe: #f7fafb;
+  --c-hover: #eaf4f5;
+  --radius: 6px;
+  --shadow-sm: 0 1px 2px rgba(0, 49, 60, 0.08);
+  --shadow-md: 0 8px 24px rgba(0, 49, 60, 0.18);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* Tokens of the Browse PVs page. They are defined from the tokens above so every page shares one palette. */
+  --bg: var(--c-bg);
+  --ink: var(--c-text);
+  --ink-2: #46585e;
+  --ink-3: var(--c-muted);
+  --rule: var(--c-border);
+  --grid: #e5ebed;
+  --accent: var(--c-accent);
+  --accent-ink: #ffffff;
+  --focus-bg: #e3f0f1;
+  --alarm: var(--c-danger);
+  --warn: #8f5f00;
+  --mono: var(--font-mono);
+  --sans: var(--font-sans);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
-  background: white;
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  background: var(--c-bg);
 }
 
 body {
-  color: black;
-  width: 1024px;
-  margin: 0 auto;
-  padding-bottom: 50px;
-  font-family: Helvetica, Arial, "Liberation Sans", FreeSans, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--c-text);
+  background: var(--c-bg);
+  text-align: left;
 }
 
-.page {
-  min-height: 600px;
+/* A long identifier breaks inside itself rather than widening a narrow page. */
+code {
+  overflow-wrap: anywhere;
+}
+
+a {
+  color: var(--c-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--c-accent-dark);
+}
+
+:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* site_header */
+
+.pageheader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  min-height: 72px;
+  background-color: var(--c-brand);
+  color: #ffffff;
 }
 
 .apptitle {
-  padding-left: 1em;
-  padding-top: 1em;
-  font-family: Helvetica, sans-serif;
-  color: white;
-  font-size: 2em;
-  display: inline-block;
-  font-weight: bold;
-  float: left;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: #ffffff;
 }
 
 #siteimages {
-  float: right;
-  padding-top: 0.5em;
+  display: flex;
+  align-items: center;
+  flex: none;
 }
 
+#siteimages a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+#siteimages img,
+.pageheader > span > img,
+.pageheader > span > picture > img {
+  display: block;
+  height: 44px;
+  width: auto;
+}
+
+/* site_navbar */
+
 .navbar {
-  background-color: #0f687e;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--c-brand);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: 3px solid var(--c-accent);
 }
 
 .nav {
-  border-top-style: solid;
-  border-top-color: white;
-  border-top-width: 0.0625em;
-  border-bottom-style: solid;
-  border-bottom-color: white;
-  border-bottom-width: 0.5em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0 1rem;
+}
+
+/* The time zone of the charts and the times, at the right end of the menu bar on every page. */
+.nav label.timezone {
+  margin-left: auto;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+
+.nav select.timezone {
+  margin-left: 0.4rem;
+  min-height: 2rem;
+  padding: 0.2rem 0.4rem;
+  font: inherit;
+  color: var(--c-brand);
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
+}
+
+/* The menu toggle of a narrow screen: a checkbox that stays focusable and a label that draws the button. */
+.menu-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.menu-button {
+  display: none;
 }
 
 ul.mainmenu {
-  list-style-type: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  list-style: none;
   margin: 0;
   padding: 0;
-  overflow: hidden;
 }
 
-/* Float the list items side by side */
 ul.mainmenu li {
-  float: left;
+  display: block;
 }
 
-/* Style the links inside the list items */
 ul.mainmenu li a {
   display: block;
-  color: white;
-  text-align: center;
-  padding: 0.875em 1em;
+  padding: 0.7rem 0.95rem;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
   text-decoration: none;
-  transition: 0.5s;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -3px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-/* Change background color of links on hover */
-ul.mainmenu li a:hover {
-  background-color: #1272a9;
+ul.mainmenu li a:hover,
+ul.mainmenu li a:focus-visible {
+  background-color: var(--c-accent);
+  color: #ffffff;
 }
 
 ul.mainmenu li a.active {
-  border-style: solid;
-  border-color: white;
-  border-width: 0.0625em;
+  border-bottom-color: #ffffff;
 }
 
-/* Hide the list item that contains the link that should open and close the topnav on small screens */
 ul.mainmenu li.icon {
   display: none;
 }
 
+/* page body */
+
+.page {
+  max-width: 1440px;
+  min-height: 600px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
 .page p {
-  font-size: 1em;
-  line-height: 1.25em;
-  margin: 1.25em 1.25em 1em 0em;
-  text-align: justify;
+  margin: 0 0 1rem 0;
+  max-width: 80ch;
 }
 
-input[type="button"] {
-  background-color: white;
-  color: black;
-  padding: 2px 10px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  transition-duration: 0.4s;
-  border: 2px solid #e7e7e7;
+.pagefooter {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 1.5rem 1.5rem;
+  color: var(--c-muted);
+  font-size: 0.875rem;
 }
 
-input[type="button"]:hover {
-  background-color: #e7e7e7;
+/* form controls */
+
+input[type="text"],
+input[type="url"],
+input[type="number"],
+input[type="password"],
+input[type="file"],
+select,
+textarea {
+  max-width: 100%;
+  font: inherit;
+  color: var(--c-text);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.6rem;
+}
+
+input[type="text"]:focus,
+input[type="url"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 0;
+  border-color: var(--c-accent);
+}
+
+textarea {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+input[type="button"],
+input[type="submit"],
+button {
+  font: inherit;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--c-accent);
+  border: 1px solid var(--c-accent);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.9rem;
+  margin: 0 0.25rem 0.25rem 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+input[type="button"]:hover,
+input[type="submit"]:hover,
+button:hover {
+  background: var(--c-accent-dark);
+  border-color: var(--c-accent-dark);
+}
+
+input[type="button"]:disabled,
+input[type="submit"]:disabled,
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* touch and notched screens */
+
+html {
+  -webkit-tap-highlight-color: rgba(0, 118, 129, 0.15);
+}
+
+.pageheader,
+.page,
+.pagefooter {
+  padding-left: max(1.5rem, env(safe-area-inset-left));
+  padding-right: max(1.5rem, env(safe-area-inset-right));
+}
+
+/* narrow screens */
+
+@media (max-width: 720px) {
+  body {
+    font-size: 1rem;
+  }
+
+  .pageheader,
+  .page,
+  .pagefooter {
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+
+  .pageheader {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    min-height: 56px;
+  }
+
+  .apptitle {
+    font-size: 1.1rem;
+  }
+
+  #siteimages img,
+  .pageheader > span > img,
+  .pageheader > span > picture > img {
+    height: 30px;
+  }
+
+  /* The menu folds behind a button on a phone and opens as one column. */
+  .nav {
+    padding: 0;
+  }
+
+  .menu-button {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 44px;
+    padding: 0 0.9rem;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .menu-button::before {
+    content: "";
+    width: 20px;
+    height: 2px;
+    background: #ffffff;
+    box-shadow: 0 -6px 0 #ffffff, 0 6px 0 #ffffff;
+  }
+
+  .menu-toggle:focus-visible + .menu-button {
+    outline: 2px solid #ffffff;
+    outline-offset: -2px;
+  }
+
+  ul.mainmenu {
+    display: none;
+    flex-direction: column;
+  }
+
+  .menu-toggle:checked ~ ul.mainmenu {
+    display: flex;
+  }
+
+  ul.mainmenu li a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 0.9rem;
+    white-space: nowrap;
+    border-bottom: 0;
+    border-left: 3px solid transparent;
+    margin-bottom: 0;
+  }
+
+  ul.mainmenu li a.active {
+    border-left-color: #ffffff;
+  }
+
+  .page {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  /* 16px controls stop mobile browsers from zooming on focus. */
+  input[type="text"],
+  input[type="url"],
+  input[type="number"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 1rem;
+    min-height: 44px;
+  }
+
+  input[type="button"],
+  input[type="submit"],
+  button {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .apptitle {
+    font-size: 1rem;
+  }
+
+  /* The site logo shrinks so it stays beside the header logo, which turns into the wordmark below 360 px; a linked
+     site logo keeps its 44 px tap height. */
+  #siteimages img {
+    height: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }

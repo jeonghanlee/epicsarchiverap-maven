@@ -1,9 +1,9 @@
 package org.epics.archiverappliance.retrieval.extrafields;
 
 import edu.stanford.slac.archiverappliance.PB.EPICSEvent.PayloadInfo;
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.awaitility.Awaitility;
 import org.epics.archiverappliance.SIOCSetup;
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.common.TimeUtils;
@@ -13,139 +13,133 @@ import org.epics.archiverappliance.retrieval.client.GenMsgIterator;
 import org.epics.archiverappliance.retrieval.client.InfoChangeHandler;
 import org.epics.archiverappliance.retrieval.client.RawDataRetrieval;
 import org.epics.archiverappliance.utils.ui.GetUrlContent;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
 
-import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 
 /**
- * We want to make sure we capture changes in EGU and return them as part of the retrieval request.
- * We archive a PV, then get data (and thus the EGU).
- * We then caput the EGU and then fetch the data again...
- * @author mshankar
- *
+ * Make sure a change in EGU is captured and returned as part of retrieval, through the mgmt BPL and
+ * replacing the browser-driven flow. Archive a PV, read its EGU, caput a new EGU, re-gather the
+ * metadata by pausing and resuming, and confirm retrieval reflects the new EGU. Verifies the server.
  */
 @Tag("integration")
 @Tag("localEpics")
 public class EGUChangeTest {
-	private static Logger logger = LogManager.getLogger(EGUChangeTest.class.getName());
-	TomcatSetup tomcatSetup = new TomcatSetup();
-	SIOCSetup siocSetup = new SIOCSetup();
-	WebDriver driver;
-	private String pvName = "UnitTestNoNamingConvention:sine";
+    private static Logger logger = LogManager.getLogger(EGUChangeTest.class.getName());
+    private static final String MGMT = "http://localhost:17665/mgmt/bpl/";
+    TomcatSetup tomcatSetup = new TomcatSetup();
+    SIOCSetup siocSetup = new SIOCSetup();
+    private String pvName = "UnitTestNoNamingConvention:sine";
 
-	@BeforeAll
-	public static void setupClass() {
-		WebDriverManager.firefoxdriver().setup();
-	}
+    @BeforeEach
+    public void setUp() throws Exception {
+        siocSetup.startSIOCWithDefaultDB();
+        tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
+    }
 
-	@BeforeEach
-	public void setUp() throws Exception {
-		siocSetup.startSIOCWithDefaultDB();
-		tomcatSetup.setUpWebApps(this.getClass().getSimpleName());
-		driver = new FirefoxDriver();
-	}
+    @AfterEach
+    public void tearDown() throws Exception {
+        tomcatSetup.tearDown();
+        siocSetup.stopSIOC();
+    }
 
-	@AfterEach
-	public void tearDown() throws Exception {
-		driver.quit();
-		tomcatSetup.tearDown();
-		siocSetup.stopSIOC();
-	}
+    private static String enc(String pv) {
+        return URLEncoder.encode(pv, StandardCharsets.UTF_8);
+    }
 
-	@Test
-	public void testSimpleArchivePV() throws Exception {
-		 driver.get("http://localhost:17665/mgmt/ui/index.html");
-		 WebElement pvstextarea = driver.findElement(By.id("archstatpVNames"));
-		 pvstextarea.sendKeys(pvName);
-		 WebElement archiveButton = driver.findElement(By.id("archstatArchive"));
-		 logger.debug("About to submit");
-		 archiveButton.click();
-		 // We have to wait for a few minutes here here as it does take a while for the workflow to complete.
-		 Thread.sleep(5*60*1000);
-		 WebElement checkStatusButton = driver.findElement(By.id("archstatCheckStatus"));
-		 checkStatusButton.click();
-		 Thread.sleep(2*1000);
-		 WebElement statusPVName = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(1)"));
-		 String pvNameObtainedFromTable = statusPVName.getText();
-		 Assertions.assertTrue(pvName.equals(pvNameObtainedFromTable), "PV Name is not " + pvName + "; instead we get " + pvNameObtainedFromTable);
-		 WebElement statusPVStatus = driver.findElement(By.cssSelector("#archstatsdiv_table tr:nth-child(1) td:nth-child(2)"));
-		 String pvArchiveStatusObtainedFromTable = statusPVStatus.getText();
-		 String expectedPVStatus = "Being archived";
-		 Assertions.assertTrue(expectedPVStatus.equals(pvArchiveStatusObtainedFromTable), "Expecting PV archive status to be " + expectedPVStatus + "; instead it is " + pvArchiveStatusObtainedFromTable);
-		 Thread.sleep(1*60*1000);
-		 
-		 // We have now archived this PV, get some data and make sure the EGU is as expected.
-		 checkEGU("apples");
-		 SIOCSetup.caput(pvName + ".EGU", "oranges");
-		 Thread.sleep(5*1000);
-		 // Pause and resume the PV to reget the meta data
-		 String pausePVURL = "http://localhost:17665/mgmt/bpl/pauseArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
-		 JSONObject pauseStatus = GetUrlContent.getURLContentAsJSONObject(pausePVURL);
-		 Assertions.assertTrue(pauseStatus.containsKey("status") && pauseStatus.get("status").equals("ok"), "Cannot pause PV");
-		 logger.info("Done pausing PV " + pvName);
-		 Thread.sleep(5*1000);
-		 String resumePVURL = "http://localhost:17665/mgmt/bpl/resumeArchivingPV?pv=" + URLEncoder.encode(pvName, "UTF-8");
-		 JSONObject resumeStatus = GetUrlContent.getURLContentAsJSONObject(resumePVURL);
-		 Assertions.assertTrue(resumeStatus.containsKey("status") && resumeStatus.get("status").equals("ok"), "Cannot resume PV");
-		 logger.info("Done resuming PV " + pvName);
+    private static String statusOf(String pv) {
+        JSONArray status = GetUrlContent.getURLContentAsJSONArray(MGMT + "getPVStatus?pv=" + enc(pv));
+        if (status == null || status.isEmpty()) {
+            return "(absent)";
+        }
+        return String.valueOf(((JSONObject) status.get(0)).get("status"));
+    }
 
-		 // Now check the EGU again...
-		 Thread.sleep(1*60*1000);
-		 checkEGU("oranges");		 
-	}
+    @Test
+    public void testSimpleArchivePV() throws Exception {
+        // Archive the PV and wait until it is being archived.
+        String archivePVUrl = MGMT + "archivePV?pv=" + enc(pvName);
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(2))
+                .pollInterval(Duration.ofSeconds(5))
+                .ignoreExceptions()
+                .until(() -> GetUrlContent.getURLContentAsJSONArray(archivePVUrl) != null);
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(5))
+                .pollInterval(Duration.ofSeconds(10))
+                .ignoreExceptions()
+                .until(() -> "Being archived".equals(statusOf(pvName)));
 
-	private void checkEGU(String expectedEGUValue) throws IOException {
-		RawDataRetrieval rawDataRetrieval = new RawDataRetrieval("http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT+ "/retrieval/data/getData.raw");
+        // The EGU meta field is captured a little after connect; wait until retrieval reports it.
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(5))
+                .pollInterval(Duration.ofSeconds(10))
+                .ignoreExceptions()
+                .until(() -> "apples".equals(retrievedEGU()));
+
+        // Change the EGU on the IOC, then re-gather the metadata by pausing and resuming.
+        SIOCSetup.caput(pvName + ".EGU", "oranges");
+        JSONObject pauseStatus = GetUrlContent.getURLContentAsJSONObject(MGMT + "pauseArchivingPV?pv=" + enc(pvName));
+        Assertions.assertTrue(pauseStatus.containsKey("status") && pauseStatus.get("status").equals("ok"), "Cannot pause PV");
+        JSONObject resumeStatus = GetUrlContent.getURLContentAsJSONObject(MGMT + "resumeArchivingPV?pv=" + enc(pvName));
+        Assertions.assertTrue(resumeStatus.containsKey("status") && resumeStatus.get("status").equals("ok"), "Cannot resume PV");
+
+        // Retrieval must now report the new EGU.
+        Awaitility.await()
+                .atMost(Duration.ofMinutes(5))
+                .pollInterval(Duration.ofSeconds(10))
+                .ignoreExceptions()
+                .until(() -> "oranges".equals(retrievedEGU()));
+    }
+
+    /**
+     * Retrieve the PV and return the EGU reported in the payload headers, or null if no data yet.
+     */
+    private String retrievedEGU() throws Exception {
+        RawDataRetrieval rawDataRetrieval = new RawDataRetrieval(
+                "http://localhost:" + ConfigServiceForTests.RETRIEVAL_TEST_PORT + "/retrieval/data/getData.raw");
         Instant now = TimeUtils.now();
         Instant start = TimeUtils.minusDays(now, 100);
         Instant end = TimeUtils.plusDays(now, 10);
-		 int eventCount = 0;
+        HashMap<String, String> metaFields = new HashMap<String, String>();
+        int eventCount = 0;
+        try (GenMsgIterator strm = rawDataRetrieval.getDataForPVs(
+                Arrays.asList(pvName), TimeUtils.toSQLTimeStamp(start), TimeUtils.toSQLTimeStamp(end), false, null)) {
+            if (strm == null) {
+                return null;
+            }
+            mergeHeaders(strm.getPayLoadInfo(), metaFields);
+            strm.onInfoChange(new InfoChangeHandler() {
+                @Override
+                public void handleInfoChange(PayloadInfo info) {
+                    mergeHeaders(info, metaFields);
+                }
+            });
+            for (@SuppressWarnings("unused") EpicsMessage dbrevent : strm) {
+                eventCount++;
+            }
+        }
+        if (eventCount == 0) {
+            return null;
+        }
+        return metaFields.get("EGU");
+    }
 
-		 final HashMap<String, String> metaFields = new HashMap<String, String>(); 
-		 // Make sure we get the EGU as part of a regular VAL call.
-        try (GenMsgIterator strm = rawDataRetrieval.getDataForPVs(Arrays.asList(pvName), TimeUtils.toSQLTimeStamp(start), TimeUtils.toSQLTimeStamp(end), false, null)) {
-			 PayloadInfo info = null;
-			 Assertions.assertTrue(strm != null, "We should get some data, we are getting a null stream back");
-			 info =  strm.getPayLoadInfo();
-			 Assertions.assertTrue(info != null, "Stream has no payload info");
-			 mergeHeaders(info, metaFields);
-			 strm.onInfoChange(new InfoChangeHandler() {
-				 @Override
-				 public void handleInfoChange(PayloadInfo info) {
-					 mergeHeaders(info, metaFields);
-				 }
-			 });
-
-			 for(@SuppressWarnings("unused") EpicsMessage dbrevent : strm) {
-				 eventCount++;
-			 }
-		 }
-
-		 Assertions.assertTrue(eventCount > 0, "We should have gotten some data back in retrieval. We got " + eventCount);
-		 Assertions.assertTrue(expectedEGUValue.equals(metaFields.get("EGU")), "The final value of EGU is " + metaFields.get("EGU") + ". We expected " + expectedEGUValue);
-	}
-	
-	private static void mergeHeaders(PayloadInfo info, HashMap<String, String> headers) { 
-		 int headerCount = info.getHeadersCount();
-		 for(int i = 0; i < headerCount; i++) { 
-			 String headerName = info.getHeaders(i).getName();
-			 String headerValue = info.getHeaders(i).getVal();
-			 logger.info("Adding header " + headerName + " = " + headerValue);
-			 headers.put(headerName, headerValue);
-		 }
-	}		
+    private static void mergeHeaders(PayloadInfo info, HashMap<String, String> headers) {
+        int headerCount = info.getHeadersCount();
+        for (int i = 0; i < headerCount; i++) {
+            headers.put(info.getHeaders(i).getName(), info.getHeaders(i).getVal());
+        }
+    }
 }

@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.utils.ui.JSONEncoder;
@@ -21,13 +23,15 @@ import org.json.simple.JSONObject;
 
 /**
  * 
- * @epics.BPLAction - Get the appliance information for the specified appliance. 
- * @epics.BPLActionParam id - The identity of the appliance for which we are requesting information. This is the same string as the <code>identity</code> element in the <code>appliances.xml</code> that identifies this appliance.
- * @epics.BPLActionEnd
  * 
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Get the appliance information for the specified appliance.",
+        params = {
+            @BPLParam(name = "id", description = "The identity of the appliance for which we are requesting information. This is the same string as the <code>identity</code> element in the <code>appliances.xml</code> that identifies this appliance.")
+        })
 public class GetApplianceInfo implements BPLAction {
 	private static Logger logger = LogManager.getLogger(GetApplianceInfo.class.getName());
 	@SuppressWarnings("unchecked")

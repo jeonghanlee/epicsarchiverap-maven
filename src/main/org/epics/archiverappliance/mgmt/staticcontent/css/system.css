@@ -1,0 +1,592 @@
+/* System page. Tokens come from the shared main.css. The only saturated color is the alert color. */
+
+.system {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.system h2 {
+    margin: 24px 0 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+}
+
+/* An appliance name is data and keeps its case. */
+.system h2 .pv {
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--ink);
+}
+
+.system h3 {
+    margin: 12px 0 2px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.sub {
+    margin: 0 0 8px;
+    font-size: 0.875rem;
+    color: var(--ink-2);
+}
+
+.versions {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--ink-2);
+}
+
+.error {
+    min-height: 1em;
+    margin: 4px 0;
+    color: var(--alarm);
+    font-size: 0.875rem;
+}
+
+.num,
+.pv {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.num {
+    white-space: nowrap;
+}
+
+.warn {
+    color: var(--warn);
+    font-weight: 600;
+}
+
+.scroll {
+    overflow-x: auto;
+}
+
+.grid {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.grid th {
+    padding: 4px 12px 4px 0;
+    text-align: left;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    border-bottom: 1px solid var(--rule);
+}
+
+.grid td {
+    padding: 6px 12px 6px 0;
+    border-bottom: 1px solid var(--grid);
+}
+
+.grid .r {
+    text-align: right;
+}
+
+.grid tbody tr {
+    cursor: pointer;
+}
+
+.grid tr[data-focus="true"] td {
+    background: var(--focus-bg);
+}
+
+.hosts tbody tr {
+    cursor: default;
+}
+
+.hosts button.link {
+    padding: 0;
+    font: inherit;
+    color: var(--accent);
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--accent);
+    cursor: pointer;
+}
+
+.hosts tr.detail td {
+    padding: 4px 0 10px;
+    background: var(--focus-bg);
+}
+
+.pvlist {
+    margin: 0;
+    padding: 0 0 0 16px;
+    font-size: 0.875rem;
+    columns: 2 22rem;
+}
+
+.grid .empty {
+    padding: 12px 0;
+    color: var(--ink-2);
+}
+
+.help {
+    margin: 12px 0 0;
+    font-size: 0.9375rem;
+    color: var(--ink-2);
+    max-width: 80ch;
+}
+
+.help dt {
+    margin-top: 6px;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.help dd {
+    margin: 0;
+}
+
+/* storage bars: ink for the used part only */
+
+/* The question a section answers, under its heading. */
+.lead {
+    margin: 0 0 10px;
+    color: var(--ink-2);
+    font-size: 0.9375rem;
+}
+
+/* A row of a table that only names the group of the rows under it. */
+tr.group td {
+    padding-top: 12px;
+    border-bottom: 0;
+    color: var(--ink-3);
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* The device bars: the store, a bar that carries its percent, and the numbers in columns so that no row is pushed. */
+.bars {
+    display: grid;
+    gap: 10px;
+}
+
+.bar-row {
+    display: grid;
+    grid-template-columns: minmax(6rem, 11rem) minmax(0, 1fr) 7rem 7rem 6rem;
+    gap: 12px;
+    align-items: center;
+}
+
+.bar-row.head {
+    color: var(--ink-3);
+    font-size: 0.8125rem;
+}
+
+.bar-row .pv {
+    overflow-wrap: anywhere;
+    font-size: 0.875rem;
+}
+
+.bar-row .pv small {
+    display: block;
+    color: var(--ink-3);
+    font-size: 0.8125rem;
+}
+
+.bar-row .col {
+    white-space: nowrap;
+    text-align: right;
+}
+
+.bar-row .col.copy {
+    color: var(--ink-3);
+    font-size: 0.875rem;
+}
+
+.track {
+    position: relative;
+    height: 20px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--grid);
+}
+
+.fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 6px;
+    background: var(--ink-3);
+    color: var(--c-surface);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.fill.low {
+    background: var(--alarm);
+}
+
+/* process metrics */
+
+.current {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    gap: 4px 20px;
+    margin: 0 0 12px;
+}
+
+.current dt {
+    color: var(--ink-2);
+}
+
+.current dd {
+    margin: 0;
+}
+
+
+.process {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 28px;
+}
+
+@media (max-width: 900px) {
+    .process {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .system {
+        padding: 12px;
+    }
+
+    .bar-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px 8px;
+    }
+
+    .bar-row .pv,
+    .bar-row .track {
+        grid-column: 1 / -1;
+    }
+
+    .bar-row.head span:first-child,
+    .bar-row.head span:nth-child(2) {
+        display: none;
+    }
+}
+
+/* ---- the three System pages ------------------------------------------------------------------ */
+
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 12px;
+    border-bottom: 1px solid var(--rule);
+}
+
+.tabs a {
+    padding: 8px 14px;
+    color: var(--ink-2);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+}
+
+.tabs a[aria-current="page"] {
+    color: var(--ink);
+    font-weight: 600;
+    border-bottom-color: var(--accent);
+}
+
+.tabs select {
+    margin-left: auto;
+    font: inherit;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--ink-3);
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+
+.system h1 {
+    margin: 8px 0 4px;
+    font-size: 1.375rem;
+}
+
+.verdicts {
+    list-style: none;
+    margin: 8px 0;
+    padding: 0;
+}
+
+.verdicts li {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--grid);
+}
+
+.verdicts .what {
+    font-weight: 600;
+}
+
+.status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 10px;
+}
+
+.st {
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.st.ok {
+    color: var(--ink-2);
+}
+
+.st.warn {
+    color: var(--warn);
+}
+
+.st.bad {
+    color: var(--alarm);
+}
+
+.st.unknown {
+    color: var(--ink-3);
+    font-weight: 500;
+}
+
+.why {
+    color: var(--ink-2);
+    font-size: 0.9375rem;
+}
+
+.grid.plain tbody tr {
+    cursor: default;
+}
+
+.grid.plain td {
+    vertical-align: top;
+}
+
+.grid.plain th[colspan] {
+    padding-top: 14px;
+}
+
+.columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    gap: 24px;
+}
+
+form.inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 8px 0;
+}
+
+form.inline label {
+    font-size: 0.9375rem;
+    color: var(--ink-2);
+}
+
+form.inline input,
+form.inline select {
+    font: inherit;
+    padding: 5px 8px;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--ink-3);
+    border-radius: 4px;
+}
+
+form.inline input[type="text"] {
+    min-width: 18rem;
+}
+
+form.inline button {
+    padding: 6px 14px;
+    font: inherit;
+    color: var(--accent-ink);
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .verdicts li {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+
+    form.inline button,
+    .hosts button.link {
+        min-height: 44px;
+    }
+}
+
+.grid.plain td.wrap {
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.grid.plain .num {
+    white-space: normal;
+}
+
+/* The Detail column of the Summary reads as text, from the left. */
+.grid.plain td.detail {
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.grid.plain .pv {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+    .tabs a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+
+    .system button,
+    .system input,
+    .system select {
+        min-height: 44px;
+    }
+
+    .grid.plain td a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+}
+
+dialog {
+    width: min(480px, calc(100vw - 32px));
+    padding: 20px;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--ink-3);
+    border-radius: 6px;
+}
+
+dialog::backdrop {
+    background: rgba(0, 20, 26, 0.55);
+}
+
+dialog h2 {
+    margin: 0 0 8px;
+    padding: 0;
+    border: 0;
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 18px;
+    margin-top: 12px;
+}
+
+.dialog-actions button {
+    padding: 6px 14px;
+    font: inherit;
+    color: var(--accent-ink);
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.dialog-actions button.quiet {
+    color: var(--ink-2);
+    background: none;
+    border-color: transparent;
+}
+
+.muted {
+    color: var(--ink-2);
+    font-size: 0.9375rem;
+}
+
+.segmented {
+    display: inline-flex;
+    margin: 4px 0 8px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.segmented button {
+    min-height: 36px;
+    margin: 0;
+    padding: 4px 14px;
+    border: 0;
+    border-radius: 0;
+    background: var(--c-surface);
+    color: var(--c-text);
+    font: inherit;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.segmented button[aria-pressed="true"] {
+    background: var(--c-accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.segmented button:focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: -2px;
+}
+
+.treemap svg {
+    display: block;
+    max-width: 100%;
+}
+
+.treemap a:focus-visible {
+    outline: 3px solid var(--c-accent);
+    outline-offset: 1px;
+}
+
+/* The Summary table of the overview: the Now column holds its longest values on one line and the Detail column has room. */
+@media (min-width: 721px) {
+    #summary th:nth-child(1),
+    #summary td:nth-child(1) {
+        width: 19%;
+    }
+
+    #summary th:nth-child(2),
+    #summary td:nth-child(2) {
+        width: 24%;
+    }
+
+    #summary th:nth-child(3),
+    #summary td:nth-child(3) {
+        width: 11%;
+    }
+
+    #summary th:nth-child(4),
+    #summary td:nth-child(4) {
+        width: 32%;
+    }
+}

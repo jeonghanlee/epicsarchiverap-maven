@@ -10,39 +10,40 @@ import java.util.LinkedHashMap;
  */
 public class PoorMansProfiler {
 	private LinkedHashMap<String, Long> steps = new LinkedHashMap<String, Long>();
-	private long startingTimeMS = -1;
-	private long latestMarkMS = -1;
+	// Readings of the monotonic clock, in nanoseconds; the report writes the differences in milliseconds.
+	private long startingTimeNanos = -1;
+	private long latestMarkNanos = -1;
 	
 	public PoorMansProfiler() { 
-		this.startingTimeMS = System.currentTimeMillis();
+		this.startingTimeNanos = System.nanoTime();
 	}
 
 	public void mark(String location) { 
-		latestMarkMS = System.currentTimeMillis();
-		steps.put(location, latestMarkMS);
+		latestMarkNanos = System.nanoTime();
+		steps.put(location, latestMarkNanos);
 	}
 	
 	public String toString() { 
 		StringBuilder buf = new StringBuilder();
 		buf.append("\n");
-		long previousTimeMS = startingTimeMS;
+		long previousNanos = startingTimeNanos;
 		for(String location : steps.keySet()) {
-			Long currentTimeMS = steps.get(location);
+			Long currentNanos = steps.get(location);
 			buf.append(location);
 			buf.append(" --> ");
-			buf.append(currentTimeMS - previousTimeMS);
+			buf.append((currentNanos - previousNanos) / 1_000_000);
 			buf.append("(ms)\n");
-			previousTimeMS = currentTimeMS;
+			previousNanos = currentNanos;
 		}
 		buf.append("Total");
 		buf.append(" --> ");
-		buf.append(latestMarkMS - startingTimeMS);
+		buf.append((latestMarkNanos - startingTimeNanos) / 1_000_000);
 		buf.append("(ms)\n");
 		
 		return buf.toString();
 	}
 	
 	public long totalTimeMS() { 
-		return latestMarkMS - startingTimeMS;
+		return (latestMarkNanos - startingTimeNanos) / 1_000_000;
 	}
 }

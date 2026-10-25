@@ -36,7 +36,7 @@ public class Throttle
     /** @return <code>true</code> if another event is permitted "right now" */
     synchronized public boolean isPermitted()
     {
-        final long now = System.currentTimeMillis();
+        final long now = System.nanoTime() / 1_000_000;
         if ((now - last) < period)
             return false;
         last = now;

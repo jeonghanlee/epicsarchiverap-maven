@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ApplianceAggregateInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -19,6 +20,7 @@ import org.epics.archiverappliance.utils.ui.MimeTypeConstants;
  * @author mshankar
  *
  */
+@BPLEndpoint(summary = "Gets the optimized aggregate typeInfo information for this appliance.")
 public class AggregatedApplianceInfo implements BPLAction {
 	private static Logger logger = LogManager.getLogger(AggregatedApplianceInfo.class.getName());
 

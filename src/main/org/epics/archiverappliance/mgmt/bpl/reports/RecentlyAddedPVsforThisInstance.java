@@ -2,6 +2,8 @@ package org.epics.archiverappliance.mgmt.bpl.reports;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ConfigService;
@@ -25,6 +27,11 @@ import java.util.LinkedList;
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Generate a report of PVs recently added to this instance....",
+        params = {
+            @BPLParam(name = "limit", description = "Optional; the maximum number of entries to return.")
+        })
 public class RecentlyAddedPVsforThisInstance implements BPLAction {
 	private static Logger logger = LogManager.getLogger(RecentlyAddedPVsforThisInstance.class.getName());
 
@@ -52,7 +59,7 @@ public class RecentlyAddedPVsforThisInstance implements BPLAction {
 				HashMap<String, String> jsonObj = new HashMap<String, String>();
 				jsonObj.put("pvName", pvName);
 				jsonObj.put("instance", identity);
-				jsonObj.put("creationTime", TimeUtils.convertToHumanReadableString(this.creationTimeStamp));
+				TimeUtils.putTime(jsonObj, "creationTime", this.creationTimeStamp);
 				return JSONValue.toJSONString(jsonObj);
 			}
 		}

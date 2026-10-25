@@ -159,6 +159,8 @@ public class FileEventStreamSearch {
             min = this.startPosition;
             max = Files.size(path) - 1;
             do {
+                long minBeforeStep = min;
+                long maxBeforeStep = max;
                 mid = min + ((max - min) / 2);
                 // System.out.println("Min: " + min + " Mid: " + mid + " Max: " + max);
                 // The Math.max(2, mid-2) here and the max > (min - 4) in the while is because of the seekToFirstNewLine
@@ -187,6 +189,12 @@ public class FileEventStreamSearch {
                             return true;
                         default:
                             logger.error("Compare function returned something unexpeected " + nextStep);
+                    }
+
+                    if (min == minBeforeStep && max == maxBeforeStep) {
+                        // The window did not narrow, for example when the sought time is earlier than the first line; the same
+                        // position would be read again until the counter of iterations ends, so the search is over.
+                        break;
                     }
 
                     maxIterations--;

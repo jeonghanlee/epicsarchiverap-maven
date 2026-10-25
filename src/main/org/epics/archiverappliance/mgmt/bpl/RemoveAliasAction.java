@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ApplianceInfo;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
@@ -20,13 +22,15 @@ import org.json.simple.JSONValue;
 
 /**
  *
- * @epics.BPLAction - Remove an alias for the specified PV. This is only supported for PVs who have completed their archive PV workflow.
- * @epics.BPLActionParam pv - The real name of the pv.
- * @epics.BPLActionParam aliasname - The alias name of the pv. 
- * @epics.BPLActionEnd
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Remove an alias for the specified PV. This is only supported for PVs who have completed their archive PV workflow.",
+        params = {
+            @BPLParam(name = "pv", description = "The real name of the pv."),
+            @BPLParam(name = "aliasname", description = "The alias name of the pv.")
+        })
 public class RemoveAliasAction implements BPLAction {
 	private static Logger logger = LogManager.getLogger(RemoveAliasAction.class.getName());
 

@@ -60,6 +60,11 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
     private PBFileInfo fileInfo = null;
     private BiDirectionalIterable.IterationDirection direction = null;
 
+    private enum POSITION {
+        START,
+        END
+    };
+
     /**
      * Used when we want to include data from the entire file.
      * @param pvname The PV name
@@ -164,7 +169,7 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
             this.endFilePos = Files.size(path);
         } else {
             this.startFilePos = this.fileInfo.positionOfFirstSample;
-            this.endFilePos = this.seekToEndTime(path, dbrtype, startAtTime);
+            this.endFilePos = this.seekToEndTime(path, dbrtype, startAtTime, POSITION.END);
             if (this.endFilePos <= 0) {
                 this.endFilePos = Files.size(path);
             }
@@ -365,6 +370,11 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
     }
 
     private long seekToEndTime(Path path, ArchDBRTypes dbrtype, Instant queryEndTime) throws IOException {
+        return seekToEndTime(path, dbrtype, queryEndTime, POSITION.START);
+    }
+
+    private long seekToEndTime(Path path, ArchDBRTypes dbrtype, Instant queryEndTime, POSITION posn)
+            throws IOException {
         long endPosition = -1;
         YearSecondTimestamp queryEndYTS = TimeUtils.convertToYearSecondTimestamp(queryEndTime);
         if (fileInfo.getInfo().getYear() == queryEndYTS.getYear()) {
@@ -401,6 +411,9 @@ public class FileBackedPBEventStream implements EventStream, RemotableOverRaw, E
                         }
                         endPosition = lis.getCurrentPosition();
                         lis.readLine(nextLine);
+                        if (posn == POSITION.END) {
+                            endPosition = lis.getCurrentPosition();
+                        }
                     }
                 } catch (Exception ex) {
                     logger.error("Exception seeking to the end position for pv " + this.pvName, ex);

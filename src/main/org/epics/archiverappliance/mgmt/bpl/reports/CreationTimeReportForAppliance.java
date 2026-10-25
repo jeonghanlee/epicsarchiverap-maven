@@ -9,6 +9,8 @@ package org.epics.archiverappliance.mgmt.bpl.reports;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BPLAction;
 import org.epics.archiverappliance.config.ChannelArchiverDataServerPVInfo;
 import org.epics.archiverappliance.config.ConfigService;
@@ -30,6 +32,11 @@ import java.util.regex.Pattern;
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Report of the creation times of the PVs on the specified appliance.",
+        params = {
+            @BPLParam(name = "regex", description = "Optional; a regular expression matched against PV names.")
+        })
 public class CreationTimeReportForAppliance implements BPLAction {
 	private static final Logger logger = LogManager.getLogger(CreationTimeReportForAppliance.class);
 

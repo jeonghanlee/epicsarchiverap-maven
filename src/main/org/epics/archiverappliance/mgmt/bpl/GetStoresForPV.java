@@ -11,6 +11,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.PVTypeInfo;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
@@ -20,12 +22,14 @@ import org.json.simple.JSONValue;
 /**
  * Gets the names of the data stores for this PV.
  * 
- * @epics.BPLAction - Gets the names and definitions of the data stores for this PV. Every store in a PV's typeinfo is expected to have a name - this is typically "name=STS" or something similar. This call returns the names of all the stores for a PV with their URI representations as a dictionary.
- * @epics.BPLActionParam pv - The name of the pv.
- * @epics.BPLActionEnd
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Gets the names and definitions of the data stores for this PV. Every store in a PV's typeinfo is expected to have a name - this is typically \"name=STS\" or something similar. This call returns the names of all the stores for a PV with their URI representations as a dictionary.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv.")
+        })
 public class GetStoresForPV implements BPLAction {
 	private static Logger logger = LogManager.getLogger(GetStoresForPV.class.getName());
 

@@ -7,6 +7,8 @@ import org.epics.archiverappliance.Event;
 import org.epics.archiverappliance.EventStream;
 import org.epics.archiverappliance.StoragePlugin;
 import org.epics.archiverappliance.common.BPLAction;
+import org.epics.archiverappliance.common.BPLEndpoint;
+import org.epics.archiverappliance.common.BPLParam;
 import org.epics.archiverappliance.common.BasicContext;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.common.mergededup.MergeDedupEventStream;
@@ -34,13 +36,6 @@ import java.util.HashMap;
 
 /**
  * 
- * @epics.BPLAction - Manually merges in data from an external appliance that is used for failover.  
- * @epics.BPLActionParam pv - The name of the pv; the PV needs to be paused. It's probably also a good idea to consolidate the data to the store being used for merging.
- * @epics.BPLActionParam other - This is the <code>data_retrieval_url</code> of the other appliance.
- * @epics.BPLActionParam storage - The name of the data store (LTS etc) to merge the data into. Please consolidate the data into this store to make sure merging in later data from the remote store does not result in losing data in the other stores on this appliance.   
- * @epics.BPLActionParam from - The start time for the retrieval request to the other server - defaults to 2 months ago.
- * @epics.BPLActionParam to - The end time for the retrieval request to the other server - defaults to a month from now.
- * @epics.BPLActionEnd
  * 
  * Use this to merge in data that is outside any ETL windows. See {@link org.epics.archiverappliance.common.mergededup.MergeDedupStoragePlugin}
  * Note, this call actually changes the underlying data; so please do make a backup before making this call; use with caution.
@@ -48,6 +43,15 @@ import java.util.HashMap;
  * @author mshankar
  *
  */
+@BPLEndpoint(
+        summary = "Manually merges in data from an external appliance that is used for failover.",
+        params = {
+            @BPLParam(name = "pv", description = "The name of the pv; the PV needs to be paused. It's probably also a good idea to consolidate the data to the store being used for merging."),
+            @BPLParam(name = "other", description = "This is the <code>data_retrieval_url</code> of the other appliance."),
+            @BPLParam(name = "storage", description = "The name of the data store (LTS etc) to merge the data into. Please consolidate the data into this store to make sure merging in later data from the remote store does not result in losing data in the other stores on this appliance."),
+            @BPLParam(name = "from", description = "The start time for the retrieval request to the other server - defaults to 2 months ago."),
+            @BPLParam(name = "to", description = "The end time for the retrieval request to the other server - defaults to a month from now.")
+        })
 public class MergeInDataFromExternalStore implements BPLAction {
 	private static Logger logger = LogManager.getLogger(MergeInDataFromExternalStore.class.getName());
 
