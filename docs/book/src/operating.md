@@ -188,6 +188,22 @@ When a store runs full, ETL follows the `OutOfSpaceHandling` key
   priority prefix arrives at priority 6 ([Known
   limits](logging.md#known-limits)) and `-p err` misses it:
   `journalctl -u epicsarchiverap-maven.service | grep OutOfMemoryError`.
+- **Refused requests:** the retrieval application refuses a request that
+  declares too much with HTTP 400, and answers HTTP 503 to a request while
+  memory is short, to a request it stops under memory pressure and to one
+  that runs too long, each with a message that names the condition. A client
+  that reports one of these messages has met a limit, not a failure. The
+  retrieval log records each refusal as an ERROR line, `Retrieval request
+  failed`, followed by the exception whose message begins `Retrieval memory
+  admission refused`, `Retrieval memory pressure`, `Retrieval declared size`,
+  `Retrieval request deadline exceeded` or `Retrieval request interrupted`,
+  so an ERROR in the retrieval log can be a refusal. A connection that closes before the response is complete
+  is the same limit when such a line is there, and the retrieval JVM ending
+  when the log holds an `OutOfMemoryError`.
+  [Limits on a request](retrieval.md#limits-on-a-request) lists the messages.
+  The retrieval log states the limits at start, in the lines `Retrieval
+  memory protection enabled` and `Retrieval HTTP deadline`, and warns when
+  `-XX:+DisableExplicitGC` is set.
 - **Free space** of each store, from **Stores** on the System Operations
   page or the host.
 - **Disconnected PVs**, from the **Disconnected now** selection of the

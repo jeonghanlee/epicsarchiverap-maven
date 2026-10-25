@@ -64,6 +64,17 @@ installs.
 `-t` selects one component, `-p err` shows only ERROR and FATAL lines,
 and `-f` follows new lines.
 
+The retrieval component writes two lines about its limits at start:
+`Retrieval memory protection enabled` at INFO states the heap, the budget
+and the admission and pressure thresholds in bytes, and `Retrieval HTTP
+deadline` at INFO states the deadline in milliseconds. When the JVM option
+`DisableExplicitGC` is set, a third line at WARN names it.
+
+A request that a check refuses or stops is reported to its client and logged
+at ERROR as `Retrieval request failed`, with the exception that names the
+condition on the lines below it; [Limits on a
+request](retrieval.md#limits-on-a-request) lists the messages.
+
 ## Log levels
 
 The root level comes from the `ARCHAPPL_ROOT_LOGGER_LEVEL` environment
