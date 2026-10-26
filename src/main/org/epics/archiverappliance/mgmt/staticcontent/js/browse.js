@@ -9,7 +9,7 @@ import { valueParts, dateTimeText, instantTitle } from "./browse/format.js";
 import { buildDetails } from "./browse/details.js";
 import { currentZone, onZoneChange } from "../comm/js/aa/timezone.js";
 
-// Initial limits (D47). They are configuration; measurement and use adjust them.
+// Initial limits of the table, the chart, the concurrent requests and the indexed names. They are configuration; measurement and use adjust them.
 const LIMITS = { table: 100, chart: 5, concurrentRequests: 6, indexed: 500000 };
 // What a Plot box over the limit says, as the tooltip of its cell and as the note beside the counters of the table.
 const PLOT_LIMIT_MESSAGE = `Plot limit: at most ${LIMITS.chart} PVs are drawn at a time. Turn another Plot box off first.`;
