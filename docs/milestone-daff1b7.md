@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: the release cycle 2026-10 (D62) is planned in M97 with Plan Status draft: the owner reviews and accepts the Implementation Plan of M97 and gives implementation authority separately, then the first check is Release Verification 1, the `pom.xml` pre-check (the version still reads 2025-6). Outstanding from M85: the install and run check of the current commit by the epicsarchiverap-env session belongs in M85's Closure Evidence. Every other open row is in the Backlog.
+Next session entry point: the release cycle 2026-10 (D62, D63) is planned in two rows with Plan Status draft: M98 (the Installing page becomes a procedure from the release bundle, verified on clean Debian 13 and Rocky 8.10 guests) runs first, then M97 (the version change, the candidate proof, the tag 2026-10 and the repeat of M98 on the tag). The owner reviews the Implementation Plan of M98 and accepts it, and gives implementation authority separately; M97 is accepted after that. Outstanding from M85: the install and run check of the current commit by the epicsarchiverap-env session belongs in M85's Closure Evidence. Every other open row is in the Backlog.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). M65 (the information cards of every page, and the Operations page composed again for a reader new to the appliance) is Complete on 2026-10-18 at 14f083e9 with both workflows green. The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -109,7 +109,11 @@ This register covers the minimal modernization of the existing Java appliance on
 | Phase 2 | M96 | Describe the two metachannel start settings of the engine | Milestone | Complete | No | D60 | The configuration page and the default `archappl.properties` explain `maximum_disconnected_channel_percentage_before_starting_metachannels` and `metachannels_to_start_at_a_time` with their defaults 5.0 and 10000 and state whose share of disconnected channels the percentage limits; the book builds with no broken link; issue #61; [detail](#m96---describe-the-two-metachannel-start-settings-of-the-engine) |
 | D61 | The branch `modernize` is merged into `master` with a merge commit (`--no-ff`), so that the whole branch enters `master` as one boundary that `git revert -m 1` can undo, and not as 470 commits that continue the history of the old head. The merge commit 9bbd4579 carries a message that summarizes the branch (the build on Maven, Tomcat 9 and JDK 21, the selectable store, the logging, the launcher, the ETL scheduler, the retrieval protection, the console and the book) within the limits of a commit message. The branch `modernize` is not deleted by the merge. The tag `NewHope` still points at the old head abf65451, and the name and the tag of the next release are decided when the release cycle opens. | 2026-10-25 |
 | D62 | Release 2026-10, release name Redemption, takes the merged `master` as it stands: the cycle holds one final release milestone (M97) and every other open row moved to the Backlog. The version of `pom.xml` changes from `2025-6` to `2026-10`; the release is the annotated tag `2026-10` and no GitHub release object is created; the old tag `NewHope` stays on the old head; the documented installation is checked after the release on a clean Debian 13 host and a clean Rocky 8.10 host; the register path keeps its name during the cycle. | 2026-10-25 |
-| Release | M97 | Release 2026-10 (Redemption) | Milestone | Not started | Yes | D62 | The version change, the candidate proof, the tag `2026-10` and the post-release install checks pass with their Release Verification results; [detail](#m97---release-2026-10-redemption) |
+| D63 | Release verification does not depend on epicsarchiverap-env, whose pinned reference and local settings belong to that repository. The installation from the release bundle becomes a verified procedure of this book (M98), run on a clean Debian 13 guest and a clean Rocky 8.10 guest, and the release checks of M97 repeat it on the released tag. The installation pages of the book are rewritten to state that procedure. | 2026-10-25 |
+| D64 | The installation procedure of M98 starts and stops the four instances with `catalina.sh start` and `catalina.sh stop` in a loop, in the documented order. The development launcher `scripts/run-local-appliance.bash` stays a development tool: it is not changed, not shipped in the release bundle, and raising it to a production installation is not planned. | 2026-10-25 |
+| D65 | The verification run of M98 uses SQLite as the configuration database. On both operating systems it uses the Apache Tomcat 9 archive with its sha512 checked, and JDK 21 from the operating system's packages; the package name on each system is found in the first step of M98. | 2026-10-25 |
+| Release | M98 | Verified installation from the release bundle | Milestone | Not started | Yes | D63, D64, D65 | The book holds an installation procedure from the release bundle that ran as written on a clean Debian 13 guest and a clean Rocky 8.10 guest without epicsarchiverap-env; [detail](#m98---verified-installation-from-the-release-bundle) |
+| Release | M97 | Release 2026-10 (Redemption) | Milestone | Not started | No | M98, D62, D63 | The version change, the candidate proof, the tag `2026-10` and the post-release install checks pass with their Release Verification results; [detail](#m97---release-2026-10-redemption) |
 
 ### Decisions
 
@@ -7754,6 +7758,69 @@ Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-25 07:21 UTC
 
+#### M98 - Verified installation from the release bundle
+
+Origin: daff1b7 / M98
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The Installing page names epicsarchiverap-env as the supported installation and calls the manual layout a reference, not a procedure. A release of this repository is verified without another repository, whose pinned reference and local settings are its own (D63). The installation from the release bundle therefore becomes a procedure page of this book, runs on a clean Debian 13 guest and a clean Rocky 8.10 guest, and the page states what those runs showed.
+
+##### Scope
+
+A procedure page with an imperative title, prerequisites, numbered one-action steps and a verification section that installs the four WARs and the configuration database schema of the release bundle on one host, starts the four instances in their order with `catalina.sh start` (D64) and checks them; and a reference page for the instance layout, the ports, `appliances.xml`, the environment variables and the valves. Both pages are in `SUMMARY.md`. The section on epicsarchiverap-env states what that repository does and no step of the procedure depends on it. Two real runs of the procedure as written, one on each guest, with a release bundle built on the host from the committed tree and copied to the guest, and with a soft IOC on the host as the source of the archived PV.
+
+Out of scope: a change of the product code, the configuration database setup beyond the one the procedure uses (Persistence page), the meaning of each configuration item (Configuration page), a cluster of several appliances, and the preparation of the two clean guests, which is requested from the session that manages the VM host.
+
+##### Completion Criteria
+
+- The book holds the procedure page and the reference page; every command on the procedure page ran as shown on both guests.
+- On each guest the four components run, the System page reads all running, and one archived PV answers a data request.
+- The procedure page names the operating systems on which the procedure ran.
+- Both pages pass the book build, and the procedure page passes a second-person review.
+
+##### Dependencies And Decisions
+
+- D63
+- D64
+- D65
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Read `scripts/run-local-appliance.bash` for the steps it performs on a host (instance folders, `server.xml` ports, `appliances.xml`, properties, environment) and walk the Manual reference of the Installing page against it and against the contents of the release bundle; list every step that a clean host needs and the page does not state, including the JDK 21 package name on each operating system; when a system has no JDK 21 package, record that and bring the choice of another source to the owner.
+2. Split the Installing page into the procedure page and the reference page named in the scope, so that each page has one type.
+3. Run the second-person review on the procedure page.
+4. Run T1 and T2 on clean guests with a release bundle built on the host from the committed tree and copied to the guest; correct the page from what the runs show and run the affected guest again.
+5. Build the book and land the page.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Real installation | Follow the procedure page as written from the release bundle that is built on the host from the committed tree and copied to the guest, start the appliance, archive the PV `InstallCheck:--ArchUnitTest:sine`, served on the host by `softIocPVX -m P=InstallCheck: -d src/resources/test/UnitTestPVs.db` (the EPICS environment of `TESTING.md` provides it) and reached from the guest through the Channel Access address list that the procedure sets, after checking that the host lets Channel Access traffic reach the IOC from the guest, request its data | Clean Debian 13 guest | Every command runs as shown, the System page reads all running, the data request returns the stored samples |
+| T2 | Real installation | The same procedure and checks with the same PV and soft IOC | Clean Rocky 8.10 guest | The same result |
+| T3 | Book | `docker build -t aa-mdbook docs/book`, then `docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs/book:/book" aa-mdbook build`, as the Developer guide shows | Local host | The build succeeds with both pages in the table of contents |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Clean Debian 13 guest | Pending | none |
+| T2 | Not run | Clean Rocky 8.10 guest | Pending | none |
+| T3 | Not run | Local host | Pending | none |
+
+##### Closure Evidence
+
+- none
+
 #### M97 - Release 2026-10 (Redemption)
 
 Origin: daff1b7 / M97
@@ -7763,7 +7830,7 @@ Status: Not started
 
 ##### Summary
 
-The final release milestone of the cycle that releases the merged `master` as 2026-10 (release name Redemption, D62). Every other open row is in the Backlog. The cycle changes the project version in `pom.xml` from `2025-6` to `2026-10`, proves the candidate, pushes it, creates the annotated tag `2026-10`, and checks the documented installation on a clean Debian 13 host and a clean Rocky 8.10 host. No GitHub release object is created.
+The final release milestone of the cycle that releases the merged `master` as 2026-10 (release name Redemption, D62). Every other open row is in the Backlog. The cycle changes the project version in `pom.xml` from `2025-6` to `2026-10`, proves the candidate, pushes it, creates the annotated tag `2026-10`, and repeats the installation from the release bundle, which M98 verifies, on a clean Debian 13 guest and a clean Rocky 8.10 guest. No GitHub release object is created.
 
 ##### Scope
 
@@ -7779,7 +7846,9 @@ Out of scope: any row of the Backlog, a GitHub release object, a change of the o
 
 ##### Dependencies And Decisions
 
+- M98
 - D62
+- D63
 
 ##### Implementation Plan
 
@@ -7811,13 +7880,15 @@ See Release Verification Results below.
 | Source Check | Re-run Trigger | Shared Surface | Release Verification Label | Expected Result | Result Evidence |
 | --- | --- | --- | --- | --- | --- |
 | M85 / T10 | The version change and any source change after the tested tree | The whole integration set against the four built WARs | Release Verification 4 | The whole integration set passes on the version commit | Pending |
+| M98 / T1 | The version change and the release bundle built from the tag | The installation procedure page on a clean Debian 13 guest | Release Verification 7 | The procedure runs as written | Pending |
+| M98 / T2 | The version change and the release bundle built from the tag | The installation procedure page on a clean Rocky 8.10 guest | Release Verification 8 | The procedure runs as written | Pending |
 
 ##### Production Environment Tests
 
 | Release Verification Label | Timing | System | Version | Architecture | Deployment Path | Method | Expected Result | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Release Verification 7 | post-release | Clean guest | Debian 13 | x86_64 | The installation procedure of the book page `installing.md` | Follow the documented procedure as written on the released tag, start the appliance, request data for one archived PV | Four components run, the retrieval start lines are logged, the request returns the stored samples | Pending |
-| Release Verification 8 | post-release | Clean guest | Rocky 8.10 | x86_64 | The installation procedure of the book page `installing.md` | Follow the documented procedure as written on the released tag, start the appliance, request data for one archived PV | Four components run, the retrieval start lines are logged, the request returns the stored samples | Pending |
+| Release Verification 7 | post-release | Clean guest | Debian 13 | x86_64 | The installation procedure page of the book | Build the release bundle on the host from a fresh clone of the tag `2026-10`, copy it to the guest, follow the procedure page as written (M98), request data for the PV of M98 / T1 | Four components run, the retrieval start lines are logged, the request returns the stored samples | Pending |
+| Release Verification 8 | post-release | Clean guest | Rocky 8.10 | x86_64 | The installation procedure page of the book | Build the release bundle on the host from a fresh clone of the tag `2026-10`, copy it to the guest, follow the procedure page as written (M98), request data for the PV of M98 / T1 | Four components run, the retrieval start lines are logged, the request returns the stored samples | Pending |
 
 ##### Version Changes
 
@@ -7835,7 +7906,8 @@ See Release Verification Results below.
 | 4 | Push `master` | Push delegation | `origin/master` equals the candidate commit | Pending |
 | 5 | Create the annotated tag `2026-10` on the candidate commit | Run by the owner | The tag object resolves to the candidate commit | Pending |
 | 6 | Push the tag `2026-10` | Tag push delegation | `origin` holds `refs/tags/2026-10` | Pending |
-| 7 | Commit the closure record | Commit delegation | The register records the results and the next entry point | Pending |
+| 7 | Commit the next release line: a reset of this register into its next generation, or the recorded decision not to open one | Commit delegation | One canonical register for the next line, or the decision in this register | Pending |
+| 8 | Commit the closure record | Commit delegation | The register records the results and the next entry point | Pending |
 
 ##### Release Verification Plan
 
@@ -7843,10 +7915,10 @@ See Release Verification Results below.
 | --- | --- | --- | --- | --- | --- | --- |
 | Release Verification 1 | Version | pre-change | The pre-check of Version Changes | Local checkout | `pom.xml` reads `2025-6` | Command output |
 | Release Verification 2 | Version | post-change | The post-check of Version Changes | Local checkout | The project version is `2026-10` | Command output |
-| Release Verification 3 | Default suite | post-change | `./mvnw -o -B -ntp clean verify` and `bash scripts/ui-static-checks.bash`; `clean` runs only in the fresh clone, never in the main checkout | Fresh clone of the version commit, JDK 21 | BUILD SUCCESS with 0 failures, 0 errors and 0 skipped, and the static checks report 0 failed | Test report |
-| Release Verification 4 | Integration | post-change | `MAVEN_OPTS=-Xmx1g ./mvnw -o -B -ntp test -P integration -DargLine=-Xmx2g -DforkCount=1 -DreuseForks=true` on the WARs that the Release Verification 3 build packaged on the same day and commit (`TESTING.md`) | Fresh clone of the version commit, JDK 21, Tomcat 9.0.121, `softIocPVX` 7.0.10, no other appliance or IOC on the host | The whole integration set passes with 0 failures and 0 errors | Test report under `work/` |
+| Release Verification 3 | Default suite | post-change | `./mvnw -o -B -ntp clean verify` and `bash scripts/ui-static-checks.bash`; `clean` runs only in the fresh clone, never in the main checkout | Fresh clone of the version commit made from the local repository (the commit is not pushed yet), JDK 21 | BUILD SUCCESS with 0 failures, 0 errors and 0 skipped, and the static checks report 0 failed | Test report |
+| Release Verification 4 | Integration | post-change | `MAVEN_OPTS=-Xmx1g ./mvnw -o -B -ntp test -P integration -DargLine=-Xmx2g -DforkCount=1 -DreuseForks=true` on the WARs that the Release Verification 3 build packaged on the same day and commit (`TESTING.md`) | Fresh clone of the version commit made from the local repository (the commit is not pushed yet), JDK 21, Tomcat 9.0.121, `softIocPVX` 7.0.10, no other appliance or IOC on the host | The whole integration set passes with 0 failures and 0 errors | Test report under `work/` |
 | Release Verification 5 | CI | post-release | The Maven workflow run on the candidate commit | GitHub Actions | The run concludes success | Run URL |
-| Release Verification 6 | Tag | post-release | `git ls-remote origin refs/tags/2026-10` and the `pom.xml` version at the tag | Local checkout | The tag resolves to the candidate commit and the version is `2026-10` | Command output |
+| Release Verification 6 | Tag | post-release | `git ls-remote origin 'refs/tags/2026-10*'`, which prints the tag object and the peeled `refs/tags/2026-10^{}` commit, and the `pom.xml` version at the tag | Local checkout | The tag resolves to the candidate commit and the version is `2026-10` | Command output |
 | Release Verification 7 | Production | post-release | The Debian 13 row of Production Environment Tests | Clean Debian 13 guest | As recorded there | Guest log |
 | Release Verification 8 | Production | post-release | The Rocky 8.10 row of Production Environment Tests | Clean Rocky 8.10 guest | As recorded there | Guest log |
 | Release Verification 9 | Tracker | post-release | Read the open issues and the register entry point | GitHub and the register | The open issues match the Backlog rows and the entry point names the next work | Command output |
