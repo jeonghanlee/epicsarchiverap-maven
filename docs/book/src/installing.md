@@ -1,10 +1,11 @@
-# Installing
+# Installation layout and settings
 
 ## Scope
 
-This page covers deploying the appliance on one host: the supported
-path through jeonghanlee/epicsarchiverap-env, and a manual reference
-that lists what that path sets up.
+This page describes an installed appliance on one host: the layout of the four Tomcat
+instances, the ports, `appliances.xml`, the environment, and how to start and stop the
+instances. The steps that create it are in
+[Install the appliance from the release bundle](install-bundle.md).
 
 **Out of scope:** the configuration database setup
 ([Persistence](persistence.md)), the meaning of each configuration item
@@ -19,17 +20,17 @@ On Debian 13 it installs the system packages, sets up MariaDB and loads
 the configuration database schema, builds this repository, creates the
 four Tomcat 9 instances, and installs the `epicsarchiverap-maven.service`
 systemd unit, which starts and stops the instances in their required
-order. Follow its README for the steps.
+order. Follow its README for the steps. The procedure in
+[Install the appliance from the release bundle](install-bundle.md) does not use it.
 
-## Manual reference
+## Layout of an installation
 
-The rest of this page describes the layout that a deployment needs.
-It is a reference for understanding and troubleshooting a deployment,
-not a separate supported procedure.
+The rest of this page describes the layout that the procedure creates.
+Use it to understand and to troubleshoot a deployment.
 
 ### Host requirements
 
-- JDK 21.
+- A Java 21 runtime (JRE or JDK).
 - Apache Tomcat 9.
 - A configuration database: MariaDB or SQLite ([Persistence](persistence.md)).
 - Storage for the three stores: the short term store (STS), the medium
@@ -41,29 +42,28 @@ not a separate supported procedure.
 
 One Tomcat installation (`CATALINA_HOME`) serves four instances, one per
 web application, each with its own folder (`CATALINA_BASE`). Below,
-`${TOMCAT_HOME}` is the Tomcat installation and `${DEPLOY_DIR}` the parent
+`${CATALINA_HOME}` is the Tomcat installation and `${DEPLOY_DIR}` the parent
 folder of the instances:
 
 ```
-${DEPLOY_DIR}/mgmt/       conf/  logs/  temp/  webapps/mgmt.war       work/
-${DEPLOY_DIR}/engine/     conf/  logs/  temp/  webapps/engine.war     work/
-${DEPLOY_DIR}/etl/        conf/  logs/  temp/  webapps/etl.war        work/
-${DEPLOY_DIR}/retrieval/  conf/  logs/  temp/  webapps/retrieval.war  work/
+${DEPLOY_DIR}/mgmt/       bin/  conf/  logs/  temp/  webapps/mgmt.war       work/
+${DEPLOY_DIR}/engine/     bin/  conf/  logs/  temp/  webapps/engine.war     work/
+${DEPLOY_DIR}/etl/        bin/  conf/  logs/  temp/  webapps/etl.war        work/
+${DEPLOY_DIR}/retrieval/  bin/  conf/  logs/  temp/  webapps/retrieval.war  work/
 ```
 
-1. Create the folders shown for each instance, and copy `conf/` from the
-   Tomcat installation into each of them.
-2. In each instance's `conf/server.xml`, set the HTTP connector port to
-   the port of that web application in `appliances.xml`, give the
-   shutdown port a value unique on the host, and remove the AJP
-   connector.
-3. Copy each WAR from the release bundle ([Building](building.md#outputs))
-   into its instance's `webapps/` under its plain name (`mgmt.war`, and so on). Tomcat takes the context
-   path from the file name, and the URLs in `appliances.xml` expect
-   `/mgmt`, `/engine`, `/etl` and `/retrieval`.
-4. In the mgmt instance's `conf/context.xml`, define the configuration
-   database DataSource as a `<Resource>` element inside the `<Context>`
-   element ([Persistence](persistence.md)).
+Each instance has these parts:
+
+- `bin/setenv.sh` sets the environment of the instance ([Environment](#environment)); `catalina.sh`
+  reads it at start.
+- `conf/` is a copy of the configuration of the Tomcat installation. In `conf/server.xml`, the HTTP
+  connector port is the port of the web application in `appliances.xml`, the shutdown port is unique on the
+  host, and no AJP connector is active.
+- `webapps/` holds the WAR of the release bundle ([Building](building.md#outputs)) under its plain name
+  (`mgmt.war`, and so on). Tomcat takes the context path from the file name, and the URLs in
+  `appliances.xml` expect `/mgmt`, `/engine`, `/etl` and `/retrieval`.
+- In the mgmt instance, `conf/context.xml` defines the configuration database DataSource as a
+  `<Resource>` element inside the `<Context>` element ([Persistence](persistence.md)).
 
 The examples in this book use these ports:
 
@@ -189,16 +189,25 @@ and the PVAccess service does not limit its concurrent calls.
 
 ### Starting and stopping
 
-Each instance runs in the foreground with `catalina.sh run`:
+Each instance runs in the background. Start the instances in the order `mgmt`, `engine`, `etl`, `retrieval`;
+they do not wait for each other:
 
 ```bash
-CATALINA_HOME=${TOMCAT_HOME} CATALINA_BASE=${DEPLOY_DIR}/mgmt ${TOMCAT_HOME}/bin/catalina.sh run
+for c in mgmt engine etl retrieval; do
+    CATALINA_BASE=${DEPLOY_DIR}/${c} ${CATALINA_HOME}/bin/catalina.sh start
+done
 ```
 
-Start `mgmt` first, then `engine`, `etl` and `retrieval`, each as its own
-process. Stop them in the order `engine`, `retrieval`, `etl`, `mgmt`,
-which the launcher of epicsarchiverap-env (`archappl.bash`) uses. The
-stop order is not the reverse of the start order.
+Stop them in the order `engine`, `retrieval`, `etl`, `mgmt`, which the launcher of epicsarchiverap-env
+(`archappl.bash`) uses. The stop order is not the reverse of the start order. The engine writes its buffered
+samples when it stops, so each stop waits up to 60 seconds for its instance to end; the wait needs the
+`CATALINA_PID` that `bin/setenv.sh` sets:
+
+```bash
+for c in engine retrieval etl mgmt; do
+    CATALINA_BASE=${DEPLOY_DIR}/${c} ${CATALINA_HOME}/bin/catalina.sh stop 60
+done
+```
 
 Until all four have started, the pages under `/mgmt/ui/` answer with
 HTTP 503 and the calls of the business process layer (BPL) answer with

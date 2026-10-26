@@ -5,7 +5,7 @@
 This page describes the parts of the appliance and how data moves
 through them.
 
-**Out of scope:** how to install the parts ([Installing](installing.md))
+**Out of scope:** how to install the parts ([Install the appliance from the release bundle](install-bundle.md))
 and how to configure them ([Configuration](configuration.md)).
 
 ## Four web applications

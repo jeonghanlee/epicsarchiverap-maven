@@ -7,7 +7,7 @@ this repository, and building them for a site.
 
 **Out of scope:** running the test sets in depth
 ([Developer guide](developer.md)) and deploying the build
-([Installing](installing.md)).
+([Install the appliance from the release bundle](install-bundle.md)).
 
 ## Requirements
 

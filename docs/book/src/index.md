@@ -46,7 +46,8 @@ the mgmt web application (see [Scripting](scripting.md)).
 | --- | --- |
 | [Architecture](architecture.md) | how the four web applications, the storage stages and the policies fit together |
 | [Building](building.md) | building the WARs and the release bundle |
-| [Installing](installing.md) | deploying the appliance |
+| [Install the appliance from the release bundle](install-bundle.md) | installing the release bundle on one host |
+| [Installation layout and settings](installing.md) | the layout, ports, environment and valves of an installation |
 | [Configuration](configuration.md) | environment variables, properties, policies and stores |
 | [Persistence](persistence.md) | the configuration database |
 | [Operating](operating.md) | the web interface, PV lifecycle, reports and backup |

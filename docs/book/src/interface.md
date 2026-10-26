@@ -15,7 +15,7 @@ carries a content security policy, and the charts are drawn with D3.
 The addresses of the pages are relative to the base address of the
 management web application, for example
 `http://archiver.example.org:17665/mgmt/ui/index.html`
-([Installing](installing.md)). The data viewer is served by the retrieval
+([Installation layout and settings](installing.md)). The data viewer is served by the retrieval
 web application, at `http://archiver.example.org:17668/retrieval/ui/viewer/archViewer.html`.
 
 | Page | Address | For | Content |

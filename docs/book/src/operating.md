@@ -260,7 +260,7 @@ loaded at startup from a properties file named by the
   `archappl.sqlite` in that example, with `archappl.sqlite-wal` and
   `archappl.sqlite-shm` when they exist.
 - **The configuration files** are `appliances.xml`
-  ([Installing](installing.md#appliancesxml)), `policies.py` and
+  ([Installation layout and settings](installing.md#appliancesxml)), `policies.py` and
   `archappl.properties` ([Configuration](configuration.md)). Copy them
   with the other backups.
 - **The stores** hold the samples as ordinary files, one per PV and
@@ -273,7 +273,7 @@ loaded at startup from a properties file named by the
 ## Recovering a lost appliance
 
 Install a new host with the same identity in `appliances.xml`
-([Installing](installing.md#appliancesxml)) and restore the configuration
+([Installation layout and settings](installing.md#appliancesxml)) and restore the configuration
 files. Restore the configuration database from its backup: for MariaDB,
 load the dump into the empty database that [Setting up
 MariaDB](persistence.md#setting-up-mariadb) creates:

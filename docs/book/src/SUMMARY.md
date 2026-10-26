@@ -4,7 +4,8 @@
 
 - [Architecture](architecture.md)
 - [Building](building.md)
-- [Installing](installing.md)
+- [Install the appliance from the release bundle](install-bundle.md)
+- [Installation layout and settings](installing.md)
 - [Configuration](configuration.md)
 - [Persistence](persistence.md)
 - [Operating](operating.md)

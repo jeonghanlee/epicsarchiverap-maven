@@ -57,7 +57,7 @@ The engine also reads the EPICS Channel Access (CA) client variables `EPICS_CA_A
 
 | File | Content | Found through |
 | --- | --- | --- |
-| `appliances.xml` | the appliance identity and URLs ([Installing](installing.md#appliancesxml)) | `ARCHAPPL_APPLIANCES`, else the WAR |
+| `appliances.xml` | the appliance identity and URLs ([Installation layout and settings](installing.md#appliancesxml)) | `ARCHAPPL_APPLIANCES`, else the WAR |
 | `policies.py` | the archiving policies ([Policies](#policies)) | `ARCHAPPL_POLICIES`, else the WAR |
 | `archappl.properties` | the tuning keys ([below](#archapplproperties)) | `ARCHAPPL_PROPERTIES_FILENAME`, else the WAR |
 
@@ -163,7 +163,7 @@ stands for both when they are equal. Each key starts with
     the process but not a reboot or power-off of the host. After a stop
     that hangs or writes the lines below, restart the etl process (each
     instance is its own process, see
-    [Installing](installing.md#starting-and-stopping)) and not the host. After the restart the PVs register again and the start-up
+    [Installation layout and settings](installing.md#starting-and-stopping)) and not the host. After the restart the PVs register again and the start-up
     pass moves the partitions that hold and gather allow.
   - A pause or delete that is already waiting for a consolidation when the
     first wait of the shutdown has ended (at once with `0`) waits at most
