@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: the release cycle 2026-10 (D62, D63) continues with M97 (Release 2026-10, Plan Status accepted and implementation authorized on 2026-10-26), which is In progress; M98, the installation from the release bundle, is Complete (book commit 124a5320). Release Verification 1, the `pom.xml` pre-check, passed on 2026-10-26 (the version reads 2025-6); the next step is the commit of that record, then the version change. The two test guests of M98 wait for a finished notice to the session that manages the VM host, which owns their removal; the soft IOC on this host and the verification clone `/data/gitsrc/aa-verify-8fd51b9f` of M98 are still in place. Outstanding from M85: the install and run check of the current commit by the epicsarchiverap-env session belongs in M85's Closure Evidence. Every other open row is in the Backlog.
+Next session entry point: the release cycle 2026-10 (D62, D63) continues with M97 (Release 2026-10, Plan Status accepted and implementation authorized on 2026-10-26), which is In progress; M98, the installation from the release bundle, is Complete (book commit 124a5320). Release Verification 1 to 4 passed on 2026-10-26 (pre-check, version 2026-10, the default suite and the whole integration set on a clone of the version commit 48825143); the pre-check record f89d07bf and the version commit 48825143 are local and not pushed; the next step is the commit of these results, which is the candidate commit, then its push. The two test guests of M98 wait for a finished notice to the session that manages the VM host, which owns their removal; the soft IOC on this host and the verification clone `/data/gitsrc/aa-verify-8fd51b9f` of M98 are still in place. Outstanding from M85: the install and run check of the current commit by the epicsarchiverap-env session belongs in M85's Closure Evidence. Every other open row is in the Backlog.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). M65 (the information cards of every page, and the Operations page composed again for a reader new to the appliance) is Complete on 2026-10-18 at 14f083e9 with both workflows green. The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -7883,7 +7883,7 @@ See Release Verification Results below.
 
 | Source Check | Re-run Trigger | Shared Surface | Release Verification Label | Expected Result | Result Evidence |
 | --- | --- | --- | --- | --- | --- |
-| M85 / T10 | The version change and any source change after the tested tree | The whole integration set against the four built WARs | Release Verification 4 | The whole integration set passes on the version commit | Pending |
+| M85 / T10 | The version change and any source change after the tested tree | The whole integration set against the four built WARs | Release Verification 4 | The whole integration set passes on the version commit | Pass: Release Verification 4 |
 | M98 / T1 | The version change and the release bundle built from the tag | The installation procedure page on a clean Debian 13 guest | Release Verification 7 | The procedure runs as written | Pending |
 | M98 / T2 | The version change and the release bundle built from the tag | The installation procedure page on a clean Rocky 8.10 guest | Release Verification 8 | The procedure runs as written | Pending |
 
@@ -7904,8 +7904,8 @@ See Release Verification Results below.
 
 | Step | Action | Authorization | Expected Result | Evidence |
 | --- | --- | --- | --- | --- |
-| 1 | Commit the pre-change evidence (Release Verification 1) | Commit delegation | One commit that records the pre-change result in this register | Pending |
-| 2 | Commit the version change of `pom.xml` | Commit delegation | One commit that changes only `pom.xml` | Pending |
+| 1 | Commit the pre-change evidence (Release Verification 1) | Commit delegation | One commit that records the pre-change result in this register | f89d07bf, local, not pushed |
+| 2 | Commit the version change of `pom.xml` | Commit delegation | One commit that changes only `pom.xml` | 48825143, local, not pushed |
 | 3 | Commit the readiness evidence | Commit delegation | The candidate commit | Pending |
 | 4 | Push `master` | Push delegation | `origin/master` equals the candidate commit | Pending |
 | 5 | Create the annotated tag `2026-10` on the candidate commit | Run by the owner | The tag object resolves to the candidate commit | Pending |
@@ -7932,9 +7932,9 @@ See Release Verification Results below.
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | Release Verification 1 | 2026-10-26 00:29 PDT | Local checkout of `master` at d7a5cf95 | Pass | `git grep -n "<version>2025-6</version>" -- pom.xml` printed `pom.xml:10:  <version>2025-6</version>`, and `git grep -n 2025-6` outside this register and `work/` found no other line |
-| Release Verification 2 | Not run | Local checkout | Pending | none |
-| Release Verification 3 | Not run | Fresh clone of the version commit | Pending | none |
-| Release Verification 4 | Not run | Fresh clone of the version commit | Pending | none |
+| Release Verification 2 | 2026-10-26 00:36 PDT | Fresh clone of the version commit 48825143 made from the local repository | Pass | `./mvnw -o -q help:evaluate -Dexpression=project.version -DforceStdout` printed `2026-10`; `work/release-2026-10-01/README.txt` |
+| Release Verification 3 | 2026-10-26 00:37 to 00:48 PDT | Fresh clone of the version commit 48825143 made from the local repository, JDK 21.0.12.1 | Pass | `./mvnw -o -B -ntp clean verify`: 1145 tests, 0 failures, 0 errors, 0 skipped, BUILD SUCCESS in 11:32 min; `bash scripts/ui-static-checks.bash`: 431 passed, 0 failed; logs in `work/release-2026-10-01/` |
+| Release Verification 4 | 2026-10-26 00:49 to 04:08 PDT | Fresh clone of the version commit 48825143 made from the local repository, JDK 21.0.12.1, Tomcat 9.0.121, `softIocPVX` of EPICS 7.0.10, no other appliance or IOC on the host, on the WARs of the Release Verification 3 build | Pass | `MAVEN_OPTS=-Xmx1g ./mvnw -o -B -ntp test -P integration -DargLine=-Xmx2g -DforkCount=1 -DreuseForks=true`: 152 tests, 0 failures, 0 errors, 0 skipped, BUILD SUCCESS in 3:19 h; log in `work/release-2026-10-01/` |
 | Release Verification 5 | Not run | GitHub Actions | Pending | none |
 | Release Verification 6 | Not run | Local checkout | Pending | none |
 | Release Verification 7 | Not run | Clean Debian 13 guest | Pending | none |
