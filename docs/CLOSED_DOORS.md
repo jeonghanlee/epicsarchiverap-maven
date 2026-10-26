@@ -3,7 +3,8 @@
 Examined coherence candidates the owner decided to leave unchanged. Each row is
 a door opened, checked, and marked closed, so a later sweep does not repeat the
 investigation. These are decided-Keep verdicts, not tracked work items. Open
-findings live in the milestone register, not here.
+findings live in the milestone register, not here. A row named M6, M51 or M96 in this
+file is a row of `docs/milestone-daff1b7.md` at commit bfb0dc71.
 
 Columns: the candidate, the verdict, the premise that makes the divergence
 principled, evidence to recheck it, the decision date, and the commit whose

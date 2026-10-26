@@ -2,7 +2,7 @@
 
 Date: 2026-10-20
 Status: draft 3, review closed (two rounds and two paired debates on 2026-09-27; the round-2 findings F024 to F037 are applied in this draft); implemented, the register row M25 is Complete (steps landed and verified on 2026-09-28)
-Register: `docs/milestone-daff1b7.md` M25 (issue #11), extended to this design
+Register: `docs/milestone-daff1b7.md` at commit bfb0dc71 (the previous document): M25 (issue #11), extended to this design; the register rows M13, M25, M28 and the gate G4 named in this note are rows of that document
 
 ## Scope
 

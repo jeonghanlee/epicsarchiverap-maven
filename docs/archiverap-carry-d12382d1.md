@@ -2,7 +2,7 @@
 
 ## Scope
 
-Evidence for M6 in `milestone-daff1b7.md`: classify the complete upstream range and score each surviving merge unit for selective adoption into the Maven fork. The canonical milestone owns the implementation plan and status.
+Evidence for M6 in `milestone-daff1b7.md` at commit bfb0dc71 (the previous document; M6, D1, D13 and D27 named in this note are its row and decisions): classify the complete upstream range and score each surviving merge unit for selective adoption into the Maven fork. The canonical milestone owns the implementation plan and status.
 
 **Out of scope:** applying patches, adopting a new build system or servlet platform, and running the full test suite. Owner-confirmed selection is recorded below; implementation remains outside this evidence document.
 
