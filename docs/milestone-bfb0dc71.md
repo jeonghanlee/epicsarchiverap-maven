@@ -794,7 +794,7 @@ GitHub Milestone: none
 Observed State: OPEN (2026-10-24 19:57 UTC)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 58` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
+Last Compared: 2026-10-26 12:23 PDT; `gh issue edit 58` replaced the body (the Acceptance Criteria no longer name the register), read back OPEN
 
 #### M10 - Decide the stamping and filtering rule of summary bins at the window edges
 
