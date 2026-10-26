@@ -74,7 +74,7 @@ Backlog rows are unassigned, use the same schema, and are excluded from the rele
 
 Origin: bfb0dc71 / M1
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #63 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/63)
 Status: Not started
 
 ##### Summary
@@ -135,19 +135,19 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: State-changing sample scripts lack a timeout and outcome contract
+Labels: enhancement
 GitHub Milestone: none
-Observed State: none
-Observed Labels: none
+Observed State: OPEN
+Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: not created
+Last Compared: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### M2 - Mail delivery for the alert checks
 
 Origin: bfb0dc71 / M2
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #64 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/64)
 Status: Not started
 
 ##### Summary
@@ -198,19 +198,19 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: Mail delivery for the alert checks
+Labels: enhancement
 GitHub Milestone: none
-Observed State: none
-Observed Labels: none
+Observed State: OPEN
+Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: not created
+Last Compared: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### M3 - Verify the proxy to an external Archiver Appliance
 
 Origin: bfb0dc71 / M3
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #65 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/65)
 Status: Not started
 
 ##### Summary
@@ -263,19 +263,19 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: The proxy to an external Archiver Appliance is not tested
+Labels: enhancement
 GitHub Milestone: none
-Observed State: none
-Observed Labels: none
+Observed State: OPEN
+Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: not created
+Last Compared: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### M4 - Appliance status as PVA PVs
 
 Origin: bfb0dc71 / M4
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #66 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/66)
 Status: Not started
 
 ##### Summary
@@ -332,13 +332,13 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: Appliance status measures are not archived PVs
+Labels: enhancement
 GitHub Milestone: none
-Observed State: none
-Observed Labels: none
+Observed State: OPEN
+Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: not created
+Last Compared: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### M5 - Analyzer phase A: page, header and address
 
@@ -609,7 +609,7 @@ Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the C
 
 Origin: bfb0dc71 / M8
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #67 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/67)
 Status: Blocked
 
 ##### Summary
@@ -668,13 +668,13 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: Integrated 24-hour ETL, journal and sample-buffer verification
+Labels: enhancement
 GitHub Milestone: none
-Observed State: none
-Observed Labels: none
+Observed State: OPEN
+Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: not created
+Last Compared: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### M9 - PVA PVs keep the unit, precision, limits and host in their configuration
 
