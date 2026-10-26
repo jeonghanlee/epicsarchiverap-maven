@@ -105,10 +105,13 @@ docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs/book:/book" aa-mdbook b
 
 ## Continuous Integration
 
-`.github/workflows/maven.yml` runs on JDK 21 for every push and pull request.
-It first runs `bash scripts/ui-static-checks.bash` and then
-`./mvnw -B -ntp clean verify`. A push or pull request that changes only
-`docs/milestone-*.md` or `docs/CLOSED_DOORS.md` does not start it.
+`.github/workflows/maven.yml` runs on JDK 21 for every push and pull request,
+in three environments: Ubuntu 24.04, and Debian 13 and Rocky Linux 8.10 in
+containers whose JDK 21 and build tools come from the packages of the
+distribution. Each environment first runs `bash scripts/ui-static-checks.bash`
+and then `./mvnw -B -ntp clean verify`. The CI does not run the integration
+tests. A push or pull request that changes only `docs/milestone-*.md` or
+`docs/CLOSED_DOORS.md` does not start it.
 
 `.github/workflows/pages.yml` builds and deploys the mdBook for pushes to the
 `master` branch that change `docs/book` or the workflow, and on manual

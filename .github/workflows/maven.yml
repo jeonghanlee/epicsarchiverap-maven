@@ -56,3 +56,56 @@ jobs:
           path: target/surefire-reports/
           if-no-files-found: warn
           retention-days: 14
+
+  # The production targets of the appliance. Each job installs JDK 21 and the build tools from the packages of its
+  # distribution in a container, then runs the same checks as the job above. The integration tests are not part of it.
+  verify-distribution:
+    name: Build and test on ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Debian 13
+            image: debian:13
+            report: debian-13
+            install: |
+              apt-get update
+              apt-get install -y --no-install-recommends ca-certificates curl git gzip tar python3 openjdk-21-jdk-headless
+          - name: Rocky Linux 8.10
+            image: rockylinux/rockylinux:8.10
+            report: rocky-8.10
+            install: |
+              dnf install -y git gzip tar python3 java-21-openjdk-devel
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - name: Install JDK 21 and the build tools
+        run: ${{ matrix.install }}
+
+      - name: Check out source and release history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Show the Java version
+        run: |
+          java -version
+          javac -version
+
+      - name: Check the interface files
+        run: bash scripts/ui-static-checks.bash
+
+      - name: Build, test, and check dependencies
+        run: ./mvnw -B -ntp clean verify
+
+      - name: Preserve test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-reports-${{ matrix.report }}
+          path: target/surefire-reports/
+          if-no-files-found: warn
+          retention-days: 14
