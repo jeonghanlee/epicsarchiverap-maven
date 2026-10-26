@@ -98,12 +98,11 @@ jobs:
       - name: Check the interface files
         run: bash scripts/ui-static-checks.bash
 
+      - name: Trust the checkout for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Show the release history access
-        run: |
-          id
-          ls -ld .
-          git log --oneline remotes/origin/master | head -n 3
-        continue-on-error: true
+        run: git log --oneline remotes/origin/master | head -n 3
 
       - name: Build, test, and check dependencies
         run: ./mvnw -B -ntp clean verify
