@@ -98,6 +98,13 @@ jobs:
       - name: Check the interface files
         run: bash scripts/ui-static-checks.bash
 
+      - name: Show the release history access
+        run: |
+          id
+          ls -ld .
+          git log --oneline remotes/origin/master | head -n 3
+        continue-on-error: true
+
       - name: Build, test, and check dependencies
         run: ./mvnw -B -ntp clean verify
 
