@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row once enabled, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per D2 and D3)
 
-Next session entry point: the release cycle 2026-10 (D62, D63) continues with M97 (Release 2026-10, Plan Status draft), which is Ready now that M98, the installation from the release bundle, is Complete (book commit 124a5320). The owner reviews and accepts the Implementation Plan of M97 and gives implementation authority separately; its first check is Release Verification 1, the `pom.xml` pre-check (the version still reads 2025-6). The two test guests of M98 wait for a finished notice to the session that manages the VM host, which owns their removal; the soft IOC on this host and the verification clone `/data/gitsrc/aa-verify-8fd51b9f` of M98 are still in place. Outstanding from M85: the install and run check of the current commit by the epicsarchiverap-env session belongs in M85's Closure Evidence. Every other open row is in the Backlog.
+Next session entry point: the release cycle 2026-10 (D62, D63) continues with M97 (Release 2026-10, Plan Status accepted and implementation authorized on 2026-10-26), which is In progress; M98, the installation from the release bundle, is Complete (book commit 124a5320). Release Verification 1, the `pom.xml` pre-check, passed on 2026-10-26 (the version reads 2025-6); the next step is the commit of that record, then the version change. The two test guests of M98 wait for a finished notice to the session that manages the VM host, which owns their removal; the soft IOC on this host and the verification clone `/data/gitsrc/aa-verify-8fd51b9f` of M98 are still in place. Outstanding from M85: the install and run check of the current commit by the epicsarchiverap-env session belongs in M85's Closure Evidence. Every other open row is in the Backlog.
 
 Other console work: Choose the next console work in `docs/milestone-daff1b7.md`. M56 and M57 are complete (M57 landed at 8ad888b4); issue #38 stays open for M60, which is Ready (the name check on the network). The chart and analyzer work is split in five on 2026-10-14 from the Browse PVs mockup the owner approved: M59 (the chart component and its simple form; complete, verified at ac322254 on 2026-10-15), then M58 (the Browse PVs page; in progress since the owner accepted its plan and authorized its implementation on 2026-10-15), M62 (the analyzer page, drawing options and address), M63 (analysis of numeric signals) and M64 (waveform and image analysis); their plans are drafts that wait for acceptance and implementation authorization, and M61 follows (issue #39). M65 (the information cards of every page, and the Operations page composed again for a reader new to the appliance) is Complete on 2026-10-18 at 14f083e9 with both workflows green. The body of #38 still has to be refreshed for M57. M46, G6, G7 and M48 are complete; issue #31 is closed. M72 (one chart widget with its controls) is complete on 2026-10-17 at 0ccc2ba3; the Maven and Pages workflows passed. M73 (the archiver on a changing record, issue #44) ran its five checks on a fresh appliance on 2026-10-17; three deviations wait to be filed as issues and the owner is asked to confirm the two names changed in T1.
 
@@ -113,7 +113,7 @@ This register covers the minimal modernization of the existing Java appliance on
 | D64 | The installation procedure of M98 starts and stops the four instances with `catalina.sh start` and `catalina.sh stop` in a loop, in the documented order. The development launcher `scripts/run-local-appliance.bash` stays a development tool: it is not changed, not shipped in the release bundle, and raising it to a production installation is not planned. | 2026-10-25 |
 | D65 | The verification run of M98 uses SQLite as the configuration database. On both operating systems it uses the Apache Tomcat 9 archive with its sha512 checked, and JDK 21 from the operating system's packages; the package name on each system is found in the first step of M98. | 2026-10-25 |
 | Release | M98 | Verified installation from the release bundle | Milestone | Complete | No | D63, D64, D65 | The book holds an installation procedure from the release bundle that ran as written on a clean Debian 13 guest and a clean Rocky 8.10 guest without epicsarchiverap-env, landed as 124a5320 (2026-10-26); [detail](#m98---verified-installation-from-the-release-bundle) |
-| Release | M97 | Release 2026-10 (Redemption) | Milestone | Not started | Yes | M98, D62, D63 | The version change, the candidate proof, the tag `2026-10` and the post-release install checks pass with their Release Verification results; [detail](#m97---release-2026-10-redemption) |
+| Release | M97 | Release 2026-10 (Redemption) | Milestone | In progress | No | M98, D62, D63 | The version change, the candidate proof, the tag `2026-10` and the post-release install checks pass with their Release Verification results; [detail](#m97---release-2026-10-redemption) |
 
 ### Decisions
 
@@ -7830,7 +7830,7 @@ Superseded Plan Artifacts: none
 Origin: daff1b7 / M97
 Identity History: none
 GitHub Issue: none
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -7856,9 +7856,9 @@ Out of scope: any row of the Backlog, a GitHub release object, a change of the o
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-26: the owner accepted the plan
+Implementation Authorization: 2026-10-26: the owner authorized the implementation of the plan; each commit, push and tag action of Release Execution still needs its own delegation, and the tag is created by the owner
 Superseded Plan Artifacts: none
 
 1. Run the pre-change check, record it, and commit the record.
@@ -7931,7 +7931,7 @@ See Release Verification Results below.
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| Release Verification 1 | Not run | Local checkout | Pending | none |
+| Release Verification 1 | 2026-10-26 00:29 PDT | Local checkout of `master` at d7a5cf95 | Pass | `git grep -n "<version>2025-6</version>" -- pom.xml` printed `pom.xml:10:  <version>2025-6</version>`, and `git grep -n 2025-6` outside this register and `work/` found no other line |
 | Release Verification 2 | Not run | Local checkout | Pending | none |
 | Release Verification 3 | Not run | Fresh clone of the version commit | Pending | none |
 | Release Verification 4 | Not run | Fresh clone of the version commit | Pending | none |
