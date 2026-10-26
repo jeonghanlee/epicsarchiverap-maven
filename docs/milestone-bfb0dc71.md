@@ -433,7 +433,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN
 
 #### M6 - Analyzer phase C: tools for one signal
 
@@ -517,7 +517,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN
 
 #### M7 - Analyzer phase E: waveform and image analysis
 
@@ -603,7 +603,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-12; `gh issue view 39` shows the drafted body, open, assignee jeonghanlee
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN
 
 #### M8 - Integrated 24-hour ETL, journal and sample-buffer verification
 
@@ -739,7 +739,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-15; `gh issue view 41` shows the drafted body, open, assignee jeonghanlee
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 41` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
 
 #### M10 - Archiving continues across a change of the record
 
@@ -808,7 +808,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: enhancement
 Observed Assignee: jeonghanlee
-Last Compared: 2026-10-17; filed from the body above with `gh issue create`
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 48` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
 
 #### M11 - Analyzer phase B: interaction, options and export
 
@@ -888,7 +888,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-19 11:57 PDT; `gh issue view 39` shows the body with the Browse PVs parts ticked, OPEN; a box per phase is added to its body when the phase plans are accepted (D5).
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN; a box per phase is added to its body when the phase plans are accepted (D5).
 
 #### M12 - Analyzer phase D: tools for two and several signals
 
@@ -971,7 +971,7 @@ GitHub Milestone: none
 Observed State: OPEN
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-19 11:57 PDT; `gh issue view 39` shows the body with the Browse PVs parts ticked, OPEN; a box per phase is added to its body when the phase plans are accepted (D5).
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN; a box per phase is added to its body when the phase plans are accepted (D5).
 
 #### M13 - Delete the moved partition of a zip store that is an ETL source
 
@@ -1041,7 +1041,7 @@ Last Compared: 2026-10-19 17:50 PDT; `gh issue list` read #52 OPEN with label bu
 
 Origin: bfb0dc71 / M14
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #62 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/62)
 Status: Not started
 
 ##### Summary
@@ -1096,13 +1096,13 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: Bound the concurrent calls of the PVAccess retrieval service
+Labels: enhancement
 GitHub Milestone: none
-Observed State: none, no issue yet
-Observed Labels: none
+Observed State: OPEN
+Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: none
+Last Compared: 2026-10-26 11:02 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### M15 - Verify signal storage and important-signal delivery under client overload
 
@@ -1247,7 +1247,7 @@ GitHub Milestone: none
 Observed State: OPEN (2026-10-24 19:57 UTC)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-24 19:57 UTC
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 58` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
 
 #### M17 - Decide the stamping and filtering rule of summary bins at the window edges
 
@@ -1312,7 +1312,7 @@ GitHub Milestone: none
 Observed State: OPEN (2026-10-24 19:57 UTC)
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-24 19:57 UTC
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 59` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
 
 #### M18 - Let a type change to a string or a waveform type succeed
 
@@ -1378,7 +1378,7 @@ GitHub Milestone: none
 Observed State: OPEN (2026-10-24)
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-24
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 45` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
 
 #### M19 - Carry the changed limits of a record into the type information at reconnect
 
@@ -1442,7 +1442,7 @@ GitHub Milestone: none
 Observed State: OPEN (2026-10-24)
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-24
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 47` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
 
 #### M20 - Check the retrieval operators outside the declared-size check
 
@@ -1511,7 +1511,7 @@ GitHub Milestone: none
 Observed State: OPEN (2026-10-24)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-24
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 60` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
 
 #### G1 - Ansible tools ready for the integrated 24-hour campaign
 
