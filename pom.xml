@@ -7,7 +7,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.epics.archiverappliance</groupId>
   <artifactId>archappl</artifactId>
-  <version>2025-6</version>
+  <version>2026-10</version>
   <packaging>jar</packaging>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
