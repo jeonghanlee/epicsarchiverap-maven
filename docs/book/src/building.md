@@ -38,7 +38,7 @@ this repository, and building them for a site.
   the interface files, and then `./mvnw -B -ntp clean verify`. It does so on
   Ubuntu 24.04, Debian 13 and Rocky Linux 8.10, and it does not run the
   integration tests. It runs on every push except one that changes only
-  `docs/milestone-*.md` and `docs/CLOSED_DOORS.md`.
+  `README.md`, `docs/milestone-*.md` and `docs/CLOSED_DOORS.md`.
 
 ## Outputs
 
