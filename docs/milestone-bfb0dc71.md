@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: open the next release cycle from this document with the `release-cycle` procedure: choose the release name, assign the Backlog rows that belong to it to the Milestone section and add its final release milestone. The Ready rows are M1, M6, M7, M8, M9, M11, M12, M13, M14, M16, M17, M18; M20 waits for G1. Nothing is outstanding from release 2026-10: its install and run check is accepted by D11.
+Next session entry point: phase 4 (cycle planning) of the `release-cycle` procedure for release Ahsoka in this file, on the branch ahsoka: review the draft plans of M12, M14, M7 and M13 and the release sections of M21, record the owner's plan acceptance and the implementation authority row by row, then commit the cycle plan. The other Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18; M20 waits for G1.
 
 ## Milestone
 
@@ -18,6 +18,11 @@ This register covers the work that remains after release 2026-10 of the Maven ap
 
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | Not started | Yes | D6, D12 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
+| Appliance defects | M14 | Carry the changed limits of a record into the type information at reconnect | Milestone | Not started | Yes | D9, D12 | After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` holds the new limits within one reconnect and the Details window shows them, the unit and the precision keep being updated, and the suite passes with a test that reconnects a PV with changed limits; issue #47; [detail](#m14---carry-the-changed-limits-of-a-record-into-the-type-information-at-reconnect) |
+| Interface console | M7 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes | D12 | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of an equivalent record does; [detail](#m7---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
+| Appliance defects | M13 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D9, D12 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m13---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
+| Release Ahsoka | M21 | Release Ahsoka | Milestone | Not started | No | M12, M14, M7, M13, D12 | Release Ahsoka is built, tagged and installed from its bundle with every Release Verification of the detail Pass and the issues of M12, M14, M7 and M13 closed; [detail](#m21---release-ahsoka) |
 
 ### Decisions
 
@@ -34,6 +39,7 @@ This register covers the work that remains after release 2026-10 of the Maven ap
 | D9 | Release scope of the Maven appliance: the protection of retrieval against memory exhaustion (M85 (previous document, commit bfb0dc71), issue #54) and the date correction of its summary test (M89 (previous document, commit bfb0dc71), issue #56) close before the release; every other open row and issue is worked after the release at its own pace. Open at this decision: M9 / #58, M10 / #59, M11 / #60, M19 / #55, M12 / #52, M15 / #48, M7 / #41, the analyzer rows M1, M3, M5, M2 and M4 / #39, the rows M16, M17, M18 and M6 without an issue, M20 blocked by G1, and the two deviations of M73 (previous document, commit bfb0dc71) that had no row, #45 and #47, which enter the Backlog as M13 and M14. The release cycle regroups these rows when it opens. | 2026-10-24 |
 | D10 | The five candidates that the audit of the retrieval protection and the sweep of 2026-10-24 left unchecked (`FirstSamplePP`, `DeadBand`, `Fliers` and `IgnoreFliers` outside the declared-size check and the in-loop check; the values `Median`, `Kurtosis` and `Skewness` keep per bin against the 112 bytes per bin that the declared size counts; the number of `pv` parameters of `getDataForPVs`, of the names posted to `getDataAtTime` and `getDataAtTimeForAppliance`, and of the `;` separated names of the PVAccess call) are not checked before the merge to master. They enter the Backlog as M11 / issue #60 as long-term work, each to be run as a real request at a 512 MiB heap; `Nth` and `NCount` are bounded by `MAX_COUNT` and are recorded in `docs/CLOSED_DOORS.md` as CD-18; the fill operators of the audit's `Event per bin` row were checked and corrected by a27f260a, and the PVAccess name list is the one candidate that the audit did not name. The owner decided on 2026-10-24 to settle the fate of each candidate after its check. | 2026-10-24 |
 | D11 | The install and run check of release 2026-10 is accepted on the day run of the appliance built from tag `2026-10` (commit e0a8e66e) by the installer of jeonghanlee/epicsarchiverap-env: 903 PVs archived for 24 hours (registration 2026-10-26T17:02Z, collector cycles 2026-10-26T17:32Z to 2026-10-27T17:02Z, 142 cycles with no error cycle), with the service, the archived and connected counts, the sample completeness, the dropped and stale counts, the move from the short-term to the medium-term store, a retrieval over the whole day of 16 PVs (16 of 16 complete, 2,351.6 MiB in total) and the health service all passing their checks; memory and disk are recorded as observed values only (appliance JVM 2613 MiB at the first cycle, 3007 MiB at the peak, 2639 MiB at the last; disk use unchanged at 42 percent). The statistics and the method are the record `docs/reports/soak-903pv-20261026.md` of jeonghanlee/epicsarchiverap-env at commit 587df6e0aa7163f6f28ba5f810d737212818cc36 (branch `release-2.0.1`); the raw measurements are not kept. Not shown by this run: the retrieval memory protection acting (no retrieval was refused or cut), the move from the medium-term to the long-term store and its reduction, and the first 30 minutes after registration, which were checked by hand only. This closes release 2026-10; the next release cycle opens from this document. | 2026-10-27 |
+| D12 | Release scope of release Ahsoka: the rows M12, M14, M7 and M13, which D9 left to work after the release, worked and released in this order on the branch ahsoka, which the owner opens from master and merges into master at the release; every other row stays in the Backlog. The release is named Ahsoka, its tag is named Ahsoka, and the project version is set to Ahsoka at the release. M12 comes first because it does not depend on the other three (whether M13 touches the same storage plugin is settled by the design step of M13), and M14 comes before M7 because both change what `MetaInfo` carries (M7 fills it for PV Access PVs, M14 updates it for Channel Access PVs at reconnect), so the two rows are worked in succession; M13 follows and also changes `PVTypeInfo`, so the comparison of M7 / T1 runs again on the combined branch (Release Verification 1); no dependency between the rows is recorded. | 2026-10-27 |
 
 ### ID Migration
 
@@ -62,9 +68,416 @@ Row numbers changed on 2026-10-26, before any work of this generation started, s
 | M15 | M19 | Grouped by topic | Deps of the work table, detail headings and links, Identity History, `docs/design-analyzer.md` |
 | M8 | M20 | Grouped by topic | Deps of the work table, detail headings and links, Identity History, `docs/design-analyzer.md` |
 
+### Assignment History
+
+Rows moved from the Backlog to the Milestone section of this document on 2026-10-27, with their details. Where the Test Plan environments of the four rows name a Tomcat patch version, it is 9.0.122, the version the repository pins; the Backlog text read 9.0.121.
+
+| Work Identity | From Canonical | To Canonical | Target Commit | Authority Moved At |
+| --- | --- | --- | --- | --- |
+| M12 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M14 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M7 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M13 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+
 ### Milestone Details
 
-No work is assigned yet.
+#### M12 - Delete the moved partition of a zip store that is an ETL source
+
+Origin: bfb0dc71 / M13
+Identity History: M13 to M12 on 2026-10-26
+GitHub Issue: #52 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/52)
+Status: Not started
+
+##### Summary
+
+A `pb` store with `compress=ZIP_PER_PV` that is the source of an ETL move keeps the partition it moved: `getETLStreams` keys each `ETLInfo` with `path.toAbsolutePath().toString()`, which for a path inside the zip file system is the entry's path without the `jar:` prefix; `markForDeletion` resolves that key on the local file system, finds nothing and ignores the `NoSuchFileException` by design, so the entry stays and the samples exist twice. `getETLStreamsForDeletion` keys its rows in the `jar:` form, so the explicit deletion works. Observed on 2026-10-19 with the shipped `ETLJob` over STS HOUR to a zip MTS HOUR with `pp=mean_60` to LTS YEAR: the LTS held the data and the archive still held both `.pb` and both `.mean_60` entries. A zip store is meant as the last store of a chain, where no move starts, so the shipped configurations do not reach this.
+
+##### Scope
+
+- `getETLStreams` keys the `ETLInfo` of a zip path in the `jar:` form through the same helper as `getETLStreamsForDeletion`, so `markForDeletion` deletes the moved entry and its post-processor entries (the `.mean_60` entry of a partition archived with `pp=mean_60`).
+- A test over two hops with a zip MTS is added; it fails on the code of today, which keeps the moved partition, and passes after the change.
+
+Out of scope: the uncompressed store, which an earlier check covered; where a zip store may sit in a chain (the book says the last store).
+
+##### Completion Criteria
+
+- After a move out of a zip store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, and the next store holds the data once.
+- The explicit deletion of a PV from a zip store keeps working.
+- The default suite passes.
+
+##### Dependencies And Decisions
+
+- D6 (Decision Date 2026-10-19): left to the Backlog for a later release; found by the check of M80 (previous document, commit bfb0dc71).
+- D12 (Decision Date 2026-10-27): carried by release Ahsoka as row 1 of 4, before M21.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. In `src/main/edu/stanford/slac/archiverappliance/PlainPB/PlainPBStoragePlugin.java`, `getETLStreams` takes the key of each `ETLInfo` from the private helper `deletionKey(Path)`, which `getETLStreamsForDeletion` already uses and which builds the `jar:` form for `ZIP_PER_PV`. Check: T1.
+2. The two-hop case with a zip MTS is added to `src/test/edu/stanford/slac/archiverappliance/PlainPB/PlainPBPostProcessorCleanupTest.java`, which already has the helpers `hop`, `item` and `mtsFileNames` and a zip test for the explicit deletion; the class comment, which says a zip store is not an ETL source, is updated. Check: T1.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit and suite | `PlainPBPostProcessorCleanupTest` with the two hops over a zip MTS; `./mvnw -B -ntp clean verify` | JDK 21, Tomcat 9.0.122 for the integration tests | After the second hop `mtsFileNames()` lists only the entries of the newer partition (the old behaviour keeps the entries of the older one) and the next store holds the data once; suite passes |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: A zip store as an ETL source keeps the partition it moved
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-27 17:00 PDT; `gh issue view 52` reads the title "A zip ETL source keeps the partition it moved", OPEN with label bug; the register title above is the projection source and the live title is not changed without Issue delegation.
+
+#### M14 - Carry the changed limits of a record into the type information at reconnect
+
+Origin: bfb0dc71 / M19
+Identity History: M19 to M14 on 2026-10-26
+GitHub Issue: #47 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/47)
+Status: Not started
+
+##### Summary
+
+When a PV reconnects, the engine reads the unit and the precision of its record again but keeps the display, warning, alarm and control limits that it stored at the archive request, so after the limits of a record change and the IOC restarts, `getPVTypeInfo` and the Details window of the Browse PVs page keep the old limits while the IOC reports the new ones. Observed on 2026-10-17 and 2026-10-18 on the soft IOC of `src/resources/test/st.cmd` (a follow-up of issue #44). `MetaInfo.updateTypeInfo` in `src/main/org/epics/archiverappliance/config/MetaInfo.java` compares and writes only the unit, the precision and the host name; the limits that `applyBasicInfo` reads from the control DBR on every connection are never carried into the stored type information after the first time. The method writes the unit and the precision together and only when the unit differs, and writes the host name only when the stored one is null; it does not compare the precision.
+
+##### Scope
+
+- `MetaInfo.updateTypeInfo` compares the display, warning, alarm and control limits of the connection with the stored type information and writes them when they differ, in the update that writes the unit, the precision and the host name (`MetaInfo.updateTypeInfo` has no rate limit of its own and runs from `applyBasicInfo`), with one INFO line naming the PV and the fields that changed, on the logger `config.org.epics.archiverappliance.config.MetaInfo`, which already logs the unit and the precision. A difference in any one limit sets the update on its own, so a limit that changes while the unit stays the same is saved. Two NaN limits count as equal (`Double.compare`), so a limit that the record does not set causes no write at each connect.
+- This row covers Channel Access PVs: `applyBasicInfo` is called from `EPICS_V3_PV` only.
+- A unit test of the comparison through `applyBasicInfo` (T1) and a manual check of the display limits after an IOC restart (T2).
+
+Out of scope: the pickup of a changed limit on a channel that stays connected, which the daily refresh of the metadata saves within a day once this change lands, because it runs the same `updateTypeInfo`; the limits of a PV Access PV after an IOC restart (M7 fills them once); the fields carried in the samples by the property subscription.
+
+##### Completion Criteria
+
+- After an IOC restart with changed `HOPR` and `LOPR`, `getPVTypeInfo` of the PV holds the new display limits within one reconnect; the Details window reads its display limits from the same type information, so the check is the `getPVTypeInfo` read. An EPICS record serves its warning and alarm limits only when the matching severity field (`HSV`, `LSV`, `HHSV`, `LLSV`) is set, and `SR:RF:CAV2:TEMP` sets none, so the warning and alarm limits are checked in the unit test of T1; the control limits of a `calc` record equal its `HOPR` and `LOPR` and are read in T2 with the display limits.
+- The unit and the precision keep being updated as before.
+- The display, warning, alarm and control limits all follow the connection, also when only one limit differs and the unit is unchanged (T1).
+- One INFO line names the PV and the fields that changed (T1).
+- A reconnect with unchanged limits, a limit that the record does not set (NaN) included, writes nothing (T1).
+- The suite passes, including a test that applies the connection information of a reconnect with changed limits through `applyBasicInfo`, which `EPICS_V3_PV` calls at every connect.
+
+##### Dependencies And Decisions
+
+- D9 (Decision Date 2026-10-24): worked after the release.
+- D12 (Decision Date 2026-10-27): carried by release Ahsoka as row 2 of 4, before M21.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. In `src/main/org/epics/archiverappliance/config/MetaInfo.java`, `updateTypeInfo` compares the display, warning, alarm and control limits with the stored `PVTypeInfo` (`Double.compare`), sets the update when any one differs, writes them with the unit and the precision, and logs the changed fields. Check: T1, T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit | `MetaInfo.applyBasicInfo`, the public method that calls `updateTypeInfo`, with a control-type `DBR` of the JCA library whose limits differ from the type information stored through `ConfigServiceForTests`; the test stores the type information first, sets every limit of the `DBR` (the JCA classes leave them null and `applyBasicInfo` reads all of them), reads the log line with the suite's `CapturedLog`, and uses no reflection and no stub of `MetaInfo` | JDK 21 | The limits are written, also when only one limit differs and the unit is unchanged, the unit and the precision as before, one log line names the fields; a second call with the same limits, NaN included, writes nothing |
+| T2 | Integration, manual with `ioc-runner` | Follow the section "Run the test IOC of the console checks" of `docs/book/src/developer.md`: archive `SR:RF:CAV2:TEMP` from the soft IOC of `src/resources/test/st.cmd` with the two macros unset, which gives the display limits 0; stop the IOC with `ioc-runner`, install it again with `-f install` after adding for example `CAV2_TEMP_HOPR=50` and `CAV2_TEMP_LOPR=10` to the installed configuration, start it, and read `getPVTypeInfo` of the PV after the reconnect | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | `upperDisplayLimit` and `upperCtrlLimit` 50, `lowerDisplayLimit` and `lowerCtrlLimit` 10 within one reconnect |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+| T2 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Display limits not read again at reconnect
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN (2026-10-24)
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 47` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN; on 2026-10-27 the live body of #47 still says "under the same rate limit as the unit and the precision", while the Scope above is the projection source; the first Acceptance Criterion of the live body names `HOPR`, `LOPR`, `HIGH` and `LOW`, which the Completion Criteria above narrow to the display limits at integration level
+
+#### M7 - PVA PVs keep the unit, precision, limits and host in their configuration
+
+Origin: bfb0dc71 / M9
+Identity History: M9 to M7 on 2026-10-26
+GitHub Issue: #41 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/41)
+Status: Not started
+
+##### Summary
+
+The appliance archives a PV through PV Access without its unit, precision, limits and host. On a local appliance with one `softIocPVX` serving the same records over both protocols, the `pva://` PV of a record that sets `EGU` to `mm` reports no `units` and no `hostName`, `precision` 0.0 and all display, warning and alarm limits 0.0 in `getPVTypeInfo`, where the Channel Access PV of an equivalent record reports `units` `mm`, the host, `precision` 3.0 and NaN for the warning and alarm limits that are not set. `EPICS_V3_PV.updateTotalMetaInfo` fills `MetaInfo` from a control request; `EPICS_V4_PV.updateTotalMetaInfo` has an empty body, and its host name is never assigned. The source provides the values (`pvxget` returns `display.units`, the display limits and the precision).
+
+##### Scope
+
+Fill `MetaInfo` of a PV Access PV from the `display`, `control` and `valueAlarm` members of its structure and set its host name when the channel connects, so that the configuration of a PV is the same for both protocols. `EPICS_V4_PV` assigns no host name today; the source of the host name is chosen in the first step of the Implementation Plan, and its exact form is not fixed by this change. An integration test (T1) compares the two protocols on two equivalent records, because one record under both protocols is one PV name: the archive call drops the `pva://` prefix.
+
+Out of scope: following a change of limits at the reconnect of a PV Access PV (M14 covers Channel Access PVs); how the consoles read a missing value (they already treat it as not provided); the `meta` of the retrieval response of a PV Access PV, which is not examined here.
+
+##### Completion Criteria
+
+- `getPVTypeInfo` of a `pva://` PV of a record that sets `EGU`, `PREC` and limits reports the same `units`, `precision` and limits as the Channel Access PV of an equivalent record, and the warning and alarm limits that the record does not set are NaN for both protocols.
+- `getPVDetails` of the PV Access PV shows the unit and the precision, and `hostName` is set and not empty; the host name need not equal that of the Channel Access PV, because the exact form of that name is not fixed by this change.
+- An integration test in the default suite archives an equivalent record over each protocol and compares the fields; the default suite passes.
+
+##### Dependencies And Decisions
+
+- Origin: recorded on 2026-10-15 at the owner's direction, from the observation made while checking the Details window of the Browse PVs page (M58 (previous document, commit bfb0dc71)).
+- M58 (previous document, commit bfb0dc71) reads a value that the calls do not hold as "not provided" and does not wait for this item; M6 archives PVA PVs through `pva://` and benefits from it.
+- D12 (Decision Date 2026-10-27): carried by release Ahsoka as row 3 of 4, before M21.
+- The owner confirms the source of the host name of a PV Access PV at plan acceptance.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Fill `MetaInfo` in `EPICS_V4_PV` from the structure and assign the host name; the test of T1 first. `EPICS_V4_PV` assigns no host name today, so the source of the host name of a PV Access PV is chosen and recorded in this step before the code is written; the owner confirms it at plan acceptance. The step also answers these questions: which members of the PV Access structure feed the eight limits (`display`, `control`, `valueAlarm`); what a structure without a `display` member leaves in `MetaInfo`; which of `getPVDetails` and `getPVTypeInfo` carries the host name. Closes with T1 and T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Integration | A JUnit test in the pattern of `PVAccessIntegrationTest` and `TypeChangePauseTest` (`SIOCSetup.startSIOCWithDB`, the soft IOC of `src/resources/test/st.cmd` and `ConsoleChartPVs.db`): archive `SR:RF:CAV2:TEMP` through `pva://` and `SR:RF:CAV2:POWER` over Channel Access, with the same non-zero values for `EGU`, `PREC`, `HOPR` and `LOPR` in their `CAV2_*` macros (with the default 0 the old behaviour equals the new one and the comparison cannot fail), and compare `getPVTypeInfo` and `getPVDetails` of the two once the type information exists; a manual run with `ioc-runner` (the section "Run the test IOC of the console checks" of `docs/book/src/developer.md`) is the alternative if the owner prefers it at plan acceptance, and criterion 3 changes with it | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | The units, precision, display limits and control limits are equal for both protocols; the warning and alarm limits are NaN for both, because neither record sets a severity; `hostName` is set and not empty for the PV Access PV, in the view chosen in step 1 |
+| T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21, Tomcat 9, EPICS 7.0.10 | Pending | none |
+| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: PV Access PVs are archived without unit, precision, limits and host
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 41` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN; on 2026-10-27 the live body of #41 states the host name of the PV Access server as settled, while the Scope above leaves its source to the plan
+
+#### M13 - Let a type change to a string or a waveform type succeed
+
+Origin: bfb0dc71 / M18
+Identity History: M18 to M13 on 2026-10-26
+GitHub Issue: #45 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/45)
+Status: Not started
+
+##### Summary
+
+`changeTypeForPV` cannot change a numeric PV to a string or to a waveform type: it answers HTTP 500, leaves the PV paused with its old type, and a PV resumed without the change goes on dropping every event of the new type, so the signal stops being recorded until the operator deletes the PV and archives it again. Observed on 2026-10-17 and 2026-10-18 on the soft IOC of `src/resources/test/st.cmd` restarted with `RECORD_CHANGE=Types` (a follow-up of issue #44). `ChangeTypeForPV` converts the stored history through `etl/conversion/ThruNumberAndStringConversion.java`, whose sample conversion supports the numeric scalar types only; the `DBR_SCALAR_STRING` branch calls `getStringValue(0)` on a numeric sample, which throws the same exception, and the `default` branch throws `UnsupportedOperationException` for every other target.
+
+##### Scope
+
+- The type change succeeds for every target type. Where the stored history cannot be converted into the new type (a number into a string, a scalar into a waveform), the history stays as it is under the old type and the new type starts from the instant of the change; where a conversion is defined (number to number), it is kept. No conversion of a number into a string is defined.
+- The call reports its result in its JSON answer and in the log of the management web application, where `ChangeTypeForPV` runs.
+
+Out of scope: an automatic type change by the engine without an operator call; the console page that offers the change.
+
+##### Completion Criteria
+
+- `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns HTTP 200, the PV resumes as Being archived with the new type in `getPVTypeInfo`, and the dropped-events count stops growing.
+- The samples stored before the change stay readable through `getData`, and a window across the change returns both the earlier and the later samples.
+- The JSON answer of the call tells whether the stored history was converted or kept under the old type, and the log of the management web application names the PV, the old type and the new type.
+- The record-change checks on the soft IOC with `RECORD_CHANGE=Types` pass for all four records of `ConsoleChartPVsRecordChangeTypes.db`: `SR:BPM:04:X` (`longin`), `SR:BPM:04:Y` (`stringin`), `SR:BPM:03:X` (`waveform`) and `SR:BPM:03:Y` (`longin`). For each record, archived first as a scalar double with the default databases, the IOC restarts with `RECORD_CHANGE=Types`, the PV is paused, `changeTypeForPV` is called with the type of the new record (`DBR_SCALAR_INT`, `DBR_SCALAR_STRING`, `DBR_WAVEFORM_DOUBLE`, `DBR_SCALAR_INT`) and the PV is resumed, and the first criterion holds.
+
+##### Dependencies And Decisions
+
+- D9 (Decision Date 2026-10-24): worked after the release.
+- D12 (Decision Date 2026-10-27): carried by release Ahsoka as row 4 of 4, before M21.
+- The owner confirms at plan acceptance that no conversion of a number into a string is defined; the text of issue #45 proposes it.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Design first, decided by the owner before the code is written: `PVTypeInfo` holds one type per PV, a PB file carries the type of its samples in its header, and `PlainPBStoragePlugin.convert` rewrites the stored files today. The step records how the earlier samples stay readable under the old type and the later ones under the new type in one `getData` window, and which classes and files that touches (`ChangeTypeForPV`, the storage plugin, the file naming, the retrieval). The step answers these questions in this detail before the plan is accepted: how the earlier samples stay readable under the old type and the later ones under the new type in one `getData` window, given that `PVTypeInfo` holds one type and the read path takes the type of the samples from the first file of the window; what `isScalar` and the element count become when the new type is a waveform; how the ETL lookup, which builds its items from `getDBRType()`, treats a file of the old type; which classes and files change. Check: the owner's acceptance of the recorded design.
+2. `ChangeTypeForPV` keeps the history under the old type when no conversion is defined and starts the new type at the change, instead of converting or failing, by the design of step 1. Check: T1, T2.
+3. The JSON answer and the log of the management web application carry the result of the third Completion Criterion above (the content of the answer is confirmed by the owner at plan acceptance). Check: T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Unit | `ChangeTypeForPV` with a numeric history and each target type, through a real `ConfigService` of the suite (`ConfigServiceForTests`) with only the HTTP request and response as stand-ins | JDK 21 | Numeric targets convert as before; string and waveform targets keep the history and start the new type; no exception |
+| T2 | Integration, manual with `ioc-runner` | Follow the section "Run the test IOC of the console checks" of `docs/book/src/developer.md` (the step with `RECORD_CHANGE=Types`): archive the four records of `ConsoleChartPVsRecordChangeTypes.db` as scalar doubles over Channel Access with the default databases, restart the IOC with `RECORD_CHANGE=Types`, and for each PV call `pauseArchivingPV`, `changeTypeForPV` with the new type of its record and `resumeArchivingPV`; read `getPVTypeInfo`, the report `getPVsByDroppedEventsTypeChange` and `getData` over a window around the change; the exact calls and the instant of the change are written into the result row at the run | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | HTTP 200, new type in `getPVTypeInfo`, dropped-events count constant, earlier and later samples returned in one window, and the JSON answer and the management log as the content named in the third Completion Criterion |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | pending | | | |
+| T2 | pending | | | |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Type change to string or waveform fails
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN (2026-10-24)
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 45` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN; on 2026-10-27 the live body of #45 names the engine log, while the Scope above names the log of the management web application, where the call runs
+
+#### M21 - Release Ahsoka
+
+Origin: bfb0dc71 / M21
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+Release Ahsoka carries the four rows M12, M14, M7 and M13, in that order, on the branch ahsoka. It follows release 2026-10, whose install and run check D11 accepts. This row owns the release-wide re-runs, the version change, the release actions and the final checks; the work of the four rows is implemented, verified and accepted in their own details. The combined branch is the branch ahsoka once the four rows are Complete. Phase 4 is the cycle planning of the `release-cycle` procedure, in which the owner reviews and accepts each plan and records the implementation authority separately. The soft IOC is the one of D3.
+
+##### Scope
+
+- Each of M12, M14, M7 and M13 is Complete in its own detail before this row starts its checks.
+- The Integrated Verification rows run on the combined branch before the version change.
+- The project version in `pom.xml` is set to Ahsoka, the branch ahsoka is merged into master with a merge commit, the annotated tag Ahsoka is created on that merge commit, and issues #52, #47, #41 and #45 close through `Closes` trailers of the version commit when it reaches master.
+- The documented install-from-bundle path runs on Debian 13 and on Rocky Linux 8.10 with the bundle built from the tag Ahsoka.
+
+Out of scope: any other Backlog row; a long run of the tag in the environment repository, which the owner decides after the release; the analyzer rows.
+
+##### Completion Criteria
+
+- M12, M14, M7 and M13 are Complete.
+- Every Release Verification row below reads Pass with reachable evidence.
+- The tag Ahsoka is an annotated tag on the merge commit, that commit is on origin/master, and the Maven workflow succeeded on it.
+- Issues #52, #47, #41 and #45 are observed closed.
+
+##### Dependencies And Decisions
+
+- M12, M14, M7, M13: the checks of this row run on their combined result.
+- D12 (Decision Date 2026-10-27): the scope, the name and the order.
+- The Integrated Verification rows are shared-surface candidates: M7 fills `MetaInfo` and M14 updates it (details of M7 and M14), and `ChangeTypeForPV` of M13 reads and writes the same `PVTypeInfo` as `MetaInfo.updateTypeInfo` through `getTypeInfoForPV` and `updateTypeInfoForPV`. The plan review of phase 4 confirms or removes each.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. When the four rows are Complete, run the Integrated Verification rows on the combined branch. Closes with Release Verification 13, 1 and 2.
+2. Push the branch ahsoka (Release Execution 1) and read the Maven workflow on its tip. Closes with Release Verification 3.
+3. Check the version, change it, commit it with the trailers, push the branch (Release Execution 2 and 3) and read the Maven workflow on the version commit. Closes with Release Verification 4, 5 and 6.
+4. Merge into master, push master, create and push the tag (Release Execution 4 to 7) and read the Maven workflow runs on the merge commit, the one of the master push and the one that the tag push starts. Closes with Release Verification 7 and 8.
+5. Install from the bundle of the tag on the two supported distributions, observe the closed issues delete the branch (Release Execution 8) and record the results in this register (Release Execution 9). Closes with Release Verification 9, 10, 11 and 12.
+
+##### Integrated Verification
+
+| Source Check | Re-run Trigger | Shared Surface | Release Verification Label | Expected Result | Result Evidence |
+| --- | --- | --- | --- | --- | --- |
+| M7 / T1 | the change of M13 to the type change is in the same tree as the type information written by M7 and M14 | `PVTypeInfo` through `getTypeInfoForPV` and `updateTypeInfoForPV`; `getPVTypeInfo` and `getPVDetails` of archived PVs | Release Verification 1 | the units, precision, limits and host name are present and equal for both protocols on the combined branch | pending |
+| M14 / T2 | the change of M13 and the type information written by M7 are in the same tree | `getPVTypeInfo` after an IOC restart with changed limits, and the unit and precision of `SR:BPM:03:Y` after its type change, the soft IOC of `src/resources/test/st.cmd` | Release Verification 2 | the new display limits within one reconnect on the combined branch, and the unit and precision still present after a type change | pending |
+
+##### Production Environment Tests
+
+| Release Verification Label | Timing | System | Version | Architecture | Deployment Path | Method | Expected Result | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Release Verification 9 | post-release | Debian 13, a clean host with `curl`, which step 4 of the install page uses | the bundle built from the tag Ahsoka, once, on the development host (JDK 21 and git installed) in a fresh clone of origin after Release Execution 7 with the tag checked out and `./mvnw -B clean package -DskipTests` (`docs/book/src/building.md`); the file name `aa-<date>-<commit>.tar.gz` is recorded, its commit part equals the first eight characters of the merge commit recorded at Release Execution 4, and the file is copied to the clean host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | follow every step of the install page with that bundle, the soft IOC of `src/resources/test/st.cmd` started on the development host as `<ioc_address>` (reachable from the clean host over Channel Access, UDP 5064 and the server TCP port), and `SR:BPM:01:X` of `ConsoleChartPVs.db` as `<pv_name>` | the four instances report `STARTUP_COMPLETE`, the PV reaches `connectionState` true, and the read-back reply holds at least one sample, counted by `curl -s "http://localhost:17668/retrieval/data/getData.json?pv=<pv_name>" \| grep -o '"val"' \| wc -l` | the four `startupState` lines, the `getPVStatus` reply, the sample count, the bundle file name, the `uname -m` output and the `sha256sum` of the bundle on the development host and on this host, written into the result row |
+| Release Verification 10 | post-release | Rocky Linux 8.10, a clean host with `curl` | the same bundle, copied to this host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | the same steps with the same bundle, IOC and PV | the same result | the same items, written into the result row; the two `sha256sum` values are equal to those of the Debian 13 row |
+
+##### Version Changes
+
+| Field | File | Before | Planned After | Pre-check | Pre-check Label | Post-check | Post-check Label |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| project version | `pom.xml` | 2026-10 | Ahsoka | `grep -m1 -E '^  <version>' pom.xml` prints the version line | Release Verification 4 | the same command prints the new value | Release Verification 5 |
+
+##### Release Execution
+
+The owner's push trigger for steps 1, 3 and 5 covers the outgoing commits named in the step: the commits of the four rows and the register commits, and at step 5 the merge commit as well; the executor reads them with the preflight of the Push scope. A push to a ref cancels the Maven run still in progress on that ref, so the executor waits for the run of the previous push to finish before the next push. The evidence of a step is the command output named in its Expected Result, copied into the Evidence column when the step runs.
+
+| Step | Action | Authorization | Expected Result | Evidence |
+| --- | --- | --- | --- | --- |
+| 1 | Push the branch ahsoka with an upstream, before the version change, and record the tip with `git rev-parse HEAD` | push delegation | the branch exists on origin, the Maven workflow runs on the recorded tip | pending |
+| 2 | After Release Verification 3 reads Pass, run the pre-check (Release Verification 4), edit the version line of `pom.xml` (`  <version>2026-10</version>` to `  <version>Ahsoka</version>`), run the post-check (Release Verification 5), commit it on the branch ahsoka with the trailers `Closes #52`, `Closes #47`, `Closes #41` and `Closes #45` and record the commit with `git rev-parse HEAD` | commit delegation | `git show --stat` lists only `pom.xml` with one line changed, the message carries the four trailers, and the commit ID is recorded | pending |
+| 3 | Push the branch ahsoka | push delegation | the Maven workflow runs on the version commit recorded at step 2 | pending |
+| 4 | After Release Verification 6 reads Pass, run `git fetch`, check out master (`git rev-list --count ahsoka..master` prints 0 and `git rev-parse master origin/master` prints one ID twice), merge with `git merge --no-ff ahsoka -m "Merge ahsoka: Ahsoka release"` and record the merge commit with `git rev-parse HEAD` | user-run | a merge commit on master (`git rev-list --parents -n 1 HEAD` prints three IDs); `git rev-list --count ahsoka ^HEAD` prints 0; the merge commit ID is recorded | pending |
+| 5 | Push master | push delegation | origin/master equals the merge commit, the four issues close and the Maven workflow runs on it | pending |
+| 6 | After Release Verification 7 reads Pass, create the annotated tag Ahsoka on the merge commit with the message `Release Ahsoka` | tag create delegation | the tag object peels to the merge commit | pending |
+| 7 | Push the tag Ahsoka | tag push delegation | the remote tag object equals the local tag object | pending |
+| 8 | Delete the branch ahsoka, local and on origin | user-run | `git branch --list ahsoka` and `git ls-remote --heads origin ahsoka` print nothing | pending |
+| 9 | Record the results of Release Verification 1 to 13 in this register, commit it and push master | commit delegation and push delegation | `git rev-parse master origin/master` prints one ID twice; the push changes only the register and starts no run | pending |
+
+##### Release Verification Plan
+
+| Label | Layer | Timing | Method | Environment | Expected Result | Evidence Target |
+| --- | --- | --- | --- | --- | --- | --- |
+| Release Verification 1 | Integration | pre-change | the method of M7 / T1 on the combined branch | JDK 21, Tomcat 9.0.122, EPICS 7.0.10, soft IOC | the result of M7 / T1 | the observed values of the two protocols |
+| Release Verification 2 | Integration | pre-change | the method of M14 / T2 on the combined branch, and, on `SR:BPM:03:Y` after the `changeTypeForPV` call of M13 / T2, a read of `getPVTypeInfo` | JDK 21, Tomcat 9.0.122, soft IOC | the result of M14 / T2, and `SR:BPM:03:Y` still reports the unit mm and the precision 3 after the type change; its limits are 0 before and after | `getPVTypeInfo` before and after the restart |
+| Release Verification 3 | Suite | pre-change | the Maven workflow on the tip of the pushed branch | GitHub Actions: Ubuntu 24.04, Debian 13, Rocky Linux 8.10 | the three jobs succeed | the run URL and the tip recorded at Release Execution 1 |
+| Release Verification 4 | Version | pre-change | the pre-check of Version Changes | the working tree | the version line reads 2026-10 | the command output |
+| Release Verification 5 | Version | post-change | the post-check of Version Changes | the working tree | the version line reads Ahsoka | the command output |
+| Release Verification 6 | Suite | post-change | the Maven workflow on the version commit | GitHub Actions: Ubuntu 24.04, Debian 13, Rocky Linux 8.10 | the three jobs succeed | the run URL and the commit recorded at Release Execution 2 |
+| Release Verification 7 | Suite | post-change | the Maven workflow run of the master push on the merge commit; the Pages run of the master push when it changes `docs/book/` | GitHub Actions: Ubuntu 24.04, Debian 13, Rocky Linux 8.10 | the three jobs succeed in the Maven run and the Pages run succeeds | the run URLs |
+| Release Verification 8 | Release object | post-release | `git cat-file -t refs/tags/Ahsoka`, `git rev-parse refs/tags/Ahsoka`, `git rev-parse 'refs/tags/Ahsoka^{commit}'`, `git branch -r --contains <merge-commit>` and `git ls-remote --tags origin refs/tags/Ahsoka`, where `<merge-commit>` is the ID recorded at Release Execution 4; the Maven workflow run that the tag push starts on the same commit once Release Execution 7 is done | the repository, origin and GitHub Actions | an annotated tag on the merge commit, that commit contained in origin/master, the remote tag object equal to the local one, and the three jobs of the tag run succeed | the object IDs and the run URL |
+| Release Verification 9 | Production | post-release | the production test of the Debian 13 row | Debian 13 | the expected result of that row | the record named there |
+| Release Verification 10 | Production | post-release | the production test of the Rocky Linux 8.10 row | Rocky Linux 8.10 | the expected result of that row | the record named there |
+| Release Verification 11 | Tracker | post-release | `gh issue view` of #52, #47, #41 and #45 | GitHub | the four issues are closed | the observed states |
+| Release Verification 12 | Branch | post-release | `git branch --list ahsoka` and `git ls-remote --heads origin ahsoka` after Release Execution 8 | the repository and origin | both print nothing | the command output |
+| Release Verification 13 | Status | pre-change | read the Status line of the details of M12, M14, M7 and M13 in this register | this register | all four read Complete | the four Status lines |
+
+##### Release Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| Release Verification 1 | Not run | combined branch | Pending | none |
+| Release Verification 2 | Not run | combined branch | Pending | none |
+| Release Verification 3 | Not run | GitHub Actions | Pending | none |
+| Release Verification 4 | Not run | working tree | Pending | none |
+| Release Verification 5 | Not run | working tree | Pending | none |
+| Release Verification 6 | Not run | GitHub Actions | Pending | none |
+| Release Verification 7 | Not run | GitHub Actions | Pending | none |
+| Release Verification 8 | Not run | repository and origin | Pending | none |
+| Release Verification 9 | Not run | Debian 13 | Pending | none |
+| Release Verification 10 | Not run | Rocky Linux 8.10 | Pending | none |
+| Release Verification 11 | Not run | GitHub | Pending | none |
+| Release Verification 12 | Not run | repository and origin | Pending | none |
+| Release Verification 13 | Not run | this register | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+none: the issues of the four rows carry the work; this row has no issue.
 
 ## Backlog
 
@@ -80,14 +493,10 @@ Backlog rows are unassigned, use the same schema, and are excluded from the rele
 | Interface analyzer | M4 | Analyzer phase D: tools for two and several signals | Milestone | Not started | No | M3, D2, D5 | The Correlation tab (pairing by held values, scatter with projections and density, Pearson and Spearman, profile, the fit panel with fixed and bounded parameters) and the Dependency tab (correlation matrix ordered by clustering, ranking by mutual information, multiple regression, principal components), derived signals from a typed expression and a change of unit, the routines checked on signals of known parameters; [detail](#m4---analyzer-phase-d-tools-for-two-and-several-signals) |
 | Interface analyzer | M5 | Analyzer phase E: waveform and image analysis | Milestone | Not started | No | M4, M3, D2, D5 | The analyzer draws an array at a time, over time and as a heatmap, computes its summary values and spectrum, and analyses an image by region, projections, centroid and size; [detail](#m5---analyzer-phase-e-waveform-and-image-analysis) |
 | Interface console | M6 | Appliance status as PVA PVs | Milestone | Not started | Yes |  | The appliance publishes its status measures as PVA PVs through its own PVA server and archives them, so the analyzer plots them like any archived PV; [detail](#m6---appliance-status-as-pva-pvs) |
-| Interface console | M7 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes |  | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of the same record does; [detail](#m7---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
 | Retrieval protection | M8 | Bound the concurrent calls of the PVAccess retrieval service | Milestone | Not started | Yes | D7 | The retrieval PVAccess service runs at most a measured number of calls at a time and refuses the next with a message in its log; a test with more long calls than that, on separate connections, fails on the old code and passes on the new; [detail](#m8---bound-the-concurrent-calls-of-the-pvaccess-retrieval-service) |
 | Retrieval protection | M9 | Measure the thread and valve limits and the remaining qualification cells of the retrieval protection | Milestone | Not started | Yes | D8 | A measured table of busy threads, response times, memory decisions and valve refusals against concurrency under combined console and retrieval load, at 512 MiB and 2 GiB and under two `maxThreads` values; the valve default recorded with the rule that produced it in the register, the book and `TESTING.md`, with a test that runs at that default; each unmeasured qualification cell measured or recorded as not measured with the reason; issue #58; [detail](#m9---measure-the-thread-and-valve-limits-and-the-remaining-qualification-cells-of-the-retrieval-protection) |
 | Retrieval protection | M10 | Decide the stamping and filtering rule of summary bins at the window edges | Milestone | Open | No | D8 | A recorded decision on whether a bin whose samples lie inside the requested window is returned when its midpoint stamp lies after the window end, checked against the archive viewers and the Python clients; if the rule changes, such a bin is returned regardless of the request time and `VariousPostProcessorTest` passes with its original one-day window; if it stays, the retrieval page of the book states it; issue #59; [detail](#m10---decide-the-stamping-and-filtering-rule-of-summary-bins-at-the-window-edges) |
 | Retrieval protection | M11 | Check the retrieval operators outside the declared-size check | Milestone | Not started | Yes | D10 | Each of the five candidates, `FirstSamplePP`, `DeadBand`, `Fliers` and `IgnoreFliers`; the per-bin values of `Median`, `Kurtosis` and `Skewness`; the number of `pv` parameters of `getDataForPVs`; the names posted to `getDataAtTime`; the `;` separated names of the PVAccess call, has a recorded real-request result at a 512 MiB heap, refused with a named condition or completed without exhausting the heap, and every candidate that exhausted it has a correction with a test that fails without it; issue #60; [detail](#m11---check-the-retrieval-operators-outside-the-declared-size-check) |
-| Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | Not started | Yes | D6 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
-| Appliance defects | M13 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D9 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m13---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
-| Appliance defects | M14 | Carry the changed limits of a record into the type information at reconnect | Milestone | Not started | Yes | D9 | After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` holds the new limits within one reconnect and the Details window shows them, the unit and the precision keep being updated, and the suite passes with a test that reconnects a PV with changed limits; issue #47; [detail](#m14---carry-the-changed-limits-of-a-record-into-the-type-information-at-reconnect) |
 | Appliance defects | M15 | Archiving continues across a change of the record | Milestone | Deferred | No | D4 | The engine detects a change of the archived record (type, rate, unit, precision or limits) on its own and goes on storing the signal under the new condition from the instant of the change, with the earlier samples readable as they were stored; deferred to the next major release by D4; the GitHub issue that holds the direction is filed; [detail](#m15---archiving-continues-across-a-change-of-the-record) |
 | Scripts and checks | M16 | Modernize the retained state-changing sample scripts | Milestone | Not started | Yes |  | Each of the seven retained scripts that change appliance state has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m16---modernize-the-retained-state-changing-sample-scripts) |
 | Scripts and checks | M17 | Mail delivery for the alert checks | Milestone | Not started | Yes |  | emailHandler.py's mail delivery is available to the on-demand alert checks of M37 (previous document, commit bfb0dc71) with a defined configuration, timeout and failure contract and is verified against a real SMTP endpoint; [detail](#m17---mail-delivery-for-the-alert-checks) |
@@ -595,71 +1004,6 @@ Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
-#### M7 - PVA PVs keep the unit, precision, limits and host in their configuration
-
-Origin: bfb0dc71 / M9
-Identity History: M9 to M7 on 2026-10-26
-GitHub Issue: #41 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/41)
-Status: Not started
-
-##### Summary
-
-The appliance archives a PV through PV Access without its unit, precision, limits and host. On a local appliance with one `softIocPVX` serving the same records over both protocols, the `pva://` PV of a record that sets `EGU` to `mm` reports no `units` and no `hostName`, `precision` 0.0 and all display, warning and alarm limits 0.0 in `getPVTypeInfo`, where the Channel Access PV of an equivalent record reports `units` `mm`, the host, `precision` 3.0 and NaN for the warning and alarm limits that are not set. `EPICS_V3_PV.updateTotalMetaInfo` fills `MetaInfo` from a control request; `EPICS_V4_PV.updateTotalMetaInfo` has an empty body, and its host name is never assigned. The source provides the values (`pvxget` returns `display.units`, the display limits and the precision).
-
-##### Scope
-
-Fill `MetaInfo` of a PV Access PV from the `display`, `control` and `valueAlarm` members of its structure and set its host name when the channel connects, so that the configuration of a PV is the same for both protocols.
-
-Out of scope: how the consoles read a missing value (M58 (previous document, commit bfb0dc71)); the `meta` of the retrieval response of a PV Access PV, which is not examined here.
-
-##### Completion Criteria
-
-- `getPVTypeInfo` of a `pva://` PV of a record that sets `EGU`, `PREC` and limits reports the same `units`, `precision` and limits as the Channel Access PV of the same record, and the warning and alarm limits that the record does not set are NaN for both protocols.
-- `getPVDetails` of the PV Access PV shows the unit and the precision, and `hostName` is set.
-- An integration test archives one record over each protocol and compares the fields; the default suite passes.
-
-##### Dependencies And Decisions
-
-- Origin: recorded on 2026-10-15 at the owner's direction, from the observation made while checking the Details window of the Browse PVs page (M58 (previous document, commit bfb0dc71)).
-- M58 (previous document, commit bfb0dc71) reads a value that the calls do not hold as "not provided" and does not wait for this item; M6 archives PVA PVs through `pva://` and benefits from it.
-
-##### Implementation Plan
-
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
-
-1. Fill `MetaInfo` in `EPICS_V4_PV` from the structure and assign the host name; the test of T1 first. Closes with T1 and T2.
-
-##### Test Plan
-
-| Label | Layer | Method | Environment | Expected Result |
-| --- | --- | --- | --- | --- |
-| T1 | Integration | On a running appliance with one `softIocPVX` serving `src/resources/test/ConsoleChartPVs.db`, archive `SR:BPM:01:X` through `pva://` and `SR:BPM:02:X` over Channel Access and compare `getPVTypeInfo` and `getPVDetails` of the two | JDK 21, Tomcat 9, EPICS 7.0.10 | The units, precision, limits and host name are present and equal for both protocols |
-| T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
-
-##### Verification Results
-
-| Label | Observed At | Environment | Result | Evidence |
-| --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, Tomcat 9, EPICS 7.0.10 | Pending | none |
-| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
-
-##### Closure Evidence
-
-- none
-
-##### GitHub Projection
-
-Title: PV Access PVs are archived without unit, precision, limits and host
-Labels: bug
-GitHub Milestone: none
-Observed State: OPEN
-Observed Labels: bug
-Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 41` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
-
 #### M8 - Bound the concurrent calls of the PVAccess retrieval service
 
 Origin: bfb0dc71 / M14
@@ -930,200 +1274,6 @@ Observed State: OPEN (2026-10-24)
 Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 60` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
-
-#### M12 - Delete the moved partition of a zip store that is an ETL source
-
-Origin: bfb0dc71 / M13
-Identity History: M13 to M12 on 2026-10-26
-GitHub Issue: #52 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/52)
-Status: Not started
-
-##### Summary
-
-A `pb` store with `compress=ZIP_PER_PV` that is the source of an ETL move keeps the partition it moved: `getETLStreams` keys each `ETLInfo` with `path.toAbsolutePath().toString()`, which for a path inside the zip file system is the entry's path without the `jar:` prefix; `markForDeletion` resolves that key on the local file system, finds nothing and ignores the `NoSuchFileException` by design, so the entry stays and the samples exist twice. `getETLStreamsForDeletion` keys its rows in the `jar:` form, so the explicit deletion works. Observed on 2026-10-19 with the shipped `ETLJob` over STS HOUR to a zip MTS HOUR with `pp=mean_60` to LTS YEAR: the LTS held the data and the archive still held both `.pb` and both `.mean_60` entries. A zip store is meant as the last store of a chain, where no move starts, so the shipped configurations do not reach this (D6).
-
-##### Scope
-
-- `getETLStreams` keys the `ETLInfo` of a zip path in the `jar:` form through the same helper as `getETLStreamsForDeletion`, so `markForDeletion` deletes the moved entry and its post-processor entries.
-- A test over two hops with a zip MTS, which keeps the moved partition today, passes.
-
-Out of scope: the uncompressed store (M80 (previous document, commit bfb0dc71)); where a zip store may sit in a chain (the book says the last store).
-
-##### Completion Criteria
-
-- After a move out of a zip store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, and the next store holds the data once.
-- The explicit deletion of a PV from a zip store keeps working.
-- The default suite passes.
-
-##### Dependencies And Decisions
-
-- D6 (Decision Date 2026-10-19): left to the Backlog for a later release; found by the check of M80 (previous document, commit bfb0dc71).
-
-##### Implementation Plan
-
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
-
-1. The key of `getETLStreams` through the shared helper. Check: T1.
-2. The two-hop case with a zip MTS added to `PlainPBPostProcessorCleanupTest`. Check: T1.
-
-##### Test Plan
-
-| Label | Layer | Method | Environment | Expected Result |
-| --- | --- | --- | --- | --- |
-| T1 | Unit and suite | `PlainPBPostProcessorCleanupTest` with the two hops over a zip MTS; `./mvnw -B -ntp clean verify` | JDK 21, Tomcat 9.0.121 for the integration tests | After the second hop the archive holds only the entries of the newer partition; suite passes |
-
-##### Verification Results
-
-| Label | Observed At | Environment | Result | Evidence |
-| --- | --- | --- | --- | --- |
-| T1 | pending | | | |
-
-##### Closure Evidence
-
-- none
-
-##### GitHub Projection
-
-Title: A zip store as an ETL source keeps the partition it moved
-Labels: bug
-GitHub Milestone: none
-Observed State: OPEN
-Observed Labels: bug
-Observed Milestone: none
-Last Compared: 2026-10-19 17:50 PDT; `gh issue list` read #52 OPEN with label bug and assignee jeonghanlee at its creation (2026-10-20T00:50:06Z).
-
-#### M13 - Let a type change to a string or a waveform type succeed
-
-Origin: bfb0dc71 / M18
-Identity History: M18 to M13 on 2026-10-26
-GitHub Issue: #45 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/45)
-Status: Not started
-
-##### Summary
-
-`changeTypeForPV` cannot change a numeric PV to a string or to a waveform type: it answers HTTP 500, leaves the PV paused with its old type, and a PV resumed without the change goes on dropping every event of the new type, so the signal stops being recorded until the operator deletes the PV and archives it again. Observed on 2026-10-17 and 2026-10-18 on the soft IOC of `src/resources/test/st.cmd` restarted with `RECORD_CHANGE=Types` (filed as a deviation of M73 (previous document, commit bfb0dc71)). `ChangeTypeForPV` converts the stored history through `etl/conversion/ThruNumberAndStringConversion.java`, whose sample conversion supports the numeric scalar types only; the `DBR_SCALAR_STRING` branch calls `getStringValue(0)` on a numeric sample and the `default` branch throws `UnsupportedOperationException` for every other target.
-
-##### Scope
-
-- The type change succeeds for every target type. Where the stored history cannot be converted into the new type (a number into a string, a scalar into a waveform), the history stays as it is under the old type and the new type starts from the instant of the change; where a conversion is defined (number to number), it is kept.
-- The call reports its result in its JSON answer and in the engine log.
-
-Out of scope: an automatic type change by the engine without an operator call; the console page that offers the change.
-
-##### Completion Criteria
-
-- `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns HTTP 200, the PV resumes as Being archived with the new type in `getPVTypeInfo`, and the dropped-events count stops growing.
-- The samples stored before the change stay readable through `getData`, and a window across the change returns both the earlier and the later samples.
-- The record-change checks on the soft IOC with `RECORD_CHANGE=Types` pass for all four records.
-
-##### Dependencies And Decisions
-
-- D9 (Decision Date 2026-10-24): worked after the release.
-
-##### Implementation Plan
-
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
-
-1. `ChangeTypeForPV` keeps the history under the old type when no conversion is defined and starts the new type at the change, instead of converting or failing. Check: T1, T2.
-2. The JSON answer and the engine log carry the result. Check: T2.
-
-##### Test Plan
-
-| Label | Layer | Method | Environment | Expected Result |
-| --- | --- | --- | --- | --- |
-| T1 | Unit | `ChangeTypeForPV` with a numeric history and each target type | JDK 21 | Numeric targets convert as before; string and waveform targets keep the history and start the new type; no exception |
-| T2 | Integration | The record-change checks with `RECORD_CHANGE=Types` on the soft IOC, both calls, resume, retrieval across the change | JDK 21, Tomcat 9.0.121, `softIocPVX` | HTTP 200, new type in `getPVTypeInfo`, dropped-events count constant, earlier and later samples returned |
-
-##### Verification Results
-
-| Label | Observed At | Environment | Result | Evidence |
-| --- | --- | --- | --- | --- |
-| T1 | pending | | | |
-| T2 | pending | | | |
-
-##### Closure Evidence
-
-- none
-
-##### GitHub Projection
-
-Title: Type change to string or waveform fails
-Labels: bug
-GitHub Milestone: none
-Observed State: OPEN (2026-10-24)
-Observed Labels: bug
-Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 45` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
-
-#### M14 - Carry the changed limits of a record into the type information at reconnect
-
-Origin: bfb0dc71 / M19
-Identity History: M19 to M14 on 2026-10-26
-GitHub Issue: #47 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/47)
-Status: Not started
-
-##### Summary
-
-When a PV reconnects, the engine reads the unit and the precision of its record again but keeps the display, warning, alarm and control limits that it stored at the archive request, so after the limits of a record change and the IOC restarts, `getPVTypeInfo` and the Details window of the Browse PVs page keep the old limits while the IOC reports the new ones. Observed on 2026-10-17 and 2026-10-18 on the soft IOC of `src/resources/test/st.cmd` (filed as a deviation of M73 (previous document, commit bfb0dc71)). `MetaInfo.updateTypeInfo` in `src/main/org/epics/archiverappliance/config/MetaInfo.java` compares and writes only the unit, the precision and the host name; the limits that `applyBasicInfo` reads from the control DBR on every connection are never carried into the stored type information after the first time.
-
-##### Scope
-
-- `MetaInfo.updateTypeInfo` compares the display, warning, alarm and control limits of the connection with the stored type information and writes them when they differ, under the same rate limit as the unit and the precision, with one INFO line in the engine log naming the PV and the fields that changed.
-
-Out of scope: a change of the limits while the channel stays connected and the property subscription is off; the fields carried in the samples by the property subscription.
-
-##### Completion Criteria
-
-- After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` of the PV holds the new limits within one reconnect, and the Details window shows them.
-- The unit and the precision keep being updated as before.
-- The suite passes, including a test that reconnects a PV with changed limits.
-
-##### Dependencies And Decisions
-
-- D9 (Decision Date 2026-10-24): worked after the release.
-
-##### Implementation Plan
-
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
-
-1. `MetaInfo.updateTypeInfo` compares and writes the limits with the unit and the precision, and logs the changed fields. Check: T1, T2.
-
-##### Test Plan
-
-| Label | Layer | Method | Environment | Expected Result |
-| --- | --- | --- | --- | --- |
-| T1 | Unit | `MetaInfo.updateTypeInfo` with a connection whose limits differ from the stored type information | JDK 21 | The limits are written, the unit and the precision as before, one log line names the fields |
-| T2 | Integration | A PV archived from the soft IOC, the IOC restarted with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` after the reconnect | JDK 21, Tomcat 9.0.121, `softIocPVX` | The new limits within one reconnect |
-
-##### Verification Results
-
-| Label | Observed At | Environment | Result | Evidence |
-| --- | --- | --- | --- | --- |
-| T1 | pending | | | |
-| T2 | pending | | | |
-
-##### Closure Evidence
-
-- none
-
-##### GitHub Projection
-
-Title: Display limits not read again at reconnect
-Labels: bug
-GitHub Milestone: none
-Observed State: OPEN (2026-10-24)
-Observed Labels: bug
-Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 47` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
 
 #### M15 - Archiving continues across a change of the record
 
