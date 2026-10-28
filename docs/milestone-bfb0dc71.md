@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: phase 4 (cycle planning) of the `release-cycle` procedure for release Ahsoka in this file, on the branch ahsoka: review the draft plans of M12, M14, M7 and M13 and the release sections of M21, record the owner's plan acceptance and the implementation authority row by row, then commit the cycle plan. The other Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18; M20 waits for G1.
+Next session entry point: phase 4 (cycle planning) of the `release-cycle` procedure for release Ahsoka in this file, on the branch ahsoka: the plans of M12 and M14 are accepted (without implementation authority); review the draft plans of M7 and M13 and the release sections of M21, record the owner's plan acceptance and the implementation authority row by row, then commit the cycle plan. The other Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18; M20 waits for G1.
 
 ## Milestone
 
@@ -96,6 +96,7 @@ A `pb` store with `compress=ZIP_PER_PV` that is the source of an ETL move keeps 
 
 - `getETLStreams` keys the `ETLInfo` of a zip path in the `jar:` form through the same helper as `getETLStreamsForDeletion`, so `markForDeletion` deletes the moved entry and its post-processor entries (the `.mean_60` entry of a partition archived with `pp=mean_60`).
 - A test over two hops with a zip MTS is added; it fails on the code of today, which keeps the moved partition, and passes after the change.
+- After T1 passes, the `compress` row of `docs/book/src/configuration.md` no longer says that a zip store that is the source of a move keeps the partition it moved. Its advice to use a zip store for the last store of a chain stays, because the test covers two hops.
 
 Out of scope: the uncompressed store, which an earlier check covered; where a zip store may sit in a chain (the book says the last store).
 
@@ -104,33 +105,38 @@ Out of scope: the uncompressed store, which an earlier check covered; where a zi
 - After a move out of a zip store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, and the next store holds the data once.
 - The explicit deletion of a PV from a zip store keeps working.
 - The default suite passes.
+- The `compress` row of the book no longer says that the data would exist twice, and keeps the advice to use a zip store for the last store of a chain (T2).
 
 ##### Dependencies And Decisions
 
 - D6 (Decision Date 2026-10-19): left to the Backlog for a later release; found by the check of M80 (previous document, commit bfb0dc71).
 - D12 (Decision Date 2026-10-27): carried by release Ahsoka as row 1 of 4, before M21.
+- The owner decided on 2026-10-27 that the book keeps its advice to use a zip store for the last store of a chain, and that the book is changed last, after T1 passes.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-27, accepted by the owner in the planning conversation, with the book change as the last step
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
 1. In `src/main/edu/stanford/slac/archiverappliance/PlainPB/PlainPBStoragePlugin.java`, `getETLStreams` takes the key of each `ETLInfo` from the private helper `deletionKey(Path)`, which `getETLStreamsForDeletion` already uses and which builds the `jar:` form for `ZIP_PER_PV`. Check: T1.
 2. The two-hop case with a zip MTS is added to `src/test/edu/stanford/slac/archiverappliance/PlainPB/PlainPBPostProcessorCleanupTest.java`, which already has the helpers `hop`, `item` and `mtsFileNames` and a zip test for the explicit deletion; the class comment, which says a zip store is not an ETL source, is updated. Check: T1.
+3. After T1 passes, the `compress` row of `docs/book/src/configuration.md` drops the sentence that a zip store that is the source of a move keeps the partition it moved, so that the data would exist twice; the advice to use a zip store for the last store of a chain stays. Check: T2.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
 | T1 | Unit and suite | `PlainPBPostProcessorCleanupTest` with the two hops over a zip MTS; `./mvnw -B -ntp clean verify` | JDK 21, Tomcat 9.0.122 for the integration tests | After the second hop `mtsFileNames()` lists only the entries of the newer partition (the old behaviour keeps the entries of the older one) and the next store holds the data once; suite passes |
+| T2 | Book | The mdBook build and the link check with the corrected `compress` row | `aa-mdbook` image | The book builds with no broken link and the row no longer says the data would exist twice |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | pending | | | |
+| T2 | pending | | | |
 
 ##### Closure Evidence
 
@@ -159,9 +165,9 @@ When a PV reconnects, the engine reads the unit and the precision of its record 
 
 ##### Scope
 
-- `MetaInfo.updateTypeInfo` compares the display, warning, alarm and control limits of the connection with the stored type information and writes them when they differ, in the update that writes the unit, the precision and the host name (`MetaInfo.updateTypeInfo` has no rate limit of its own and runs from `applyBasicInfo`), with one INFO line naming the PV and the fields that changed, on the logger `config.org.epics.archiverappliance.config.MetaInfo`, which already logs the unit and the precision. A difference in any one limit sets the update on its own, so a limit that changes while the unit stays the same is saved. Two NaN limits count as equal (`Double.compare`), so a limit that the record does not set causes no write at each connect.
+- `MetaInfo.updateTypeInfo` compares the display, warning, alarm and control limits of the connection with the stored type information and writes them when they differ, in the update that writes the unit, the precision and the host name (`MetaInfo.updateTypeInfo` has no rate limit of its own and runs from `applyBasicInfo`), with one INFO line naming the PV and the fields that changed, on the logger `config.org.epics.archiverappliance.config.MetaInfo`, which already logs the unit and the precision. A difference in any one limit sets the update on its own, so a limit that changes while the unit stays the same is saved. Two NaN limits count as equal (`Double.compare`), so a limit that the record does not set causes no write at each connect. A stored limit that is null counts as different and is written, because the getters of `PVTypeInfo` return `Double`. The first daily refresh after the change writes the limits of each connected channel whose stored limits differ from its record, once, with one INFO line each.
 - This row covers Channel Access PVs: `applyBasicInfo` is called from `EPICS_V3_PV` only.
-- A unit test of the comparison through `applyBasicInfo` (T1) and a manual check of the display limits after an IOC restart (T2).
+- A unit test of the comparison through `applyBasicInfo` (T1) and a manual check of the display limits after an IOC restart (T2). The unit test covers the control-double branch of `applyBasicInfo`; the control-integer and `GR` branches use the same comparison.
 
 Out of scope: the pickup of a changed limit on a channel that stays connected, which the daily refresh of the metadata saves within a day once this change lands, because it runs the same `updateTypeInfo`; the limits of a PV Access PV after an IOC restart (M7 fills them once); the fields carried in the samples by the property subscription.
 
@@ -171,6 +177,7 @@ Out of scope: the pickup of a changed limit on a channel that stays connected, w
 - The unit and the precision keep being updated as before.
 - The display, warning, alarm and control limits all follow the connection, also when only one limit differs and the unit is unchanged (T1).
 - One INFO line names the PV and the fields that changed (T1).
+- A stored limit that is null is written at the next connect (T1).
 - A reconnect with unchanged limits, a limit that the record does not set (NaN) included, writes nothing (T1).
 - The suite passes, including a test that applies the connection information of a reconnect with changed limits through `applyBasicInfo`, which `EPICS_V3_PV` calls at every connect.
 
@@ -178,21 +185,22 @@ Out of scope: the pickup of a changed limit on a channel that stays connected, w
 
 - D9 (Decision Date 2026-10-24): worked after the release.
 - D12 (Decision Date 2026-10-27): carried by release Ahsoka as row 2 of 4, before M21.
+- The owner decided on 2026-10-27 that the log line of a changed limit stays at INFO like the line of the unit and the precision, and that the unit test covers the control-double branch.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-27, accepted by the owner in the planning conversation
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. In `src/main/org/epics/archiverappliance/config/MetaInfo.java`, `updateTypeInfo` compares the display, warning, alarm and control limits with the stored `PVTypeInfo` (`Double.compare`), sets the update when any one differs, writes them with the unit and the precision, and logs the changed fields. Check: T1, T2.
+1. In `src/main/org/epics/archiverappliance/config/MetaInfo.java`, `updateTypeInfo` compares the display, warning, alarm and control limits with the stored `PVTypeInfo` (`Double.compare`), sets the update when any one differs (`Double.compare`; a stored null counts as different), writes them with the unit and the precision, and logs the changed fields. Check: T1, T2.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Unit | `MetaInfo.applyBasicInfo`, the public method that calls `updateTypeInfo`, with a control-type `DBR` of the JCA library whose limits differ from the type information stored through `ConfigServiceForTests`; the test stores the type information first, sets every limit of the `DBR` (the JCA classes leave them null and `applyBasicInfo` reads all of them), reads the log line with the suite's `CapturedLog`, and uses no reflection and no stub of `MetaInfo` | JDK 21 | The limits are written, also when only one limit differs and the unit is unchanged, the unit and the precision as before, one log line names the fields; a second call with the same limits, NaN included, writes nothing |
+| T1 | Unit | `MetaInfo.applyBasicInfo`, the public method that calls `updateTypeInfo`, with a control-type `DBR` of the JCA library whose limits differ from the type information stored through `ConfigServiceForTests`; the test stores the type information first, sets every limit of the `DBR` (the JCA classes leave them null and `applyBasicInfo` reads all of them), reads the log line with the suite's `CapturedLog`, and uses no reflection and no stub of `MetaInfo` | JDK 21 | The limits are written, also when only one limit differs and the unit is unchanged, the unit and the precision as before, one log line names the fields; a second call with the same limits, NaN included, writes nothing; a stored null limit is written |
 | T2 | Integration, manual with `ioc-runner` | Follow the section "Run the test IOC of the console checks" of `docs/book/src/developer.md`: archive `SR:RF:CAV2:TEMP` from the soft IOC of `src/resources/test/st.cmd` with the two macros unset, which gives the display limits 0; stop the IOC with `ioc-runner`, install it again with `-f install` after adding for example `CAV2_TEMP_HOPR=50` and `CAV2_TEMP_LOPR=10` to the installed configuration, start it, and read `getPVTypeInfo` of the PV after the reconnect | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | `upperDisplayLimit` and `upperCtrlLimit` 50, `lowerDisplayLimit` and `lowerCtrlLimit` 10 within one reconnect |
 
 ##### Verification Results
