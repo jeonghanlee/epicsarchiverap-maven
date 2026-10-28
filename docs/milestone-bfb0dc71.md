@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: phase 4 (cycle planning) of the `release-cycle` procedure for release Ahsoka in this file, on the branch ahsoka: the plans of M12 and M14 are accepted (without implementation authority); review the draft plans of M7 and M13 and the release sections of M21, record the owner's plan acceptance and the implementation authority row by row, then commit the cycle plan. The other Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18; M20 waits for G1.
+Next session entry point: implementation of release Ahsoka on the branch ahsoka, in the order M12, M14, M7, M13 (all plans and the release plan are accepted, none has implementation authority): record the owner's implementation authority for the row to start, write its T1 first, then follow its Implementation Plan. The other Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18; M20 waits for G1.
 
 ## Milestone
 
@@ -39,7 +39,7 @@ This register covers the work that remains after release 2026-10 of the Maven ap
 | D9 | Release scope of the Maven appliance: the protection of retrieval against memory exhaustion (M85 (previous document, commit bfb0dc71), issue #54) and the date correction of its summary test (M89 (previous document, commit bfb0dc71), issue #56) close before the release; every other open row and issue is worked after the release at its own pace. Open at this decision: M9 / #58, M10 / #59, M11 / #60, M19 / #55, M12 / #52, M15 / #48, M7 / #41, the analyzer rows M1, M3, M5, M2 and M4 / #39, the rows M16, M17, M18 and M6 without an issue, M20 blocked by G1, and the two deviations of M73 (previous document, commit bfb0dc71) that had no row, #45 and #47, which enter the Backlog as M13 and M14. The release cycle regroups these rows when it opens. | 2026-10-24 |
 | D10 | The five candidates that the audit of the retrieval protection and the sweep of 2026-10-24 left unchecked (`FirstSamplePP`, `DeadBand`, `Fliers` and `IgnoreFliers` outside the declared-size check and the in-loop check; the values `Median`, `Kurtosis` and `Skewness` keep per bin against the 112 bytes per bin that the declared size counts; the number of `pv` parameters of `getDataForPVs`, of the names posted to `getDataAtTime` and `getDataAtTimeForAppliance`, and of the `;` separated names of the PVAccess call) are not checked before the merge to master. They enter the Backlog as M11 / issue #60 as long-term work, each to be run as a real request at a 512 MiB heap; `Nth` and `NCount` are bounded by `MAX_COUNT` and are recorded in `docs/CLOSED_DOORS.md` as CD-18; the fill operators of the audit's `Event per bin` row were checked and corrected by a27f260a, and the PVAccess name list is the one candidate that the audit did not name. The owner decided on 2026-10-24 to settle the fate of each candidate after its check. | 2026-10-24 |
 | D11 | The install and run check of release 2026-10 is accepted on the day run of the appliance built from tag `2026-10` (commit e0a8e66e) by the installer of jeonghanlee/epicsarchiverap-env: 903 PVs archived for 24 hours (registration 2026-10-26T17:02Z, collector cycles 2026-10-26T17:32Z to 2026-10-27T17:02Z, 142 cycles with no error cycle), with the service, the archived and connected counts, the sample completeness, the dropped and stale counts, the move from the short-term to the medium-term store, a retrieval over the whole day of 16 PVs (16 of 16 complete, 2,351.6 MiB in total) and the health service all passing their checks; memory and disk are recorded as observed values only (appliance JVM 2613 MiB at the first cycle, 3007 MiB at the peak, 2639 MiB at the last; disk use unchanged at 42 percent). The statistics and the method are the record `docs/reports/soak-903pv-20261026.md` of jeonghanlee/epicsarchiverap-env at commit 587df6e0aa7163f6f28ba5f810d737212818cc36 (branch `release-2.0.1`); the raw measurements are not kept. Not shown by this run: the retrieval memory protection acting (no retrieval was refused or cut), the move from the medium-term to the long-term store and its reduction, and the first 30 minutes after registration, which were checked by hand only. This closes release 2026-10; the next release cycle opens from this document. | 2026-10-27 |
-| D12 | Release scope of release Ahsoka: the rows M12, M14, M7 and M13, which D9 left to work after the release, worked and released in this order on the branch ahsoka, which the owner opens from master and merges into master at the release; every other row stays in the Backlog. The release is named Ahsoka, its tag is named Ahsoka, and the project version is set to Ahsoka at the release. M12 comes first because it does not depend on the other three (whether M13 touches the same storage plugin is settled by the design step of M13), and M14 comes before M7 because both change what `MetaInfo` carries (M7 fills it for PV Access PVs, M14 updates it for Channel Access PVs at reconnect), so the two rows are worked in succession; M13 follows and also changes `PVTypeInfo`, so the comparison of M7 / T1 runs again on the combined branch (Release Verification 1); no dependency between the rows is recorded. | 2026-10-27 |
+| D12 | Release scope of release Ahsoka: the rows M12, M14, M7 and M13, which D9 left to work after the release, worked and released in this order on the branch ahsoka, which the owner opens from master and merges into master at the release; every other row stays in the Backlog. The release is named Ahsoka, its tag is named Ahsoka, and the project version is set to Ahsoka at the release. M12 comes first because it does not depend on the other three (whether M13 touches the same storage plugin is settled by the investigation step of M13), and M14 comes before M7 because both change what `MetaInfo` carries (M7 fills it for PV Access PVs, M14 updates it for Channel Access PVs at reconnect), so the two rows are worked in succession; M13 follows and also changes `PVTypeInfo`, so the comparison of M7 / T1 runs again on the combined branch (Release Verification 1); no dependency between the rows is recorded. | 2026-10-27 |
 
 ### ID Migration
 
@@ -237,14 +237,14 @@ The appliance archives a PV through PV Access without its unit, precision, limit
 
 ##### Scope
 
-Fill `MetaInfo` of a PV Access PV from the `display`, `control` and `valueAlarm` members of its structure and set its host name when the channel connects, so that the configuration of a PV is the same for both protocols. `EPICS_V4_PV` assigns no host name today; the source of the host name is chosen in the first step of the Implementation Plan, and its exact form is not fixed by this change. An integration test (T1) compares the two protocols on two equivalent records, because one record under both protocols is one PV name: the archive call drops the `pva://` prefix.
+Fill `MetaInfo` of a PV Access PV from the `display`, `control` and `valueAlarm` members of its structure and set its host name when the channel connects, so that the configuration of a PV is the same for both protocols. `EPICS_V4_PV` assigns no host name today; the host name is the server address that `PVAChannel.getRemoteAddress()` reports at connect, and its exact form is not fixed by this change. The type information takes the host name at the archive request, through `PVTypeInfo.absorbMetaInfo`. A member that the structure lacks leaves its limit NaN. An integration test (T1) compares the two protocols on two equivalent records, because one record under both protocols is one PV name: the archive call drops the `pva://` prefix.
 
 Out of scope: following a change of limits at the reconnect of a PV Access PV (M14 covers Channel Access PVs); how the consoles read a missing value (they already treat it as not provided); the `meta` of the retrieval response of a PV Access PV, which is not examined here.
 
 ##### Completion Criteria
 
-- `getPVTypeInfo` of a `pva://` PV of a record that sets `EGU`, `PREC` and limits reports the same `units`, `precision` and limits as the Channel Access PV of an equivalent record, and the warning and alarm limits that the record does not set are NaN for both protocols.
-- `getPVDetails` of the PV Access PV shows the unit and the precision, and `hostName` is set and not empty; the host name need not equal that of the Channel Access PV, because the exact form of that name is not fixed by this change.
+- `getPVTypeInfo` of a `pva://` PV of a record that sets `EGU`, `PREC` and limits reports the same `units`, `precision` and limits as the Channel Access PV of an equivalent record, and the warning and alarm limits that the record does not set are NaN for both protocols. A limit whose member the structure lacks is NaN too.
+- `getPVDetails` of the PV Access PV shows the unit and the precision, and `hostName` is set and not empty there and in `getPVTypeInfo`; the host name need not equal that of the Channel Access PV, because the exact form of that name is not fixed by this change.
 - An integration test in the default suite archives an equivalent record over each protocol and compares the fields; the default suite passes.
 
 ##### Dependencies And Decisions
@@ -252,22 +252,24 @@ Out of scope: following a change of limits at the reconnect of a PV Access PV (M
 - Origin: recorded on 2026-10-15 at the owner's direction, from the observation made while checking the Details window of the Browse PVs page (M58 (previous document, commit bfb0dc71)).
 - M58 (previous document, commit bfb0dc71) reads a value that the calls do not hold as "not provided" and does not wait for this item; M6 archives PVA PVs through `pva://` and benefits from it.
 - D12 (Decision Date 2026-10-27): carried by release Ahsoka as row 3 of 4, before M21.
-- The owner confirms the source of the host name of a PV Access PV at plan acceptance.
+- The owner decided on 2026-10-27 that the host name comes from `PVAChannel.getRemoteAddress()` and is shown in `getPVDetails` and in `getPVTypeInfo`, and that T1 is a JUnit test in the default suite.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-27, accepted by the owner in the planning conversation
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Fill `MetaInfo` in `EPICS_V4_PV` from the structure and assign the host name; the test of T1 first. `EPICS_V4_PV` assigns no host name today, so the source of the host name of a PV Access PV is chosen and recorded in this step before the code is written; the owner confirms it at plan acceptance. The step also answers these questions: which members of the PV Access structure feed the eight limits (`display`, `control`, `valueAlarm`); what a structure without a `display` member leaves in `MetaInfo`; which of `getPVDetails` and `getPVTypeInfo` carries the host name. Closes with T1 and T2.
+1. T1 first: the JUnit test fails on the code of today. Check: T1.
+2. In `src/main/org/epics/archiverappliance/engine/pv/EPICS_V4_PV.java`, `subscribe()` reads the structure at connect (`pvaChannel.read("")`); from it the code fills `totalMetaInfo`: the unit from `display.units`, the precision from `display.precision`, the display limits from `display.limitLow` and `display.limitHigh`, the control limits from `control.limitLow` and `control.limitHigh`, the warning and alarm limits from `valueAlarm.lowWarningLimit`, `highWarningLimit`, `lowAlarmLimit` and `highAlarmLimit`; a member that is absent leaves NaN. The member names are those of the table in `FieldValuesCache`, which maps `control.minStep` to PREC; that entry is not used for the precision. The names are confirmed with `pvxget` on the soft IOC before the code is written. The host name is set from `PVAChannel.getRemoteAddress()` at connect. Check: T1.
+3. `PVTypeInfo.absorbMetaInfo` copies the host name of the `MetaInfo`, so that `getPVTypeInfo` carries it as the Channel Access PV does after its first connect. Check: T1, T2.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Integration | A JUnit test in the pattern of `PVAccessIntegrationTest` and `TypeChangePauseTest` (`SIOCSetup.startSIOCWithDB`, the soft IOC of `src/resources/test/st.cmd` and `ConsoleChartPVs.db`): archive `SR:RF:CAV2:TEMP` through `pva://` and `SR:RF:CAV2:POWER` over Channel Access, with the same non-zero values for `EGU`, `PREC`, `HOPR` and `LOPR` in their `CAV2_*` macros (with the default 0 the old behaviour equals the new one and the comparison cannot fail), and compare `getPVTypeInfo` and `getPVDetails` of the two once the type information exists; a manual run with `ioc-runner` (the section "Run the test IOC of the console checks" of `docs/book/src/developer.md`) is the alternative if the owner prefers it at plan acceptance, and criterion 3 changes with it | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | The units, precision, display limits and control limits are equal for both protocols; the warning and alarm limits are NaN for both, because neither record sets a severity; `hostName` is set and not empty for the PV Access PV, in the view chosen in step 1 |
+| T1 | Integration | A JUnit test in the pattern of `PVAccessIntegrationTest` and `TypeChangePauseTest` (`SIOCSetup.startSIOCWithDB`, the soft IOC of `src/resources/test/st.cmd` and `ConsoleChartPVs.db`): archive `SR:RF:CAV2:TEMP` through `pva://` and `SR:RF:CAV2:POWER` over Channel Access, with the same non-zero values for `EGU`, `PREC`, `HOPR` and `LOPR` in their `CAV2_*` macros (with the default 0 the old behaviour equals the new one and the comparison cannot fail), and compare `getPVTypeInfo` and `getPVDetails` of the two once the type information exists | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | The units, precision, display limits and control limits are equal for both protocols; the warning and alarm limits are NaN for both, because neither record sets a severity; `hostName` is set and not empty for the PV Access PV, in `getPVDetails` and in `getPVTypeInfo` |
 | T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
 
 ##### Verification Results
@@ -304,41 +306,42 @@ Status: Not started
 
 ##### Scope
 
-- The type change succeeds for every target type. Where the stored history cannot be converted into the new type (a number into a string, a scalar into a waveform), the history stays as it is under the old type and the new type starts from the instant of the change; where a conversion is defined (number to number), it is kept. No conversion of a number into a string is defined.
+- The type change succeeds for every target type. The stored history is converted into the new type by the rewrite of the stores that the type change already uses: a number becomes its text, and a scalar becomes a waveform of one element; a conversion that is already defined (number to number) is kept. The earlier samples are therefore readable in the new type, not as they were stored; keeping them under their old type is the design of the deferred row for the automatic reaction to a changed record (issue #48).
 - The call reports its result in its JSON answer and in the log of the management web application, where `ChangeTypeForPV` runs.
 
-Out of scope: an automatic type change by the engine without an operator call; the console page that offers the change.
+Out of scope: an automatic type change by the engine without an operator call; keeping the earlier samples under their old type (issue #48); the console page that offers the change.
 
 ##### Completion Criteria
 
 - `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns HTTP 200, the PV resumes as Being archived with the new type in `getPVTypeInfo`, and the dropped-events count stops growing.
-- The samples stored before the change stay readable through `getData`, and a window across the change returns both the earlier and the later samples.
-- The JSON answer of the call tells whether the stored history was converted or kept under the old type, and the log of the management web application names the PV, the old type and the new type.
+- The samples stored before the change are readable through `getData` in the new type (a number as its text, a scalar as a waveform of one element), and a window across the change returns both the earlier and the later samples.
+- The JSON answer of the call names the old and the new type and says that the stored history was converted, and the log of the management web application names the PV, the old type and the new type.
 - The record-change checks on the soft IOC with `RECORD_CHANGE=Types` pass for all four records of `ConsoleChartPVsRecordChangeTypes.db`: `SR:BPM:04:X` (`longin`), `SR:BPM:04:Y` (`stringin`), `SR:BPM:03:X` (`waveform`) and `SR:BPM:03:Y` (`longin`). For each record, archived first as a scalar double with the default databases, the IOC restarts with `RECORD_CHANGE=Types`, the PV is paused, `changeTypeForPV` is called with the type of the new record (`DBR_SCALAR_INT`, `DBR_SCALAR_STRING`, `DBR_WAVEFORM_DOUBLE`, `DBR_SCALAR_INT`) and the PV is resumed, and the first criterion holds.
 
 ##### Dependencies And Decisions
 
 - D9 (Decision Date 2026-10-24): worked after the release.
 - D12 (Decision Date 2026-10-27): carried by release Ahsoka as row 4 of 4, before M21.
-- The owner confirms at plan acceptance that no conversion of a number into a string is defined; the text of issue #45 proposes it.
+- The owner decided on 2026-10-28 that the history is converted (a number into its text, a scalar into a waveform of one element) and not kept under the old type, that the string and the waveform targets are both in this row, and that the content of the JSON answer is as the Completion Criteria state. If the investigation of step 2 shows a change of the read path or of the engine beyond the type information, the work stops and returns to the owner.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-28, accepted by the owner in the planning conversation, with a stop condition at step 2
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Design first, decided by the owner before the code is written: `PVTypeInfo` holds one type per PV, a PB file carries the type of its samples in its header, and `PlainPBStoragePlugin.convert` rewrites the stored files today. The step records how the earlier samples stay readable under the old type and the later ones under the new type in one `getData` window, and which classes and files that touches (`ChangeTypeForPV`, the storage plugin, the file naming, the retrieval). The step answers these questions in this detail before the plan is accepted: how the earlier samples stay readable under the old type and the later ones under the new type in one `getData` window, given that `PVTypeInfo` holds one type and the read path takes the type of the samples from the first file of the window; what `isScalar` and the element count become when the new type is a waveform; how the ETL lookup, which builds its items from `getDBRType()`, treats a file of the old type; which classes and files change. Check: the owner's acceptance of the recorded design.
-2. `ChangeTypeForPV` keeps the history under the old type when no conversion is defined and starts the new type at the change, instead of converting or failing, by the design of step 1. Check: T1, T2.
-3. The JSON answer and the log of the management web application carry the result of the third Completion Criterion above (the content of the answer is confirmed by the owner at plan acceptance). Check: T2.
+1. T1 first: the unit test fails on the code of today. Check: T1.
+2. Before the code is written, find where the element count of a waveform PV comes from when the PV resumes (the record through the channel, or a parameter of the call) and what the engine does when the count differs from the type information; the answer is recorded in this detail. `ChangeTypeForPV` sets `isScalar` and the element count for a waveform target by that answer. If the answer needs a change of the read path or of the engine beyond the type information, the work stops and returns to the owner. Check: the recorded answer.
+3. In `src/main/org/epics/archiverappliance/etl/conversion/ThruNumberAndStringConversion.java` the string target converts a numeric sample into the text of its number, and the waveform targets convert a scalar sample into a vector of one element; whether the serializing constructor of each waveform type accepts that value is answered by T1, starting with `DBR_WAVEFORM_DOUBLE`. Check: T1.
+4. The JSON answer and the log of the management web application carry the result of the third Completion Criterion above. Check: T2.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Unit | `ChangeTypeForPV` with a numeric history and each target type, through a real `ConfigService` of the suite (`ConfigServiceForTests`) with only the HTTP request and response as stand-ins | JDK 21 | Numeric targets convert as before; string and waveform targets keep the history and start the new type; no exception |
-| T2 | Integration, manual with `ioc-runner` | Follow the section "Run the test IOC of the console checks" of `docs/book/src/developer.md` (the step with `RECORD_CHANGE=Types`): archive the four records of `ConsoleChartPVsRecordChangeTypes.db` as scalar doubles over Channel Access with the default databases, restart the IOC with `RECORD_CHANGE=Types`, and for each PV call `pauseArchivingPV`, `changeTypeForPV` with the new type of its record and `resumeArchivingPV`; read `getPVTypeInfo`, the report `getPVsByDroppedEventsTypeChange` and `getData` over a window around the change; the exact calls and the instant of the change are written into the result row at the run | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | HTTP 200, new type in `getPVTypeInfo`, dropped-events count constant, earlier and later samples returned in one window, and the JSON answer and the management log as the content named in the third Completion Criterion |
+| T1 | Unit | `ChangeTypeForPV` with a numeric history and each target type, through a real `ConfigService` of the suite (`ConfigServiceForTests`) with only the HTTP request and response as stand-ins | JDK 21 | Numeric targets convert as before; the string target converts each number into its text; the waveform target converts each sample into a vector of one element; no exception |
+| T2 | Integration, manual with `ioc-runner` | Follow the section "Run the test IOC of the console checks" of `docs/book/src/developer.md` (the step with `RECORD_CHANGE=Types`): archive the four records of `ConsoleChartPVsRecordChangeTypes.db` as scalar doubles over Channel Access with the default databases, restart the IOC with `RECORD_CHANGE=Types`, and for each PV call `pauseArchivingPV`, `changeTypeForPV` with the new type of its record and `resumeArchivingPV`; read `getPVTypeInfo`, the report `getPVsByDroppedEventsTypeChange` and `getData` over a window around the change; the exact calls and the instant of the change are written into the result row at the run | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | HTTP 200, new type in `getPVTypeInfo`, dropped-events count constant, earlier samples (in the new type) and later samples returned in one window, and the JSON answer and the management log as the content named in the third Completion Criterion |
 
 ##### Verification Results
 
@@ -377,6 +380,7 @@ Release Ahsoka carries the four rows M12, M14, M7 and M13, in that order, on the
 - Each of M12, M14, M7 and M13 is Complete in its own detail before this row starts its checks.
 - The Integrated Verification rows run on the combined branch before the version change.
 - The project version in `pom.xml` is set to Ahsoka, the branch ahsoka is merged into master with a merge commit, the annotated tag Ahsoka is created on that merge commit, and issues #52, #47, #41 and #45 close through `Closes` trailers of the version commit when it reaches master.
+- The sentence of `README.md` that names the form of a release tag is changed in a docs commit of its own, before the version change.
 - The documented install-from-bundle path runs on Debian 13 and on Rocky Linux 8.10 with the bundle built from the tag Ahsoka.
 
 Out of scope: any other Backlog row; a long run of the tag in the environment repository, which the owner decides after the release; the analyzer rows.
@@ -387,25 +391,27 @@ Out of scope: any other Backlog row; a long run of the tag in the environment re
 - Every Release Verification row below reads Pass with reachable evidence.
 - The tag Ahsoka is an annotated tag on the merge commit, that commit is on origin/master, and the Maven workflow succeeded on it.
 - Issues #52, #47, #41 and #45 are observed closed.
+- `README.md` names the tag of a release as the name of the release, for example `2026-10` or `Ahsoka`, and no longer as a form `YYYY-MM` (Release Verification 14).
 
 ##### Dependencies And Decisions
 
 - M12, M14, M7, M13: the checks of this row run on their combined result.
 - D12 (Decision Date 2026-10-27): the scope, the name and the order.
+- The owner decided on 2026-10-28 that the sentence of `README.md` about the tag name is changed in a docs commit of its own before the version change, that the clean hosts of the installation check are test guests requested from the provisioning session when the check starts and returned with a finished notice, and that a long run of the tag is not part of this row.
 - The Integrated Verification rows are shared-surface candidates: M7 fills `MetaInfo` and M14 updates it (details of M7 and M14), and `ChangeTypeForPV` of M13 reads and writes the same `PVTypeInfo` as `MetaInfo.updateTypeInfo` through `getTypeInfoForPV` and `updateTypeInfoForPV`. The plan review of phase 4 confirms or removes each.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
+Plan Status: accepted
+Plan Acceptance: 2026-10-28, accepted by the owner in the planning conversation
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
 1. When the four rows are Complete, run the Integrated Verification rows on the combined branch. Closes with Release Verification 13, 1 and 2.
-2. Push the branch ahsoka (Release Execution 1) and read the Maven workflow on its tip. Closes with Release Verification 3.
+2. Commit the README sentence, push the branch ahsoka (Release Execution 1) and read the Maven workflow on its tip. Closes with Release Verification 14 and 3.
 3. Check the version, change it, commit it with the trailers, push the branch (Release Execution 2 and 3) and read the Maven workflow on the version commit. Closes with Release Verification 4, 5 and 6.
 4. Merge into master, push master, create and push the tag (Release Execution 4 to 7) and read the Maven workflow runs on the merge commit, the one of the master push and the one that the tag push starts. Closes with Release Verification 7 and 8.
-5. Install from the bundle of the tag on the two supported distributions, observe the closed issues delete the branch (Release Execution 8) and record the results in this register (Release Execution 9). Closes with Release Verification 9, 10, 11 and 12.
+5. Install from the bundle of the tag on the two supported distributions, observe the closed issues, delete the branch (Release Execution 8) and record the results in this register (Release Execution 9). Closes with Release Verification 9, 10, 11 and 12.
 
 ##### Integrated Verification
 
@@ -418,8 +424,8 @@ Superseded Plan Artifacts: none
 
 | Release Verification Label | Timing | System | Version | Architecture | Deployment Path | Method | Expected Result | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Release Verification 9 | post-release | Debian 13, a clean host with `curl`, which step 4 of the install page uses | the bundle built from the tag Ahsoka, once, on the development host (JDK 21 and git installed) in a fresh clone of origin after Release Execution 7 with the tag checked out and `./mvnw -B clean package -DskipTests` (`docs/book/src/building.md`); the file name `aa-<date>-<commit>.tar.gz` is recorded, its commit part equals the first eight characters of the merge commit recorded at Release Execution 4, and the file is copied to the clean host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | follow every step of the install page with that bundle, the soft IOC of `src/resources/test/st.cmd` started on the development host as `<ioc_address>` (reachable from the clean host over Channel Access, UDP 5064 and the server TCP port), and `SR:BPM:01:X` of `ConsoleChartPVs.db` as `<pv_name>` | the four instances report `STARTUP_COMPLETE`, the PV reaches `connectionState` true, and the read-back reply holds at least one sample, counted by `curl -s "http://localhost:17668/retrieval/data/getData.json?pv=<pv_name>" \| grep -o '"val"' \| wc -l` | the four `startupState` lines, the `getPVStatus` reply, the sample count, the bundle file name, the `uname -m` output and the `sha256sum` of the bundle on the development host and on this host, written into the result row |
-| Release Verification 10 | post-release | Rocky Linux 8.10, a clean host with `curl` | the same bundle, copied to this host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | the same steps with the same bundle, IOC and PV | the same result | the same items, written into the result row; the two `sha256sum` values are equal to those of the Debian 13 row |
+| Release Verification 9 | post-release | Debian 13, a clean test guest requested from the provisioning session for this check, with `curl`, which step 4 of the install page uses; a finished notice returns it | the bundle built from the tag Ahsoka, once, on the development host (JDK 21 and git installed) in a fresh clone of origin after Release Execution 7 with the tag checked out and `./mvnw -B clean package -DskipTests` (`docs/book/src/building.md`); the file name `aa-<date>-<commit>.tar.gz` is recorded, its commit part equals the first eight characters of the merge commit recorded at Release Execution 4, and the file is copied to the clean host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | follow every step of the install page with that bundle, the soft IOC of `src/resources/test/st.cmd` started on the development host as `<ioc_address>` (reachable from the clean host over Channel Access, UDP 5064 and the server TCP port), and `SR:BPM:01:X` of `ConsoleChartPVs.db` as `<pv_name>` | the four instances report `STARTUP_COMPLETE`, the PV reaches `connectionState` true, and the read-back reply holds at least one sample, counted by `curl -s "http://localhost:17668/retrieval/data/getData.json?pv=<pv_name>" \| grep -o '"val"' \| wc -l` | the four `startupState` lines, the `getPVStatus` reply, the sample count, the bundle file name, the `uname -m` output and the `sha256sum` of the bundle on the development host and on this host, written into the result row |
+| Release Verification 10 | post-release | Rocky Linux 8.10, a clean test guest requested the same way, with `curl`; a finished notice returns it | the same bundle, copied to this host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | the same steps with the same bundle, IOC and PV | the same result | the same items, written into the result row; the two `sha256sum` values are equal to those of the Debian 13 row |
 
 ##### Version Changes
 
@@ -433,7 +439,7 @@ The owner's push trigger for steps 1, 3 and 5 covers the outgoing commits named 
 
 | Step | Action | Authorization | Expected Result | Evidence |
 | --- | --- | --- | --- | --- |
-| 1 | Push the branch ahsoka with an upstream, before the version change, and record the tip with `git rev-parse HEAD` | push delegation | the branch exists on origin, the Maven workflow runs on the recorded tip | pending |
+| 1 | Change the sentence of `README.md` that names the form of a release tag to "A release is an annotated tag named after the release, for example `2026-10` or `Ahsoka`." and commit it on its own; then push the branch ahsoka with a plain `git push` (the branch exists on origin with its upstream) and record the tip with `git rev-parse HEAD` | commit delegation and push delegation | the README commit is separate from the version commit; origin/ahsoka equals the recorded tip and the Maven workflow runs on it | pending |
 | 2 | After Release Verification 3 reads Pass, run the pre-check (Release Verification 4), edit the version line of `pom.xml` (`  <version>2026-10</version>` to `  <version>Ahsoka</version>`), run the post-check (Release Verification 5), commit it on the branch ahsoka with the trailers `Closes #52`, `Closes #47`, `Closes #41` and `Closes #45` and record the commit with `git rev-parse HEAD` | commit delegation | `git show --stat` lists only `pom.xml` with one line changed, the message carries the four trailers, and the commit ID is recorded | pending |
 | 3 | Push the branch ahsoka | push delegation | the Maven workflow runs on the version commit recorded at step 2 | pending |
 | 4 | After Release Verification 6 reads Pass, run `git fetch`, check out master (`git rev-list --count ahsoka..master` prints 0 and `git rev-parse master origin/master` prints one ID twice), merge with `git merge --no-ff ahsoka -m "Merge ahsoka: Ahsoka release"` and record the merge commit with `git rev-parse HEAD` | user-run | a merge commit on master (`git rev-list --parents -n 1 HEAD` prints three IDs); `git rev-list --count ahsoka ^HEAD` prints 0; the merge commit ID is recorded | pending |
@@ -441,7 +447,7 @@ The owner's push trigger for steps 1, 3 and 5 covers the outgoing commits named 
 | 6 | After Release Verification 7 reads Pass, create the annotated tag Ahsoka on the merge commit with the message `Release Ahsoka` | tag create delegation | the tag object peels to the merge commit | pending |
 | 7 | Push the tag Ahsoka | tag push delegation | the remote tag object equals the local tag object | pending |
 | 8 | Delete the branch ahsoka, local and on origin | user-run | `git branch --list ahsoka` and `git ls-remote --heads origin ahsoka` print nothing | pending |
-| 9 | Record the results of Release Verification 1 to 13 in this register, commit it and push master | commit delegation and push delegation | `git rev-parse master origin/master` prints one ID twice; the push changes only the register and starts no run | pending |
+| 9 | Record the results of Release Verification 1 to 14 in this register, commit it and push master | commit delegation and push delegation | `git rev-parse master origin/master` prints one ID twice; the push changes only the register and starts no run | pending |
 
 ##### Release Verification Plan
 
@@ -460,6 +466,7 @@ The owner's push trigger for steps 1, 3 and 5 covers the outgoing commits named 
 | Release Verification 11 | Tracker | post-release | `gh issue view` of #52, #47, #41 and #45 | GitHub | the four issues are closed | the observed states |
 | Release Verification 12 | Branch | post-release | `git branch --list ahsoka` and `git ls-remote --heads origin ahsoka` after Release Execution 8 | the repository and origin | both print nothing | the command output |
 | Release Verification 13 | Status | pre-change | read the Status line of the details of M12, M14, M7 and M13 in this register | this register | all four read Complete | the four Status lines |
+| Release Verification 14 | Documentation | pre-change | `grep -n "annotated tag" README.md` on the tip recorded at Release Execution 1 | the working tree | the line names the tag as the name of the release and not as a form `YYYY-MM` | the command output |
 
 ##### Release Verification Results
 
@@ -478,6 +485,7 @@ The owner's push trigger for steps 1, 3 and 5 covers the outgoing commits named 
 | Release Verification 11 | Not run | GitHub | Pending | none |
 | Release Verification 12 | Not run | repository and origin | Pending | none |
 | Release Verification 13 | Not run | this register | Pending | none |
+| Release Verification 14 | Not run | working tree | Pending | none |
 
 ##### Closure Evidence
 
