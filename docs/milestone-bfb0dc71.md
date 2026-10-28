@@ -3,10 +3,10 @@
 Release line: master
 Milestone index: bfb0dc71
 Canonical path: `docs/milestone-bfb0dc71.md`
-Canonical branch or ref: master
+Canonical branch or ref: master; release Ahsoka is worked on the branch ahsoka until its merge into master
 Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
-Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-265f580.md` on branch modernize (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
+Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-2.0.1.md` on branch release-2.0.1 (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
 Next session entry point: implementation of release Ahsoka on the branch ahsoka, in the order M12, M14, M7, M13 (all plans and the release plan are accepted, none has implementation authority): record the owner's implementation authority for the row to start, write its T1 first, then follow its Implementation Plan. The other Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18; M20 waits for G1.
 
@@ -144,13 +144,13 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: A zip store as an ETL source keeps the partition it moved
+Title: A zip ETL source keeps the partition it moved
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-27 17:00 PDT; `gh issue view 52` reads the title "A zip ETL source keeps the partition it moved", OPEN with label bug; the register title above is the projection source and the live title is not changed without Issue delegation.
+Last Compared: 2026-10-28 00:46 PDT; `gh issue edit 52` replaced the body with the projection of this detail, read back OPEN with a body equal to the draft, label bug, assignee jeonghanlee, no milestone, remote updatedAt 2026-10-28T07:46:15Z
 
 #### M14 - Carry the changed limits of a record into the type information at reconnect
 
@@ -219,10 +219,10 @@ Superseded Plan Artifacts: none
 Title: Display limits not read again at reconnect
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN (2026-10-24)
+Observed State: OPEN (2026-10-28)
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 47` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN; on 2026-10-27 the live body of #47 still says "under the same rate limit as the unit and the precision", while the Scope above is the projection source; the first Acceptance Criterion of the live body names `HOPR`, `LOPR`, `HIGH` and `LOW`, which the Completion Criteria above narrow to the display limits at integration level
+Last Compared: 2026-10-28 00:46 PDT; `gh issue edit 47` replaced the body with the projection of this detail, read back OPEN with a body equal to the draft, label bug, assignee jeonghanlee, no milestone, remote updatedAt 2026-10-28T07:46:16Z
 
 #### M7 - PVA PVs keep the unit, precision, limits and host in their configuration
 
@@ -288,10 +288,10 @@ Superseded Plan Artifacts: none
 Title: PV Access PVs are archived without unit, precision, limits and host
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 41` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN; on 2026-10-27 the live body of #41 states the host name of the PV Access server as settled, while the Scope above leaves its source to the plan
+Last Compared: 2026-10-28 00:46 PDT; `gh issue edit 41` replaced the body with the projection of this detail, read back OPEN with a body equal to the draft, label bug, assignee jeonghanlee, no milestone, remote updatedAt 2026-10-28T07:46:17Z
 
 #### M13 - Let a type change to a string or a waveform type succeed
 
@@ -359,10 +359,10 @@ Superseded Plan Artifacts: none
 Title: Type change to string or waveform fails
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN (2026-10-24)
+Observed State: OPEN (2026-10-28)
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 45` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN; on 2026-10-27 the live body of #45 names the engine log, while the Scope above names the log of the management web application, where the call runs
+Last Compared: 2026-10-28 00:46 PDT; `gh issue edit 45` replaced the body with the projection of this detail, read back OPEN with a body equal to the draft, label bug, assignee jeonghanlee, no milestone, remote updatedAt 2026-10-28T07:46:19Z
 
 #### M21 - Release Ahsoka
 
@@ -613,10 +613,10 @@ Superseded Plan Artifacts: none
 Title: Analyzer for archived data
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #39 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T17:58:00Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN
 
 #### M2 - Analyzer phase B: interaction, options and export
 
@@ -693,10 +693,10 @@ Superseded Plan Artifacts: none
 Title: Analyzer for archived data
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN; a box per phase is added to its body when the phase plans are accepted (D5).
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #39 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T17:58:00Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN; a box per phase is added to its body when the phase plans are accepted (D5).
 
 #### M3 - Analyzer phase C: tools for one signal
 
@@ -777,10 +777,10 @@ Superseded Plan Artifacts: none
 Title: Analyzer for archived data
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #39 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T17:58:00Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN
 
 #### M4 - Analyzer phase D: tools for two and several signals
 
@@ -860,10 +860,10 @@ Superseded Plan Artifacts: none
 Title: Analyzer for archived data
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN; a box per phase is added to its body when the phase plans are accepted (D5).
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #39 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T17:58:00Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN; a box per phase is added to its body when the phase plans are accepted (D5).
 
 #### M5 - Analyzer phase E: waveform and image analysis
 
@@ -946,10 +946,10 @@ Superseded Plan Artifacts: none
 Title: Analyzer for archived data
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #39 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T17:58:00Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:02 PDT; `gh issue edit 39` replaced the body (the Current State names the release 2026-10 and not a deleted branch), read back OPEN
 
 #### M6 - Appliance status as PVA PVs
 
@@ -1015,10 +1015,10 @@ Superseded Plan Artifacts: none
 Title: Appliance status measures are not archived PVs
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #66 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T18:56:40Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### M8 - Bound the concurrent calls of the PVAccess retrieval service
 
@@ -1082,10 +1082,10 @@ Superseded Plan Artifacts: none
 Title: Bound the concurrent calls of the PVAccess retrieval service
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #62 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T17:58:21Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:02 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### M9 - Measure the thread and valve limits and the remaining qualification cells of the retrieval protection
 
@@ -1152,10 +1152,10 @@ Superseded Plan Artifacts: none
 Title: Measure thread and valve limits under load
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN (2026-10-24 19:57 UTC)
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 12:23 PDT; `gh issue edit 58` replaced the body (the Acceptance Criteria no longer name the register), read back OPEN
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #58 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T19:22:06Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 12:23 PDT; `gh issue edit 58` replaced the body (the Acceptance Criteria no longer name the register), read back OPEN
 
 #### M10 - Decide the stamping and filtering rule of summary bins at the window edges
 
@@ -1217,10 +1217,10 @@ Superseded Plan Artifacts: none
 Title: Summary bin event stamped past the request end
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN (2026-10-24 19:57 UTC)
+Observed State: OPEN (2026-10-28)
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 59` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #59 OPEN, label bug, milestone none, remote updatedAt 2026-10-26T17:58:11Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:02 PDT; `gh issue edit 59` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
 
 #### M11 - Check the retrieval operators outside the declared-size check
 
@@ -1286,10 +1286,10 @@ Superseded Plan Artifacts: none
 Title: Check retrieval operators outside the size check
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN (2026-10-24)
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 60` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #60 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T17:58:13Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:02 PDT; `gh issue edit 60` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
 
 #### M15 - Archiving continues across a change of the record
 
@@ -1355,10 +1355,10 @@ Body: The engine detects a change of an archived record but stops at counting, s
 
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Assignee: jeonghanlee
-Last Compared: 2026-10-26 11:02 PDT; `gh issue edit 48` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #48 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T17:58:08Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:02 PDT; `gh issue edit 48` replaced the body (the Acceptance Criteria are checkboxes, all open), read back OPEN
 
 #### M16 - Modernize the retained state-changing sample scripts
 
@@ -1428,10 +1428,10 @@ Superseded Plan Artifacts: none
 Title: State-changing sample scripts lack a timeout and outcome contract
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #63 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T18:56:34Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### M17 - Mail delivery for the alert checks
 
@@ -1491,10 +1491,10 @@ Superseded Plan Artifacts: none
 Title: Mail delivery for the alert checks
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #64 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T18:56:36Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### M18 - Verify the proxy to an external Archiver Appliance
 
@@ -1556,10 +1556,10 @@ Superseded Plan Artifacts: none
 Title: The proxy to an external Archiver Appliance is not tested
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #65 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T18:56:38Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### M19 - Verify signal storage and important-signal delivery under client overload
 
@@ -1630,11 +1630,11 @@ Superseded Plan Artifacts: none
 Title: Verify storage and important-signal delivery under client overload
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
 Observed Assignee: jeonghanlee
-Last Compared: 2026-10-23T06:26:19.445179+00:00; issue #55 read back with exact draft-body equality; remote updatedAt 2026-10-23T06:25:39Z.
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #55 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-23T06:25:39Z, no difference of metadata from the Observed fields; earlier record: 2026-10-23T06:26:19.445179+00:00; issue #55 read back with exact draft-body equality; remote updatedAt 2026-10-23T06:25:39Z.
 
 #### M20 - Integrated 24-hour ETL, journal and sample-buffer verification
 
@@ -1702,10 +1702,10 @@ Superseded Plan Artifacts: none
 Title: Integrated 24-hour ETL, journal and sample-buffer verification
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN
+Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
+Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #67 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T18:56:42Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
 
 #### G1 - Ansible tools ready for the integrated 24-hour campaign
 
