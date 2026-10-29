@@ -359,7 +359,7 @@ Parameters of the `pb` plugin:
 | `pp` | post-processors computed and cached while data moves into this store; a retrieval request that matches one exactly reads the cached result. The cached files of a partition leave the store with its data when the ETL moves it on or the PV is deleted. Not combined with `reducedata` on one store, since the caches would be computed from the reduced data |
 | `etlIntoStoreIf` | name of a flag ([Operating](operating.md#named-flags)); while the flag is false, data moved into this store is discarded |
 | `etlOutofStoreIf` | name of a flag; while the flag is false, data stays in this store and accumulates |
-| `compress` | `ZIP_PER_PV` keeps the files of a PV in one zip archive instead of a folder. For the last store of a chain only: a zip store that is the source of a move keeps the partition it moved, so the data would exist twice. The move out of an uncompressed store deletes the moved partition and its cached files |
+| `compress` | `ZIP_PER_PV` keeps the files of a PV in one zip archive instead of a folder. For the last store of a chain only. The move out of an uncompressed store deletes the moved partition and its cached files |
 
 Parameters of the `merge`, `pbraw` and `rtree` plugins:
 

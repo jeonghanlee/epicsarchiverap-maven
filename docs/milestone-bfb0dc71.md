@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-2.0.1.md` on branch release-2.0.1 (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: implementation of release Ahsoka on the branch ahsoka, in the order M12, M14, M7, M13 (all plans and the release plan are accepted, none has implementation authority): record the owner's implementation authority for the row to start, write its T1 first, then follow its Implementation Plan. The other Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18; M20 waits for G1.
+Next session entry point: continue M12 on branch ahsoka from its Verification Results below: the local implementation, regression, default suite and book checks pass; commit, upstream landing evidence and linked-issue reconciliation remain under their separate authority. M12 implementation is authorized on 2026-10-29; the later accepted plans M14, M7, M13 and M21 await their own implementation authority. Release work remains one In progress row and four Not started rows. The other Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18; M20 waits for G1.
 
 ## Milestone
 
@@ -18,7 +18,7 @@ This register covers the work that remains after release 2026-10 of the Maven ap
 
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | Not started | Yes | D6, D12 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
+| Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | In progress | No | D6, D12 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
 | Appliance defects | M14 | Carry the changed limits of a record into the type information at reconnect | Milestone | Not started | Yes | D9, D12 | After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` holds the new limits within one reconnect and the Details window shows them, the unit and the precision keep being updated, and the suite passes with a test that reconnects a PV with changed limits; issue #47; [detail](#m14---carry-the-changed-limits-of-a-record-into-the-type-information-at-reconnect) |
 | Interface console | M7 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes | D12 | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of an equivalent record does; [detail](#m7---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
 | Appliance defects | M13 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D9, D12 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m13---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
@@ -86,7 +86,7 @@ Rows moved from the Backlog to the Milestone section of this document on 2026-10
 Origin: bfb0dc71 / M13
 Identity History: M13 to M12 on 2026-10-26
 GitHub Issue: #52 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/52)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -117,7 +117,7 @@ Out of scope: the uncompressed store, which an earlier check covered; where a zi
 
 Plan Status: accepted
 Plan Acceptance: 2026-10-27, accepted by the owner in the planning conversation, with the book change as the last step
-Implementation Authorization: none
+Implementation Authorization: 2026-10-29, owner directed work on Ahsoka to proceed; M12 is the first item in the accepted order
 Superseded Plan Artifacts: none
 
 1. In `src/main/edu/stanford/slac/archiverappliance/PlainPB/PlainPBStoragePlugin.java`, `getETLStreams` takes the key of each `ETLInfo` from the private helper `deletionKey(Path)`, which `getETLStreamsForDeletion` already uses and which builds the `jar:` form for `ZIP_PER_PV`. Check: T1.
@@ -135,12 +135,13 @@ Superseded Plan Artifacts: none
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | pending | | | |
-| T2 | pending | | | |
+| T1 | 2026-10-29 11:38 PDT | OpenJDK 21.0.13, wrapper Maven, offline cached dependencies; Maven heap 1 GiB and one reused test fork with 2 GiB heap | Pass | The new shipped-ETL regression failed before the fix because the old partition remained in the zip; after the fix the cleanup and explicit-deletion classes passed all 14 tests. `./mvnw -B -ntp -o clean verify -DargLine=-Xmx2g -DforkCount=1 -DreuseForks=true` with `MAVEN_OPTS=-Xmx1g` completed successfully: 1,146 tests, zero failures, errors or skips. The two-hop regression checks removal of raw and mean_60 entries, retention of the newer partition and exactly 3,600 destination samples with the expected timestamp and value after a repeated ETL pass. Local logs: `work/ahsoka-m12-red-20261029.log`, `work/ahsoka-m12-green-20261029.log`, `work/ahsoka-m12-verify-20261029.log`. Environment-dependent integration profiles were not selected. |
+| T2 | 2026-10-29 11:38 PDT | Existing aa-mdbook image, mdBook 0.4.52; Python HTMLParser over its generated HTML | Pass for build and internal links | The corrected compress row retains the last-store advice and removes the duplicate-data warning. The image built the real book into `work/ahsoka-m12-book-20261029`; `python3 work/check-book-links-m12.py work/ahsoka-m12-book-20261029` checked 21 HTML pages and 1,181 local links and fragments with zero errors; 52 external references were excluded from this internal check. Build log: `work/ahsoka-m12-book-20261029.log`. The existing admonish version warning did not prevent the build. |
 
 ##### Closure Evidence
 
-- none
+- Implementation rechecked against the accepted plan and its completion criteria on 2026-10-29: getETLStreams uses the existing deletionKey helper, the real two-hop regression covers the moved and retained partitions and destination data, explicit deletion passes, and the book preserves the last-store restriction. No scope deviation found.
+- Local verification is complete; repository changes are uncommitted. Commit, upstream landing evidence and linked-issue reconciliation remain pending, so M12 stays In progress.
 
 ##### GitHub Projection
 

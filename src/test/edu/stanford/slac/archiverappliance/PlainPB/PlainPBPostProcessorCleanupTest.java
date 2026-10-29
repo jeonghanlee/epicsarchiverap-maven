@@ -38,8 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 /**
  * Checks that the post-processor files of a partition leave a store with its data: over two hops of the shipped ETLJob
  * (STS to a MTS that carries pp=mean_60, then that MTS to the LTS) and over the explicit deletion of a PV's data. The
- * zip archive per PV is covered for the explicit deletion only, because a zip store is the last store of a chain and
- * is not an ETL source.
+ * zip archive per PV is covered both as an ETL source and for explicit deletion.
  */
 public class PlainPBPostProcessorCleanupTest {
     private static final String PV = ConfigServiceForTests.ARCH_UNIT_TEST_PVNAME_PREFIX + ":PPCleanup:signal";
@@ -172,6 +171,42 @@ public class PlainPBPostProcessorCleanupTest {
             }
         }
         assertEquals(set(), mtsFileNames(), "after the deletion the MTS holds no file of the PV");
+    }
+
+    @Test
+    void thePostProcessorEntriesOfAMovedPartitionLeaveTheZipStore() throws Exception {
+        String sts = url("STS", "PARTITION_HOUR", "");
+        String mts = url("MTS", "PARTITION_HOUR", "&pp=mean_60&compress=ZIP_PER_PV");
+        String lts = url("LTS", "PARTITION_YEAR", "");
+        write(sts, 2 * HOUR);
+        String year = Short.toString(TimeUtils.getCurrentYear());
+        String hour0 = year + "_01_01_00";
+        String hour1 = year + "_01_01_01";
+
+        hop(item(sts, mts, 0), startOfYearPlus(3 * HOUR));
+        assertEquals(set(hour0 + ".pb", hour0 + ".mean_60", hour1 + ".pb", hour1 + ".mean_60"), mtsFileNames(),
+                "after the first hop the zip holds both partitions and their post-processor entries");
+
+        hop(item(mts, lts, 1), startOfYearPlus(HOUR + HOUR / 2));
+        assertEquals(set(hour1 + ".pb", hour1 + ".mean_60"), mtsFileNames(),
+                "after the second hop the zip holds only the newer partition and its post-processor entry");
+
+        // A repeated pass must not append the moved partition again.
+        hop(item(mts, lts, 1), startOfYearPlus(HOUR + HOUR / 2));
+        int samples = 0;
+        try (Stream<Path> files = Files.walk(root.resolve("lts"))) {
+            List<Path> partitions = files.filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().endsWith(".pb")).toList();
+            assertEquals(1, partitions.size(), "the LTS holds one yearly partition");
+            try (FileBackedPBEventStream stream = new FileBackedPBEventStream(PV, partitions.getFirst(), TYPE)) {
+                for (var event : stream) {
+                    assertEquals(startOfYearPlus(samples), event.getEventTimeStamp());
+                    assertEquals((double) samples, event.getSampleValue().getValue().doubleValue());
+                    samples++;
+                }
+            }
+        }
+        assertEquals(HOUR, samples, "the LTS holds every sample of the moved hour exactly once");
     }
 
     @Test
