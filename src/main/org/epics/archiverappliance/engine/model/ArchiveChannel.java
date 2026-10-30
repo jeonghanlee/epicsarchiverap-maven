@@ -325,6 +325,7 @@ public abstract class ArchiveChannel {
             final boolean usePVAccess,
             final boolean useDBEProperties)
             throws IOException {
+        if (usePVAccess) ((EPICS_V4_PV) this.pv).enableRecordMetadata();
         HashSet<String> runtTimeFieldsCopy = new HashSet<String>();
         HashSet<String> nonDBEPropertiesFields = new HashSet<String>();
         HashSet<String> DBEPropertiesFields = new HashSet<String>();
@@ -612,7 +613,7 @@ public abstract class ArchiveChannel {
         if (incrementEventCounts) {
             this.pvMetrics.addEventCounts();
             this.pvMetrics.addStorageSize(timeevent);
-            this.pv.sampleWrittenIntoStores();
+            this.pv.sampleWrittenIntoStores(timeevent);
         }
 
         if (SampleBuffer.isInErrorState()) need_write_error_sample = true;

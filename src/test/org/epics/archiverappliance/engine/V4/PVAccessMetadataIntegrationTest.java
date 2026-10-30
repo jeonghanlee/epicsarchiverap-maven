@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.time.Instant;
+import java.util.function.BooleanSupplier;
 
 import static org.epics.archiverappliance.engine.V4.PVAccessUtil.waitForStatusChange;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -80,6 +82,56 @@ class PVAccessMetadataIntegrationTest {
             assertEquals(3.0, Double.parseDouble(detail(details, "Precision:")));
             assertFalse(detail(details, "Host name").isBlank());
         }
+    }
+
+    @Test
+    void changedIocMetadataReachesEngineAndArchivedSamples() throws Exception {
+        Instant start = Instant.now().minusSeconds(5);
+        GetUrlContent.getURLContentAsJSONArray(MGMT + "archivePV?pv=" + encode("pva://" + PVA_PV));
+        waitForStatusChange(PVA_PV, "Being archived", 120, MGMT, 1);
+        JSONObject stored = typeInfo(PVA_PV);
+        assertEquals("5 second", ((JSONObject) stored.get("extraFields")).get("SCAN"));
+        SIOCSetup.caput(PVA_PV + ".SCAN", 0);
+        SIOCSetup.caput(PVA_PV + ".PREC", 5);
+        await(() -> "5".equals(latest().get("PREC")));
+        SIOCSetup.caput(PVA_PV + ".DESC", "Changed metadata fixture");
+        await(() -> "Changed metadata fixture".equals(latest().get("DESC")));
+        SIOCSetup.caput(PVA_PV + ".HYST", 0.75);
+        await(() -> "0.75".equals(latest().get("HYST")));
+        SIOCSetup.caput(PVA_PV + ".PROC", 1);
+        await(() -> hasArchivedMetadata(start));
+        assertEquals(stored.get("precision"), typeInfo(PVA_PV).get("precision"));
+        JSONArray details = GetUrlContent.getURLContentAsJSONArray(MGMT + "getPVDetails?pv=" + encode(PVA_PV));
+        assertEquals("available", detail(details, "Latest metadata availability"));
+        assertEquals("Changed metadata fixture", detail(details, "Latest metadata: DESC"));
+        assertEquals("0.75", detail(details, "Latest metadata: HYST"));
+    }
+
+    private static JSONObject latest() {
+        return GetUrlContent.getURLContentAsJSONObject(
+                MGMT.replace("/mgmt/bpl/", "/engine/bpl/getMetadata?pv=") + encode(PVA_PV));
+    }
+
+    private static boolean hasArchivedMetadata(Instant start) {
+        JSONArray response = GetUrlContent.getURLContentAsJSONArray(
+                MGMT.replace("/mgmt/bpl/", "/retrieval/data/getData.json?pv=") + encode(PVA_PV)
+                        + "&from=" + encode(start.toString()) + "&to=" + encode(Instant.now().toString()));
+        for (Object stream : response) {
+            JSONArray samples = (JSONArray) ((JSONObject) stream).get("data");
+            for (Object sample : samples) {
+                JSONObject fields = (JSONObject) ((JSONObject) sample).get("fields");
+                if (fields != null && "5".equals(fields.get("PREC"))
+                        && "Changed metadata fixture".equals(fields.get("DESC"))
+                        && "0.75".equals(fields.get("HYST"))) return true;
+            }
+        }
+        return false;
+    }
+
+    private static void await(BooleanSupplier condition) throws Exception {
+        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(30);
+        while (!condition.getAsBoolean() && System.nanoTime() < deadline) Thread.sleep(200);
+        assertTrue(condition.getAsBoolean(), "timed out waiting for native IOC metadata");
     }
 
     private static JSONObject typeInfo(String pv) {

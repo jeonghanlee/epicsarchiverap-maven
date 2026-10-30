@@ -184,9 +184,11 @@ State column says what a lost sample is and what to do about each cause:
 
 Value and Last event come from one call of `getDataAtTime` for all the PVs of the table. While the window ends now the page leaves the instant out and the server answers with the newest sample; for a window that ends earlier the page sends the end of the window. A window of 10 minutes or less shows the same sample as the last one that `getData` returns for it; a longer window draws a mean in its last interval, which is not a sample.
 
-The **Details** button opens a window with the groups below. A value is read by the exact name of the call that holds it, `getPVStatus`, `getPVTypeInfo` or `getPVDetails`; a time of those calls also comes as epoch seconds (`epochSeconds` in an element of `getPVDetails`, `lastEventEpochSeconds` beside `lastEvent`), which a client uses to write it in another zone. A name that the call does not hold reads *not provided*; for a PVA PV these are the unit and the host. A value that is present and empty, a pair of limits that are both 0 or both NaN, and a limit that is NaN read *not set*; for a CA record without a unit the call returns an empty string, so its unit reads *not set*. A time that comes with its epoch seconds is written in the time zone chosen in the menu bar, and any other time as the server writes it, in the time zone of the server, under the heading of its kind: the time of the data, received, recorded, moved, and the times of the connection, of the settings of the PV and of the last request for its data.
+The **Details** button opens a window with the groups below. A value is read by the exact name of the call that holds it, `getPVStatus`, `getPVTypeInfo` or `getPVDetails`; a time of those calls also comes as epoch seconds (`epochSeconds` in an element of `getPVDetails`, `lastEventEpochSeconds` beside `lastEvent`), which a client uses to write it in another zone. A name that the call does not hold reads *not provided*. PVA units and connection endpoints are reported when available. A value that is present and empty, a pair of limits that are both NaN, and a limit that is NaN read *not set*; for a CA record without a unit the call returns an empty string, so its unit reads *not set*. A time that comes with its epoch seconds is written in the time zone chosen in the menu bar, and any other time as the server writes it, in the time zone of the server, under the heading of its kind: the time of the data, received, recorded, moved, and the times of the connection, of the settings of the PV and of the last request for its data.
 
-![The Details window of a PV](images/browse-details.png)
+Stored configuration rows, including SCAN, show `getPVTypeInfo` values. The separate latest received metadata group shows engine availability, enum choices, description and alarm hysteresis. Paused or disconnected channels do not supply current metadata; this differs from an empty value received from the IOC. Valid zero limits, including a 0/0 pair, remain visible. Archived PVA channels also monitor the record DESC and HYST fields when available. These received values take precedence over the corresponding main-PV metadata; servers without those field channels retain main-PV metadata. Field changes remain pending until the archive buffer accepts a timestamped sample carrying them. With SCAN sampling, skipped samples retain their metadata changes for the next stored sample. Latest received metadata can therefore be newer than the last archived sample.
+
+![Stored configuration and latest received metadata in PV Details](images/browse-details.png)
 
 | Group | Content |
 | :--- | :--- |
@@ -195,7 +197,8 @@ The **Details** button opens a window with the groups below. A value is read by 
 | Connection | Whether the PV is connected, its connection state and the connection drops, with the time of the data of the last event, the time at which the archiver received the last event, and the times of the connection |
 | Lost events | The events lost for a wrong time stamp, for a full sample buffer and for a change of type, and their sum |
 | Who reads it | The number of retrieval requests and of users, and the time of the last request |
-| The PV itself | The data type, the unit, the precision, the display, control, warning and alarm limits, the record type, the archived fields and the host, with the times at which its settings were created and last changed |
+| The PV itself (stored configuration) | The data type, unit, precision, limits, record type, SCAN, archived fields and host from stored configuration, with the times at which its settings were created and last changed |
+| Latest received metadata | Engine availability, enum choices, description and alarm hysteresis from the latest received metadata |
 | Moves between stores | For each move, for example from the short term store to the medium term store, the granularity of the source and of the destination, the duration of the last job, the number of runs, and the times of the last and the next run |
 
 A paused PV has no connection, no lost events and no moves between stores to report; its Details window says so for those groups.
@@ -310,9 +313,10 @@ in `archappl.properties`, at least 1.0 ([Configuration](configuration.md)).
 The heap size of a process is a setting of the installation that starts
 the JVMs, not of the appliance.
 
-Disconnected PVs are grouped by the host the Channel Access connection
-came from and the time they were lost, because the appliance reports no
-IOC name. A PV Access PV has no host and is listed under an unknown host.
+Disconnected PVs are grouped by the endpoint reported by the CA or PVA
+connection and the time they were lost. PVA endpoints may include a port.
+The appliance reports no IOC name, and one host can serve several IOCs.
+A missing endpoint is listed under an unknown host.
 
 ## Retrieval performance page
 

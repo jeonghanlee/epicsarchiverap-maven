@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.utils.ui;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Utility class for dealing with metafields as part of responses.
@@ -23,6 +24,28 @@ public class MetaFields {
         if(!meta.containsKey(fieldName)) {
             meta.put(fieldName, fieldValue);
         }
+        trimEnumLabels(meta);
+    }
+
+    /** Applies an explicit enum choice count without changing legacy metadata lacking a count. */
+    public static void trimEnumLabels(Map<String, String> fields) {
+        String countText = fields.get("ENUM_COUNT");
+        if (countText == null) return;
+        final int count;
+        try {
+            count = Integer.parseInt(countText);
+        } catch (NumberFormatException ex) {
+            return;
+        }
+        if (count < 0) return;
+        fields.keySet().removeIf(key -> {
+            if (!key.startsWith("ENUM_") || key.equals("ENUM_COUNT")) return false;
+            try {
+                return Integer.parseInt(key.substring(5)) >= count;
+            } catch (NumberFormatException ex) {
+                return false;
+            }
+        });
     }
 
 }

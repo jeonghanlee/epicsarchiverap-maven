@@ -60,7 +60,7 @@ const CARDS = [
         [
             ["In short", "PVs of one host that lost their connection at the same time are one group, which is usually one IOC."],
             ["Groups", `PVs of one host that lost their connection within ${T.lossWindowSeconds} seconds of each other are one group.`],
-            ["The host", "The host the Channel Access connection came from; the appliance reports no IOC name, and a PV Access PV has no host."],
+            ["The host", "The endpoint reported by the CA or PVA connection. PVA endpoints may include a port. The appliance reports no IOC name; one host can serve several IOCs."],
             ["Partly listed", "A host listed with only some of its PVs may still be running: its other PVs are connected."],
             ["What to do", "PVs lists the group, Open in Browse PVs selects them on that page, and Pause these… pauses the PVs that no longer exist."],
         ],

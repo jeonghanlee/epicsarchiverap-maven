@@ -6,6 +6,7 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.MetaInfo;
+import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.data.DBRTimeEvent;
 import org.epics.pva.client.ClientChannelListener;
 import org.epics.pva.client.ClientChannelState;
@@ -16,10 +17,12 @@ import org.epics.pva.data.PVAData;
 import org.epics.pva.data.PVAInt;
 import org.epics.pva.data.PVANumber;
 import org.epics.pva.data.PVAString;
+import org.epics.pva.data.PVAStringArray;
 import org.epics.pva.data.PVAStructure;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
+    private static final long METADATA_SAVE_PERIOD_SECONDS = 86400;
     private static final Logger logger = LogManager.getLogger(EPICS_V4_PV.class.getName());
 
     /** Channel name. */
@@ -83,6 +87,11 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
      *  The field values changed for this event.
      */
     private FieldValuesCache fieldValuesCache;
+    private final HashMap<String, String> pendingMetadata = new HashMap<>();
+    private boolean pendingMetadataSnapshot;
+    private final Map<String, String> recordMetadata = new HashMap<>();
+    private final List<RecordMetadataSubscription> recordSubscriptions = new ArrayList<>();
+    private boolean recordMetadataEnabled;
     /**
      *  The field values changed for this event.
      */
@@ -195,16 +204,20 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
     }
 
     @Override
-    public HashMap<String, String> getLatestMetadata() {
+    public synchronized HashMap<String, String> getLatestMetadata() {
         HashMap<String, String> retVal = new HashMap<>();
         // The totalMetaInfo is updated once every 24hours...
         MetaInfo metaInfo = this.totalMetaInfo;
         if (metaInfo != null) {
             metaInfo.addToDict(retVal);
+            if (metaInfo.getLabel() != null) {
+                retVal.put("ENUM_COUNT", Integer.toString(metaInfo.getLabel().length));
+            }
         }
         if (fieldValuesCache != null) {
             retVal.putAll(fieldValuesCache.getCurrentFieldValues());
         }
+        retVal.putAll(recordMetadata);
         return retVal;
     }
 
@@ -215,6 +228,10 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
     }
 
     private void updateTotalMetaInfo(PVAStructure data) {
+        if (data.get("value") instanceof PVAStructure value
+                && value.get("choices") instanceof PVAStringArray choices) {
+            totalMetaInfo.setLabel(choices.get().clone());
+        }
         PVAData displayField = data.get("display");
         if (displayField instanceof PVAStructure display) {
             PVAData units = display.get("units");
@@ -266,6 +283,11 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
         logger.debug("Construct the fieldValuesCache for PV " + this.getName());
         boolean excludeV4Changes = true;
         this.fieldValuesCache = new FieldValuesCache(data, excludeV4Changes);
+        synchronized (pendingMetadata) {
+            pendingMetadata.clear();
+            pendingMetadataSnapshot = false;
+        }
+        this.archiveFieldsSavedAtEpSec = 0;
         this.timeStampBits = this.fieldValuesCache.getTimeStampBits();
         if (this.timeStampBits.isEmpty()) {
             logger.error("Cannot determine the timestamp bitset for PV " + this.name
@@ -293,7 +315,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
 
     private static boolean timeStampUpdated(BitSet changes, BitSet timeStampBits) {
         if (!timeStampBits.isEmpty()) {
-            return changes.intersects(timeStampBits);
+            return changes.get(0) || changes.intersects(timeStampBits);
         }
         return false;
     }
@@ -303,15 +325,41 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
         return lastSaveSecs <= 0 || (nowES - lastSaveSecs) >= periodLengthSecs;
     }
 
-    private DBRTimeEvent fromStructure(PVAStructure data, BitSet changes) throws Exception {
+    private synchronized DBRTimeEvent fromStructure(PVAStructure data, BitSet changes) throws Exception {
+        synchronized (pendingMetadata) {
 
-        DBRTimeEvent dbrtimeevent = con.newInstance(data);
-        this.totalMetaInfo.computeRate(dbrtimeevent);
+            DBRTimeEvent dbrtimeevent = con.newInstance(data);
+            this.totalMetaInfo.computeRate(dbrtimeevent);
 
-        this.fieldValuesCache.updateFieldValues(data, changes);
-        dbrtimeevent.setFieldValues(this.fieldValuesCache.getUpdatedFieldValues(false, this.metaFields), false);
+            updateCachedMetadata(data, changes);
+            if (pendingMetadataSnapshot || newMetaDataSavePeriod(archiveFieldsSavedAtEpSec, METADATA_SAVE_PERIOD_SECONDS)) {
+                saveAllMetaData(dbrtimeevent);
+            } else {
+                dbrtimeevent.setFieldValues(new HashMap<>(pendingMetadata), false);
+            }
 
-        return dbrtimeevent;
+            return dbrtimeevent;
+        }
+    }
+
+    private synchronized void updateCachedMetadata(PVAStructure data, BitSet changes) throws Exception {
+        synchronized (pendingMetadata) {
+            fieldValuesCache.updateFieldValues(data, changes);
+            Map<String, String> updated = fieldValuesCache.getUpdatedFieldValues(false, metaFields);
+            updated.keySet().removeAll(recordMetadata.keySet());
+            pendingMetadata.putAll(updated);
+            if (data.get("value") instanceof PVAStructure value
+                    && value.get("choices") instanceof PVAStringArray choices) {
+                String[] labels = choices.get();
+                if (!Arrays.equals(totalMetaInfo.getLabel(), labels)) {
+                    totalMetaInfo.setLabel(labels.clone());
+                    pendingMetadata.put("ENUM_COUNT", Integer.toString(labels.length));
+                    for (int i = 0; i < labels.length; i++) pendingMetadata.put("ENUM_" + i, labels[i]);
+                    pendingMetadata.keySet().removeIf(key -> key.startsWith("ENUM_")
+                            && !key.equals("ENUM_COUNT") && Integer.parseInt(key.substring(5)) >= labels.length);
+                }
+            }
+        }
     }
 
     @Override
@@ -345,6 +393,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
             // We store fields as part of the next record processing event.
             // If this is not a record processing event, skip this.
             if (!timeStampUpdated(changes, this.timeStampBits)) {
+                updateCachedMetadata(data, changes);
                 logger.debug("Timestamp has not changed; most likely this is a update to the properties for pv "
                         + this.name);
                 logger.debug("Timestamp bits " + this.timeStampBits + " Changed bits " + changes);
@@ -473,7 +522,6 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
                 updateTotalMetaInfo(pvaStructure);
                 this.setupDBRType(pvaStructure);
                 DBRTimeEvent dbrTimeEvent = fromStructure(pvaStructure, null);
-                saveAllMetaData(dbrTimeEvent);
                 fireValueUpdate(dbrTimeEvent);
             } catch (Exception e) {
                 logger.error("exception when reading pv " + this.name, e);
@@ -494,6 +542,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
                                 .pipeline(pipeline)
                                 .build(),
                         this);
+                startRecordMetadataSubscriptions();
             } catch (final Exception ex) {
                 logger.error("exception when subscribing pv " + this.name, ex);
             }
@@ -504,6 +553,9 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
     private void unsubscribe() {
         AutoCloseable subCopy;
         synchronized (this) {
+            for (RecordMetadataSubscription subscription : recordSubscriptions) subscription.close();
+            recordSubscriptions.clear();
+            recordMetadata.clear();
             subCopy = subscriptionCloseable;
             subscriptionCloseable = null;
             archDBRType = null;
@@ -527,8 +579,12 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
             if (totalMetaInfo.getUnit() != null) {
                 tempHashMap.put("EGU", totalMetaInfo.getUnit());
             }
-            if (totalMetaInfo.getPrecision() != 0) {
-                tempHashMap.put("PREC", Integer.toString(totalMetaInfo.getPrecision()));
+            String[] labels = totalMetaInfo.getLabel();
+            if (labels != null) {
+                tempHashMap.put("ENUM_COUNT", Integer.toString(labels.length));
+                for (int i = 0; i < labels.length; i++) {
+                    tempHashMap.put("ENUM_" + i, labels[i]);
+                }
             }
         }
         return tempHashMap;
@@ -615,26 +671,134 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
         // No more need for this method
     }
 
-    /**
-     * Updates field values when about to write to the buffer.
-     * @param lastEvent Last event got.
-     */
+    /** Retain newer or unsaved metadata until a sample carrying it reaches the buffer. */
+    @Override
+    public void sampleWrittenIntoStores(DBRTimeEvent sample) {
+        // The SCAN thread holds its channel lock; acknowledgement must not acquire the PV lock.
+        synchronized (pendingMetadata) {
+            Map<String, String> accepted = sample.getFields();
+            pendingMetadata.entrySet().removeIf(entry -> entry.getValue().equals(accepted.get(entry.getKey())));
+            if (pendingMetadata.isEmpty()) pendingMetadataSnapshot = false;
+        }
+    }
+
+    /** Metadata snapshots are attached when a sample is created, before it enters the buffer. */
     @Override
     public void aboutToWriteBuffer(DBRTimeEvent lastEvent) {
-        // save all the fields once every period
-        // 24 hours
-        int saveMetaDataPeriodSecs = 86400;
-        if (newMetaDataSavePeriod(this.archiveFieldsSavedAtEpSec, saveMetaDataPeriodSecs)) {
-            saveAllMetaData(lastEvent);
-        }
     }
 
     private void saveAllMetaData(DBRTimeEvent lastEvent) {
         HashMap<String, String> fieldValues = new HashMap<>();
         fieldValues.putAll(metaInfoToStore(totalMetaInfo));
         fieldValues.putAll(fieldValuesCache.getUpdatedFieldValues(true, this.metaFields));
+        fieldValues.putAll(fieldValuesCache.getCurrentFieldValues());
+        fieldValues.putAll(recordMetadata);
+        pendingMetadata.putAll(fieldValues);
+        pendingMetadataSnapshot = true;
         this.archiveFieldsSavedAtEpSec = TimeUtils.getCurrentEpochSeconds();
-        lastEvent.setFieldValues(fieldValues, false);
+        lastEvent.setFieldValues(new HashMap<>(pendingMetadata), false);
+    }
+
+    /** Enable optional record-field monitors for an archived PVA channel. */
+    public synchronized void enableRecordMetadata() {
+        recordMetadataEnabled = true;
+        if (running) scheduleCommand(this::startRecordMetadataSubscriptions);
+    }
+
+    private synchronized void startRecordMetadataSubscriptions() {
+        if (!running || !recordMetadataEnabled || !recordSubscriptions.isEmpty()) return;
+        for (String field : List.of("DESC", "HYST")) {
+            RecordMetadataSubscription subscription = new RecordMetadataSubscription(field);
+            recordSubscriptions.add(subscription);
+            subscription.channel = configservice.getEngineContext().getPVAClient().getChannel(
+                    PVNames.channelNamePVName(name) + "." + field, subscription);
+            if (subscription.channel.isConnected()) subscription.connect();
+        }
+    }
+
+    /** Field monitors accept value changes independently of the parent record timestamp. */
+    private final class RecordMetadataSubscription implements ClientChannelListener, MonitorListener {
+        private final String field;
+        private PVAChannel channel;
+        private AutoCloseable monitor;
+        private boolean closed;
+
+        private RecordMetadataSubscription(String field) {
+            this.field = field;
+        }
+
+        @Override
+        public void channelStateChanged(PVAChannel source, ClientChannelState channelState) {
+            scheduleCommand(() -> {
+                synchronized (EPICS_V4_PV.this) {
+                    if (closed || !running) return;
+                    if (channelState == ClientChannelState.CONNECTED) connect();
+                    else closeMonitor();
+                }
+            });
+        }
+
+        private void connect() {
+            if (closed || monitor != null || channel == null || !channel.isConnected()) return;
+            try {
+                monitor = channel.subscribe("", RecordOptions.builder()
+                        .dbeMask(RecordOptions.DBEMask.DBE_VALUE).build(), this);
+            } catch (Exception ex) {
+                logger.warn("Cannot subscribe to metadata field {} for {}", field, name, ex);
+            }
+        }
+
+        @Override
+        public void handleMonitor(PVAChannel source, BitSet changes, BitSet overruns, PVAStructure data) {
+            synchronized (EPICS_V4_PV.this) {
+                if (closed || !running) return;
+                if (data == null) {
+                    releaseRecordValue();
+                    return;
+                }
+                if (!source.isConnected()) return;
+                PVAData value = data.get("value");
+                String text;
+                if (field.equals("DESC") && value instanceof PVAString string) text = string.get();
+                else if (field.equals("HYST") && value instanceof PVANumber number) text = number.getNumber().toString();
+                else return;
+                if (!text.equals(recordMetadata.put(field, text))) {
+                    synchronized (pendingMetadata) {
+                        pendingMetadata.put(field, text);
+                    }
+                }
+            }
+        }
+
+        /** Restore the main-PV value for both readers and the next archived sample. */
+        private void releaseRecordValue() {
+            if (recordMetadata.remove(field) == null) return;
+            synchronized (pendingMetadata) {
+                pendingMetadata.remove(field);
+                if (fieldValuesCache != null) {
+                    String fallback = fieldValuesCache.getCurrentFieldValues().get(field);
+                    if (fallback != null) pendingMetadata.put(field, fallback);
+                }
+            }
+        }
+
+        private void closeMonitor() {
+            releaseRecordValue();
+            if (monitor == null) return;
+            try {
+                monitor.close();
+            } catch (Exception ex) {
+                logger.warn("Cannot close metadata monitor {} for {}", field, name, ex);
+            } finally {
+                monitor = null;
+            }
+        }
+
+        private void close() {
+            closed = true;
+            closeMonitor();
+            if (channel != null) channel.close();
+        }
     }
 
     /**

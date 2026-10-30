@@ -299,7 +299,7 @@ public class FieldValuesCacheTest {
         allBits.set(15, true);
         expectedMap.put("DRVL", "1.0");
         expectedMap.put("DRVH", "1.0");
-        expectedMap.put("PREC", "1.0");
+
 
         var lowAlarmLimit = new PVAInt("lowAlarmLimit", 1);
         var lowWarningLimit = new PVAInt("lowWarningLimit", 1);
@@ -356,4 +356,20 @@ public class FieldValuesCacheTest {
         fieldValuesCache.updateFieldValues(pvaStructure, allBits);
         Assertions.assertEquals(expectedMap, fieldValuesCache.getUpdatedFieldValues(true, new ArrayList<>()));
     }
+    @Test
+    public void rootBitRefreshesPrecisionWithoutUsingMinStep() throws Exception {
+        var precision = new PVAInt("precision", 3);
+        var data = new PVAStructure("", "test", new PVADouble("value", 1),
+                new PVAStructure("display", "display_t", precision),
+                new PVAStructure("control", "control_t", new PVADouble("minStep", 0.125)));
+        var cache = new FieldValuesCache(data, true);
+        precision.set(0);
+        var root = new BitSet();
+        root.set(0);
+        cache.updateFieldValues(data, root);
+        Assertions.assertEquals("0", cache.getCurrentFieldValues().get("PREC"));
+        Assertions.assertEquals("0", cache.getUpdatedFieldValues(false, new ArrayList<>()).get("PREC"));
+        Assertions.assertEquals("0.125", cache.getUpdatedFieldValues(true, new ArrayList<>()).get("control.minStep"));
+    }
+
 }

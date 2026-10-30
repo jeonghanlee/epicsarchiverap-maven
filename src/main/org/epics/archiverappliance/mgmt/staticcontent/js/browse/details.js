@@ -1,6 +1,6 @@
 // The Details window of a PV: what getPVStatus, getPVTypeInfo and getPVDetails hold about it, in groups. A value is read by the exact
 // name of the call. A name that a call does not hold reads "not provided"; a value that is present and empty, a pair of limits that
-// are both 0 and a limit that is NaN read "not set". A time is shown as the call writes it, under the heading of its kind
+// contain NaN read "not set". Valid zero limits remain visible. A time is shown as the call writes it, under the heading of its kind
 // (docs/time-handling.md): the time of the data, received, recorded, moved, and the times of the connection, of the settings and of
 // the last request.
 import { node } from "../../comm/js/aa/dom.js";
@@ -27,7 +27,7 @@ const info = (key) => (ctx) => (key in ctx.info ? ctx.info[key] : undefined);
 const status = (key) => (ctx) => (key in ctx.status ? ctx.status[key] : undefined);
 const extra = (key) => (ctx) => (ctx.info.extraFields && key in ctx.info.extraFields ? ctx.info.extraFields[key] : undefined);
 
-/** A pair of limits: not provided when the call holds neither, not set when both are 0 or both are NaN, otherwise each limit by itself. */
+/** A pair of limits: not provided when the call holds neither, not set when both are NaN, otherwise each limit by itself. */
 function limits(lowKey, highKey) {
     return (ctx) => {
         const low = ctx.info[lowKey];
@@ -37,12 +37,22 @@ function limits(lowKey, highKey) {
         }
         const number = (value) => (value === undefined || value === "" || value === null ? Number.NaN : Number(value));
         const neither = Number.isNaN(number(low)) && Number.isNaN(number(high));
-        if (neither || (number(low) === 0 && number(high) === 0)) {
+        if (neither) {
             return "";
         }
         const part = (label, value) => `${label} ${Number.isNaN(number(value)) ? NOT_SET : value}`;
         return `${part("low", low)}, ${part("high", high)}`;
     };
+}
+
+function enumLabels(ctx) {
+    const prefix = "Latest metadata: ENUM_";
+    const count = ctx.details.get(`${prefix}COUNT`);
+    if (count === "0") return "empty list";
+    const entries = [...ctx.details.entries()]
+        .filter(([key]) => key.startsWith(prefix) && /^\d+$/.test(key.slice(prefix.length)))
+        .sort(([left], [right]) => Number(left.slice(prefix.length)) - Number(right.slice(prefix.length)));
+    return entries.length ? entries.map(([key, value]) => `${key.slice(prefix.length)}: ${value}`).join(", ") : undefined;
 }
 
 function sampling(ctx) {
@@ -164,7 +174,7 @@ function groups(ctx) {
             kinds: [{ heading: "Last request for the data", rows: [time("Time of last Retrieval Request")] }],
         },
         {
-            title: "The PV itself",
+            title: "The PV itself (stored configuration)",
             rows: [
                 row("Data type", info("DBRType")),
                 row("Units", info("units")),
@@ -174,10 +184,20 @@ function groups(ctx) {
                 row("Warning limits", limits("lowerWarningLimit", "upperWarningLimit")),
                 row("Alarm limits", limits("lowerAlarmLimit", "upperAlarmLimit")),
                 row("Record type", extra("RTYP")),
+                row("Scan", extra("SCAN")),
                 row("Archived fields", info("archiveFields")),
                 row("Host", info("hostName")),
             ],
             kinds: [{ heading: "Settings of the PV", rows: [time("Archival params creation time:"), time("Archival params modification time:")] }],
+        },
+        {
+            title: "Latest received metadata",
+            rows: [
+                row("Availability", details("Latest metadata availability")),
+                row("Enum choices", enumLabels),
+                row("Description", details("Latest metadata: DESC")),
+                row("Alarm hysteresis", details("Latest metadata: HYST")),
+            ],
         },
         { title: "Moves between stores", moves },
     ];
