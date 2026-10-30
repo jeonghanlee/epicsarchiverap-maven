@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-2.0.1.md` on branch release-2.0.1 (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. M7 is Complete in 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9, verified on origin/ahsoka; issue #41 is closed as completed. The next work is M25 immediately after M7: start with `EPICS_V4_PV` enum labels and `FieldValuesCache` precision mapping, then verify DESC/HYST end to end. M25 has an initial draft plan; M13 follows it, and the M13 and M21 plans await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are two Complete, one In progress and three Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24; M20 waits for G1. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility.
+Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. M7 is Complete in 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9, verified on origin/ahsoka; issue #41 is closed as completed. M25 implementation and local verification are finished: precision, enum labels/count, metadata-only retention, snapshots, DESC/HYST subscriptions, and API/UI wiring are implemented locally. The accepted review corrections cover independent field loss and SCAN skipping samples carrying metadata. Pending metadata is acknowledged only when its carrying sample enters the archive buffer; newer values remain pending. The 25 metadata/cache tests pass, including three real PVA-to-SCAN-to-PB-file regressions, and default Maven verify passes 1,174 tests with no failures, errors or skips. Implementation review 5 and document review 6 have no new findings. Native IOC/browser evidence predates the SCAN correction. M25 remains In progress until landing and issue closure. M27 records the requested viewer follow-up for distinct line styles, color-vision options and browser-session defaults for time/display settings. M25 has an accepted implementation plan and is In progress; M26 retains a draft plan. Complete PVA metadata work in M25, then inspect and repair CA metadata in M26, starting at `MetaInfo.applyBasicInfo` and `updateTypeInfo`; M13 follows. The M13 and M21 plans await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are two Complete, two In progress and three Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24, M27; M20 waits for G1. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility.
 
 ## Milestone
 
@@ -21,7 +21,8 @@ This register covers the work that remains after release 2026-10 of the Maven ap
 | Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | In progress | No | D6, D12 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
 | Appliance defects | M14 | Carry the changed limits of a record into the type information at reconnect | Milestone | Complete | No | D9, D12 | After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` holds the new limits within one reconnect and the Details window shows them, the unit and the precision keep being updated, and the suite passes with a test that reconnects a PV with changed limits; issue #47; [detail](#m14---carry-the-changed-limits-of-a-record-into-the-type-information-at-reconnect) |
 | Interface console | M7 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Complete | No | D12 | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of an equivalent record does; [detail](#m7---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
-| Appliance defects | M25 | Preserve remaining PVA metadata across collection and retrieval | Milestone | Not started | Yes | M7 | Enum labels reach metadata consumers, precision is never taken from minStep, and DESC/HYST paths have verified outcomes; [detail](#m25---preserve-remaining-pva-metadata-across-collection-and-retrieval) |
+| Appliance defects | M25 | Preserve remaining PVA metadata across collection and retrieval | Milestone | In progress | No | M7 | Enum labels reach metadata consumers, precision is never taken from minStep, and DESC/HYST paths and API-to-screen values and explanations have verified outcomes; issue #69; [detail](#m25---preserve-remaining-pva-metadata-across-collection-and-retrieval) |
+| Appliance defects | M26 | Preserve Channel Access metadata across reception and updates | Milestone | Not started | No | M25 | Precision-only and host changes reach stored configuration, short control limits are preserved, and property-event, field metadata and API-to-screen paths have verified values and explanations; issue #70; [detail](#m26---preserve-channel-access-metadata-across-reception-and-updates) |
 | Appliance defects | M13 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D9, D12 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m13---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
 | Release Ahsoka | M21 | Release Ahsoka | Milestone | Not started | No | M12, M14, M7, M13, D12 | Release Ahsoka is built, tagged and installed from its bundle with every Release Verification of the detail Pass and the issues of M12, M14, M7 and M13 closed; [detail](#m21---release-ahsoka) |
 
@@ -324,12 +325,12 @@ Last Compared: 2026-10-29 23:00 PDT; issue #41 body and completion comment read 
 
 Origin: bfb0dc71 / M25
 Identity History: none
-GitHub Issue: none
-Status: Not started
+GitHub Issue: #69 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/69)
+Status: In progress
 
 ##### Summary
 
-PVA metadata has paths beyond the initial configuration fields repaired by M7. `EPICS_V4_PV` does not fill `MetaInfo.label`, which `MetaGet.parseOtherInfo` needs to translate SCAN enum indexes into names. The real IOC run in `work/m7-integration-isolated.log` records `SCAN does not seem to be a valid label`. `FieldValuesCache` maps `control.minStep` to PREC instead of `display.precision`; its effect on metadata queries and archived sample fields remains to be reproduced. DESC and HYST have separate cache mappings, so absence from the M7 method alone does not establish data loss.
+PVA metadata has paths beyond the initial configuration fields repaired by M7. `EPICS_V4_PV` does not fill `MetaInfo.label`, which `MetaGet.parseOtherInfo` needs to translate SCAN enum indexes into names. The real IOC run in `work/m7-integration-isolated.log` records `SCAN does not seem to be a valid label`. `FieldValuesCache` maps `control.minStep` to PREC instead of `display.precision`; the pre-fix production receiver regression returned PREC 0.125 instead of display precision 3. DESC and HYST have separate cache mappings, so absence from the M7 method alone does not establish data loss.
 
 ##### Scope
 
@@ -337,6 +338,9 @@ PVA metadata has paths beyond the initial configuration fields repaired by M7. `
 - Reproduce and correct the precision mapping in `FieldValuesCache`, checking both initial and later metadata values while keeping minStep distinct from decimal precision.
 - Trace DESC and HYST from the server response through the cache, archived samples and retrieval. Record supported behavior and repair confirmed omissions within these paths.
 - Compare the metadata fields carried by the CA and PVA implementations to identify further gaps; classify any additional findings before expanding implementation scope.
+
+- Extend the PVA metadata path through management/retrieval APIs to PV Details and the Operations/System host views. Include SCAN, enum labels, DESC and HYST display requirements, correcting API or UI omissions where supported values should be visible.
+- Correct obsolete PVA unit/host explanations in `mgmt/staticcontent/js/operations.js` and `docs/book/src/interface.md`; inspect shared formatting in `mgmt/staticcontent/js/browse/details.js`, including zero limits versus missing or NaN values.
 
 Out of scope: new acquisition or buffer policies, automatic sampling changes, arbitrary new PVA structure support, and CI installation of a native IOC.
 
@@ -347,12 +351,144 @@ Out of scope: new acquisition or buffer policies, automatic sampling changes, ar
 - DESC and HYST have explicit, verified outcomes for initial reception, changes, archive storage and retrieval; any intentional exclusions are documented.
 - Tests exercise production paths and fail on each confirmed defective behavior before its correction; the default suite and the relevant native IOC comparison pass.
 
+- PVA values agree only when compared at the same observation point: initial reception with stored configuration, received changes with latest engine metadata, and archived samples with retrieval at their sample times. PV Details identifies stored configuration separately from latest received metadata; Operations/System host observations are compared with connection state. SCAN, enum labels, DESC and HYST have a defined display source and explicit unavailable behavior.
+- Shared limit formatting distinguishes valid zero values, including a valid 0/0 pair, from absent or NaN values. Display policy and help text agree with the implemented metadata semantics.
+- Operations and the interface manual no longer claim that PVA units or hosts are categorically unavailable; descriptions distinguish stored configuration from connection observations where their update times differ.
+
 ##### Dependencies And Decisions
 
 - Decision Date: 2026-10-29. Record this follow-up as a separate milestone and work it immediately after M7, before proceeding to M13.
 - M7 is a work-order dependency requested by the owner; it is not a claim that the defects cannot be repaired independently.
-- Confirmed source findings: missing PVA assignment to `MetaInfo.label`; `FieldValuesCache` maps `control.minStep` to PREC. Runtime evidence currently covers the SCAN warning only; the precision impact and DESC/HYST outcomes are not yet verified.
+- Confirmed source findings: missing PVA assignment to `MetaInfo.label`; `FieldValuesCache` maps `control.minStep` to PREC. On 2026-10-29, direct execution of the production cache at b95203ec37e3c55a899db85f92ac32aa8f76bf68 with display precision 3 and minStep 0.125 returned PREC 0.125 for both latest metadata and sample changes. DESC and HYST were present in that method-level check.
+- The same cache check returned native PVA field names for full snapshots, versus EGU/PREC/DESC/HYST-style names for mapped changes. Preserve compatibility while making mapped fields available consistently; do not rewrite historical samples.
+- Source finding requiring real-monitor reproduction: `EPICS_V4_PV.handleMonitor` returns before cache updates when the timestamp bits are absent. A metadata-only update may therefore be lost rather than retained for the next sample. Root-bit notifications also need verification.
+- UI source findings: PV Details has no SCAN/enum/DESC/HYST rows; Operations and the interface manual contain obsolete PVA host/unit explanations. Stored initial configuration and latest engine metadata must not be silently presented as the same observation.
 - The next-work decision does not by itself revise M21 release acceptance or publication actions; reconcile release coverage when the implementation plan is accepted.
+
+- Decision Date: 2026-10-29. Include metadata delivery through APIs to PV Details, Operations/System and related explanations in this milestone; define concrete display behavior in the implementation plan before implementation.
+
+- Observed 2026-10-30: the real PVXS 1.5.2 IOC updates PREC through the main PVA monitor, but a changed DESC remains stale in both an independent PVA monitor and the archiver while a fresh main-PV read returns the changed description. Main-PV HYST remains NaN even with HSV=MINOR; direct `.HYST` reads return 0.75 and direct `.DESC` reads return the changed text. Evidence: `work/m25-ioc-field-probe.log`, produced by the shipped `SIOCSetup` fixture and production PVA receiver with an independent PVA client. No subscription-mask defect is established by these observations.
+- Decision Date: 2026-10-30. Implement separate PVA field subscriptions for DESC/HYST, explicitly selected and authorized by the owner. Received field values take precedence over main-PV aliases; absent field channels retain main-PV fallback. Field updates accumulate for the next timestamped sample. Parent disconnect/stop closes field subscriptions, and parent reconnection establishes fresh subscriptions.
+- Decision Date: 2026-10-30. Apply the first implementation third-person review finding: independent DESC/HYST field loss releases its cached override and pending field value, then queues the current main-PV fallback if available. Later main-PV updates remain effective; a reconnected field resumes precedence only after a valid value is received. The regression exercises real field-channel closure and recreation with PB serialization.
+- Decision Date: 2026-10-30. Apply implementation review 4: retain PVA metadata until the archive buffer accepts a sample carrying it. `ArchiveChannel` acknowledges the exact accepted sample through the compatible `PV` callback; only matching pending values are removed. Pending full snapshots refresh from current metadata before each candidate sample until acceptance. Verify both SCAN selection paths, intervening changes, empty enum choices, PB file persistence, and removal of already accepted metadata.
+- The daily snapshot regression reproduced later DESC metadata being attached to an earlier buffered sample. PVA snapshots now attach at sample creation, including the initial sample after reconnection; the writer hook no longer attaches a newer cache to an older timestamp.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-30; revised plan after two third-person passes and one second-person pass
+Implementation Authorization: 2026-10-30; explicit owner direction to proceed with the reviewed plan, followed by acceptance and authorization of separate DESC/HYST field subscriptions
+Superseded Plan Artifacts: none
+
+1. Extend `PVAccessMetadataTest` with real Java PVA enum and numeric servers. Establish failing regressions for enum choices, distinct display precision/minStep, metadata-only notifications followed by timestamped samples, root-bit notifications, zero precision, and DESC/HYST updates. Exercise actual production reception and sample serialization; retain existing fixtures for integration checks. Checks: T1, T2.
+2. In `EPICS_V4_PV`, populate enum labels from the received enum structure and retain metadata changes before the timestamp gate. Accumulate changed metadata until a real value sample carrying it is accepted by the archive buffer; do not manufacture samples for property-only updates. Verify label refresh and changed-to-empty choices explicitly. Check: T1.
+3. Add optional DESC/HYST field monitors to archived PVA channels through `ArchiveChannel` and `EPICS_V4_PV`; accept field changes without requiring parent timestamps, preserve main-PV fallback when fields are unavailable, and manage reconnect/stop lifecycle. In `FieldValuesCache`, map `display.precision` to PREC and keep `control.minStep` distinct. Use the field-name contract below for initial/daily snapshots and changed-sample metadata; preserve existing native snapshot keys and add the corrected aliases without rewriting historical samples. Update the existing cache tests that currently expect minStep as PREC. Validate actual PB serialization and retrieval, including DESC/HYST and enum labels using existing metadata conventions. Checks: T1, T2.
+4. Define API/display sources explicitly: keep `getPVTypeInfo` as stored configuration; expose available latest engine metadata through the existing engine/management PV Details path, using `ArchiveChannel.getLatestMetadata`. Apply the source/time contract below to every displayed metadata row, including SCAN, units, precision, limits and host. Expose enum labels/DESC/HYST from latest engine metadata separately from stored configuration; distinguish unavailable engine metadata while paused or disconnected from an empty value. No new top-level persistence schema or historical-data rewrite is proposed. Checks: T2, T4.
+5. In `browse/details.js`, add the agreed metadata rows and preserve valid zero limits, including 0/0. Correct the PVA host wording in `operations.js`; verify `system.js` and `system/judge.js` grouping with actual CA/PVA addresses without assuming identical address formats or one IOC per host. Synchronize `docs/book/src/interface.md`, including the Details content description and affected screenshot when its displayed content changes. Check: T4.
+6. Run targeted regressions, opt-in real IOC archive/retrieval checks, the default Maven verify lifecycle, UI static checks and browser verification against the shipped pages and live APIs. Compare values at the observation points below, prove native IOC change delivery through the production subscription, and preserve CA behavior. Checks: T1, T2, T3, T4.
+
+Metadata source/time contract:
+
+| Consumer | Source and comparison point | Display or verification rule |
+| --- | --- | --- |
+| Stored configuration and existing PV Details units/precision/limits/host/SCAN rows | `getPVTypeInfo`, including SCAN in `extraFields`; configuration snapshot captured at archival setup | Label these values as stored configuration. Runtime metadata changes do not require this snapshot to match the latest engine values. |
+| Latest received metadata in PV Details | `ArchiveChannel.getLatestMetadata` through engine/management PV Details | Present enum labels, DESC and HYST as latest received metadata. If units/precision/limits are also shown from this source, keep them separate from stored values. Compare after the corresponding monitor callback has been received. An unavailable engine response is not an empty IOC value. |
+| Operations/System host observations | Existing engine connection metrics | Compare with the current connection observation, independently of the host stored at archival setup. |
+| Archived sample metadata and retrieval | Metadata retained until a carrying timestamped sample is accepted by the buffer, including initial/daily snapshots | Compare sample fields at that sample's timestamp. Retrieval response headers may contain latest engine metadata and must not be used as proof of historical sample metadata. |
+
+Field-name compatibility contract:
+
+- Newly written initial/daily snapshots retain existing native PVA keys and also contain the mapped aliases. Changed samples contain mapped aliases for changed supported fields, retaining the existing policy for unmapped native fields. `control.minStep` remains a native field and never supplies PREC.
+- For new data, `display.precision` supplies PREC; `display.units` supplies EGU; `display.description` supplies DESC; `valueAlarm.hysteresis` supplies HYST. Retain the existing limit mappings. Native keys retain the main-PV response. DESC/HYST aliases use separately received record fields when available, so they may differ from stale or unsupported main-PV native values. A corrected alias takes precedence over stale `MetaInfo` fallback values during snapshot assembly.
+- Decision Date: 2026-10-30. Add `ENUM_COUNT` alongside `ENUM_<index>` metadata for PVA choice lists, as explicitly authorized. Every label-list update carries its full current labels and count, including zero for an empty list. Retrieval applies the latest applicable count to omit older labels beyond that count; samples without a count retain their existing interpretation. No PB schema change is required.
+- Do not rewrite or reinterpret existing PB files. Retrieve a file produced by the pre-change writer and compare its decoded metadata before and after the change, including an old PREC value originating from minStep. Test new snapshots and subsequent changes separately; corrected new writes must not silently change old stored values.
+
+Native IOC change-delivery procedure (T2):
+
+1. Archive the shipped IOC fixtures and capture initial IOC values, stored configuration, latest engine metadata and timestamped retrieved sample metadata.
+2. Through the IOC's supported field-write interface, change PREC, DESC and HYST one at a time to distinct values; hold record processing while observing property-only delivery, then process the record to produce the next timestamped sample. Use only fields the shipped IOC exposes and record any unsupported field explicitly. Retain the production PVA subscription options, including its current `DBE_ARCHIVE` mask, for the baseline.
+3. Observe whether each change reaches the production monitor callback, latest metadata, the next archived sample and retrieval. A Java server test cannot substitute for this IOC delivery check. If the production subscription does not receive a change, establish the cause and define the required subscription correction or explicit supported-behavior exclusion before claiming completion.
+4. Read historical and changed samples separately and reopen PV Details. Assert the changed values against latest received metadata and changed sample fields, while asserting that stored configuration still represents its original snapshot. Verify SCAN name interpretation and compare CA/PVA only for equivalent supported fields at equivalent observation points.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Component integration | Real Java PVA server sends enum choices, distinct precision/minStep, description and hysteresis through shipped reception, metadata and serialization paths; inspect initial and changed values | JDK 21; default suite | Exact values reach their intended consumers without substitutes for internal production functions |
+| T2 | Integration | Run the native IOC change-delivery procedure above through the production subscription, storage and retrieval; compare SCAN interpretation and equivalent CA/PVA fields; verify pre-change PB compatibility | JDK 21, Tomcat 9.0.122, EPICS 7.0.10; opt-in integration suite | Initial snapshots, received changes and timestamped samples match their respective source observations; old PB values remain unchanged; missing-label warnings are absent |
+| T3 | Suite | Run the default Maven verify lifecycle after the corrections | JDK 21 | No regression |
+| T4 | UI integration | Archive shipped PVA fixtures and use the real management/retrieval APIs and shipped web pages; compare supported SCAN, enum labels, DESC, HYST, units, precision, limits and host with their source values; cover valid zero, NaN and missing members, reopen PV Details after updates, and inspect Operations/System host grouping and help text | Local appliance and IOC; browser; interface manual | Stored and latest values are visibly distinguished and agree with their respective sources; historical sample checks do not use latest response headers; supported values are visible and absent values are explicit; shared CA display remains correct |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | 2026-10-30 02:44 PDT | JDK 21; real Java PVA server, SCAN channel, writer, PB files and production reader | Pass: 25 metadata/cache tests; three SCAN regressions pass: both numeric selection paths preserve latest DESC/PREC/HYST and refreshed native snapshots across skipped samples, and the event-triggered path preserves an empty enum list; accepted metadata stops repeating; independent field loss/reconnection and legacy regressions also pass | `work/m25-scan-red.log` (three pre-fix failures), `work/m25-scan-green.log` (25 targeted passes), `work/m25-scan-verify-2.log` (final code); `work/m25-scan-ack-review.log` confirms older-sample acknowledgement preserves newer metadata |
+| T2 | 2026-10-30 01:13 PDT | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 / PVXS 1.5.2; isolated network namespace | Pass: initial CA/PVA comparison and SCAN interpretation; changed PREC/DESC/HYST reach latest metadata, stored sample fields and PV Details while stored precision remains unchanged; legacy PB decoding unchanged | `work/m25-native.log` (initial comparison), `work/m25-runtime.log` (pre-fix DESC failure), `work/m25-field-runtime-3.log` (change delivery and browser success), `work/m25-field-test.log` (legacy reader) |
+| T3 | 2026-10-30 02:44 PDT | JDK 21 | Pass after SCAN correction: default Maven verify completed 1,174 tests with zero failures, errors or skips; BUILD SUCCESS, exit 0 | `work/m25-scan-verify-2.log`; the preceding `work/m25-scan-verify.log` ended with exit 143 and is not counted as a completed verify run |
+| T4 | 2026-10-30 01:19 PDT | Shipped interface; Firefox, local appliance and native IOC | Pass: 431 static checks; changed DESC/HYST and SCAN, stored/latest separation, valid 0/0 limits, NaN and absent values, CA Details, pause/resume field reception, disconnected availability, and actual CA/PVA host groups; screenshot updated | `work/m25-field-ui-static.log`, `work/m25-field-runtime-4.log`, `work/m25-details*.txt`, `work/m25-disconnected-api.json`, `work/m25-operations-disconnected.txt`, `work/m25-system-disconnected.txt`, `docs/book/src/images/browse-details.png`; IOC/Tomcat shut down, residual scratch driver threads terminated explicitly |
+
+Implementation review evidence (2026-10-30): third-person pass 1 reported one must-fix for independent field disconnection; the accepted correction is covered by T1 and the post-fix T3 run. Third-person pass 2 and document second-person pass 3 reported no new findings. Implementation review 4 reported one must-fix for SCAN metadata loss, accepted by the owner and corrected locally. Third-person review 5 and document second-person review 6 have no new findings. Open findings: zero. The additional real PVA/SCAN/writer/file-reader check in `work/m25-scan-ack-review.log` stores an older sample with DESC=First, then stores DESC=Second on the next sample after the newer metadata arrives before the older sample is accepted. Additional execution through the production `GetDataAtTime.GetDataPredicate` with real received and serialized enum samples confirmed that an empty choice list does not restore older labels. This is a component consumer check, not an HTTP end-to-end test. T2 and T4 retain their pre-correction observation times.
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Preserve PVA metadata through storage and web views
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN (2026-10-29 23:20 PDT)
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-29 23:20 PDT; issue #69 read back with body equal to the prepared draft, label bug, assignee jeonghanlee, no milestone; remote updatedAt 2026-10-30T06:19:54Z
+
+#### M26 - Preserve Channel Access metadata across reception and updates
+
+Origin: bfb0dc71 / M26
+Identity History: none
+GitHub Issue: #70 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/70)
+Status: Not started
+
+##### Summary
+
+Channel Access receives initial metadata, but some values do not reach or refresh stored configuration. At source commit b95203ec37e3c55a899db85f92ac32aa8f76bf68, `MetaInfo.updateTypeInfo` updates precision only when units change and does not replace an existing host. `MetaInfo.applyBasicInfo` handles `DBR_CTRL_Short` through the `GR` branch, which assigns zero to both control limits. Direct execution of the production methods on 2026-10-29 reproduced received precision 5 with stored precision 2, a changed received host with the old stored host, and received short control limits -12/34 with parsed limits 0/0. These are method-level observations using JCA response objects and `ConfigServiceForTests`, not IOC-to-storage verification.
+
+The optional `EPICS_V3_PV.processDBEPropertiesMonitorEvent` accepts `DBR_CTRL_Int` in a branch that casts to `DBR_CTRL_Double`; this is a source finding requiring runtime reproduction. CA already receives enum labels, while DESC and HYST use field subscriptions and policy-dependent storage paths; missing data in those paths is not yet established.
+
+##### Scope
+
+- Correct precision-only and host changes in the CA metadata-to-configuration update path.
+- Preserve control limits from short metadata responses and verify the supported numeric response types.
+- Reproduce property-event handling for numeric and enum metadata, including initialization, updates and persistence; repair confirmed defects within this path.
+- Trace enum labels, DESC and HYST through reception, configuration, sample metadata and retrieval, separating policy exclusions from lost values.
+- Retain the existing CA limit reconnect behavior and PVA metadata behavior with regression coverage.
+
+- Verify CA metadata updates through management/retrieval APIs and PV Details, Operations and System views, reusing shared rendering from M25. Correct CA-specific display or API omissions for precision, limits, hosts, enum labels, SCAN, DESC and HYST.
+- Update the host description in `mgmt/staticcontent/js/retrieval.js` when stored hosts follow connection changes; align relevant interface-manual and screen explanations with the actual update behavior.
+
+Out of scope: PVA-specific reception and mapping repairs owned by M25, sampling or buffer policies, broad metadata schema redesign, arbitrary server extensions, and native IOC installation in CI.
+
+##### Completion Criteria
+
+- A precision change with unchanged units reaches stored type information; a changed non-empty host replaces the previous host.
+- Short, integer and floating-point metadata preserve supported control limits, including non-zero and zero values.
+- Enabled property-event handling accepts supported response types without invalid casts or uninitialized metadata storage, and observed changes reach the intended metadata consumers.
+- Enum labels, DESC and HYST have explicit verified outcomes for initial reception, updates, archive storage and retrieval; intentional policy exclusions are documented.
+- Regression tests exercise the shipped processing paths and fail on each reproduced defect before correction; the default suite and relevant real IOC integration checks pass.
+
+- After CA metadata changes or reconnect, reopened PV Details and retrieval information show the updated supported values. Operations/System connection-host observations and stored configuration agree once the update completes; any temporary difference is explained accurately.
+- Retrieval no longer describes an updated host as the host where the PV was first seen. CA and PVA use consistent zero/missing/NaN display rules and accurate metadata descriptions.
+
+##### Dependencies And Decisions
+
+- Decision Date: 2026-10-29. Keep M25 scoped to PVA and register CA metadata separately, to be worked next after M25 and before M13.
+- M25 is a work-order dependency, not a technical prerequisite for the CA fixes.
+- The three method-level reproductions above establish parser and configuration-update defects only. Property-event impact and end-to-end field storage remain unverified.
+- This registration does not change M21 release acceptance; reconcile release coverage when the implementation plan is accepted.
+
+- Decision Date: 2026-10-29. Include metadata delivery through APIs to PV Details, Operations/System and related explanations in this milestone; define concrete display behavior in the implementation plan before implementation.
 
 ##### Implementation Plan
 
@@ -361,29 +497,43 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Inventory fields and their real consumers in `EPICS_V4_PV`, `MetaInfo`, `MetaGet`, `FieldValuesCache`, sample serialization and retrieval. Separate confirmed defects from unsupported assumptions. Checks: T1, T2.
-2. Establish failing regressions with a Java PVA server and the shipped IOC fixtures; define corrections for labels and precision and any demonstrated DESC/HYST omissions. Accept the concrete plan before implementation. Checks: T1, T2.
-3. Implement the accepted corrections and run the default suite plus the real IOC comparison. Checks: T1, T2, T3.
+1. Inventory CA metadata consumers in `MetaInfo`, `PVTypeInfo`, `EPICS_V3_PV`, `MetaGet` and `ArchiveChannel`, including runtime/archive field policy and retrieval. Confirm the numeric response types and reproduce the property-event findings. Checks: T1, T2.
+2. Establish regressions for the three observed defects and any confirmed property-event or field-path defect. Define the correction and its intended persistence behavior; accept the concrete plan before implementation. Checks: T1, T2.
+3. Implement the accepted changes and verify initial registration, metadata updates and reconnect through the shipped IOC and archive paths, preserving existing CA and PVA coverage. Checks: T1, T2, T3.
+
+4. Verify the CA API-to-screen path through `browse/details.js`, `retrieval.js`, `operations.js`, `system.js` and `system/judge.js`; correct CA-specific omissions and host wording, update the interface manual, and retain M25 shared display behavior. Check: T4.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Component integration | Real Java PVA server sends enum choices, distinct precision/minStep, description and hysteresis through shipped reception, metadata and serialization paths; inspect initial and changed values | JDK 21; default suite | Exact values reach their intended consumers without substitutes for internal production functions |
-| T2 | Integration | Archive shipped IOC fixtures over CA and PVA; compare SCAN interpretation, configuration, sample metadata and retrieval for the accepted field inventory | JDK 21, Tomcat 9.0.122, EPICS 7.0.10; opt-in integration suite | Equivalent supported metadata agrees and missing-label warnings are absent |
+| T1 | Component | Exercise production metadata parsing and configuration transfer with valid JCA response objects for supported types; cover precision-only changes, changed hosts, non-zero/zero limits and confirmed property-event defects | JDK 21; default suite | Values reach the intended consumers without internal-function substitutes; each regression fails before its correction |
+| T2 | Integration | Use shipped IOC fixtures and the real archive APIs to verify initial metadata, field/property changes, reconnect, stored configuration, sample storage and retrieval; include enabled and disabled property-event handling | JDK 21, Tomcat 9.0.122, EPICS 7.0.10; opt-in integration suite | Supported metadata is preserved across the full path; configured exclusions are explicit; no CA or PVA regression |
 | T3 | Suite | Run the default Maven verify lifecycle after the corrections | JDK 21 | No regression |
+| T4 | UI integration | Use the shipped IOC, real archive APIs and web pages before and after precision-only changes, host changes, limit changes and reconnect; verify PV Details, Retrieval and Operations/System host views, including enum/SCAN and DESC/HYST behavior under the configured field policy; reopen or refresh views and compare with PVA | Local appliance and IOC; browser; interface manual | Updated CA metadata reaches the displayed values; descriptions match stored versus connection metadata; valid zero is preserved; no shared PVA display regression |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21; Java PVA server | Pending | none |
+| T1 | Not run | JDK 21 | Pending | Preliminary method observations are recorded in Summary; the planned regression suite has not run |
 | T2 | Not run | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | Pending | none |
 | T3 | Not run | JDK 21 | Pending | none |
+| T4 | Not run | Local appliance and IOC; browser | Pending | none |
 
 ##### Closure Evidence
 
 - none
+
+##### GitHub Projection
+
+Title: Preserve CA metadata through updates and web views
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN (2026-10-29 23:20 PDT)
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-29 23:20 PDT; issue #70 read back with body equal to the prepared draft, label bug, assignee jeonghanlee, no milestone; remote updatedAt 2026-10-30T06:20:12Z
 
 #### M13 - Let a type change to a string or a waveform type succeed
 
@@ -614,6 +764,7 @@ Backlog rows are unassigned, use the same schema, and are excluded from the rele
 | Interface console | M22 | Restore viewed PVs after tab navigation | Milestone | Not started | Yes |  | Returning to the viewer restores the previously selected and plotted PVs without entering them again; deliberate removal remains effective; [detail](#m22---restore-viewed-pvs-after-tab-navigation) |
 | Interface console | M23 | Select matching PVs together and improve Find | Milestone | Not started | Yes |  | The operator can select matching PVs together; search assistance preserves exact Glob behavior and makes selection limits explicit; [detail](#m23---select-matching-pvs-together-and-improve-find) |
 | Interface console | M24 | Explain sampling changes and hide irrelevant confirmation controls | Milestone | Not started | Yes |  | Change sampling shows only applicable controls and explains MONITOR, SCAN and the period; required confirmations of other operations remain visible; [detail](#m24---explain-sampling-changes-and-hide-irrelevant-confirmation-controls) |
+| Interface console | M27 | Distinguish plotted lines and retain accessible display preferences | Milestone | Not started | Yes |  | Plot lines differ beyond color; color-vision display options and time/display defaults survive navigation within the browser session; [detail](#m27---distinguish-plotted-lines-and-retain-accessible-display-preferences) |
 | Tracking | G1 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No |  | ansible-provision supplies real-path readiness evidence for the corrected tools required by M20; [detail](#g1---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Backlog Details
@@ -1986,6 +2137,68 @@ Superseded Plan Artifacts: none
 | --- | --- | --- | --- | --- |
 | T1 | Not run | Browser and deployed appliance | Pending | none |
 | T2 | Not run | Isolated test PV, browser and appliance | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+#### M27 - Distinguish plotted lines and retain accessible display preferences
+
+Origin: bfb0dc71 / M27
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+Plots need distinguishable line styles as well as colors. Operators need display options for differing color-vision needs, with their selected time and display settings reused during the browser session.
+
+##### Scope
+
+- Assign distinct line styles automatically when signals are selected for plotting; keep the legend consistent with each plotted line.
+- Provide selectable web display options for differing color-vision needs. Use line patterns, labels and other non-color cues wherever color conveys meaning.
+- Reuse selected time settings and display options as defaults within the browser session, including tab navigation and reopening the relevant page.
+- Define supported color-vision profiles, the meaning of time settings, and browser-session boundaries during plan review.
+
+Out of scope: changing archived samples, acquisition settings, account-wide preferences or cross-device synchronization.
+
+##### Completion Criteria
+
+- Simultaneously plotted signals remain distinguishable without relying on color alone, with matching legends and an explicit policy for the supported number of lines.
+- Display options preserve readable text, controls and status distinctions for the agreed color-vision profiles.
+- Selected time/display options survive the agreed browser-session navigation and reset behavior; an explicit later selection takes precedence over a saved default.
+
+##### Dependencies And Decisions
+
+- Decision Date: 2026-10-30. Record this viewer follow-up after the current PVA metadata implementation. This is a planning request, not implementation authorization.
+- Coordinate preference storage with M22 selection restoration without assuming a technical dependency before inspecting the existing navigation and storage paths.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Inspect Browse and viewer line assignment, legends, status colors, time controls and existing browser storage. Define profile and session behavior for plan acceptance. Checks: T1, T2, T3.
+2. After separate acceptance and implementation authorization, implement the agreed line styles and display options consistently across affected views. Checks: T1, T2.
+3. Persist the agreed preferences for the browser session and apply them on navigation while honoring explicit user selections. Check: T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser integration | Select multiple real PVs and compare lines with legends before and after selection changes | Shipped viewer and local appliance | Signals have consistent, distinguishable styles within the supported line count |
+| T2 | Accessibility and browser | Inspect all agreed profiles, including non-color cues, contrast, controls and status displays | Shipped pages and agreed color-vision assessment tools | Information remains distinguishable without color alone |
+| T3 | Browser integration | Change time/display options, navigate between tabs, reopen pages and exercise the agreed session reset boundary | Real browser session | Defaults are reused only for the agreed lifetime; explicit selections take precedence |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Shipped viewer and local appliance | Pending | none |
+| T2 | Not run | Shipped pages and agreed assessment tools | Pending | none |
+| T3 | Not run | Real browser session | Pending | none |
 
 ##### Closure Evidence
 
