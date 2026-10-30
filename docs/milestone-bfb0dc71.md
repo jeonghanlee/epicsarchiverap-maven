@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-2.0.1.md` on branch release-2.0.1 (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. The changes await commit, push and issue #41 reconciliation; M7 remains In progress. The later M13 and M21 plans await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are one Complete, two In progress and two Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24; M20 waits for G1. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility.
+Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. M7 is Complete in 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9, verified on origin/ahsoka; issue #41 is closed as completed. The next work is M25 immediately after M7: start with `EPICS_V4_PV` enum labels and `FieldValuesCache` precision mapping, then verify DESC/HYST end to end. M25 has an initial draft plan; M13 follows it, and the M13 and M21 plans await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are two Complete, one In progress and three Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24; M20 waits for G1. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility.
 
 ## Milestone
 
@@ -20,7 +20,8 @@ This register covers the work that remains after release 2026-10 of the Maven ap
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | In progress | No | D6, D12 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
 | Appliance defects | M14 | Carry the changed limits of a record into the type information at reconnect | Milestone | Complete | No | D9, D12 | After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` holds the new limits within one reconnect and the Details window shows them, the unit and the precision keep being updated, and the suite passes with a test that reconnects a PV with changed limits; issue #47; [detail](#m14---carry-the-changed-limits-of-a-record-into-the-type-information-at-reconnect) |
-| Interface console | M7 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | In progress | No | D12 | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of an equivalent record does; [detail](#m7---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
+| Interface console | M7 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Complete | No | D12 | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of an equivalent record does; [detail](#m7---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
+| Appliance defects | M25 | Preserve remaining PVA metadata across collection and retrieval | Milestone | Not started | Yes | M7 | Enum labels reach metadata consumers, precision is never taken from minStep, and DESC/HYST paths have verified outcomes; [detail](#m25---preserve-remaining-pva-metadata-across-collection-and-retrieval) |
 | Appliance defects | M13 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D9, D12 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m13---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
 | Release Ahsoka | M21 | Release Ahsoka | Milestone | Not started | No | M12, M14, M7, M13, D12 | Release Ahsoka is built, tagged and installed from its bundle with every Release Verification of the detail Pass and the issues of M12, M14, M7 and M13 closed; [detail](#m21---release-ahsoka) |
 
@@ -250,7 +251,7 @@ Last Compared: 2026-10-29 19:44 PDT; issue #47 body and completion comment recon
 Origin: bfb0dc71 / M9
 Identity History: M9 to M7 on 2026-10-26
 GitHub Issue: #41 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/41)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
@@ -305,17 +306,84 @@ Superseded Plan Artifacts: none
 
 ##### Closure Evidence
 
-- none
+- Implementation commit: 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9 on ahsoka; required T1, T2 and T3 passed as recorded above.
+- Landing observed 2026-10-29 23:00 PDT: after fetching origin, HEAD and origin/ahsoka both resolve to 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9; the tree comparison has no differences.
+- Issue #41 observed CLOSED with reason completed on 2026-10-29 23:00 PDT. Its body matches the implemented test placement and completed acceptance criteria; completion comment: https://github.com/jeonghanlee/epicsarchiverap-maven/issues/41#issuecomment-6516125983.
 
 ##### GitHub Projection
 
 Title: PV Access PVs are archived without unit, precision, limits and host
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN (2026-10-28)
+Observed State: CLOSED, completed (2026-10-29 23:00 PDT)
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-28 00:46 PDT; `gh issue edit 41` replaced the body with the projection of this detail, read back OPEN with a body equal to the draft, label bug, assignee jeonghanlee, no milestone, remote updatedAt 2026-10-28T07:46:17Z
+Last Compared: 2026-10-29 23:00 PDT; issue #41 body and completion comment read back equal to the prepared content; CLOSED with reason completed, label bug, assignee jeonghanlee, no milestone, remote updatedAt 2026-10-30T06:00:21Z
+
+#### M25 - Preserve remaining PVA metadata across collection and retrieval
+
+Origin: bfb0dc71 / M25
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+PVA metadata has paths beyond the initial configuration fields repaired by M7. `EPICS_V4_PV` does not fill `MetaInfo.label`, which `MetaGet.parseOtherInfo` needs to translate SCAN enum indexes into names. The real IOC run in `work/m7-integration-isolated.log` records `SCAN does not seem to be a valid label`. `FieldValuesCache` maps `control.minStep` to PREC instead of `display.precision`; its effect on metadata queries and archived sample fields remains to be reproduced. DESC and HYST have separate cache mappings, so absence from the M7 method alone does not establish data loss.
+
+##### Scope
+
+- Trace PVA enum choices through `MetaInfo`, SCAN interpretation, sample metadata and retrieval; repair confirmed missing connections.
+- Reproduce and correct the precision mapping in `FieldValuesCache`, checking both initial and later metadata values while keeping minStep distinct from decimal precision.
+- Trace DESC and HYST from the server response through the cache, archived samples and retrieval. Record supported behavior and repair confirmed omissions within these paths.
+- Compare the metadata fields carried by the CA and PVA implementations to identify further gaps; classify any additional findings before expanding implementation scope.
+
+Out of scope: new acquisition or buffer policies, automatic sampling changes, arbitrary new PVA structure support, and CI installation of a native IOC.
+
+##### Completion Criteria
+
+- A real PVA enum supplies its choice names to metadata consumers, and a shipped IOC SCAN field is interpreted by name without the missing-label warning.
+- Precision comes from `display.precision` on every examined path; a distinct nonzero `control.minStep` cannot replace it.
+- DESC and HYST have explicit, verified outcomes for initial reception, changes, archive storage and retrieval; any intentional exclusions are documented.
+- Tests exercise production paths and fail on each confirmed defective behavior before its correction; the default suite and the relevant native IOC comparison pass.
+
+##### Dependencies And Decisions
+
+- Decision Date: 2026-10-29. Record this follow-up as a separate milestone and work it immediately after M7, before proceeding to M13.
+- M7 is a work-order dependency requested by the owner; it is not a claim that the defects cannot be repaired independently.
+- Confirmed source findings: missing PVA assignment to `MetaInfo.label`; `FieldValuesCache` maps `control.minStep` to PREC. Runtime evidence currently covers the SCAN warning only; the precision impact and DESC/HYST outcomes are not yet verified.
+- The next-work decision does not by itself revise M21 release acceptance or publication actions; reconcile release coverage when the implementation plan is accepted.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Inventory fields and their real consumers in `EPICS_V4_PV`, `MetaInfo`, `MetaGet`, `FieldValuesCache`, sample serialization and retrieval. Separate confirmed defects from unsupported assumptions. Checks: T1, T2.
+2. Establish failing regressions with a Java PVA server and the shipped IOC fixtures; define corrections for labels and precision and any demonstrated DESC/HYST omissions. Accept the concrete plan before implementation. Checks: T1, T2.
+3. Implement the accepted corrections and run the default suite plus the real IOC comparison. Checks: T1, T2, T3.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Component integration | Real Java PVA server sends enum choices, distinct precision/minStep, description and hysteresis through shipped reception, metadata and serialization paths; inspect initial and changed values | JDK 21; default suite | Exact values reach their intended consumers without substitutes for internal production functions |
+| T2 | Integration | Archive shipped IOC fixtures over CA and PVA; compare SCAN interpretation, configuration, sample metadata and retrieval for the accepted field inventory | JDK 21, Tomcat 9.0.122, EPICS 7.0.10; opt-in integration suite | Equivalent supported metadata agrees and missing-label warnings are absent |
+| T3 | Suite | Run the default Maven verify lifecycle after the corrections | JDK 21 | No regression |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | JDK 21; Java PVA server | Pending | none |
+| T2 | Not run | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | Pending | none |
+| T3 | Not run | JDK 21 | Pending | none |
+
+##### Closure Evidence
+
+- none
 
 #### M13 - Let a type change to a string or a waveform type succeed
 
