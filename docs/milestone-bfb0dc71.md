@@ -1352,17 +1352,29 @@ Superseded Plan Artifacts: none
 2. The engine reactions, one per change of M73 (previous document, commit bfb0dc71).
 3. The console and the manual.
 
+Buffer adaptation ideas for plan evaluation, recorded on 2026-10-29; these do not select a design or authorize implementation:
+
+- The operator reports that changing a MONITOR period from 1.0 s to 0.1 s stopped the observed buffer loss. This is operator evidence, not an independently measured before-and-after result; the observation duration and counter continuity were not recorded. `ArchiveEngine.computeBufferCapacity` derives capacity from the configured period, while `SampleBuffer` holds a final capacity and drops the oldest event when full.
+- Prefer evaluating automatic buffer capacity adjustment independently of the configured sampling method and period. MONITOR should continue receiving its subscribed events; SCAN timing and operator settings must not silently change to resolve a capacity shortage.
+- Measure incoming valid events before overflow handling, buffer occupancy and actual buffer-swap/write delay over bounded windows. Include events involved in overflow in the incoming-rate measure; `ArchiveChannel` increments its existing event count only when `buffer.add` reports no overflow, so that counter alone understates input during loss. Separate a faster source or burst from a persistently slow or failing storage writer.
+- Estimate capacity from observed input rate, the write interval and a bounded allowance for bursts and write delay. Evaluate growth before overflow, with a rapid response to bursts; choose thresholds, observation windows and growth limits from measurements. A periodic check alone cannot guarantee preservation of an abrupt burst before it reacts.
+- Enforce both per-PV and appliance-wide memory budgets, accounting for waveform payloads, the current buffer, a pending write and temporary memory during resizing. Preserve queued events and their order while coordinating with callbacks and buffer swaps; evaluate a resize path that does not recreate the CA/PVA connection. Do not discard an unacknowledged write batch to make room.
+- Add a minimum interval between adjustments and a separate sustained-low-load condition before any shrink. At the memory limit or during persistent storage failure, stop growth and report the cause, capacity, occupancy and loss counters; automatic growth cannot repair inadequate sustained write throughput or recover previously dropped samples.
+- Show each automatic adjustment and its reason in Operations and PV Details. Define an enable/disable policy, manual override precedence and whether learned capacity survives restart; these remain planning decisions.
+
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
 | T1 | Engine and stores | The five checks of M73 (previous document, commit bfb0dc71) (`work/exp/m73/run_all.sh`) on the one IOC and the one appliance of D3, read for continuity instead of for loss | Packaged WARs, the IOC of D3 | Every change is followed; a window across the change holds both sides |
+| T2 | Engine and storage integration | After plan acceptance, drive the shipped engine with independently counted sequenced input: steady rate increases, abrupt bursts, delayed or failed writes, recovery, many PVs and waveform payloads; compare stored sequence, timestamps and values, memory use, adjustment records and connection continuity | Isolated appliance, real CA/PVA source and actual storage writer; resource limits fixed by the accepted plan | Within the declared load and memory envelope, adaptation preserves queued samples without duplicates or changed sampling settings; outside that envelope, bounded memory and explicit loss or write-failure reporting; no claim of zero loss outside the measured scope |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | Not run | Packaged WARs, the IOC of D3 | Pending | none |
+| T2 | Not run | Isolated appliance and real source | Pending | Buffer adaptation is a planning idea only; no implementation or runtime verification |
 
 ##### Closure Evidence
 
