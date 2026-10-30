@@ -768,7 +768,7 @@ Backlog rows are unassigned, use the same schema, and are excluded from the rele
 | Interface console | M22 | Restore viewed PVs after tab navigation | Milestone | Not started | Yes |  | Returning to the viewer restores the previously selected and plotted PVs without entering them again; deliberate removal remains effective; [detail](#m22---restore-viewed-pvs-after-tab-navigation) |
 | Interface console | M23 | Select matching PVs together and improve Find | Milestone | Not started | Yes |  | The operator can select matching PVs together; search assistance preserves exact Glob behavior and makes selection limits explicit; [detail](#m23---select-matching-pvs-together-and-improve-find) |
 | Interface console | M24 | Explain sampling changes and hide irrelevant confirmation controls | Milestone | Not started | Yes |  | Change sampling shows only applicable controls and explains MONITOR, SCAN and the period; required confirmations of other operations remain visible; [detail](#m24---explain-sampling-changes-and-hide-irrelevant-confirmation-controls) |
-| Interface console | M27 | Distinguish plotted lines and retain accessible display preferences | Milestone | Not started | Yes |  | Plot lines differ beyond color; color-vision display options and time/display defaults survive navigation within the browser session; [detail](#m27---distinguish-plotted-lines-and-retain-accessible-display-preferences) |
+| Interface console | M27 | Distinguish plotted lines and retain accessible display preferences | Milestone | Not started | Yes |  | Plot lines differ beyond color; color-vision display options and time/display defaults survive navigation within the browser session; issue #71; [detail](#m27---distinguish-plotted-lines-and-retain-accessible-display-preferences) |
 | Tracking | G1 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No |  | ansible-provision supplies real-path readiness evidence for the corrected tools required by M20; [detail](#g1---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Backlog Details
@@ -2150,7 +2150,7 @@ Superseded Plan Artifacts: none
 
 Origin: bfb0dc71 / M27
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #71 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/71)
 Status: Not started
 
 ##### Summary
@@ -2207,6 +2207,16 @@ Superseded Plan Artifacts: none
 ##### Closure Evidence
 
 - none
+
+##### GitHub Projection
+
+Title: Add accessible chart styles and session display defaults
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN (2026-10-30 10:19 PDT)
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-30 10:19 PDT; issue #71 read back with body equal to the prepared draft, three unchecked acceptance criteria, label enhancement, assignee jeonghanlee, no milestone; remote updatedAt 2026-10-30T17:18:50Z
 
 #### G1 - Ansible tools ready for the integrated 24-hour campaign
 
