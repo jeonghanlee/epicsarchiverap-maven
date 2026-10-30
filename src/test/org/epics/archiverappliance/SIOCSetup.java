@@ -51,13 +51,18 @@ public class SIOCSetup {
 	 * @throws Exception when the file is missing or the process does not start
 	 */
 	public void startSIOCWithDB(String path) throws Exception {
+		startSIOCWithDB(path, "P=" + prefix);
+	}
+
+	/** Start the shipped database with explicit macro values. */
+	public void startSIOCWithDB(String path, String macros) throws Exception {
 		File f = new File(path);
 		if(!f.exists()) throw new IOException("Cannot find SIOC database file " + path);
 		
 		logger.info("Starting SIOC with DB file " + f.getAbsolutePath());
 		
 		String softIocExecutable = System.getProperty("archappl.softioc", "softIocPVX");
-		ProcessBuilder pb = new ProcessBuilder(softIocExecutable, "-m", "P=" + prefix, "-d", f.getAbsolutePath());
+		ProcessBuilder pb = new ProcessBuilder(softIocExecutable, "-m", macros, "-d", f.getAbsolutePath());
 		// Keep CA and PVA traffic on loopback. PVA also receives the direct multicast searches
 		// sent by the Surefire clients, regardless of which local server starts last.
 		// PVXS adds the group's loopback interface for TCP; an explicit entry would duplicate it.

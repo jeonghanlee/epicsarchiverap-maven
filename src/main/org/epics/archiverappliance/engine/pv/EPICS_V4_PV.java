@@ -13,6 +13,9 @@ import org.epics.pva.client.MonitorListener;
 import org.epics.pva.client.PVAChannel;
 import org.epics.pva.client.RecordOptions;
 import org.epics.pva.data.PVAData;
+import org.epics.pva.data.PVAInt;
+import org.epics.pva.data.PVANumber;
+import org.epics.pva.data.PVAString;
 import org.epics.pva.data.PVAStructure;
 
 import java.lang.reflect.Constructor;
@@ -207,8 +210,34 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
 
     @Override
     public void updateTotalMetaInfo() throws IllegalStateException {
-        // We should not need to do anyting here as we should get updates on any field change for PVAccess and we do not
-        // need to do an explicit get.
+        // Connection metadata is read before the initial sample in subscribe().
+        // Periodic configuration refresh is not implemented for PVAccess.
+    }
+
+    private void updateTotalMetaInfo(PVAStructure data) {
+        PVAData displayField = data.get("display");
+        if (displayField instanceof PVAStructure display) {
+            PVAData units = display.get("units");
+            PVAData precision = display.get("precision");
+            totalMetaInfo.setUnit(units instanceof PVAString value ? value.get() : null);
+            totalMetaInfo.setPrecision(precision instanceof PVAInt value ? value.get() : 0);
+        }
+        totalMetaInfo.setLowerDisplayLimit(metadataLimit(data, "display", "limitLow"));
+        totalMetaInfo.setUpperDisplayLimit(metadataLimit(data, "display", "limitHigh"));
+        totalMetaInfo.setLoweCtrlLimit(metadataLimit(data, "control", "limitLow"));
+        totalMetaInfo.setUpperCtrlLimit(metadataLimit(data, "control", "limitHigh"));
+        totalMetaInfo.setLowerWarningLimit(metadataLimit(data, "valueAlarm", "lowWarningLimit"));
+        totalMetaInfo.setUpperWarningLimit(metadataLimit(data, "valueAlarm", "highWarningLimit"));
+        totalMetaInfo.setLowerAlarmLimit(metadataLimit(data, "valueAlarm", "lowAlarmLimit"));
+        totalMetaInfo.setUpperAlarmLimit(metadataLimit(data, "valueAlarm", "highAlarmLimit"));
+    }
+
+    private static double metadataLimit(PVAStructure data, String group, String member) {
+        if (data.get(group) instanceof PVAStructure structure
+                && structure.get(member) instanceof PVANumber number) {
+            return number.getNumber().doubleValue();
+        }
+        return Double.NaN;
     }
 
     @Override
@@ -376,6 +405,9 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
 
         state = PVConnectionState.Connected;
 
+        hostName = pvaChannel.getRemoteAddress();
+        totalMetaInfo.setHostName(hostName);
+
         fireConnected();
 
         if (!running) {
@@ -438,6 +470,7 @@ public class EPICS_V4_PV implements PV, ClientChannelListener, MonitorListener {
 
             try {
                 var pvaStructure = pvaChannel.read("").get();
+                updateTotalMetaInfo(pvaStructure);
                 this.setupDBRType(pvaStructure);
                 DBRTimeEvent dbrTimeEvent = fromStructure(pvaStructure, null);
                 saveAllMetaData(dbrTimeEvent);

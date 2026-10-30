@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-2.0.1.md` on branch release-2.0.1 (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. The next planned implementation is M7; its accepted plan, and the later M13 and M21 plans, await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are one Complete, one In progress and three Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24; M20 waits for G1. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility.
+Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. The changes await commit, push and issue #41 reconciliation; M7 remains In progress. The later M13 and M21 plans await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are one Complete, two In progress and two Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24; M20 waits for G1. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility.
 
 ## Milestone
 
@@ -20,7 +20,7 @@ This register covers the work that remains after release 2026-10 of the Maven ap
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | In progress | No | D6, D12 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
 | Appliance defects | M14 | Carry the changed limits of a record into the type information at reconnect | Milestone | Complete | No | D9, D12 | After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` holds the new limits within one reconnect and the Details window shows them, the unit and the precision keep being updated, and the suite passes with a test that reconnects a PV with changed limits; issue #47; [detail](#m14---carry-the-changed-limits-of-a-record-into-the-type-information-at-reconnect) |
-| Interface console | M7 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes | D12 | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of an equivalent record does; [detail](#m7---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
+| Interface console | M7 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | In progress | No | D12 | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of an equivalent record does; [detail](#m7---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
 | Appliance defects | M13 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D9, D12 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m13---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
 | Release Ahsoka | M21 | Release Ahsoka | Milestone | Not started | No | M12, M14, M7, M13, D12 | Release Ahsoka is built, tagged and installed from its bundle with every Release Verification of the detail Pass and the issues of M12, M14, M7 and M13 closed; [detail](#m21---release-ahsoka) |
 
@@ -250,7 +250,7 @@ Last Compared: 2026-10-29 19:44 PDT; issue #47 body and completion comment recon
 Origin: bfb0dc71 / M9
 Identity History: M9 to M7 on 2026-10-26
 GitHub Issue: #41 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/41)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -258,7 +258,7 @@ The appliance archives a PV through PV Access without its unit, precision, limit
 
 ##### Scope
 
-Fill `MetaInfo` of a PV Access PV from the `display`, `control` and `valueAlarm` members of its structure and set its host name when the channel connects, so that the configuration of a PV is the same for both protocols. `EPICS_V4_PV` assigns no host name today; the host name is the server address that `PVAChannel.getRemoteAddress()` reports at connect, and its exact form is not fixed by this change. The type information takes the host name at the archive request, through `PVTypeInfo.absorbMetaInfo`. A member that the structure lacks leaves its limit NaN. An integration test (T1) compares the two protocols on two equivalent records, because one record under both protocols is one PV name: the archive call drops the `pva://` prefix.
+Fill `MetaInfo` of a PV Access PV from the `display`, `control` and `valueAlarm` members of its structure and set its host name when the channel connects, so that the configuration of a PV is the same for both protocols. `EPICS_V4_PV` assigns no host name today; the host name is the server address that `PVAChannel.getRemoteAddress()` reports at connect, and its exact form is not fixed by this change. The type information takes the host name at the archive request, through `PVTypeInfo.absorbMetaInfo`. A member that the structure lacks leaves its limit NaN. An opt-in integration test (T1) compares the two protocols on two equivalent records, because one record under both protocols is one PV name: the archive call drops the `pva://` prefix.
 
 Out of scope: following a change of limits at the reconnect of a PV Access PV (M14 covers Channel Access PVs); how the consoles read a missing value (they already treat it as not provided); the `meta` of the retrieval response of a PV Access PV, which is not examined here.
 
@@ -266,23 +266,24 @@ Out of scope: following a change of limits at the reconnect of a PV Access PV (M
 
 - `getPVTypeInfo` of a `pva://` PV of a record that sets `EGU`, `PREC` and limits reports the same `units`, `precision` and limits as the Channel Access PV of an equivalent record, and the warning and alarm limits that the record does not set are NaN for both protocols. A limit whose member the structure lacks is NaN too.
 - `getPVDetails` of the PV Access PV shows the unit and the precision, and `hostName` is set and not empty there and in `getPVTypeInfo`; the host name need not equal that of the Channel Access PV, because the exact form of that name is not fixed by this change.
-- An integration test in the default suite archives an equivalent record over each protocol and compares the fields; the default suite passes.
+- An opt-in integration test archives equivalent records over each protocol and compares the fields. A default-suite test uses a Java PVA server to exercise metadata reception and transfer into the stored type information, including absent limit members; the default suite passes.
 
 ##### Dependencies And Decisions
 
 - Origin: recorded on 2026-10-15 at the owner's direction, from the observation made while checking the Details window of the Browse PVs page (M58 (previous document, commit bfb0dc71)).
 - M58 (previous document, commit bfb0dc71) reads a value that the calls do not hold as "not provided" and does not wait for this item; M6 archives PVA PVs through `pva://` and benefits from it.
 - D12 (Decision Date 2026-10-27): carried by release Ahsoka as row 3 of 4, before M21.
-- The owner decided on 2026-10-27 that the host name comes from `PVAChannel.getRemoteAddress()` and is shown in `getPVDetails` and in `getPVTypeInfo`, and that T1 is a JUnit test in the default suite.
+- The owner decided on 2026-10-27 that the host name comes from `PVAChannel.getRemoteAddress()` and is shown in `getPVDetails` and in `getPVTypeInfo`, and that T1 is a JUnit test in the default suite. The test placement is superseded by the decision below.
+- Decision Date 2026-10-29: keep the real IOC comparison in the opt-in integration suite; add Java PVA server coverage to the default suite. No EPICS installation is added to CI.
 
 ##### Implementation Plan
 
 Plan Status: accepted
-Plan Acceptance: 2026-10-27, accepted by the owner in the planning conversation
-Implementation Authorization: none
+Plan Acceptance: 2026-10-29, revised test placement accepted; implementation scope remains as accepted on 2026-10-27
+Implementation Authorization: 2026-10-29, proceed with the revised plan
 Superseded Plan Artifacts: none
 
-1. T1 first: the JUnit test fails on the code of today. Check: T1.
+1. Add the real IOC comparison (T1) and Java PVA server regression (T3); establish a failing regression before changing production code. Check: T1, T3.
 2. In `src/main/org/epics/archiverappliance/engine/pv/EPICS_V4_PV.java`, `subscribe()` reads the structure at connect (`pvaChannel.read("")`); from it the code fills `totalMetaInfo`: the unit from `display.units`, the precision from `display.precision`, the display limits from `display.limitLow` and `display.limitHigh`, the control limits from `control.limitLow` and `control.limitHigh`, the warning and alarm limits from `valueAlarm.lowWarningLimit`, `highWarningLimit`, `lowAlarmLimit` and `highAlarmLimit`; a member that is absent leaves NaN. The member names are those of the table in `FieldValuesCache`, which maps `control.minStep` to PREC; that entry is not used for the precision. The names are confirmed with `pvxget` on the soft IOC before the code is written. The host name is set from `PVAChannel.getRemoteAddress()` at connect. Check: T1.
 3. `PVTypeInfo.absorbMetaInfo` copies the host name of the `MetaInfo`, so that `getPVTypeInfo` carries it as the Channel Access PV does after its first connect. Check: T1, T2.
 
@@ -290,15 +291,17 @@ Superseded Plan Artifacts: none
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Integration | A JUnit test in the pattern of `PVAccessIntegrationTest` and `TypeChangePauseTest` (`SIOCSetup.startSIOCWithDB`, the soft IOC of `src/resources/test/st.cmd` and `ConsoleChartPVs.db`): archive `SR:RF:CAV2:TEMP` through `pva://` and `SR:RF:CAV2:POWER` over Channel Access, with the same non-zero values for `EGU`, `PREC`, `HOPR` and `LOPR` in their `CAV2_*` macros (with the default 0 the old behaviour equals the new one and the comparison cannot fail), and compare `getPVTypeInfo` and `getPVDetails` of the two once the type information exists | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | The units, precision, display limits and control limits are equal for both protocols; the warning and alarm limits are NaN for both, because neither record sets a severity; `hostName` is set and not empty for the PV Access PV, in `getPVDetails` and in `getPVTypeInfo` |
-| T2 | Suite | ./mvnw -B -ntp clean verify; Maven and Pages workflows | JDK 21; GitHub Actions | Pass |
+| T1 | Integration | An opt-in JUnit integration test in the pattern of `PVAccessIntegrationTest` and `TypeChangePauseTest` (`SIOCSetup.startSIOCWithDB`, the soft IOC of `src/resources/test/st.cmd` and `ConsoleChartPVs.db`): archive `SR:RF:CAV2:TEMP` through `pva://` and `SR:RF:CAV2:POWER` over Channel Access, with the same non-zero values for `EGU`, `PREC`, `HOPR` and `LOPR` in their `CAV2_*` macros (with the default 0 the old behaviour equals the new one and the comparison cannot fail), and compare `getPVTypeInfo` and `getPVDetails` of the two once the type information exists | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 | The units, precision, display limits and control limits are equal for both protocols; the warning and alarm limits are NaN for both, because neither record sets a severity; `hostName` is set and not empty for the PV Access PV, in `getPVDetails` and in `getPVTypeInfo` |
+| T2 | Suite | ./mvnw -B -ntp clean verify | JDK 21 | Pass |
+| T3 | Component integration | A Java PVA server sends metadata over the real PVA connection; the PV listener receives it and `PVTypeInfo.absorbMetaInfo` transfers it into the configuration service. Cover non-zero limits, zero, NaN, missing groups and missing members, and host availability at connection notification | JDK 21; default suite, no native IOC | Exact metadata is preserved; missing limits are NaN; host is non-empty |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21, Tomcat 9, EPICS 7.0.10 | Pending | none |
-| T2 | Not run | JDK 21; GitHub Actions | Pending | none |
+| T1 | 2026-10-29 22:40 PDT | JDK 21, Tomcat 9.0.122, EPICS 7.0.10 / PVXS 1.5.2; isolated network namespace | Pass | `PVAccessMetadataIntegrationTest` via `./mvnw -B -ntp -o test -Pintegration -Dtest=PVAccessMetadataIntegrationTest`: the shipped IOC database is archived through both protocols, with units `mm`, precision 3, display/control limits -20 and 80, and warning/alarm limits NaN. `getPVTypeInfo` and `getPVDetails` expose non-empty hosts; Details also carries the unit and precision. `work/m7-integration-isolated.log`; initial field names confirmed by `work/m7-pvxget.log` |
+| T2 | 2026-10-29 22:36 PDT | JDK 21 | Pass | `./mvnw -B -ntp -o clean verify -DargLine=-Xmx2g -DforkCount=1 -DreuseForks=true`: 1,163 tests, no failures, errors or skips; WAR packaging and dependency checks pass. `work/m7-verify.log` |
+| T3 | 2026-10-29 22:24 PDT | JDK 21; Java PVA server | Pass | `PVAccessMetadataTest`: four tests fail on the previous implementation and pass after the change; includes real PVA reception, all eight limits, unit, precision, missing groups/members, numeric zero and NaN, and host at connection notification and in type information. `work/m7-default-red.log`, `work/m7-targeted.log`; the latter also passes all 13 existing `MetaInfoLimitsTest` checks |
 
 ##### Closure Evidence
 
