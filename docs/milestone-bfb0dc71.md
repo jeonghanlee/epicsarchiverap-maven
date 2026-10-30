@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-2.0.1.md` on branch release-2.0.1 (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. The next planned implementation is M7; its accepted plan, and the later M13 and M21 plans, await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are one Complete, one In progress and three Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18; M20 waits for G1.
+Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. The next planned implementation is M7; its accepted plan, and the later M13 and M21 plans, await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are one Complete, one In progress and three Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24; M20 waits for G1. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility.
 
 ## Milestone
 
@@ -540,6 +540,9 @@ Backlog rows are unassigned, use the same schema, and are excluded from the rele
 | Scripts and checks | M18 | Verify the proxy to an external Archiver Appliance | Milestone | Not started | Yes |  | An integration test on two appliances registers the second as an external `ARCHAPPL_PBRAW` server of the first and observes, through the first, the data, the name match and the value at a time of a PV archived only on the second; [detail](#m18---verify-the-proxy-to-an-external-archiver-appliance) |
 | Verification | M19 | Verify signal storage and important-signal delivery under client overload | Milestone | Deferred | No |  | Long-term plan, deferred on 2026-10-22: verify signal storage first, important-signal storage and delivery second, and client request handling last; issue #55; [detail](#m19---verify-signal-storage-and-important-signal-delivery-under-client-overload) |
 | Verification | M20 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | G1 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m20---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
+| Interface console | M22 | Restore viewed PVs after tab navigation | Milestone | Not started | Yes |  | Returning to the viewer restores the previously selected and plotted PVs without entering them again; deliberate removal remains effective; [detail](#m22---restore-viewed-pvs-after-tab-navigation) |
+| Interface console | M23 | Select matching PVs together and improve Find | Milestone | Not started | Yes |  | The operator can select matching PVs together; search assistance preserves exact Glob behavior and makes selection limits explicit; [detail](#m23---select-matching-pvs-together-and-improve-find) |
+| Interface console | M24 | Explain sampling changes and hide irrelevant confirmation controls | Milestone | Not started | Yes |  | Change sampling shows only applicable controls and explains MONITOR, SCAN and the period; required confirmations of other operations remain visible; [detail](#m24---explain-sampling-changes-and-hide-irrelevant-confirmation-controls) |
 | Tracking | G1 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No |  | ansible-provision supplies real-path readiness evidence for the corrected tools required by M20; [detail](#g1---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Backlog Details
@@ -1739,6 +1742,183 @@ Observed State: OPEN (2026-10-28)
 Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #67 OPEN, label enhancement, milestone none, remote updatedAt 2026-10-26T18:56:42Z, no difference of metadata from the Observed fields; earlier record: 2026-10-26 11:57 PDT; filed from the draft body with `gh issue create`, read back OPEN with label enhancement and assignee jeonghanlee
+
+#### M22 - Restore viewed PVs after tab navigation
+
+Origin: bfb0dc71 / M22
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The reported viewer behavior loses the previously viewed PVs when the operator changes tabs. Preserve the PV selection so returning to the viewer restores the working list and plotted PVs without entering their names again.
+
+##### Scope
+
+- Identify the affected viewer and navigation path, then preserve and restore its selected PV list and plotted subset across leaving and returning to the view.
+- Define the storage mechanism, retention duration and precedence of an explicit address over saved state during planning; retain the existing PV limits and address behavior.
+- Keep deliberate PV removal and clearing effective when the operator returns.
+
+Out of scope: changing acquisition, sampling or archived data; implementing the analyzer phases; a general browsing-history service or cross-device synchronization.
+
+##### Completion Criteria
+
+- After selecting and plotting PVs, navigating to another tab and returning restores the same PV names and plotted subset without manual re-entry.
+- Repeated navigation introduces no duplicate PVs, and removed or cleared PVs do not reappear from saved state.
+- Explicit addresses continue to open their requested PVs according to the documented precedence; missing or unusable saved state leaves the viewer usable.
+
+##### Dependencies And Decisions
+
+- Decision Date: 2026-10-29. Record PV selection persistence as a separate work item; no implementation is authorized by this entry.
+- No execution dependency is established. M1 also concerns viewer address state; coordinate any shared paths when planning without making this item depend on the analyzer redesign.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Reproduce the reported navigation through the shipped viewer, identify its state initialization and address handling, and define storage, retention and restoration precedence. Check: T1.
+2. After separate plan acceptance and implementation authorization, preserve and restore the selected and plotted PVs through that path and verify removal, clearing and explicit-address behavior. Checks: T1, T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser integration | Select and plot multiple archived PVs in the shipped viewer, follow the reported tab navigation and return repeatedly through the real UI | Browser and deployed appliance | The same selected and plotted PVs return without manual re-entry or duplicates |
+| T2 | Browser integration | Remove or clear PVs and revisit; open an explicit PV address; exercise missing or unusable saved state through the shipped restore path | Same browser and appliance | Deliberate removal persists, explicit addresses follow the agreed precedence, and the viewer remains usable |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Browser and deployed appliance | Pending | none |
+| T2 | Not run | Browser and deployed appliance | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+#### M23 - Select matching PVs together and improve Find
+
+Origin: bfb0dc71 / M23
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+After narrowing the viewer's Find results by a prefix and Glob pattern, the operator needs one action to select the matching PVs. The search should also provide more useful assistance when the exact name is not known.
+
+##### Scope
+
+- Add selection of matching results as one operation, accounting for existing selections, duplicates, partial results and the current selection limit.
+- Evaluate search assistance against the existing Worker-based Contains, Glob and Regex modes. Preserve exact Glob matching and distinguish approximate suggestions from exact results.
+- Evaluate Fuse.js for ranked approximate matches and Tom Select for search and selection controls before selecting a dependency; neither library is approved by this record.
+
+Out of scope: changing acquisition or archived data; automatically plotting every selected PV; changing the current 100-PV selection or five-PV plot limits without a separate decision; implementing selection persistence covered by M22.
+
+##### Completion Criteria
+
+- A prefix and Glob query can select its matching PVs together, without duplicates or unexpected removal of earlier selections.
+- The interface explains limits and partial results instead of silently claiming that all matches were selected.
+- Exact Glob results retain their meaning, including the difference between one-character `?` and arbitrary-length `*`; approximate suggestions cannot silently become exact bulk selections.
+- The accepted search assistance works with the real PV list and remains responsive at the supported list size.
+
+##### Dependencies And Decisions
+
+- Decision Date: 2026-10-29. Record the viewer requests as later work; implementation and dependency selection remain pending.
+- No execution dependency is established. Coordinate shared selection handling with M22 when planning.
+- Source inspection on 2026-10-29: `browse.js` uses a Worker, limits selection to 100 and plots to five; `names-worker.js` implements exact Contains, Glob and Regex matching. Library references: https://www.fusejs.io/ and https://tom-select.js.org/docs/ . No library benchmark or browser verification has run.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Use the shipped Find path in `browse.js` and `browse/names-worker.js` to define bulk selection, partial-result handling and search-assistance behavior; compare the candidate libraries on representative PV names before accepting a plan. Checks: T1, T2.
+2. After separate plan acceptance and implementation authorization, implement and verify the accepted controls through the real UI. Checks: T1, T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser integration | Narrow a real PV list by prefix and Glob; select results together with existing selections, duplicate names, empty results and results exceeding the selection limit | Browser and deployed appliance | Correct selected names, explicit limits and no duplicate or unintended selections |
+| T2 | Search and browser integration | Exercise shipped search with exact identifiers, one- and two-digit suffixes, approximate queries, partial server results and a representative large PV list | Browser, shipped Worker and appliance | Exact modes retain their contract; assistance and responsiveness meet the accepted plan |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Browser and deployed appliance | Pending | none |
+| T2 | Not run | Browser and deployed appliance | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+#### M24 - Explain sampling changes and hide irrelevant confirmation controls
+
+Origin: bfb0dc71 / M24
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The operator reports an unlabeled checkbox in Change sampling and needs an explanation of its controls. The dialog shares `maintainAckRow` with operations such as type conversion, whose checkbox confirms a data backup; sampling supplies no confirmation text and should hide the row.
+
+##### Scope
+
+- Reproduce the unexpected checkbox in the shipped dialog and correct its visibility without removing confirmations required by other operations.
+- Explain MONITOR and SCAN, the meaning of their period, and how the MONITOR period affects sample-buffer sizing rather than imposing an event-throttling interval.
+- State the behavior of a sampling change using the actual backend path, including its effect on existing data and any collection interruption that the implementation entails.
+
+Out of scope: changing acquisition behavior, buffer sizing rules or sampling defaults; unrelated dialog redesign.
+
+##### Completion Criteria
+
+- Change sampling has no unlabeled or irrelevant checkbox, including after another maintenance dialog was opened.
+- Type conversion still displays and requires its backup confirmation.
+- The dialog explains method and period accurately enough to distinguish MONITOR buffer sizing from SCAN timing, and its help remains readable with keyboard navigation.
+
+##### Dependencies And Decisions
+
+- Decision Date: 2026-10-29. Record the reported control and explanation problem for later implementation.
+- Source inspection on 2026-10-29: `openMaintain` sets `maintainAckRow.hidden` from `config.ack`; `openChangeSampling` provides no `ack`, while `openChangeType` does. `browse.css` sets `dialog label` to `display: block`, a suspected override of hidden presentation; browser reproduction remains pending.
+- No execution dependency is established.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Reproduce the dialog visibility through `index.html`, `browse.js` and `browse.css`; trace the sampling API and buffer behavior to draft accurate help. Checks: T1, T2.
+2. After separate plan acceptance and implementation authorization, correct visibility and add the accepted explanation, then exercise both sampling and type-conversion dialogs. Checks: T1, T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Browser integration | Open sampling directly and after type conversion; inspect visibility and keyboard focus; check required confirmation on type conversion without submitting that operation | Browser and deployed appliance | No irrelevant checkbox in sampling; backup confirmation remains visible and required for type conversion |
+| T2 | Contract and browser integration | Compare dialog help against the shipped sampling API and buffer allocation, then change sampling on a test PV through the actual UI | Isolated test PV, browser and appliance | Help matches actual method, period, buffer and stored-data behavior |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Browser and deployed appliance | Pending | none |
+| T2 | Not run | Isolated test PV, browser and appliance | Pending | none |
+
+##### Closure Evidence
+
+- none
 
 #### G1 - Ansible tools ready for the integrated 24-hour campaign
 
