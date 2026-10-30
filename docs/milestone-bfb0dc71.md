@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-2.0.1.md` on branch release-2.0.1 (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: review the M14 implementation on branch ahsoka before commit preparation. T1, T2 and T3 passed on 2026-10-29: 13 targeted tests, 1,159 default-suite tests and four WARs, and the existing IOC/appliance reconnect check with verified restoration. The source and test changes are uncommitted; issue #47 reconciliation and repository publication remain pending under their own authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The later accepted plans M7, M13 and M21 await their own implementation authority. The recorded release rows are two In progress and three Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18; M20 waits for G1.
+Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. The next planned implementation is M7; its accepted plan, and the later M13 and M21 plans, await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are one Complete, one In progress and three Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18; M20 waits for G1.
 
 ## Milestone
 
@@ -19,7 +19,7 @@ This register covers the work that remains after release 2026-10 of the Maven ap
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | In progress | No | D6, D12 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
-| Appliance defects | M14 | Carry the changed limits of a record into the type information at reconnect | Milestone | In progress | No | D9, D12 | After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` holds the new limits within one reconnect and the Details window shows them, the unit and the precision keep being updated, and the suite passes with a test that reconnects a PV with changed limits; issue #47; [detail](#m14---carry-the-changed-limits-of-a-record-into-the-type-information-at-reconnect) |
+| Appliance defects | M14 | Carry the changed limits of a record into the type information at reconnect | Milestone | Complete | No | D9, D12 | After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` holds the new limits within one reconnect and the Details window shows them, the unit and the precision keep being updated, and the suite passes with a test that reconnects a PV with changed limits; issue #47; [detail](#m14---carry-the-changed-limits-of-a-record-into-the-type-information-at-reconnect) |
 | Interface console | M7 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Not started | Yes | D12 | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of an equivalent record does; [detail](#m7---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
 | Appliance defects | M13 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D9, D12 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m13---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
 | Release Ahsoka | M21 | Release Ahsoka | Milestone | Not started | No | M12, M14, M7, M13, D12 | Release Ahsoka is built, tagged and installed from its bundle with every Release Verification of the detail Pass and the issues of M12, M14, M7 and M13 closed; [detail](#m21---release-ahsoka) |
@@ -158,13 +158,13 @@ Last Compared: 2026-10-28 00:46 PDT; `gh issue edit 52` replaced the body with t
 Origin: bfb0dc71 / M19
 Identity History: M19 to M14 on 2026-10-26
 GitHub Issue: #47 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/47)
-Status: In progress
+Status: Complete
 
 ##### Summary
 
 Before this fix, the engine read the record metadata again at reconnect but retained the display, warning, alarm and control limits stored at the archive request. After the IOC limits changed and the IOC restarted, `getPVTypeInfo` and the Details window therefore retained the old limits. This behavior was observed on 2026-10-17 and 2026-10-18 with `src/resources/test/st.cmd` (a follow-up of issue #44): `MetaInfo.applyBasicInfo` read the new control DBR, but `MetaInfo.updateTypeInfo` did not copy its limits into the stored type information.
 
-The current implementation compares all eight received limits independently of units, saves changed values in one configuration update, and emits one INFO line naming the PV and changed fields. Identical numeric limits and repeated NaN values cause no additional limit update. The existing unit, precision and hostname rules remain: precision is written with a unit change, and the hostname is filled only when the stored value is null. The implementation and verification results below apply to the uncommitted working tree; they do not indicate a released deployment.
+The current implementation compares all eight received limits independently of units, saves changed values in one configuration update, and emits one INFO line naming the PV and changed fields. Identical numeric limits and repeated NaN values cause no additional limit update. The existing unit, precision and hostname rules remain: precision is written with a unit change, and the hostname is filled only when the stored value is null. The verified source and regression are committed in c959153afa8169945d6804d292a0094aa14ddb3d and present on `origin/ahsoka`. This completes the defect fix; release and production deployment remain part of M21.
 
 ##### Scope
 
@@ -230,17 +230,20 @@ T2 preparation and recovery:
 
 ##### Closure Evidence
 
-- none
+- Completed on 2026-10-29: commit c959153afa8169945d6804d292a0094aa14ddb3d contains the implementation, regression and verification record. T1, T2 and T3 passed as recorded above; the committed production and test files match the tested source fingerprints.
+- Repository landing observed at 2026-10-29 19:44 PDT: after `git fetch origin`, `origin/ahsoka` resolves to c959153afa8169945d6804d292a0094aa14ddb3d. An ancestor check and comparison of all three paths changed by the commit confirm that the implementation, regression and recorded verification are present on the fetched branch. The release branch is the implementation landing target under D12; the merge into master and release remain M21 work.
+- Issue #47 was closed as completed at 2026-10-29 19:22:56 PDT. Its body records the implemented numeric/NaN contract and satisfied criteria; closure comment: https://github.com/jeonghanlee/epicsarchiverap-maven/issues/47#issuecomment-6513393997 . The body and comment were read back and matched their prepared content after closure.
+- External state rechecked at 2026-10-29 19:44 PDT through `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/47`: CLOSED, reason completed, label bug, assignee jeonghanlee, no milestone. No required defect verification or external gate remains open.
 
 ##### GitHub Projection
 
 Title: Display limits not read again at reconnect
 Labels: bug
 GitHub Milestone: none
-Observed State: OPEN (2026-10-28)
+Observed State: CLOSED (2026-10-29 19:44 PDT; reason completed)
 Observed Labels: bug
 Observed Milestone: none
-Last Compared: 2026-10-28 00:46 PDT; `gh issue edit 47` replaced the body with the projection of this detail, read back OPEN with a body equal to the draft, label bug, assignee jeonghanlee, no milestone, remote updatedAt 2026-10-28T07:46:16Z
+Last Compared: 2026-10-29 19:44 PDT; issue #47 body and completion comment reconciled with the implemented scope and verification, read back CLOSED with reason completed, label bug, assignee jeonghanlee, no milestone, remote updatedAt 2026-10-30T02:22:57Z
 
 #### M7 - PVA PVs keep the unit, precision, limits and host in their configuration
 
