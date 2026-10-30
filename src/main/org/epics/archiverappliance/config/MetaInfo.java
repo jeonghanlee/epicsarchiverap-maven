@@ -24,6 +24,7 @@ import gov.aps.jca.dbr.PRECISION;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.util.HashMap;
+import java.util.StringJoiner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -670,9 +671,9 @@ public class MetaInfo {
 	}
 	
 	/**
-	 * If we detect a change in the units or precision, we update the typeInfo in the configservice. 
-	 * This should accommodate changes in EGU and precision.
-	 * However, this should happen rarely or else performance will suffer.
+	 * Persist changed limits and units in one configuration update. Precision follows
+	 * a unit change, and the host name is filled only when absent. Unchanged numeric
+	 * limits and repeated NaN values do not trigger an update.
 	 * @param pvName The name of PV. 
 	 * @param configService ConfigService
 	 */
@@ -680,11 +681,50 @@ public class MetaInfo {
 		PVTypeInfo typeInfo = configService.getTypeInfoForPV(pvName);
 		boolean updated = false;
 		if(typeInfo != null) { 
+			StringJoiner changes = new StringJoiner(", ");
 			if((typeInfo.getUnits() == null && this.unit != null) 
 					|| (typeInfo.getUnits() != null && this.unit != null && !typeInfo.getUnits().equals(this.unit))) {
-				configLogger.info("Updating units and precision for pv " + pvName + " to " + this.unit + " and " + this.precision);
 				typeInfo.setUnits(this.unit);
 				typeInfo.setPrecision(Double.valueOf(this.precision));
+				changes.add("units=" + this.unit);
+				changes.add("precision=" + this.precision);
+				updated = true;
+			}
+
+			if(Double.compare(typeInfo.getLowerDisplayLimit(), this.lowerDisplayLimit) != 0) {
+				typeInfo.setLowerDisplayLimit(this.lowerDisplayLimit);
+				changes.add("lowerDisplayLimit=" + this.lowerDisplayLimit);
+			}
+			if(Double.compare(typeInfo.getUpperDisplayLimit(), this.upperDisplayLimit) != 0) {
+				typeInfo.setUpperDisplayLimit(this.upperDisplayLimit);
+				changes.add("upperDisplayLimit=" + this.upperDisplayLimit);
+			}
+			if(Double.compare(typeInfo.getLowerWarningLimit(), this.lowerWarningLimit) != 0) {
+				typeInfo.setLowerWarningLimit(this.lowerWarningLimit);
+				changes.add("lowerWarningLimit=" + this.lowerWarningLimit);
+			}
+			if(Double.compare(typeInfo.getUpperWarningLimit(), this.upperWarningLimit) != 0) {
+				typeInfo.setUpperWarningLimit(this.upperWarningLimit);
+				changes.add("upperWarningLimit=" + this.upperWarningLimit);
+			}
+			if(Double.compare(typeInfo.getLowerAlarmLimit(), this.lowerAlarmLimit) != 0) {
+				typeInfo.setLowerAlarmLimit(this.lowerAlarmLimit);
+				changes.add("lowerAlarmLimit=" + this.lowerAlarmLimit);
+			}
+			if(Double.compare(typeInfo.getUpperAlarmLimit(), this.upperAlarmLimit) != 0) {
+				typeInfo.setUpperAlarmLimit(this.upperAlarmLimit);
+				changes.add("upperAlarmLimit=" + this.upperAlarmLimit);
+			}
+			if(Double.compare(typeInfo.getLowerCtrlLimit(), this.loweCtrlLimit) != 0) {
+				typeInfo.setLowerCtrlLimit(this.loweCtrlLimit);
+				changes.add("lowerCtrlLimit=" + this.loweCtrlLimit);
+			}
+			if(Double.compare(typeInfo.getUpperCtrlLimit(), this.upperCtrlLimit) != 0) {
+				typeInfo.setUpperCtrlLimit(this.upperCtrlLimit);
+				changes.add("upperCtrlLimit=" + this.upperCtrlLimit);
+			}
+			if(changes.length() > 0) {
+				configLogger.info("Updating metadata for pv " + pvName + ": " + changes);
 				updated = true;
 			}
 			
