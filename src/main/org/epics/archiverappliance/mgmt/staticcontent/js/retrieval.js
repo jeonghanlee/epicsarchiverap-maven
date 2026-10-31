@@ -221,7 +221,7 @@ async function lookUp(event) {
             ["Paused", String(typeInfo.paused)],
             ["Stores", stores.join(" then ") || "unknown"],
             ["Data reduced in the long term store", typeInfo.hasReducedDataSet === "true" || typeInfo.hasReducedDataSet === true ? "yes" : "no"],
-            ["Host the PV was first seen on", typeInfo.hostName || "unknown"],
+            ["Host of the latest connection", typeInfo.hostName || "unknown"],
         ];
         for (const [label, value] of rows) {
             body.append(row(label, value));

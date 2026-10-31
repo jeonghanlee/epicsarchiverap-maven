@@ -14,9 +14,8 @@
 
 package org.epics.archiverappliance.config;
 
+import gov.aps.jca.dbr.CTRL;
 import gov.aps.jca.dbr.DBR;
-import gov.aps.jca.dbr.DBR_CTRL_Double;
-import gov.aps.jca.dbr.DBR_CTRL_Int;
 import gov.aps.jca.dbr.DBR_LABELS_Enum;
 import gov.aps.jca.dbr.GR;
 import gov.aps.jca.dbr.PRECISION;
@@ -237,32 +236,18 @@ public class MetaInfo {
 			logger.debug("Updating labels for ENUM pv " + pvName);
 			final DBR_LABELS_Enum labels = (DBR_LABELS_Enum)dbr;
 			label=labels.getLabels();
-		} else if (dbr instanceof DBR_CTRL_Double) {
-			logger.debug("Updating metafields for DBR_CTRL_Double for pv " + pvName);
-			final DBR_CTRL_Double ctrl = (DBR_CTRL_Double)dbr;
+		} else if (dbr instanceof CTRL) {
+			logger.debug("Updating metafields for " + dbr.getClass().getSimpleName() + " pv " + pvName);
+			final CTRL ctrl = (CTRL)dbr;
 			this.lowerDisplayLimit= ctrl.getLowerDispLimit().doubleValue();
 			this.upperDisplayLimit=ctrl.getUpperDispLimit().doubleValue();
 			this.lowerWarningLimit=ctrl.getLowerWarningLimit().doubleValue();
 			this.upperWarningLimit=ctrl.getUpperWarningLimit().doubleValue();
 			this.lowerAlarmLimit=ctrl.getLowerAlarmLimit().doubleValue();
+			this.upperAlarmLimit=ctrl.getUpperAlarmLimit().doubleValue();
 			this.loweCtrlLimit=ctrl.getLowerCtrlLimit().doubleValue();
 			this.upperCtrlLimit=ctrl.getUpperCtrlLimit().doubleValue();
-			this.upperAlarmLimit=ctrl.getUpperAlarmLimit().doubleValue();
-			this.precision=ctrl.getPrecision();
-			this.unit=ctrl.getUnits();
-			updateTypeInfo(pvName, configService);
-		} else if (dbr instanceof DBR_CTRL_Int) {
-			logger.debug("Updating metafields for DBR_CTRL_Int pv " + pvName);
-			final DBR_CTRL_Int ctrl = (DBR_CTRL_Int)dbr;
-			this.lowerDisplayLimit= ctrl.getLowerDispLimit().doubleValue();
-			this.upperDisplayLimit=ctrl.getUpperDispLimit().doubleValue();
-			this.lowerWarningLimit=ctrl.getLowerWarningLimit().doubleValue();
-			this.upperWarningLimit=ctrl.getUpperWarningLimit().doubleValue();
-			this.loweCtrlLimit=ctrl.getLowerCtrlLimit().doubleValue();
-			this.upperCtrlLimit=ctrl.getUpperCtrlLimit().doubleValue();
-			this.lowerAlarmLimit=ctrl.getLowerAlarmLimit().doubleValue();
-			this.upperAlarmLimit=ctrl.getUpperAlarmLimit().doubleValue();
-			this.precision=0;
+			this.precision=(dbr instanceof PRECISION)? ((PRECISION)dbr).getPrecision() : 0;
 			this.unit=ctrl.getUnits();
 			updateTypeInfo(pvName, configService);
 		} else if (dbr instanceof GR) {
@@ -671,8 +656,8 @@ public class MetaInfo {
 	}
 	
 	/**
-	 * Persist changed limits and units in one configuration update. Precision follows
-	 * a unit change, and the host name is filled only when absent. Unchanged numeric
+	 * Persist changed limits, units, precision and host in one configuration update.
+	 * A changed non-empty host replaces the stored host. Unchanged numeric
 	 * limits and repeated NaN values do not trigger an update.
 	 * @param pvName The name of PV. 
 	 * @param configService ConfigService
@@ -685,8 +670,12 @@ public class MetaInfo {
 			if((typeInfo.getUnits() == null && this.unit != null) 
 					|| (typeInfo.getUnits() != null && this.unit != null && !typeInfo.getUnits().equals(this.unit))) {
 				typeInfo.setUnits(this.unit);
-				typeInfo.setPrecision(Double.valueOf(this.precision));
 				changes.add("units=" + this.unit);
+				updated = true;
+			}
+
+			if(typeInfo.getPrecision() == null || Double.compare(typeInfo.getPrecision(), this.precision) != 0) {
+				typeInfo.setPrecision(Double.valueOf(this.precision));
 				changes.add("precision=" + this.precision);
 				updated = true;
 			}
@@ -723,14 +712,14 @@ public class MetaInfo {
 				typeInfo.setUpperCtrlLimit(this.upperCtrlLimit);
 				changes.add("upperCtrlLimit=" + this.upperCtrlLimit);
 			}
-			if(changes.length() > 0) {
-				configLogger.info("Updating metadata for pv " + pvName + ": " + changes);
+			if(this.hostName != null && !this.hostName.isEmpty() && !this.hostName.equals(typeInfo.getHostName())) {
+				typeInfo.setHostName(this.hostName);
+				changes.add("hostName=" + this.hostName);
 				updated = true;
 			}
-			
-			if(typeInfo.getHostName() == null  || (typeInfo.getHostName() == null && this.hostName != null && !this.hostName.equals(typeInfo.getHostName()))) { 
-				logger.debug("Updating hostname for pv " + pvName + " to " + this.hostName);
-				typeInfo.setHostName(this.hostName);
+
+			if(changes.length() > 0) {
+				configLogger.info("Updating metadata for pv " + pvName + ": " + changes);
 				updated = true;
 			}
 			
@@ -764,12 +753,45 @@ public class MetaInfo {
 		}
 		
 		if(this.label != null) { 
-			int li= 0;
-			for(String lbl : this.label) { 
-				retVal.put("ENUM_"+li, lbl);
-				li++;
-			}
+			retVal.putAll(enumFieldValues(this.label));
 		}
+	}
+
+	/**
+	 * The stored enum label fields: one ENUM_n entry per label and ENUM_COUNT with the number of labels.
+	 * @param labels the current enum choices
+	 * @return the field names and values
+	 */
+	public static HashMap<String, String> enumFieldValues(String[] labels) {
+		HashMap<String, String> fields = new HashMap<String, String>();
+		for(int li = 0; li < labels.length; li++) {
+			fields.put("ENUM_" + li, labels[li]);
+		}
+		fields.put("ENUM_COUNT", Integer.toString(labels.length));
+		return fields;
+	}
+
+	/**
+	 * The record field values carried by a control response, read through the CTRL interface so that
+	 * every numeric control type is covered. PREC is present only for types that carry a precision.
+	 * @param dbr a control response
+	 * @return the field names and values, empty for a response that is not a control response
+	 */
+	public static HashMap<String, String> controlFieldValues(DBR dbr) {
+		HashMap<String, String> fields = new HashMap<String, String>();
+		if(!(dbr instanceof CTRL)) return fields;
+		final CTRL ctrl = (CTRL) dbr;
+		if(dbr instanceof PRECISION) fields.put("PREC", Short.toString(((PRECISION) dbr).getPrecision()));
+		fields.put("EGU", ctrl.getUnits() == null ? "" : ctrl.getUnits());
+		fields.put("HOPR", ctrl.getUpperDispLimit().toString());
+		fields.put("LOPR", ctrl.getLowerDispLimit().toString());
+		fields.put("HIHI", ctrl.getUpperAlarmLimit().toString());
+		fields.put("HIGH", ctrl.getUpperWarningLimit().toString());
+		fields.put("LOW", ctrl.getLowerWarningLimit().toString());
+		fields.put("LOLO", ctrl.getLowerAlarmLimit().toString());
+		fields.put("DRVH", ctrl.getUpperCtrlLimit().toString());
+		fields.put("DRVL", ctrl.getLowerCtrlLimit().toString());
+		return fields;
 	}
 
 }

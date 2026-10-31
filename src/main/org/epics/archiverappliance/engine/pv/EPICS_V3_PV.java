@@ -13,10 +13,9 @@ import gov.aps.jca.CAException;
 import gov.aps.jca.Channel;
 import gov.aps.jca.Channel.ConnectionState;
 import gov.aps.jca.Monitor;
+import gov.aps.jca.dbr.CTRL;
 import gov.aps.jca.dbr.DBR;
 import gov.aps.jca.dbr.DBRType;
-import gov.aps.jca.dbr.DBR_CTRL_Double;
-import gov.aps.jca.dbr.DBR_CTRL_Int;
 import gov.aps.jca.dbr.DBR_LABELS_Enum;
 import gov.aps.jca.dbr.DBR_String;
 import gov.aps.jca.event.ConnectionEvent;
@@ -44,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 
 /**
  * EPICS ChannelAccess implementation of the PV interface.
@@ -88,6 +88,16 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
 
     /**we save all meta field once every day and lastTimeStampWhenSavingarchiveFields is when we save all last meta fields*/
     private long archiveFieldsSavedAtEpSec = 0;
+
+    /**
+     * Guards the metadata state as one unit: a DBE_PROPERTIES update, the attachment of pending metadata to a
+     * sample, the acknowledgement of that sample and the combined latest-metadata read. Without it a reader can
+     * see enum label keys that differ from ENUM_COUNT while a label list is being replaced.
+     */
+    private final Object metadataLock = new Object();
+
+    /** The snapshot of all fields attached to a sample that the archive buffer has not yet accepted, or null. */
+    private HashMap<String, String> pendingSnapshot = null;
 
     /**this pv is meta field  or not*/
     private boolean isarchiveFieldsField = false;
@@ -733,6 +743,7 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
                 }
                 dbrtimeevent = con.newInstance(dbr);
                 totalMetaInfo.computeRate(dbrtimeevent);
+                attachPendingMetadata(dbrtimeevent);
                 dbr = null;
             } catch (Exception e) {
                 logger.error(
@@ -852,8 +863,8 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
      */
     public void markPVHasMetafields(boolean hasMetaField) {
         if (hasMetaField) {
-            allarchiveFieldsData = new ConcurrentHashMap<String, String>();
-            changedarchiveFieldsData = new ConcurrentHashMap<String, String>();
+            if (allarchiveFieldsData == null) allarchiveFieldsData = new ConcurrentHashMap<String, String>();
+            if (changedarchiveFieldsData == null) changedarchiveFieldsData = new ConcurrentHashMap<String, String>();
         }
         this.hasMetaField = hasMetaField;
     }
@@ -967,6 +978,13 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
      */
     @Override
     public HashMap<String, String> getLatestMetadata() {
+        // Read under the metadata lock so that a label update is seen completely or not at all.
+        synchronized (metadataLock) {
+            return combineLatestMetadata();
+        }
+    }
+
+    private HashMap<String, String> combineLatestMetadata() {
         HashMap<String, String> retVal = new HashMap<String, String>();
         // The totalMetaInfo is updated once every 24hours...
         MetaInfo metaInfo = this.getTotalMetaInfo();
@@ -995,88 +1013,116 @@ public class EPICS_V3_PV implements PV, ControllingPV, ConnectionListener, Monit
         this.allarchiveFieldsData.put(fieldName, value);
     }
 
+    /**
+     * Apply a DBE_PROPERTIES event. Control responses of every numeric type update the record fields;
+     * enum responses update ENUM_n and ENUM_COUNT.
+     */
     private void processDBEPropertiesMonitorEvent(MonitorEvent monitorEvent) {
-        DBR dbr = monitorEvent.getDBR();
+        processDBEProperties(monitorEvent.getDBR());
+    }
+
+    /** The handler body for a DBE_PROPERTIES response; package visible for tests with real responses. */
+    void processDBEProperties(DBR dbr) {
+        synchronized (metadataLock) {
+            applyDBEProperties(dbr);
+        }
+    }
+
+    private void applyDBEProperties(DBR dbr) {
         if (dbr.isLABELS()) {
             logger.debug("Updating DBE_PROPERTIES labels for ENUM pv " + name);
-            final DBR_LABELS_Enum labels = (DBR_LABELS_Enum) dbr;
-            addUpdateChangedDBEPropertyMetaField("LABELS", String.join(",", labels.getLabels()));
-        } else if (dbr instanceof DBR_CTRL_Double || dbr instanceof DBR_CTRL_Int) {
-            logger.debug("Updating DBE_PROPERTIES metafields for DBR_CTRL_Double for pv " + name);
-            assert dbr instanceof DBR_CTRL_Double;
-            final DBR_CTRL_Double ctrl = (DBR_CTRL_Double) dbr;
-            // fieldsAvailableFromDBRControl = new String[] {"PREC", "EGU", "HOPR", "LOPR", "HIHI", "HIGH", "LOW",
-            // "LOLO", "DRVH", "DRVL" };
-            addUpdateChangedDBEPropertyMetaField("PREC", Short.toString(ctrl.getPrecision()));
-            addUpdateChangedDBEPropertyMetaField("EGU", ctrl.getUnits());
-            addUpdateChangedDBEPropertyMetaField(
-                    "HOPR", ctrl.getUpperDispLimit().toString());
-            addUpdateChangedDBEPropertyMetaField(
-                    "LOPR", ctrl.getLowerDispLimit().toString());
-
-            addUpdateChangedDBEPropertyMetaField(
-                    "HIHI", ctrl.getUpperAlarmLimit().toString());
-            addUpdateChangedDBEPropertyMetaField(
-                    "HIGH", ctrl.getUpperWarningLimit().toString());
-            addUpdateChangedDBEPropertyMetaField(
-                    "LOW", ctrl.getLowerWarningLimit().toString());
-            addUpdateChangedDBEPropertyMetaField(
-                    "LOLO", ctrl.getLowerAlarmLimit().toString());
-
-            addUpdateChangedDBEPropertyMetaField(
-                    "DRVH", ctrl.getUpperCtrlLimit().toString());
-            addUpdateChangedDBEPropertyMetaField(
-                    "DRVL", ctrl.getLowerCtrlLimit().toString());
+            final String[] labels = ((DBR_LABELS_Enum) dbr).getLabels();
+            if (labels == null) {
+                logger.warn("Ignoring a DBE_PROPERTIES response without labels for ENUM pv " + name);
+                return;
+            }
+            // The labels received at connection must follow the new list, or the latest metadata would still
+            // report the labels beyond the new count.
+            this.totalMetaInfo.setLabel(labels);
+            // A shorter choice list must not leave the labels beyond the new count in the stored values,
+            // nor in a change that is still waiting for the next sample.
+            Predicate<String> beyondCount = key -> key.startsWith("ENUM_")
+                    && !key.equals("ENUM_COUNT")
+                    && enumIndex(key) >= labels.length;
+            allarchiveFieldsData.keySet().removeIf(beyondCount);
+            changedarchiveFieldsData.keySet().removeIf(beyondCount);
+            MetaInfo.enumFieldValues(labels).forEach(this::addUpdateChangedDBEPropertyMetaField);
+        } else if (dbr instanceof CTRL) {
+            logger.debug("Updating DBE_PROPERTIES metafields for " + dbr.getClass().getSimpleName() + " for pv " + name);
+            MetaInfo.controlFieldValues(dbr).forEach(this::addUpdateChangedDBEPropertyMetaField);
         } else {
-            logger.error("In applyBasicInfo, cannot determine dbr type for "
+            logger.error("In processDBEPropertiesMonitorEvent, cannot determine dbr type for "
                     + dbr.getClass().getName());
+        }
+    }
+
+    private static int enumIndex(String key) {
+        try {
+            return Integer.parseInt(key.substring("ENUM_".length()));
+        } catch (NumberFormatException ex) {
+            return -1;
         }
     }
 
     @Override
     public void sampleWrittenIntoStores() {}
 
-    /**
-     * save the meta data
-     */
-    private void saveMetaDataOnceEveryDay(DBRTimeEvent lastEvent) {
-        HashMap<String, String> tempHashMap = new HashMap<String, String>(allarchiveFieldsData);
-        if (!runTimeFieldsData.isEmpty()) {
-            // This should store fields like the description at least once every day.
-            tempHashMap.putAll(runTimeFieldsData);
-        }
-        if (this.totalMetaInfo != null) {
-            if (this.totalMetaInfo.getUnit() != null) {
-                tempHashMap.put("EGU", this.totalMetaInfo.getUnit());
-            }
-            if (this.totalMetaInfo.getPrecision() != 0) {
-                tempHashMap.put("PREC", Integer.toString(this.totalMetaInfo.getPrecision()));
+    /** Retain changed or snapshot metadata until a sample carrying it has been accepted by the archive buffer. */
+    @Override
+    public void sampleWrittenIntoStores(DBRTimeEvent sample) {
+        if (!hasMetaField || changedarchiveFieldsData == null) return;
+        synchronized (metadataLock) {
+            Map<String, String> accepted = sample.getFields();
+            if (accepted == null) return;
+            changedarchiveFieldsData.entrySet().removeIf(entry -> entry.getValue().equals(accepted.get(entry.getKey())));
+            if (pendingSnapshot != null && accepted.entrySet().containsAll(pendingSnapshot.entrySet())) {
+                pendingSnapshot = null;
+                archiveFieldsSavedAtEpSec = TimeUtils.getCurrentEpochSeconds();
             }
         }
-        // dbrtimeevent.s
-        lastEvent.setFieldValues(tempHashMap, false);
-        archiveFieldsSavedAtEpSec = TimeUtils.getCurrentEpochSeconds();
     }
 
-    @Override
-    public void aboutToWriteBuffer(DBRTimeEvent lastEvent) {
-        // if this pv has meta data , handle here
-        if (hasMetaField) {
-            // //////////handle the field value when it
-            // changes//////////////
-            if (!changedarchiveFieldsData.isEmpty()) {
-                logger.debug("Adding changed field for pv " + name + " with " + changedarchiveFieldsData.size());
-                HashMap<String, String> tempHashMap = new HashMap<>(changedarchiveFieldsData);
-                // dbrtimeevent.s
-                lastEvent.setFieldValues(tempHashMap, true);
-                changedarchiveFieldsData.clear();
+    /** The values of all archived and runtime fields, with the stored configuration of units, precision and labels. */
+    private HashMap<String, String> currentFieldSnapshot() {
+        HashMap<String, String> snapshot = new HashMap<String, String>();
+        if (this.totalMetaInfo != null && this.totalMetaInfo.getLabel() != null
+                && !allarchiveFieldsData.containsKey("ENUM_COUNT")) {
+            snapshot.putAll(MetaInfo.enumFieldValues(this.totalMetaInfo.getLabel()));
+        }
+        snapshot.putAll(allarchiveFieldsData);
+        snapshot.putAll(runTimeFieldsData);
+        if (this.totalMetaInfo != null) {
+            if (this.totalMetaInfo.getUnit() != null) {
+                snapshot.put("EGU", this.totalMetaInfo.getUnit());
             }
-            if (!allarchiveFieldsData.isEmpty()) {
-                long nowES = TimeUtils.getCurrentEpochSeconds();
-                if ((nowES - archiveFieldsSavedAtEpSec) >= 86400) {
-                    saveMetaDataOnceEveryDay(lastEvent);
-                }
+            if (this.totalMetaInfo.getPrecision() != 0) {
+                snapshot.put("PREC", Integer.toString(this.totalMetaInfo.getPrecision()));
+            }
+        }
+        return snapshot;
+    }
+
+    /**
+     * Attach the pending metadata to a sample as it is created, so that a change is never stored with an
+     * older sample. The values stay pending until the sample is accepted by the archive buffer.
+     */
+    void attachPendingMetadata(DBRTimeEvent sample) {
+        if (!hasMetaField || allarchiveFieldsData == null) return;
+        synchronized (metadataLock) {
+            boolean snapshotDue = pendingSnapshot != null
+                    || TimeUtils.getCurrentEpochSeconds() - archiveFieldsSavedAtEpSec >= 86400;
+            if (snapshotDue && !allarchiveFieldsData.isEmpty()) {
+                HashMap<String, String> snapshot = currentFieldSnapshot();
+                pendingSnapshot = snapshot;
+                sample.setFieldValues(new HashMap<>(snapshot), false);
+            } else if (!changedarchiveFieldsData.isEmpty()) {
+                logger.debug("Adding changed field for pv " + name + " with " + changedarchiveFieldsData.size());
+                sample.setFieldValues(new HashMap<>(changedarchiveFieldsData), true);
             }
         }
     }
+
+    /** Metadata is attached when a sample is created; nothing is added to the last sample of a batch. */
+    @Override
+    public void aboutToWriteBuffer(DBRTimeEvent lastEvent) {}
 }

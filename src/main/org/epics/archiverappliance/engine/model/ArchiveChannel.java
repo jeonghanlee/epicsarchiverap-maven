@@ -398,6 +398,7 @@ public abstract class ArchiveChannel {
             boolean useDBEProperties) {
         if (useDBEProperties) {
             // For a DBE_PROPERTIES, we use the name of the PV as the name of the channel
+            v3Pv.markPVHasMetafields(true);
             v3Pv.setDBEroperties();
             return;
         }

@@ -203,7 +203,7 @@ Field changes remain pending until the archive buffer accepts a timestamped samp
 | Connection | Whether the PV is connected, its connection state and the connection drops, with the time of the data of the last event, the time at which the archiver received the last event, and the times of the connection |
 | Lost events | The events lost for a wrong time stamp, for a full sample buffer and for a change of type, and their sum |
 | Who reads it | The number of retrieval requests and of users, and the time of the last request |
-| The PV itself (stored configuration) | The data type, unit, precision, limits, record type, SCAN, archived fields and host from stored configuration, with the times at which its settings were created and last changed |
+| The PV itself (stored configuration) | The data type, unit, precision, limits, record type, SCAN, archived fields and the host of the latest connection that updated the stored configuration, with the times at which its settings were created and last changed |
 | Latest received metadata | Engine availability, enum choices, description and alarm hysteresis from the latest received metadata |
 | Moves between stores | For each move, for example from the short term store to the medium term store, the granularity of the source and of the destination, the duration of the last job, the number of runs, and the times of the last and the next run |
 
