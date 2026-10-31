@@ -8,22 +8,46 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-2.0.1.md` on branch release-2.0.1 (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. M7 is Complete in 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9, verified on origin/ahsoka; issue #41 is closed as completed. M25 is Complete: implementation fc52f0807b371990137bcd975ac62dc0a6c18094, milestone record c1b08d94b289585259b44d07389ad65d1066f2cf, and operator guide with final verification record 50fa32baf4dfcdf7b50d60f8091a639037df198f are on origin/ahsoka; the 25 metadata/cache tests and all 1,174 default-suite tests pass, native IOC comparison, metadata-change delivery and real browser checks passed against WARs rebuilt from c1b08d94, and issue #69 is closed as completed with six checked acceptance criteria. M27 records the requested viewer follow-up for distinct line styles, color-vision options and browser-session defaults for time/display settings and is linked to issue #71 in e42a8efd98279f807c08c23753566864045ddf44; origin/ahsoka was observed at that tip on 2026-10-30 10:59 PDT. Next: M26 is Complete: implementation f3f458e70b588f296716cc07fb7e58fdffc45fdf and its default-policy native check e91fef785f26fe5934d7f55519924c6e8bfb9b11 are on origin/ahsoka, the default verify (1,209 tests), the native checks and the browser checks passed on WARs built from the commit, and issue #70 is closed as completed with seven checked acceptance criteria. Next: M13, which is Ready; review its plan before any implementation, as its plan awaits its own acceptance and implementation authority. The M13 and M21 plans await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are four Complete, one In progress and two Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24, M27, M28; M20 waits for G1. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility. For M28, a study of configuration reload, start at `DefaultConfigService.initialize()`, `EngineContext` and `JCACommandThread`.
+Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. M7 is Complete in 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9, verified on origin/ahsoka; issue #41 is closed as completed. M25 is Complete: implementation fc52f0807b371990137bcd975ac62dc0a6c18094, milestone record c1b08d94b289585259b44d07389ad65d1066f2cf, and operator guide with final verification record 50fa32baf4dfcdf7b50d60f8091a639037df198f are on origin/ahsoka; the 25 metadata/cache tests and all 1,174 default-suite tests pass, native IOC comparison, metadata-change delivery and real browser checks passed against WARs rebuilt from c1b08d94, and issue #69 is closed as completed with six checked acceptance criteria. M27 records the requested viewer follow-up for distinct line styles, color-vision options and browser-session defaults for time/display settings and is linked to issue #71 in e42a8efd98279f807c08c23753566864045ddf44; origin/ahsoka was observed at that tip on 2026-10-30 10:59 PDT. Next: M26 is Complete: implementation f3f458e70b588f296716cc07fb7e58fdffc45fdf and its default-policy native check e91fef785f26fe5934d7f55519924c6e8bfb9b11 are on origin/ahsoka, the default verify (1,209 tests), the native checks and the browser checks passed on WARs built from the commit, and issue #70 is closed as completed with seven checked acceptance criteria. Next: reconcile the closure record of M12, whose commit 1bc1d76c is pushed and whose issue #52 is closed but whose detail still says the changes are uncommitted; then work the rows in the order of the Milestone table, which the owner confirmed on 2026-10-31: M12, M24, M13, M22, M27, M23, M28, M10, M17, M8, M11, M16, M18, M6, M9, M1 to M5 in sequence, then G1, M20, M15 and M19, and M21 last. M13 is the release gate among them; review its plan before any implementation, because the plans of M13 and M21 await their own acceptance and implementation authority. M10 and M17 need an owner decision before work. The release scope of M21 is not yet decided: whether every row must be Complete, and whether the stopped rows M15, M19, M20 and G1 resume in this release. The recorded rows are four Complete, one In progress, nineteen Not started, two Open (M10 and G1), two Deferred (M15 and M19) and one Blocked (M20). The Ready rows are M13, M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24, M27 and M28; M2 to M5 wait for their predecessors, M10 awaits a decision, M15 and M19 are Deferred, and M20 waits for G1. Every former Backlog row moved to the Milestone section on 2026-10-31, and the Backlog is empty. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility. For M28, a study of configuration reload, start at `DefaultConfigService.initialize()`, `EngineContext` and `JCACommandThread`.
 
 ## Milestone
 
 This register covers the work that remains after release 2026-10 of the Maven appliance. The completed work and the decisions that only it needed are in the previous document at commit bfb0dc71; a row or decision of that document is named with that commit.
 
+The four Complete rows come first. The rows below them are listed in the work order the owner confirmed on 2026-10-31, lightest and most independent first, with the release gate M13 early, the analyzer phases in their required sequence, the stopped rows after them and the release row last. The details further down keep their earlier order.
+
 ### Work
 
 | Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | In progress | No | D6, D12 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
 | Appliance defects | M14 | Carry the changed limits of a record into the type information at reconnect | Milestone | Complete | No | D9, D12 | After an IOC restart with changed `HOPR`, `LOPR`, `HIGH` and `LOW`, `getPVTypeInfo` holds the new limits within one reconnect and the Details window shows them, the unit and the precision keep being updated, and the suite passes with a test that reconnects a PV with changed limits; issue #47; [detail](#m14---carry-the-changed-limits-of-a-record-into-the-type-information-at-reconnect) |
 | Interface console | M7 | PVA PVs keep the unit, precision, limits and host in their configuration | Milestone | Complete | No | D12 | The configuration of a PVA PV carries the unit, the precision, the display, control, warning and alarm limits and the host as the Channel Access PV of an equivalent record does; [detail](#m7---pva-pvs-keep-the-unit-precision-limits-and-host-in-their-configuration) |
 | Appliance defects | M25 | Preserve remaining PVA metadata across collection and retrieval | Milestone | Complete | No | M7 | Enum labels reach metadata consumers, precision is never taken from minStep, and DESC/HYST paths and API-to-screen values and explanations have verified outcomes; issue #69; [detail](#m25---preserve-remaining-pva-metadata-across-collection-and-retrieval) |
 | Appliance defects | M26 | Preserve Channel Access metadata across reception and updates | Milestone | Complete | No | M25 | Precision-only and host changes reach stored configuration, short, float and byte control limits are preserved, and property-event, field metadata and API-to-screen paths have verified values and explanations; issue #70; [detail](#m26---preserve-channel-access-metadata-across-reception-and-updates) |
+| Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | In progress | No | D6, D12 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
+| Interface console | M24 | Explain sampling changes and hide irrelevant confirmation controls | Milestone | Not started | Yes |  | Change sampling shows only applicable controls and explains MONITOR, SCAN and the period; required confirmations of other operations remain visible; issue #74; [detail](#m24---explain-sampling-changes-and-hide-irrelevant-confirmation-controls) |
 | Appliance defects | M13 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D9, D12 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m13---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
+| Interface console | M22 | Restore viewed PVs after tab navigation | Milestone | Not started | Yes |  | Returning to the viewer restores the previously selected and plotted PVs without entering them again; deliberate removal remains effective; issue #72; [detail](#m22---restore-viewed-pvs-after-tab-navigation) |
+| Interface console | M27 | Distinguish plotted lines and retain accessible display preferences | Milestone | Not started | Yes |  | Plot lines differ beyond color; color-vision display options and time/display defaults survive navigation within the browser session; issue #71; [detail](#m27---distinguish-plotted-lines-and-retain-accessible-display-preferences) |
+| Interface console | M23 | Select matching PVs together and improve Find | Milestone | Not started | Yes |  | The operator can select matching PVs together; search assistance preserves exact Glob behavior and makes selection limits explicit; issue #73; [detail](#m23---select-matching-pvs-together-and-improve-find) |
+| Configuration | M28 | Study dynamic configuration reload and immediate API application | Milestone | Not started | Yes |  | A recommendation, supported by code references and by measurement on the real configuration and acquisition paths, classifies each configuration setting as dynamically applicable, requiring Channel Access context recreation or requiring a restart, compares 60-second polling with explicit API application, and states its unsupported cases and the behavior that remains unverified; issue #68; [detail](#m28---study-dynamic-configuration-reload-and-immediate-api-application) |
+| Retrieval protection | M10 | Decide the stamping and filtering rule of summary bins at the window edges | Milestone | Open | No | D8 | A recorded decision on whether a bin whose samples lie inside the requested window is returned when its midpoint stamp lies after the window end, checked against the archive viewers and the Python clients; if the rule changes, such a bin is returned regardless of the request time and `VariousPostProcessorTest` passes with its original one-day window; if it stays, the retrieval page of the book states it; issue #59; [detail](#m10---decide-the-stamping-and-filtering-rule-of-summary-bins-at-the-window-edges) |
+| Scripts and checks | M17 | Mail delivery for the alert checks | Milestone | Not started | Yes |  | emailHandler.py's mail delivery is available to the on-demand alert checks of M37 (previous document, commit bfb0dc71) with a defined configuration, timeout and failure contract and is verified against a real SMTP endpoint; [detail](#m17---mail-delivery-for-the-alert-checks) |
+| Retrieval protection | M8 | Bound the concurrent calls of the PVAccess retrieval service | Milestone | Not started | Yes | D7 | The retrieval PVAccess service runs at most a measured number of calls at a time and refuses the next with a message in its log; a test with more long calls than that, on separate connections, fails on the old code and passes on the new; [detail](#m8---bound-the-concurrent-calls-of-the-pvaccess-retrieval-service) |
+| Retrieval protection | M11 | Check the retrieval operators outside the declared-size check | Milestone | Not started | Yes | D10 | Each of the five candidates, `FirstSamplePP`, `DeadBand`, `Fliers` and `IgnoreFliers`; the per-bin values of `Median`, `Kurtosis` and `Skewness`; the number of `pv` parameters of `getDataForPVs`; the names posted to `getDataAtTime`; the `;` separated names of the PVAccess call, has a recorded real-request result at a 512 MiB heap, refused with a named condition or completed without exhausting the heap, and every candidate that exhausted it has a correction with a test that fails without it; issue #60; [detail](#m11---check-the-retrieval-operators-outside-the-declared-size-check) |
+| Scripts and checks | M16 | Modernize the retained state-changing sample scripts | Milestone | Not started | Yes |  | Each of the seven retained scripts that change appliance state has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m16---modernize-the-retained-state-changing-sample-scripts) |
+| Scripts and checks | M18 | Verify the proxy to an external Archiver Appliance | Milestone | Not started | Yes |  | An integration test on two appliances registers the second as an external `ARCHAPPL_PBRAW` server of the first and observes, through the first, the data, the name match and the value at a time of a PV archived only on the second; [detail](#m18---verify-the-proxy-to-an-external-archiver-appliance) |
+| Interface console | M6 | Appliance status as PVA PVs | Milestone | Not started | Yes |  | The appliance publishes its status measures as PVA PVs through its own PVA server and archives them, so the analyzer plots them like any archived PV; [detail](#m6---appliance-status-as-pva-pvs) |
+| Retrieval protection | M9 | Measure the thread and valve limits and the remaining qualification cells of the retrieval protection | Milestone | Not started | Yes | D8 | A measured table of busy threads, response times, memory decisions and valve refusals against concurrency under combined console and retrieval load, at 512 MiB and 2 GiB and under two `maxThreads` values; the valve default recorded with the rule that produced it in the register, the book and `TESTING.md`, with a test that runs at that default; each unmeasured qualification cell measured or recorded as not measured with the reason; issue #58; [detail](#m9---measure-the-thread-and-valve-limits-and-the-remaining-qualification-cells-of-the-retrieval-protection) |
+| Interface analyzer | M1 | Analyzer phase A: page, header and address | Milestone | Not started | Yes | D1, D2, D5 | The analyzer is an independent service with the header, menu and time zone choice of the console, a page composition the owner approved from a mockup (tabs by kind of analysis, a drawer of Signals, Axes, Options, Data and Export), the Trend tab drawn through the chart component, and an address that carries the PVs, the window, the zone and the options the component has; the console passes its options; [detail](#m1---analyzer-phase-a-page-header-and-address) |
+| Interface analyzer | M2 | Analyzer phase B: interaction, options and export | Milestone | Not started | No | M1, D2, D5 | The gestures beyond the simple form (the drag tool chosen on the strip, wheel and pinch zoom, undo and redo of the range, two cursors, pinned samples), the options the reference tools offer (line width and style, a gap threshold, a fill between signals, fixed and soft ranges, the averaging interval or raw samples, the min-max band, a split by unit, SI prefixes, a legend table, tooltip modes), the Data tab and the full Export tab, each carried in the address; [detail](#m2---analyzer-phase-b-interaction-options-and-export) |
+| Interface analyzer | M3 | Analyzer phase C: tools for one signal | Milestone | Not started | No | M2, D2, D5 | The Distribution, Compare and Spectrum tabs: the summary and moments, histogram and box plot, moving statistics, the limits with the time beyond them, the pattern by hour and weekday, two ranges or two signals compared with their tests, and the spectrum by FFT with autocorrelation, computed by the page where the D3 bundle has no function and checked on signals of known parameters; [detail](#m3---analyzer-phase-c-tools-for-one-signal) |
+| Interface analyzer | M4 | Analyzer phase D: tools for two and several signals | Milestone | Not started | No | M3, D2, D5 | The Correlation tab (pairing by held values, scatter with projections and density, Pearson and Spearman, profile, the fit panel with fixed and bounded parameters) and the Dependency tab (correlation matrix ordered by clustering, ranking by mutual information, multiple regression, principal components), derived signals from a typed expression and a change of unit, the routines checked on signals of known parameters; [detail](#m4---analyzer-phase-d-tools-for-two-and-several-signals) |
+| Interface analyzer | M5 | Analyzer phase E: waveform and image analysis | Milestone | Not started | No | M4, M3, D2, D5 | The analyzer draws an array at a time, over time and as a heatmap, computes its summary values and spectrum, and analyses an image by region, projections, centroid and size; [detail](#m5---analyzer-phase-e-waveform-and-image-analysis) |
+| Tracking | G1 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No |  | ansible-provision supplies real-path readiness evidence for the corrected tools required by M20; [detail](#g1---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
+| Verification | M20 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | G1 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m20---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
+| Appliance defects | M15 | Archiving continues across a change of the record | Milestone | Deferred | No | D4 | The engine detects a change of the archived record (type, rate, unit, precision or limits) on its own and goes on storing the signal under the new condition from the instant of the change, with the earlier samples readable as they were stored; deferred to the next major release by D4; the GitHub issue that holds the direction is filed; [detail](#m15---archiving-continues-across-a-change-of-the-record) |
+| Verification | M19 | Verify signal storage and important-signal delivery under client overload | Milestone | Deferred | No |  | Long-term plan, deferred on 2026-10-22: verify signal storage first, important-signal storage and delivery second, and client request handling last; issue #55; [detail](#m19---verify-signal-storage-and-important-signal-delivery-under-client-overload) |
 | Release Ahsoka | M21 | Release Ahsoka | Milestone | Not started | No | M12, M14, M7, M13, D12 | Release Ahsoka is built, tagged and installed from its bundle with every Release Verification of the detail Pass and the issues of M12, M14, M7 and M13 closed; [detail](#m21---release-ahsoka) |
 
 ### Decisions
@@ -80,6 +104,30 @@ Rows moved from the Backlog to the Milestone section of this document on 2026-10
 | M14 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
 | M7 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
 | M13 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M1 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M2 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M3 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M4 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M5 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M6 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M8 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M9 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M10 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M11 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M15 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M16 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M17 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M18 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M19 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M20 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M22 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M23 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M24 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M27 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| M28 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+| G1 | docs/milestone-bfb0dc71.md, Backlog | docs/milestone-bfb0dc71.md, Milestone | this synchronization commit | this synchronization commit |
+
+On 2026-10-31 the owner moved every remaining Backlog row, with its detail, to the Milestone section. Statuses, dependencies, dated decisions and gates are unchanged: the Deferred, Open and Blocked rows keep them, and the coverage of Release Ahsoka is reconciled separately.
 
 ### Milestone Details
 
@@ -621,170 +669,6 @@ Observed State: OPEN (2026-10-28)
 Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-10-28 00:46 PDT; `gh issue edit 45` replaced the body with the projection of this detail, read back OPEN with a body equal to the draft, label bug, assignee jeonghanlee, no milestone, remote updatedAt 2026-10-28T07:46:19Z
-
-#### M21 - Release Ahsoka
-
-Origin: bfb0dc71 / M21
-Identity History: none
-GitHub Issue: none
-Status: Not started
-
-##### Summary
-
-Release Ahsoka carries the four rows M12, M14, M7 and M13, in that order, on the branch ahsoka. It follows release 2026-10, whose install and run check D11 accepts. This row owns the release-wide re-runs, the version change, the release actions and the final checks; the work of the four rows is implemented, verified and accepted in their own details. The combined branch is the branch ahsoka once the four rows are Complete. Phase 4 is the cycle planning of the `release-cycle` procedure, in which the owner reviews and accepts each plan and records the implementation authority separately. The soft IOC is the one of D3.
-
-##### Scope
-
-- Each of M12, M14, M7 and M13 is Complete in its own detail before this row starts its checks.
-- The Integrated Verification rows run on the combined branch before the version change.
-- The project version in `pom.xml` is set to Ahsoka, the branch ahsoka is merged into master with a merge commit, the annotated tag Ahsoka is created on that merge commit, and issues #52, #47, #41 and #45 close through `Closes` trailers of the version commit when it reaches master.
-- The sentence of `README.md` that names the form of a release tag is changed in a docs commit of its own, before the version change.
-- The documented install-from-bundle path runs on Debian 13 and on Rocky Linux 8.10 with the bundle built from the tag Ahsoka.
-
-Out of scope: any other Backlog row; a long run of the tag in the environment repository, which the owner decides after the release; the analyzer rows.
-
-##### Completion Criteria
-
-- M12, M14, M7 and M13 are Complete.
-- Every Release Verification row below reads Pass with reachable evidence.
-- The tag Ahsoka is an annotated tag on the merge commit, that commit is on origin/master, and the Maven workflow succeeded on it.
-- Issues #52, #47, #41 and #45 are observed closed.
-- `README.md` names the tag of a release as the name of the release, for example `2026-10` or `Ahsoka`, and no longer as a form `YYYY-MM` (Release Verification 14).
-
-##### Dependencies And Decisions
-
-- M12, M14, M7, M13: the checks of this row run on their combined result.
-- D12 (Decision Date 2026-10-27): the scope, the name and the order.
-- The owner decided on 2026-10-28 that the sentence of `README.md` about the tag name is changed in a docs commit of its own before the version change, that the clean hosts of the installation check are test guests requested from the provisioning session when the check starts and returned with a finished notice, and that a long run of the tag is not part of this row.
-- The Integrated Verification rows are shared-surface candidates: M7 fills `MetaInfo` and M14 updates it (details of M7 and M14), and `ChangeTypeForPV` of M13 reads and writes the same `PVTypeInfo` as `MetaInfo.updateTypeInfo` through `getTypeInfoForPV` and `updateTypeInfoForPV`. The plan review of phase 4 confirms or removes each.
-
-##### Implementation Plan
-
-Plan Status: accepted
-Plan Acceptance: 2026-10-28, accepted by the owner in the planning conversation
-Implementation Authorization: none
-Superseded Plan Artifacts: none
-
-1. When the four rows are Complete, run the Integrated Verification rows on the combined branch. Closes with Release Verification 13, 1 and 2.
-2. Commit the README sentence, push the branch ahsoka (Release Execution 1) and read the Maven workflow on its tip. Closes with Release Verification 14 and 3.
-3. Check the version, change it, commit it with the trailers, push the branch (Release Execution 2 and 3) and read the Maven workflow on the version commit. Closes with Release Verification 4, 5 and 6.
-4. Merge into master, push master, create and push the tag (Release Execution 4 to 7) and read the Maven workflow runs on the merge commit, the one of the master push and the one that the tag push starts. Closes with Release Verification 7 and 8.
-5. Install from the bundle of the tag on the two supported distributions, observe the closed issues, delete the branch (Release Execution 8) and record the results in this register (Release Execution 9). Closes with Release Verification 9, 10, 11 and 12.
-
-##### Integrated Verification
-
-| Source Check | Re-run Trigger | Shared Surface | Release Verification Label | Expected Result | Result Evidence |
-| --- | --- | --- | --- | --- | --- |
-| M7 / T1 | the change of M13 to the type change is in the same tree as the type information written by M7 and M14 | `PVTypeInfo` through `getTypeInfoForPV` and `updateTypeInfoForPV`; `getPVTypeInfo` and `getPVDetails` of archived PVs | Release Verification 1 | the units, precision, limits and host name are present and equal for both protocols on the combined branch | pending |
-| M14 / T2 | the change of M13 and the type information written by M7 are in the same tree | `getPVTypeInfo` after an IOC restart with changed limits, and the unit and precision of `SR:BPM:03:Y` after its type change, the soft IOC of `src/resources/test/st.cmd` | Release Verification 2 | the new display limits within one reconnect on the combined branch, and the unit and precision still present after a type change | pending |
-
-##### Production Environment Tests
-
-| Release Verification Label | Timing | System | Version | Architecture | Deployment Path | Method | Expected Result | Evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Release Verification 9 | post-release | Debian 13, a clean test guest requested from the provisioning session for this check, with `curl`, which step 4 of the install page uses; a finished notice returns it | the bundle built from the tag Ahsoka, once, on the development host (JDK 21 and git installed) in a fresh clone of origin after Release Execution 7 with the tag checked out and `./mvnw -B clean package -DskipTests` (`docs/book/src/building.md`); the file name `aa-<date>-<commit>.tar.gz` is recorded, its commit part equals the first eight characters of the merge commit recorded at Release Execution 4, and the file is copied to the clean host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | follow every step of the install page with that bundle, the soft IOC of `src/resources/test/st.cmd` started on the development host as `<ioc_address>` (reachable from the clean host over Channel Access, UDP 5064 and the server TCP port), and `SR:BPM:01:X` of `ConsoleChartPVs.db` as `<pv_name>` | the four instances report `STARTUP_COMPLETE`, the PV reaches `connectionState` true, and the read-back reply holds at least one sample, counted by `curl -s "http://localhost:17668/retrieval/data/getData.json?pv=<pv_name>" \| grep -o '"val"' \| wc -l` | the four `startupState` lines, the `getPVStatus` reply, the sample count, the bundle file name, the `uname -m` output and the `sha256sum` of the bundle on the development host and on this host, written into the result row |
-| Release Verification 10 | post-release | Rocky Linux 8.10, a clean test guest requested the same way, with `curl`; a finished notice returns it | the same bundle, copied to this host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | the same steps with the same bundle, IOC and PV | the same result | the same items, written into the result row; the two `sha256sum` values are equal to those of the Debian 13 row |
-
-##### Version Changes
-
-| Field | File | Before | Planned After | Pre-check | Pre-check Label | Post-check | Post-check Label |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| project version | `pom.xml` | 2026-10 | Ahsoka | `grep -m1 -E '^  <version>' pom.xml` prints the version line | Release Verification 4 | the same command prints the new value | Release Verification 5 |
-
-##### Release Execution
-
-The owner's push trigger for steps 1, 3 and 5 covers the outgoing commits named in the step: the commits of the four rows and the register commits, and at step 5 the merge commit as well; the executor reads them with the preflight of the Push scope. A push to a ref cancels the Maven run still in progress on that ref, so the executor waits for the run of the previous push to finish before the next push. The evidence of a step is the command output named in its Expected Result, copied into the Evidence column when the step runs.
-
-| Step | Action | Authorization | Expected Result | Evidence |
-| --- | --- | --- | --- | --- |
-| 1 | Change the sentence of `README.md` that names the form of a release tag to "A release is an annotated tag named after the release, for example `2026-10` or `Ahsoka`." and commit it on its own; then push the branch ahsoka with a plain `git push` (the branch exists on origin with its upstream) and record the tip with `git rev-parse HEAD` | commit delegation and push delegation | the README commit is separate from the version commit; origin/ahsoka equals the recorded tip and the Maven workflow runs on it | pending |
-| 2 | After Release Verification 3 reads Pass, run the pre-check (Release Verification 4), edit the version line of `pom.xml` (`  <version>2026-10</version>` to `  <version>Ahsoka</version>`), run the post-check (Release Verification 5), commit it on the branch ahsoka with the trailers `Closes #52`, `Closes #47`, `Closes #41` and `Closes #45` and record the commit with `git rev-parse HEAD` | commit delegation | `git show --stat` lists only `pom.xml` with one line changed, the message carries the four trailers, and the commit ID is recorded | pending |
-| 3 | Push the branch ahsoka | push delegation | the Maven workflow runs on the version commit recorded at step 2 | pending |
-| 4 | After Release Verification 6 reads Pass, run `git fetch`, check out master (`git rev-list --count ahsoka..master` prints 0 and `git rev-parse master origin/master` prints one ID twice), merge with `git merge --no-ff ahsoka -m "Merge ahsoka: Ahsoka release"` and record the merge commit with `git rev-parse HEAD` | user-run | a merge commit on master (`git rev-list --parents -n 1 HEAD` prints three IDs); `git rev-list --count ahsoka ^HEAD` prints 0; the merge commit ID is recorded | pending |
-| 5 | Push master | push delegation | origin/master equals the merge commit, the four issues close and the Maven workflow runs on it | pending |
-| 6 | After Release Verification 7 reads Pass, create the annotated tag Ahsoka on the merge commit with the message `Release Ahsoka` | tag create delegation | the tag object peels to the merge commit | pending |
-| 7 | Push the tag Ahsoka | tag push delegation | the remote tag object equals the local tag object | pending |
-| 8 | Delete the branch ahsoka, local and on origin | user-run | `git branch --list ahsoka` and `git ls-remote --heads origin ahsoka` print nothing | pending |
-| 9 | Record the results of Release Verification 1 to 14 in this register, commit it and push master | commit delegation and push delegation | `git rev-parse master origin/master` prints one ID twice; the push changes only the register and starts no run | pending |
-
-##### Release Verification Plan
-
-| Label | Layer | Timing | Method | Environment | Expected Result | Evidence Target |
-| --- | --- | --- | --- | --- | --- | --- |
-| Release Verification 1 | Integration | pre-change | the method of M7 / T1 on the combined branch | JDK 21, Tomcat 9.0.122, EPICS 7.0.10, soft IOC | the result of M7 / T1 | the observed values of the two protocols |
-| Release Verification 2 | Integration | pre-change | the method of M14 / T2 on the combined branch, and, on `SR:BPM:03:Y` after the `changeTypeForPV` call of M13 / T2, a read of `getPVTypeInfo` | JDK 21, Tomcat 9.0.122, soft IOC | the result of M14 / T2, and `SR:BPM:03:Y` still reports the unit mm and the precision 3 after the type change; its limits are 0 before and after | `getPVTypeInfo` before and after the restart |
-| Release Verification 3 | Suite | pre-change | the Maven workflow on the tip of the pushed branch | GitHub Actions: Ubuntu 24.04, Debian 13, Rocky Linux 8.10 | the three jobs succeed | the run URL and the tip recorded at Release Execution 1 |
-| Release Verification 4 | Version | pre-change | the pre-check of Version Changes | the working tree | the version line reads 2026-10 | the command output |
-| Release Verification 5 | Version | post-change | the post-check of Version Changes | the working tree | the version line reads Ahsoka | the command output |
-| Release Verification 6 | Suite | post-change | the Maven workflow on the version commit | GitHub Actions: Ubuntu 24.04, Debian 13, Rocky Linux 8.10 | the three jobs succeed | the run URL and the commit recorded at Release Execution 2 |
-| Release Verification 7 | Suite | post-change | the Maven workflow run of the master push on the merge commit; the Pages run of the master push when it changes `docs/book/` | GitHub Actions: Ubuntu 24.04, Debian 13, Rocky Linux 8.10 | the three jobs succeed in the Maven run and the Pages run succeeds | the run URLs |
-| Release Verification 8 | Release object | post-release | `git cat-file -t refs/tags/Ahsoka`, `git rev-parse refs/tags/Ahsoka`, `git rev-parse 'refs/tags/Ahsoka^{commit}'`, `git branch -r --contains <merge-commit>` and `git ls-remote --tags origin refs/tags/Ahsoka`, where `<merge-commit>` is the ID recorded at Release Execution 4; the Maven workflow run that the tag push starts on the same commit once Release Execution 7 is done | the repository, origin and GitHub Actions | an annotated tag on the merge commit, that commit contained in origin/master, the remote tag object equal to the local one, and the three jobs of the tag run succeed | the object IDs and the run URL |
-| Release Verification 9 | Production | post-release | the production test of the Debian 13 row | Debian 13 | the expected result of that row | the record named there |
-| Release Verification 10 | Production | post-release | the production test of the Rocky Linux 8.10 row | Rocky Linux 8.10 | the expected result of that row | the record named there |
-| Release Verification 11 | Tracker | post-release | `gh issue view` of #52, #47, #41 and #45 | GitHub | the four issues are closed | the observed states |
-| Release Verification 12 | Branch | post-release | `git branch --list ahsoka` and `git ls-remote --heads origin ahsoka` after Release Execution 8 | the repository and origin | both print nothing | the command output |
-| Release Verification 13 | Status | pre-change | read the Status line of the details of M12, M14, M7 and M13 in this register | this register | all four read Complete | the four Status lines |
-| Release Verification 14 | Documentation | pre-change | `grep -n "annotated tag" README.md` on the tip recorded at Release Execution 1 | the working tree | the line names the tag as the name of the release and not as a form `YYYY-MM` | the command output |
-
-##### Release Verification Results
-
-| Label | Observed At | Environment | Result | Evidence |
-| --- | --- | --- | --- | --- |
-| Release Verification 1 | Not run | combined branch | Pending | none |
-| Release Verification 2 | Not run | combined branch | Pending | none |
-| Release Verification 3 | Not run | GitHub Actions | Pending | none |
-| Release Verification 4 | Not run | working tree | Pending | none |
-| Release Verification 5 | Not run | working tree | Pending | none |
-| Release Verification 6 | Not run | GitHub Actions | Pending | none |
-| Release Verification 7 | Not run | GitHub Actions | Pending | none |
-| Release Verification 8 | Not run | repository and origin | Pending | none |
-| Release Verification 9 | Not run | Debian 13 | Pending | none |
-| Release Verification 10 | Not run | Rocky Linux 8.10 | Pending | none |
-| Release Verification 11 | Not run | GitHub | Pending | none |
-| Release Verification 12 | Not run | repository and origin | Pending | none |
-| Release Verification 13 | Not run | this register | Pending | none |
-| Release Verification 14 | Not run | working tree | Pending | none |
-
-##### Closure Evidence
-
-- none
-
-##### GitHub Projection
-
-none: the issues of the four rows carry the work; this row has no issue.
-
-## Backlog
-
-Backlog rows are unassigned, use the same schema, and are excluded from the release tally.
-
-### Work
-
-| Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Interface analyzer | M1 | Analyzer phase A: page, header and address | Milestone | Not started | Yes | D1, D2, D5 | The analyzer is an independent service with the header, menu and time zone choice of the console, a page composition the owner approved from a mockup (tabs by kind of analysis, a drawer of Signals, Axes, Options, Data and Export), the Trend tab drawn through the chart component, and an address that carries the PVs, the window, the zone and the options the component has; the console passes its options; [detail](#m1---analyzer-phase-a-page-header-and-address) |
-| Interface analyzer | M2 | Analyzer phase B: interaction, options and export | Milestone | Not started | No | M1, D2, D5 | The gestures beyond the simple form (the drag tool chosen on the strip, wheel and pinch zoom, undo and redo of the range, two cursors, pinned samples), the options the reference tools offer (line width and style, a gap threshold, a fill between signals, fixed and soft ranges, the averaging interval or raw samples, the min-max band, a split by unit, SI prefixes, a legend table, tooltip modes), the Data tab and the full Export tab, each carried in the address; [detail](#m2---analyzer-phase-b-interaction-options-and-export) |
-| Interface analyzer | M3 | Analyzer phase C: tools for one signal | Milestone | Not started | No | M2, D2, D5 | The Distribution, Compare and Spectrum tabs: the summary and moments, histogram and box plot, moving statistics, the limits with the time beyond them, the pattern by hour and weekday, two ranges or two signals compared with their tests, and the spectrum by FFT with autocorrelation, computed by the page where the D3 bundle has no function and checked on signals of known parameters; [detail](#m3---analyzer-phase-c-tools-for-one-signal) |
-| Interface analyzer | M4 | Analyzer phase D: tools for two and several signals | Milestone | Not started | No | M3, D2, D5 | The Correlation tab (pairing by held values, scatter with projections and density, Pearson and Spearman, profile, the fit panel with fixed and bounded parameters) and the Dependency tab (correlation matrix ordered by clustering, ranking by mutual information, multiple regression, principal components), derived signals from a typed expression and a change of unit, the routines checked on signals of known parameters; [detail](#m4---analyzer-phase-d-tools-for-two-and-several-signals) |
-| Interface analyzer | M5 | Analyzer phase E: waveform and image analysis | Milestone | Not started | No | M4, M3, D2, D5 | The analyzer draws an array at a time, over time and as a heatmap, computes its summary values and spectrum, and analyses an image by region, projections, centroid and size; [detail](#m5---analyzer-phase-e-waveform-and-image-analysis) |
-| Interface console | M6 | Appliance status as PVA PVs | Milestone | Not started | Yes |  | The appliance publishes its status measures as PVA PVs through its own PVA server and archives them, so the analyzer plots them like any archived PV; [detail](#m6---appliance-status-as-pva-pvs) |
-| Retrieval protection | M8 | Bound the concurrent calls of the PVAccess retrieval service | Milestone | Not started | Yes | D7 | The retrieval PVAccess service runs at most a measured number of calls at a time and refuses the next with a message in its log; a test with more long calls than that, on separate connections, fails on the old code and passes on the new; [detail](#m8---bound-the-concurrent-calls-of-the-pvaccess-retrieval-service) |
-| Retrieval protection | M9 | Measure the thread and valve limits and the remaining qualification cells of the retrieval protection | Milestone | Not started | Yes | D8 | A measured table of busy threads, response times, memory decisions and valve refusals against concurrency under combined console and retrieval load, at 512 MiB and 2 GiB and under two `maxThreads` values; the valve default recorded with the rule that produced it in the register, the book and `TESTING.md`, with a test that runs at that default; each unmeasured qualification cell measured or recorded as not measured with the reason; issue #58; [detail](#m9---measure-the-thread-and-valve-limits-and-the-remaining-qualification-cells-of-the-retrieval-protection) |
-| Retrieval protection | M10 | Decide the stamping and filtering rule of summary bins at the window edges | Milestone | Open | No | D8 | A recorded decision on whether a bin whose samples lie inside the requested window is returned when its midpoint stamp lies after the window end, checked against the archive viewers and the Python clients; if the rule changes, such a bin is returned regardless of the request time and `VariousPostProcessorTest` passes with its original one-day window; if it stays, the retrieval page of the book states it; issue #59; [detail](#m10---decide-the-stamping-and-filtering-rule-of-summary-bins-at-the-window-edges) |
-| Retrieval protection | M11 | Check the retrieval operators outside the declared-size check | Milestone | Not started | Yes | D10 | Each of the five candidates, `FirstSamplePP`, `DeadBand`, `Fliers` and `IgnoreFliers`; the per-bin values of `Median`, `Kurtosis` and `Skewness`; the number of `pv` parameters of `getDataForPVs`; the names posted to `getDataAtTime`; the `;` separated names of the PVAccess call, has a recorded real-request result at a 512 MiB heap, refused with a named condition or completed without exhausting the heap, and every candidate that exhausted it has a correction with a test that fails without it; issue #60; [detail](#m11---check-the-retrieval-operators-outside-the-declared-size-check) |
-| Appliance defects | M15 | Archiving continues across a change of the record | Milestone | Deferred | No | D4 | The engine detects a change of the archived record (type, rate, unit, precision or limits) on its own and goes on storing the signal under the new condition from the instant of the change, with the earlier samples readable as they were stored; deferred to the next major release by D4; the GitHub issue that holds the direction is filed; [detail](#m15---archiving-continues-across-a-change-of-the-record) |
-| Scripts and checks | M16 | Modernize the retained state-changing sample scripts | Milestone | Not started | Yes |  | Each of the seven retained scripts that change appliance state has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m16---modernize-the-retained-state-changing-sample-scripts) |
-| Scripts and checks | M17 | Mail delivery for the alert checks | Milestone | Not started | Yes |  | emailHandler.py's mail delivery is available to the on-demand alert checks of M37 (previous document, commit bfb0dc71) with a defined configuration, timeout and failure contract and is verified against a real SMTP endpoint; [detail](#m17---mail-delivery-for-the-alert-checks) |
-| Scripts and checks | M18 | Verify the proxy to an external Archiver Appliance | Milestone | Not started | Yes |  | An integration test on two appliances registers the second as an external `ARCHAPPL_PBRAW` server of the first and observes, through the first, the data, the name match and the value at a time of a PV archived only on the second; [detail](#m18---verify-the-proxy-to-an-external-archiver-appliance) |
-| Verification | M19 | Verify signal storage and important-signal delivery under client overload | Milestone | Deferred | No |  | Long-term plan, deferred on 2026-10-22: verify signal storage first, important-signal storage and delivery second, and client request handling last; issue #55; [detail](#m19---verify-signal-storage-and-important-signal-delivery-under-client-overload) |
-| Verification | M20 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | G1 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m20---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
-| Interface console | M22 | Restore viewed PVs after tab navigation | Milestone | Not started | Yes |  | Returning to the viewer restores the previously selected and plotted PVs without entering them again; deliberate removal remains effective; issue #72; [detail](#m22---restore-viewed-pvs-after-tab-navigation) |
-| Interface console | M23 | Select matching PVs together and improve Find | Milestone | Not started | Yes |  | The operator can select matching PVs together; search assistance preserves exact Glob behavior and makes selection limits explicit; issue #73; [detail](#m23---select-matching-pvs-together-and-improve-find) |
-| Interface console | M24 | Explain sampling changes and hide irrelevant confirmation controls | Milestone | Not started | Yes |  | Change sampling shows only applicable controls and explains MONITOR, SCAN and the period; required confirmations of other operations remain visible; issue #74; [detail](#m24---explain-sampling-changes-and-hide-irrelevant-confirmation-controls) |
-| Interface console | M27 | Distinguish plotted lines and retain accessible display preferences | Milestone | Not started | Yes |  | Plot lines differ beyond color; color-vision display options and time/display defaults survive navigation within the browser session; issue #71; [detail](#m27---distinguish-plotted-lines-and-retain-accessible-display-preferences) |
-| Configuration | M28 | Study dynamic configuration reload and immediate API application | Milestone | Not started | Yes |  | A recommendation, supported by code references and by measurement on the real configuration and acquisition paths, classifies each configuration setting as dynamically applicable, requiring Channel Access context recreation or requiring a restart, compares 60-second polling with explicit API application, and states its unsupported cases and the behavior that remains unverified; issue #68; [detail](#m28---study-dynamic-configuration-reload-and-immediate-api-application) |
-| Tracking | G1 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No |  | ansible-provision supplies real-path readiness evidence for the corrected tools required by M20; [detail](#g1---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
-
-### Backlog Details
 
 #### M1 - Analyzer phase A: page, header and address
 
@@ -2362,6 +2246,151 @@ ansible-provision reports readiness of the actual collection, comparison and ter
 ##### Closure Evidence
 
 - none
+
+#### M21 - Release Ahsoka
+
+Origin: bfb0dc71 / M21
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+Release Ahsoka carries the four rows M12, M14, M7 and M13, in that order, on the branch ahsoka. It follows release 2026-10, whose install and run check D11 accepts. This row owns the release-wide re-runs, the version change, the release actions and the final checks; the work of the four rows is implemented, verified and accepted in their own details. The combined branch is the branch ahsoka once the four rows are Complete. Phase 4 is the cycle planning of the `release-cycle` procedure, in which the owner reviews and accepts each plan and records the implementation authority separately. The soft IOC is the one of D3.
+
+##### Scope
+
+- Each of M12, M14, M7 and M13 is Complete in its own detail before this row starts its checks.
+- The Integrated Verification rows run on the combined branch before the version change.
+- The project version in `pom.xml` is set to Ahsoka, the branch ahsoka is merged into master with a merge commit, the annotated tag Ahsoka is created on that merge commit, and issues #52, #47, #41 and #45 close through `Closes` trailers of the version commit when it reaches master.
+- The sentence of `README.md` that names the form of a release tag is changed in a docs commit of its own, before the version change.
+- The documented install-from-bundle path runs on Debian 13 and on Rocky Linux 8.10 with the bundle built from the tag Ahsoka.
+
+Out of scope: any other Backlog row; a long run of the tag in the environment repository, which the owner decides after the release; the analyzer rows.
+
+##### Completion Criteria
+
+- M12, M14, M7 and M13 are Complete.
+- Every Release Verification row below reads Pass with reachable evidence.
+- The tag Ahsoka is an annotated tag on the merge commit, that commit is on origin/master, and the Maven workflow succeeded on it.
+- Issues #52, #47, #41 and #45 are observed closed.
+- `README.md` names the tag of a release as the name of the release, for example `2026-10` or `Ahsoka`, and no longer as a form `YYYY-MM` (Release Verification 14).
+
+##### Dependencies And Decisions
+
+- M12, M14, M7, M13: the checks of this row run on their combined result.
+- D12 (Decision Date 2026-10-27): the scope, the name and the order.
+- The owner decided on 2026-10-28 that the sentence of `README.md` about the tag name is changed in a docs commit of its own before the version change, that the clean hosts of the installation check are test guests requested from the provisioning session when the check starts and returned with a finished notice, and that a long run of the tag is not part of this row.
+- The Integrated Verification rows are shared-surface candidates: M7 fills `MetaInfo` and M14 updates it (details of M7 and M14), and `ChangeTypeForPV` of M13 reads and writes the same `PVTypeInfo` as `MetaInfo.updateTypeInfo` through `getTypeInfoForPV` and `updateTypeInfoForPV`. The plan review of phase 4 confirms or removes each.
+
+##### Implementation Plan
+
+Plan Status: accepted
+Plan Acceptance: 2026-10-28, accepted by the owner in the planning conversation
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. When the four rows are Complete, run the Integrated Verification rows on the combined branch. Closes with Release Verification 13, 1 and 2.
+2. Commit the README sentence, push the branch ahsoka (Release Execution 1) and read the Maven workflow on its tip. Closes with Release Verification 14 and 3.
+3. Check the version, change it, commit it with the trailers, push the branch (Release Execution 2 and 3) and read the Maven workflow on the version commit. Closes with Release Verification 4, 5 and 6.
+4. Merge into master, push master, create and push the tag (Release Execution 4 to 7) and read the Maven workflow runs on the merge commit, the one of the master push and the one that the tag push starts. Closes with Release Verification 7 and 8.
+5. Install from the bundle of the tag on the two supported distributions, observe the closed issues, delete the branch (Release Execution 8) and record the results in this register (Release Execution 9). Closes with Release Verification 9, 10, 11 and 12.
+
+##### Integrated Verification
+
+| Source Check | Re-run Trigger | Shared Surface | Release Verification Label | Expected Result | Result Evidence |
+| --- | --- | --- | --- | --- | --- |
+| M7 / T1 | the change of M13 to the type change is in the same tree as the type information written by M7 and M14 | `PVTypeInfo` through `getTypeInfoForPV` and `updateTypeInfoForPV`; `getPVTypeInfo` and `getPVDetails` of archived PVs | Release Verification 1 | the units, precision, limits and host name are present and equal for both protocols on the combined branch | pending |
+| M14 / T2 | the change of M13 and the type information written by M7 are in the same tree | `getPVTypeInfo` after an IOC restart with changed limits, and the unit and precision of `SR:BPM:03:Y` after its type change, the soft IOC of `src/resources/test/st.cmd` | Release Verification 2 | the new display limits within one reconnect on the combined branch, and the unit and precision still present after a type change | pending |
+
+##### Production Environment Tests
+
+| Release Verification Label | Timing | System | Version | Architecture | Deployment Path | Method | Expected Result | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Release Verification 9 | post-release | Debian 13, a clean test guest requested from the provisioning session for this check, with `curl`, which step 4 of the install page uses; a finished notice returns it | the bundle built from the tag Ahsoka, once, on the development host (JDK 21 and git installed) in a fresh clone of origin after Release Execution 7 with the tag checked out and `./mvnw -B clean package -DskipTests` (`docs/book/src/building.md`); the file name `aa-<date>-<commit>.tar.gz` is recorded, its commit part equals the first eight characters of the merge commit recorded at Release Execution 4, and the file is copied to the clean host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | follow every step of the install page with that bundle, the soft IOC of `src/resources/test/st.cmd` started on the development host as `<ioc_address>` (reachable from the clean host over Channel Access, UDP 5064 and the server TCP port), and `SR:BPM:01:X` of `ConsoleChartPVs.db` as `<pv_name>` | the four instances report `STARTUP_COMPLETE`, the PV reaches `connectionState` true, and the read-back reply holds at least one sample, counted by `curl -s "http://localhost:17668/retrieval/data/getData.json?pv=<pv_name>" \| grep -o '"val"' \| wc -l` | the four `startupState` lines, the `getPVStatus` reply, the sample count, the bundle file name, the `uname -m` output and the `sha256sum` of the bundle on the development host and on this host, written into the result row |
+| Release Verification 10 | post-release | Rocky Linux 8.10, a clean test guest requested the same way, with `curl`; a finished notice returns it | the same bundle, copied to this host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | the same steps with the same bundle, IOC and PV | the same result | the same items, written into the result row; the two `sha256sum` values are equal to those of the Debian 13 row |
+
+##### Version Changes
+
+| Field | File | Before | Planned After | Pre-check | Pre-check Label | Post-check | Post-check Label |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| project version | `pom.xml` | 2026-10 | Ahsoka | `grep -m1 -E '^  <version>' pom.xml` prints the version line | Release Verification 4 | the same command prints the new value | Release Verification 5 |
+
+##### Release Execution
+
+The owner's push trigger for steps 1, 3 and 5 covers the outgoing commits named in the step: the commits of the four rows and the register commits, and at step 5 the merge commit as well; the executor reads them with the preflight of the Push scope. A push to a ref cancels the Maven run still in progress on that ref, so the executor waits for the run of the previous push to finish before the next push. The evidence of a step is the command output named in its Expected Result, copied into the Evidence column when the step runs.
+
+| Step | Action | Authorization | Expected Result | Evidence |
+| --- | --- | --- | --- | --- |
+| 1 | Change the sentence of `README.md` that names the form of a release tag to "A release is an annotated tag named after the release, for example `2026-10` or `Ahsoka`." and commit it on its own; then push the branch ahsoka with a plain `git push` (the branch exists on origin with its upstream) and record the tip with `git rev-parse HEAD` | commit delegation and push delegation | the README commit is separate from the version commit; origin/ahsoka equals the recorded tip and the Maven workflow runs on it | pending |
+| 2 | After Release Verification 3 reads Pass, run the pre-check (Release Verification 4), edit the version line of `pom.xml` (`  <version>2026-10</version>` to `  <version>Ahsoka</version>`), run the post-check (Release Verification 5), commit it on the branch ahsoka with the trailers `Closes #52`, `Closes #47`, `Closes #41` and `Closes #45` and record the commit with `git rev-parse HEAD` | commit delegation | `git show --stat` lists only `pom.xml` with one line changed, the message carries the four trailers, and the commit ID is recorded | pending |
+| 3 | Push the branch ahsoka | push delegation | the Maven workflow runs on the version commit recorded at step 2 | pending |
+| 4 | After Release Verification 6 reads Pass, run `git fetch`, check out master (`git rev-list --count ahsoka..master` prints 0 and `git rev-parse master origin/master` prints one ID twice), merge with `git merge --no-ff ahsoka -m "Merge ahsoka: Ahsoka release"` and record the merge commit with `git rev-parse HEAD` | user-run | a merge commit on master (`git rev-list --parents -n 1 HEAD` prints three IDs); `git rev-list --count ahsoka ^HEAD` prints 0; the merge commit ID is recorded | pending |
+| 5 | Push master | push delegation | origin/master equals the merge commit, the four issues close and the Maven workflow runs on it | pending |
+| 6 | After Release Verification 7 reads Pass, create the annotated tag Ahsoka on the merge commit with the message `Release Ahsoka` | tag create delegation | the tag object peels to the merge commit | pending |
+| 7 | Push the tag Ahsoka | tag push delegation | the remote tag object equals the local tag object | pending |
+| 8 | Delete the branch ahsoka, local and on origin | user-run | `git branch --list ahsoka` and `git ls-remote --heads origin ahsoka` print nothing | pending |
+| 9 | Record the results of Release Verification 1 to 14 in this register, commit it and push master | commit delegation and push delegation | `git rev-parse master origin/master` prints one ID twice; the push changes only the register and starts no run | pending |
+
+##### Release Verification Plan
+
+| Label | Layer | Timing | Method | Environment | Expected Result | Evidence Target |
+| --- | --- | --- | --- | --- | --- | --- |
+| Release Verification 1 | Integration | pre-change | the method of M7 / T1 on the combined branch | JDK 21, Tomcat 9.0.122, EPICS 7.0.10, soft IOC | the result of M7 / T1 | the observed values of the two protocols |
+| Release Verification 2 | Integration | pre-change | the method of M14 / T2 on the combined branch, and, on `SR:BPM:03:Y` after the `changeTypeForPV` call of M13 / T2, a read of `getPVTypeInfo` | JDK 21, Tomcat 9.0.122, soft IOC | the result of M14 / T2, and `SR:BPM:03:Y` still reports the unit mm and the precision 3 after the type change; its limits are 0 before and after | `getPVTypeInfo` before and after the restart |
+| Release Verification 3 | Suite | pre-change | the Maven workflow on the tip of the pushed branch | GitHub Actions: Ubuntu 24.04, Debian 13, Rocky Linux 8.10 | the three jobs succeed | the run URL and the tip recorded at Release Execution 1 |
+| Release Verification 4 | Version | pre-change | the pre-check of Version Changes | the working tree | the version line reads 2026-10 | the command output |
+| Release Verification 5 | Version | post-change | the post-check of Version Changes | the working tree | the version line reads Ahsoka | the command output |
+| Release Verification 6 | Suite | post-change | the Maven workflow on the version commit | GitHub Actions: Ubuntu 24.04, Debian 13, Rocky Linux 8.10 | the three jobs succeed | the run URL and the commit recorded at Release Execution 2 |
+| Release Verification 7 | Suite | post-change | the Maven workflow run of the master push on the merge commit; the Pages run of the master push when it changes `docs/book/` | GitHub Actions: Ubuntu 24.04, Debian 13, Rocky Linux 8.10 | the three jobs succeed in the Maven run and the Pages run succeeds | the run URLs |
+| Release Verification 8 | Release object | post-release | `git cat-file -t refs/tags/Ahsoka`, `git rev-parse refs/tags/Ahsoka`, `git rev-parse 'refs/tags/Ahsoka^{commit}'`, `git branch -r --contains <merge-commit>` and `git ls-remote --tags origin refs/tags/Ahsoka`, where `<merge-commit>` is the ID recorded at Release Execution 4; the Maven workflow run that the tag push starts on the same commit once Release Execution 7 is done | the repository, origin and GitHub Actions | an annotated tag on the merge commit, that commit contained in origin/master, the remote tag object equal to the local one, and the three jobs of the tag run succeed | the object IDs and the run URL |
+| Release Verification 9 | Production | post-release | the production test of the Debian 13 row | Debian 13 | the expected result of that row | the record named there |
+| Release Verification 10 | Production | post-release | the production test of the Rocky Linux 8.10 row | Rocky Linux 8.10 | the expected result of that row | the record named there |
+| Release Verification 11 | Tracker | post-release | `gh issue view` of #52, #47, #41 and #45 | GitHub | the four issues are closed | the observed states |
+| Release Verification 12 | Branch | post-release | `git branch --list ahsoka` and `git ls-remote --heads origin ahsoka` after Release Execution 8 | the repository and origin | both print nothing | the command output |
+| Release Verification 13 | Status | pre-change | read the Status line of the details of M12, M14, M7 and M13 in this register | this register | all four read Complete | the four Status lines |
+| Release Verification 14 | Documentation | pre-change | `grep -n "annotated tag" README.md` on the tip recorded at Release Execution 1 | the working tree | the line names the tag as the name of the release and not as a form `YYYY-MM` | the command output |
+
+##### Release Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| Release Verification 1 | Not run | combined branch | Pending | none |
+| Release Verification 2 | Not run | combined branch | Pending | none |
+| Release Verification 3 | Not run | GitHub Actions | Pending | none |
+| Release Verification 4 | Not run | working tree | Pending | none |
+| Release Verification 5 | Not run | working tree | Pending | none |
+| Release Verification 6 | Not run | GitHub Actions | Pending | none |
+| Release Verification 7 | Not run | GitHub Actions | Pending | none |
+| Release Verification 8 | Not run | repository and origin | Pending | none |
+| Release Verification 9 | Not run | Debian 13 | Pending | none |
+| Release Verification 10 | Not run | Rocky Linux 8.10 | Pending | none |
+| Release Verification 11 | Not run | GitHub | Pending | none |
+| Release Verification 12 | Not run | repository and origin | Pending | none |
+| Release Verification 13 | Not run | this register | Pending | none |
+| Release Verification 14 | Not run | working tree | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+none: the issues of the four rows carry the work; this row has no issue.
+
+## Backlog
+
+Backlog rows are unassigned, use the same schema, and are excluded from the release tally.
+
+### Work
+
+| Group | ID | Work unit | Type | Status | Ready | Deps | Done when / Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+
+### Backlog Details
+
+No row is unassigned: every Backlog row moved to the Milestone section on 2026-10-31 with its detail; Assignment History records each move.
 
 ## History
 
