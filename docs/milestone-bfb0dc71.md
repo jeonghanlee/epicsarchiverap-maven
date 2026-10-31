@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-2.0.1.md` on branch release-2.0.1 (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. M7 is Complete in 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9, verified on origin/ahsoka; issue #41 is closed as completed. M25 is Complete: implementation fc52f0807b371990137bcd975ac62dc0a6c18094, milestone record c1b08d94b289585259b44d07389ad65d1066f2cf, and operator guide with final verification record 50fa32baf4dfcdf7b50d60f8091a639037df198f are on origin/ahsoka; the 25 metadata/cache tests and all 1,174 default-suite tests pass, native IOC comparison, metadata-change delivery and real browser checks passed against WARs rebuilt from c1b08d94, and issue #69 is closed as completed with six checked acceptance criteria. M27 records the requested viewer follow-up for distinct line styles, color-vision options and browser-session defaults for time/display settings and is linked to issue #71 in e42a8efd98279f807c08c23753566864045ddf44; origin/ahsoka was observed at that tip on 2026-10-30 10:59 PDT. Next: M26 is Complete: implementation f3f458e70b588f296716cc07fb7e58fdffc45fdf and its default-policy native check e91fef785f26fe5934d7f55519924c6e8bfb9b11 are on origin/ahsoka, the default verify (1,209 tests), the native checks and the browser checks passed on WARs built from the commit, and issue #70 is closed as completed with seven checked acceptance criteria. Next: M13, which is Ready; review its plan before any implementation, as its plan awaits its own acceptance and implementation authority. The M13 and M21 plans await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are four Complete, one In progress and two Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24, M27; M20 waits for G1. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility.
+Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. M7 is Complete in 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9, verified on origin/ahsoka; issue #41 is closed as completed. M25 is Complete: implementation fc52f0807b371990137bcd975ac62dc0a6c18094, milestone record c1b08d94b289585259b44d07389ad65d1066f2cf, and operator guide with final verification record 50fa32baf4dfcdf7b50d60f8091a639037df198f are on origin/ahsoka; the 25 metadata/cache tests and all 1,174 default-suite tests pass, native IOC comparison, metadata-change delivery and real browser checks passed against WARs rebuilt from c1b08d94, and issue #69 is closed as completed with six checked acceptance criteria. M27 records the requested viewer follow-up for distinct line styles, color-vision options and browser-session defaults for time/display settings and is linked to issue #71 in e42a8efd98279f807c08c23753566864045ddf44; origin/ahsoka was observed at that tip on 2026-10-30 10:59 PDT. Next: M26 is Complete: implementation f3f458e70b588f296716cc07fb7e58fdffc45fdf and its default-policy native check e91fef785f26fe5934d7f55519924c6e8bfb9b11 are on origin/ahsoka, the default verify (1,209 tests), the native checks and the browser checks passed on WARs built from the commit, and issue #70 is closed as completed with seven checked acceptance criteria. Next: M13, which is Ready; review its plan before any implementation, as its plan awaits its own acceptance and implementation authority. The M13 and M21 plans await their own implementation authority. M12 is committed and pushed as 1bc1d76c and issue #52 is closed; its local closure record still needs reconciliation. The recorded release rows are four Complete, one In progress and two Not started. The Ready rows of the Backlog are M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24, M27, M28; M20 waits for G1. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility. For M28, a study of configuration reload, start at `DefaultConfigService.initialize()`, `EngineContext` and `JCACommandThread`.
 
 ## Milestone
 
@@ -538,7 +538,7 @@ Implementation review evidence (2026-10-30): third-person pass 1 read the whole 
 ##### Closure Evidence
 
 - Implementation: f3f458e70b588f296716cc07fb7e58fdffc45fdf on branch ahsoka, on top of b362b589346d476d71fa3e469b847f4384203b34. Its four checks were observed on the working tree before the commit, after the review findings were applied, with WARs packaged from that tree; the commit adds only the nine files of the working tree. Landing, observed 2026-10-30 23:02 PDT: the live branch ref, the fetched `origin/ahsoka` and the local HEAD all returned 2c05b37667a8277cd1c13c16dbafdc63d022499a, which holds this commit and the register commit that records it. Recheck with `gh api repos/jeonghanlee/epicsarchiverap-maven/git/ref/heads/ahsoka` and compare with local `origin/ahsoka`. Repeat on the commit, observed 2026-10-30 23:28 PDT: the default verify (1,209 tests, zero failures, errors or skips), T2 and T4 passed with WARs `aa-20261031-2c05b376-*` built from HEAD 2c05b37667a8277cd1c13c16dbafdc63d022499a with a clean working tree, and the engine WAR holds the same compiled `EPICS_V3_PV` class as the build; evidence `work/m26-verify-4.log`, `work/m26-final-runtime-5.log`, `work/m26-final/manifest-commit-wars.json` (WAR SHA-256 values) and the Retrieval capture `work/m26-final/m26-retrieval-ca.png` (SHA-256 e974c012415f049d974402e893339dea1553da7eb58bef9784c762353b2d1409). The SCAN, DESC and HYST outcomes that issue #70 lists are existing behavior, not changed here, and a native check of a default-policy PV now evidences them (T2): SCAN is stored in the extra fields at archive time, DESC is a runtime key that the latest metadata reports and the daily snapshot stores without storing each change, and HYST is not collected by default. That check is committed in e91fef785f26fe5934d7f55519924c6e8bfb9b11. To repeat: run `./mvnw verify` to build the WARs, then `unshare -rn python3 work/m26-final/run.py`, which runs the Channel Access and PVA integration tests and the browser check against the newest WARs named for the current HEAD and writes `work/m26-final/manifest.json`. The driver, the browser script and their output are in the untracked `work/m26-final` on the workstation that holds this checkout.
-- Final landing, observed 2026-10-30 23:48 PDT: the live branch ref, the fetched `origin/ahsoka` and the local HEAD all returned e48b2319c044b92ad4abe8e2ac2ce15f4af5fba3, which holds the implementation f3f458e70b588f296716cc07fb7e58fdffc45fdf, the native check e91fef785f26fe5934d7f55519924c6e8bfb9b11 and the register commits that record them. Recheck as above.
+- Final landing, observed 2026-10-30 23:48 PDT: the live branch ref, the fetched `origin/ahsoka` and the local HEAD all returned e48b2319c044b92ad4abe8e2ac2ce15f4af5fba3, which holds the implementation f3f458e70b588f296716cc07fb7e58fdffc45fdf, the native check e91fef785f26fe5934d7f55519924c6e8bfb9b11 and the register commits that record them. Recheck as above. The register commit 66e3ef58cd7d268c50795bea62a18cfed1c041fe, which records the completion and the closure of issue #70, also landed on `origin/ahsoka`, observed 2026-10-30 23:57 PDT with the live branch ref and the local HEAD both returning it.
 - Issue #70: its body was replaced with the implemented behavior and seven checked acceptance criteria, the outcome comment was posted, and the issue was closed as completed at 2026-10-31T06:54:24Z; observed CLOSED, reason completed, at 2026-10-30 23:54 PDT with the live body and comment equal to the projected drafts. Recheck with `gh issue view 70 --repo jeonghanlee/epicsarchiverap-maven --json state,closedAt`. Completion recorded 2026-10-30.
 
 ##### GitHub Projection
@@ -777,10 +777,11 @@ Backlog rows are unassigned, use the same schema, and are excluded from the rele
 | Scripts and checks | M18 | Verify the proxy to an external Archiver Appliance | Milestone | Not started | Yes |  | An integration test on two appliances registers the second as an external `ARCHAPPL_PBRAW` server of the first and observes, through the first, the data, the name match and the value at a time of a PV archived only on the second; [detail](#m18---verify-the-proxy-to-an-external-archiver-appliance) |
 | Verification | M19 | Verify signal storage and important-signal delivery under client overload | Milestone | Deferred | No |  | Long-term plan, deferred on 2026-10-22: verify signal storage first, important-signal storage and delivery second, and client request handling last; issue #55; [detail](#m19---verify-signal-storage-and-important-signal-delivery-under-client-overload) |
 | Verification | M20 | Integrated 24-hour ETL, journal and sample-buffer verification | Milestone | Blocked | No | G1 | Separate corrected-build campaign after four-hour acceptance and required Ansible tool readiness; independent product results; [detail](#m20---integrated-24-hour-etl-journal-and-sample-buffer-verification) |
-| Interface console | M22 | Restore viewed PVs after tab navigation | Milestone | Not started | Yes |  | Returning to the viewer restores the previously selected and plotted PVs without entering them again; deliberate removal remains effective; [detail](#m22---restore-viewed-pvs-after-tab-navigation) |
-| Interface console | M23 | Select matching PVs together and improve Find | Milestone | Not started | Yes |  | The operator can select matching PVs together; search assistance preserves exact Glob behavior and makes selection limits explicit; [detail](#m23---select-matching-pvs-together-and-improve-find) |
-| Interface console | M24 | Explain sampling changes and hide irrelevant confirmation controls | Milestone | Not started | Yes |  | Change sampling shows only applicable controls and explains MONITOR, SCAN and the period; required confirmations of other operations remain visible; [detail](#m24---explain-sampling-changes-and-hide-irrelevant-confirmation-controls) |
+| Interface console | M22 | Restore viewed PVs after tab navigation | Milestone | Not started | Yes |  | Returning to the viewer restores the previously selected and plotted PVs without entering them again; deliberate removal remains effective; issue #72; [detail](#m22---restore-viewed-pvs-after-tab-navigation) |
+| Interface console | M23 | Select matching PVs together and improve Find | Milestone | Not started | Yes |  | The operator can select matching PVs together; search assistance preserves exact Glob behavior and makes selection limits explicit; issue #73; [detail](#m23---select-matching-pvs-together-and-improve-find) |
+| Interface console | M24 | Explain sampling changes and hide irrelevant confirmation controls | Milestone | Not started | Yes |  | Change sampling shows only applicable controls and explains MONITOR, SCAN and the period; required confirmations of other operations remain visible; issue #74; [detail](#m24---explain-sampling-changes-and-hide-irrelevant-confirmation-controls) |
 | Interface console | M27 | Distinguish plotted lines and retain accessible display preferences | Milestone | Not started | Yes |  | Plot lines differ beyond color; color-vision display options and time/display defaults survive navigation within the browser session; issue #71; [detail](#m27---distinguish-plotted-lines-and-retain-accessible-display-preferences) |
+| Configuration | M28 | Study dynamic configuration reload and immediate API application | Milestone | Not started | Yes |  | A recommendation, supported by code references and by measurement on the real configuration and acquisition paths, classifies each configuration setting as dynamically applicable, requiring Channel Access context recreation or requiring a restart, compares 60-second polling with explicit API application, and states its unsupported cases and the behavior that remains unverified; issue #68; [detail](#m28---study-dynamic-configuration-reload-and-immediate-api-application) |
 | Tracking | G1 | Ansible tools ready for the integrated 24-hour campaign | External gate | Open | No |  | ansible-provision supplies real-path readiness evidence for the corrected tools required by M20; [detail](#g1---ansible-tools-ready-for-the-integrated-24-hour-campaign) |
 
 ### Backlog Details
@@ -1985,7 +1986,7 @@ Last Compared: 2026-10-28 00:36 PDT; `gh issue list` read #67 OPEN, label enhanc
 
 Origin: bfb0dc71 / M22
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #72 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/72)
 Status: Not started
 
 ##### Summary
@@ -2039,11 +2040,21 @@ Superseded Plan Artifacts: none
 
 - none
 
+##### GitHub Projection
+
+Title: Restore viewed PVs after tab navigation
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN (2026-10-31 00:12 PDT)
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-31 00:12 PDT; issue #72 read back with body equal to the prepared draft, three unchecked acceptance criteria, label enhancement, assignee jeonghanlee, no milestone; remote updatedAt 2026-10-31T07:12:13Z
+
 #### M23 - Select matching PVs together and improve Find
 
 Origin: bfb0dc71 / M23
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #73 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/73)
 Status: Not started
 
 ##### Summary
@@ -2099,11 +2110,21 @@ Superseded Plan Artifacts: none
 
 - none
 
+##### GitHub Projection
+
+Title: Select matching PVs together and improve Find
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN (2026-10-31 00:12 PDT)
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-31 00:12 PDT; issue #73 read back with body equal to the prepared draft, four unchecked acceptance criteria, label enhancement, assignee jeonghanlee, no milestone; remote updatedAt 2026-10-31T07:12:15Z
+
 #### M24 - Explain sampling changes and hide irrelevant confirmation controls
 
 Origin: bfb0dc71 / M24
 Identity History: none
-GitHub Issue: none
+GitHub Issue: #74 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/74)
 Status: Not started
 
 ##### Summary
@@ -2157,6 +2178,16 @@ Superseded Plan Artifacts: none
 ##### Closure Evidence
 
 - none
+
+##### GitHub Projection
+
+Title: Hide the irrelevant checkbox in Change sampling and explain it
+Labels: bug
+GitHub Milestone: none
+Observed State: OPEN (2026-10-31 00:12 PDT)
+Observed Labels: bug
+Observed Milestone: none
+Last Compared: 2026-10-31 00:12 PDT; issue #74 read back with body equal to the prepared draft, three unchecked acceptance criteria, label bug, assignee jeonghanlee, no milestone; remote updatedAt 2026-10-31T07:12:17Z
 
 #### M27 - Distinguish plotted lines and retain accessible display preferences
 
@@ -2229,6 +2260,82 @@ Observed State: OPEN (2026-10-30 10:19 PDT)
 Observed Labels: enhancement
 Observed Milestone: none
 Last Compared: 2026-10-30 10:19 PDT; issue #71 read back with body equal to the prepared draft, three unchecked acceptance criteria, label enhancement, assignee jeonghanlee, no milestone; remote updatedAt 2026-10-30T17:18:50Z
+
+#### M28 - Study dynamic configuration reload and immediate API application
+
+Origin: bfb0dc71 / M28
+Identity History: none
+GitHub Issue: #68 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/68)
+Status: Not started
+
+##### Summary
+
+Selected configuration changes might be applied to a running appliance through a 60-second reload cycle or an explicit API request, while other settings must keep requiring a restart. This study decides which. `DefaultConfigService.initialize()` loads the installation properties at start. `EngineContext` sets `jca.use_env` to true before it creates the command threads, and each `JCACommandThread` constructs its own `CAJContext`. The execution-policy cache expires one minute after it is written and is read on demand; that is separate from a general configuration reload.
+
+##### Scope
+
+- Inventory the configuration settings by source, consumer and read time, and classify each as dynamically applicable, requiring recreation of the Channel Access context, or requiring a component or JVM restart, with code references.
+- Compare 60-second polling with explicit API application: change detection, validation, concurrent updates, and how a caller distinguishes an accepted change from a successfully applied one.
+- Evaluate Channel Access reconnection, channel and monitor recreation, pending commands, buffered samples and collection gaps, and define how interruption, loss and duplication would be measured.
+- Define persistence across restarts and the precedence among environment variables, JVM properties, configuration files and API updates, separating changes to startup files from configuration available to a running process.
+- Define behavior for invalid input, partial application, an unavailable component and a failed recreation of the Channel Access context, including retention or restoration of the last valid configuration.
+- Define consistency across the management and engine components, access control of the API, and visibility of requested versus effective configuration.
+- Produce a recommendation, the explicit unsupported cases and a verification plan on the real configuration and acquisition paths, and name the runtime behavior that remains unverified.
+
+Out of scope: implementing configuration reload or an API; preparing environment-side `config.d` support; treating the existing policy-cache expiration as a general configuration reload.
+
+##### Completion Criteria
+
+- Every configuration setting has a recorded source, consumer, read time and classification, each supported by a code reference.
+- The comparison of polling and explicit API application states change detection, validation, concurrent-update handling and the distinction between accepted and applied changes.
+- Interruption, loss and duplication across the recreation of the Channel Access context are defined and measured on a real appliance with an IOC, or the reason a case cannot be measured is recorded.
+- Persistence, precedence, failure behavior, cross-component consistency, access control and the visibility of requested versus effective configuration are defined.
+- A recommendation, its unsupported cases and a verification plan are recorded, and the runtime behavior that remains unverified is named.
+
+##### Dependencies And Decisions
+
+- Decision Date: 2026-10-31. Register issue #68 as backlog work. This entry records a study; no implementation of reload or of an API is authorized.
+- No execution dependency is established.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. Inventory the settings through the shipped initialization and runtime paths (`DefaultConfigService.initialize()`, `EngineContext`, `JCACommandThread`), then classify each and record its code reference. Check: T1.
+2. Compare polling and explicit API application and define persistence, precedence, validation, failure behavior, consistency, access control and visibility of requested versus effective configuration. Check: T1.
+3. Measure the recreation of the Channel Access context under real acquisition: interruption, loss and duplication, and the effect on pending commands and buffered samples. Check: T2.
+4. Write the recommendation with its unsupported cases, the verification plan and the unverified behavior. Checks: T1, T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Source and runtime analysis | Trace each setting from its source to its consumer and read time in the shipped paths, then change a value on a running appliance and observe when the consumer reads it | Source tree and a local appliance | Each setting has a source, consumer, read time and classification confirmed by a code reference and an observation |
+| T2 | Integration | Recreate the Channel Access context while a real IOC publishes known samples, then compare the samples archived and retrieved against the published ones | Local appliance, IOC and JDK 21 | Interruption, loss and duplication are measured and stated, and unmeasured cases are listed |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | Source tree and a local appliance | Pending | none |
+| T2 | Not run | Local appliance, IOC and JDK 21 | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+Title: Study dynamic configuration reload and immediate API application
+Labels: enhancement
+GitHub Milestone: none
+Observed State: OPEN (2026-10-31 00:14 PDT)
+Observed Labels: enhancement
+Observed Milestone: none
+Last Compared: 2026-10-31 00:14 PDT; issue #68 read back with the acceptance criteria registered as scope and completion criteria, label enhancement, assignee jeonghanlee, no milestone; remote updatedAt 2026-10-29T07:35:45Z
 
 #### G1 - Ansible tools ready for the integrated 24-hour campaign
 
