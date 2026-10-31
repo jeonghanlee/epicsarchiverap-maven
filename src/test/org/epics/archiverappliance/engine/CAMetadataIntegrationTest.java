@@ -98,6 +98,22 @@ class CAMetadataIntegrationTest {
         await(ENUM_PV, () -> hasArchivedFields(ENUM_PV, start, "ENUM_0", "Top-up changed"));
     }
 
+    @Test
+    void defaultPolicyPVReportsScanAndDescAndStoresFieldsWithItsSamples() throws Exception {
+        Instant start = Instant.now().minusSeconds(5);
+        archive(DOUBLE_PV);
+        assertEquals("2 second", ((JSONObject) typeInfo(DOUBLE_PV).get("extraFields")).get("SCAN"),
+                "SCAN is stored with the configuration at archive time");
+        JSONArray details = GetUrlContent.getURLContentAsJSONArray(MGMT + "getPVDetails?pv=" + encode(DOUBLE_PV));
+        assertEquals("2 second", detail(details, "Extra info - SCAN:"));
+        await(DOUBLE_PV, () -> "cavity forward power".equals(latest(DOUBLE_PV).get("DESC")));
+        assertFalse(latest(DOUBLE_PV).containsKey("HYST"), "HYST is not collected by the default policy");
+        await(DOUBLE_PV, () -> hasArchivedFields(DOUBLE_PV, start, "DESC", "cavity forward power")
+                && hasArchivedFields(DOUBLE_PV, start, "HOPR", "80"));
+        SIOCSetup.caput(DOUBLE_PV + ".HOPR", 92);
+        await(DOUBLE_PV, () -> hasArchivedFields(DOUBLE_PV, start, "HOPR", "92"));
+    }
+
     private static void archive(String pv) {
         GetUrlContent.getURLContentAsJSONArray(MGMT + "archivePV?pv=" + encode(pv));
         waitForStatusChange(pv, "Being archived", 120, MGMT, 1);
