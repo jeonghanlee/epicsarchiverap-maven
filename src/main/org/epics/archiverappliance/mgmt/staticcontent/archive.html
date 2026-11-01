@@ -48,7 +48,7 @@
       <section aria-labelledby="addHeading" id="add">
         <h2 id="addHeading">Add PVs</h2>
         <label class="field" for="names">One PV name per line, or paste a list</label>
-        <textarea id="names" spellcheck="false" autocomplete="off" placeholder="SR:BPM:01:X&#10;SR:BPM:02:X"></textarea>
+        <textarea id="names" spellcheck="false" placeholder="SR:BPM:01:X&#10;SR:BPM:02:X"></textarea>
         <p class="sub" id="parseNote" role="status"></p>
         <details class="choice" id="choice">
           <summary><b>Sampling:</b> <span id="choiceSummary">the site policy decides</span></summary>
@@ -71,7 +71,7 @@
             </div>
             <div>
               <label for="controlling">Controlling PV</label>
-              <input id="controlling" type="text" placeholder="none" spellcheck="false" autocomplete="off" />
+              <input id="controlling" type="text" placeholder="none" spellcheck="false" />
             </div>
             <p class="hint" id="choiceError" role="status"></p>
             <p class="hint">Without a period the policy of the site decides everything. A period replaces its choice: the method is then the one you pick, or Monitor. The choice applies to every name above. Monitor stores every change of a PV and uses the period only to size its buffer, so give it the shortest time you expect between two changes; Scan stores the latest value at most once per period.</p>

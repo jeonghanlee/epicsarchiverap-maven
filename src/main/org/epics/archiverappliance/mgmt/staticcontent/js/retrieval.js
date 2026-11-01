@@ -4,6 +4,7 @@ import { infoButton } from "../comm/js/aa/card.js";
 import { node } from "../comm/js/aa/dom.js";
 import { appliances, get, number, settled } from "./system/api.js";
 import { etlTiers, heapFloor, measureMap } from "./system/judge.js";
+import { suggestNames } from "./suggest.js";
 import { HEAP_CARD, chooseAppliance, statusNode } from "./system/view.js";
 
 const $ = (id) => document.getElementById(id);
@@ -247,6 +248,27 @@ async function refresh() {
     }
 }
 
+// The two PV names are kept in the fragment of the address, so the menu and a bookmark bring them back.
+const NAME_FIELDS = { measurePV: "measure", dataPV: "data" };
+function keepInAddress() {
+    const params = new URLSearchParams();
+    for (const [id, key] of Object.entries(NAME_FIELDS)) {
+        const value = $(id).value.trim();
+        if (value) {
+            params.set(key, value);
+        }
+    }
+    const fragment = params.toString();
+    window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search + (fragment ? `#${fragment}` : ""));
+}
+const carried = new URLSearchParams(window.location.hash.slice(1));
+for (const [id, key] of Object.entries(NAME_FIELDS)) {
+    if (carried.has(key)) {
+        $(id).value = carried.get(key);
+    }
+    $(id).addEventListener("input", keepInAddress);
+    suggestNames($(id));
+}
 $("measureForm").addEventListener("submit", measure);
 $("dataForm").addEventListener("submit", lookUp);
 refresh();

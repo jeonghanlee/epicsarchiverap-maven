@@ -152,7 +152,9 @@ Open all selected in the analyzer opens every PV of the table in the
 analyzer over the window of the chart.
 
 The state is kept in the fragment of the address, the part after `#`
-(`index.html#q=bpm&range=10&pv=SR:BPM:01:X`), so a link reproduces the view:
+(`index.html#q=bpm&range=10&pv=SR:BPM:01:X`), so a link reproduces the view. A menu entry opens a page at the last address
+that the page had in the same browser tab, a new tab starts fresh, and an
+address that you open yourself is used as it is:
 
 | Parameter | Meaning |
 | :--- | :--- |

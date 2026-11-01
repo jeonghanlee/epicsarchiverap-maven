@@ -17,6 +17,51 @@
         current.setAttribute("aria-current", "page");
     }
 
+    // A menu entry opens its page at the last address that the page had in this browser tab. The address is kept in
+    // sessionStorage, so a new tab starts fresh, and it is recorded on pagehide (never unload or beforeunload, which
+    // would remove the page from the back/forward cache). The browser still follows the link itself, so opening an
+    // entry in a new tab or with the middle button keeps working; an entry with an address of its own is left alone.
+    const KEY = "aa.lastAddress:";
+    const storage = {
+        get: (key) => { try { return window.sessionStorage.getItem(KEY + key); } catch (e) { return null; } },
+        set: (key, value) => { try { window.sessionStorage.setItem(KEY + key, value); } catch (e) { /* storage unavailable */ } },
+        remove: (key) => { try { window.sessionStorage.removeItem(KEY + key); } catch (e) { /* storage unavailable */ } }
+    };
+    const entryHref = new Map(Array.from(menu.querySelectorAll("a")).map((link) => [link, link.getAttribute("href") || ""]));
+    const record = () => {
+        if (!current) {
+            return;
+        }
+        const key = entryHref.get(current);
+        const rest = window.location.search + window.location.hash;
+        if (rest) {
+            storage.set(key, page + rest);
+        } else {
+            storage.remove(key);
+        }
+    };
+    const restore = () => {
+        entryHref.forEach((plain, link) => {
+            if (link === current || /[?#]/.test(plain)) {
+                return;
+            }
+            const saved = storage.get(plain);
+            if (saved && pagesOf(link).includes(saved.split(/[?#]/)[0])) {
+                link.setAttribute("href", saved);
+            } else {
+                link.setAttribute("href", plain);
+            }
+        });
+    };
+    restore();
+    window.addEventListener("hashchange", record);
+    window.addEventListener("pagehide", record);
+    window.addEventListener("pageshow", (event) => {
+        if (event.persisted) {
+            restore();
+        }
+    });
+
     const toggle = document.getElementById("menu-toggle");
     if (!toggle) {
         return;
