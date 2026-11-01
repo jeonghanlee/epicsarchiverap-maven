@@ -100,7 +100,7 @@ const CARDS = [
             ["Normal", `Below ${T.writeAttentionPercent} % of the period.`],
             ["Attention", `${T.writeAttentionPercent} % or more: the writer needs more than half of its period.`],
             ["Problem", `${T.writeProblemPercent} %: the writer needs all of its period, and samples are lost.`],
-            ["What to do", "Slow the fastest PVs with Change sampling, check the disk under the short term store, or add an appliance. The write delay a buffer absorbs is a setting described in the manual; ask the administrator."],
+            ["What to do", "Store fewer samples of the fastest PVs. A Monitor PV stores every change whatever its period, so change it to Scan with a longer period in Change sampling in Browse PVs; a PV on Scan needs only a longer period. Also check the disk under the short term store, or add an appliance. The write delay a buffer absorbs is a setting described in the manual; ask the administrator."],
         ],
     ],
     [
@@ -108,7 +108,7 @@ const CARDS = [
         "Fastest PVs: which PVs send the most?",
         [
             ["In short", "The five PVs with the highest sample rate; they take the largest share of the write time and of the storage."],
-            ["What to do", "A PV that is faster than needed gets a longer period with Change sampling in Browse PVs."],
+            ["What to do", "A PV that is faster than needed is changed to Scan with a longer period, or given a longer period if it is on Scan already, in Change sampling in Browse PVs. A longer period on a Monitor PV only makes its buffer smaller."],
         ],
     ],
     [

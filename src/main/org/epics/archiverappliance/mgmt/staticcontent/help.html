@@ -70,7 +70,7 @@
         <h3 id="archive-add">Add one PV or a list</h3>
         <ol>
           <li>Type one name, or paste a list with one name per line, into <b>Add PVs</b>. The note under the box counts the names and points at any that are not valid PV names.</li>
-          <li>Leave <b>Sampling</b> as it is to let the policy of the site choose the method and the period of each PV. Open it to choose <b>Monitor</b> or <b>Scan</b>, a period, a policy or a controlling PV for every name; a period replaces the choice of the policy, and without a period the method and the controlling PV are not used.</li>
+          <li>Leave <b>Sampling</b> as it is to let the policy of the site choose the method and the period of each PV. Open it to choose <b>Monitor</b> or <b>Scan</b>, a period, a policy or a controlling PV for every name; a period replaces the choice of the policy, and without a period the method and the controlling PV are not used. <b>Monitor</b> stores every change and uses the period to size its buffer; <b>Scan</b> stores at most one sample per period. <a href="#browse-sampling">Change how a PV is sampled</a> explains both.</li>
           <li>Click <b>Archive</b>. Each name is first searched on the network; a name a server answers is archived and appears under <b>Requested in this visit</b> with the answer of the request and its state, and a name no server answers is listed with <b>Archive anyway</b>, for an IOC that is not up yet.</li>
         </ol>
 
@@ -115,6 +115,15 @@
           <li>Use the buttons in the row of the PV. Only the buttons that fit its state appear: <b>Pause</b> or <b>Resume</b>, <b>More</b>, <b>Cancel request</b> for a request that has not started, or a link to <a href="#archive">Archive PVs</a> for a PV that is not archived.</li>
           <li><b>More</b> holds <b>Change sampling…</b>, <b>Maintenance…</b> (rename, type change and consolidation; its <b>i</b> button explains the three) and <b>Stop archiving…</b>. Each says what it does before it acts.</li>
           <li>To act on every PV of the table at once, use <b>Pause all selected…</b>, <b>Resume all selected…</b> or <b>Stop archiving all selected…</b> under the table. Each asks before it acts.</li>
+        </ol>
+
+        <h3 id="browse-sampling">Change how a PV is sampled</h3>
+        <ol>
+          <li>Open <b>More</b> in the row of the PV and choose <b>Change sampling…</b>. Choose the <b>Sampling method</b>, type the <b>Sampling period in seconds</b> and press <b>Change</b>. The field does not accept a period below the minimum of the appliance, 0.1 s unless the site sets another.</li>
+          <li><b>Monitor</b> stores every change of the PV. Its period does not limit how often samples are stored; it is the shortest time you expect between two changes, and the appliance sizes the memory buffer of the PV from it. <b>Scan</b> looks at the PV once per period and stores its latest value if it changed, so its period is the shortest interval between two stored samples.</li>
+          <li>The buffer holds the samples of a PV until the next write to the short term store, by default every 10 s. It has one slot for each period of that interval plus a margin of 1 s, for example 11 slots for a period of 1.0 s and 110 slots for 0.1 s. When more samples arrive between two writes than the buffer has slots, each new sample pushes out the oldest one, so the first samples of that interval are missing. They are counted as lost; the <b>i</b> button in the <b>State</b> column of the table explains how to read the count.</li>
+          <li>For <b>Monitor</b>, choose a period no larger than the real interval between the updates of the PV, so that the buffer holds one write interval of them, and no smaller than the minimum above. Take the real interval from what you know of the PV, for example the scan period of its record: the Estimated event rate in the Details window counts only the samples the buffer accepted, so for a PV that loses samples it reads lower than the real rate. A smaller period makes a larger buffer and uses more memory. A period far smaller than the PV needs wastes that memory but loses nothing. A PV that updates faster than the minimum period allows cannot have a buffer sized for it, so it can lose samples as described above.</li>
+          <li>The new method and period are stored first. A running PV is then rebuilt with them, so its collection stops for a moment; a PV that stays on <b>Scan</b> and whose period changes by less than 0.1 s is not rebuilt and keeps running with the old period; changing a PV from <b>Scan</b> to <b>Monitor</b>, or the period by more, rebuilds it. A paused PV takes the new values when you press <b>Resume</b>. The data already stored does not change.</li>
         </ol>
 
         <h3 id="browse-viewer">Open PVs in the Analyzer</h3>

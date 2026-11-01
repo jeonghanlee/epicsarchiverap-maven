@@ -1488,15 +1488,20 @@ function say(text) {
 }
 
 /**
- * One dialog serves every maintenance operation. config: {title, name, text, fields: [{id, label, options | type,
- * value, min, step}], ack, submit, danger, run(values) -> message}. run throws to refuse; its message is shown
- * under the list on success.
+ * One dialog serves every maintenance operation. config: {title, name, text, help: {href, text}, fields: [{id, label,
+ * options | type, value, min, step}], ack, submit, danger, run(values) -> message}. run throws to refuse; its message
+ * is shown under the list on success. help is a link that opens in a new tab, so that the dialog stays open.
  */
 function openMaintain(config) {
     const dialog = $("maintainDialog");
     $("maintainTitle").textContent = config.title;
     $("maintainName").textContent = config.name || "";
     $("maintainText").textContent = config.text || "";
+    $("maintainHelpRow").hidden = !config.help;
+    if (config.help) {
+        $("maintainHelp").href = config.help.href;
+        $("maintainHelp").textContent = config.help.text;
+    }
     $("maintainError").textContent = "";
     const fields = $("maintainFields");
     fields.textContent = "";
@@ -1588,9 +1593,13 @@ async function openChangeSampling(name) {
     openMaintain({
         title: "Change sampling",
         name,
-        text: "The new method and period apply at once to a running PV. The stored data does not change.",
+        text: "Monitor stores every change of the PV; its period is the shortest time you expect between two changes and only sizes the buffer. " +
+            "Scan looks at the PV once per period and stores its latest value if it changed.\n\n" +
+            "A running PV is rebuilt with the new values, so its collection stops for a moment, except a PV that stays Scan " +
+            "when its period changes by less than 0.1 s. A paused PV takes the new values when it resumes. The stored data does not change.",
+        help: { href: "help.html#browse-sampling", text: "How sampling and the buffer work (opens in a new tab)" },
         fields: [
-            { id: "method", label: "Sampling method", options: [["MONITOR", "Monitor: store each change"], ["SCAN", "Scan: store at a fixed period"]], value: info.samplingMethod },
+            { id: "method", label: "Sampling method", options: [["MONITOR", "Monitor: store each change"], ["SCAN", "Scan: store at most once per period"]], value: info.samplingMethod },
             { id: "period", label: "Sampling period in seconds", type: "number", min: String(state.minimumSamplingPeriod), step: "any", value: info.samplingPeriod },
         ],
         submit: "Change",

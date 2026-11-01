@@ -738,6 +738,16 @@ dialog label.check {
     color: var(--ink);
 }
 
+/* A line break in the text of the maintenance dialog starts a new paragraph. */
+#maintainText {
+    white-space: pre-line;
+}
+
+/* The display of `dialog label` must not show an element that carries the hidden attribute. */
+dialog [hidden] {
+    display: none;
+}
+
 dialog select,
 dialog input[type="number"] {
     width: 100%;
