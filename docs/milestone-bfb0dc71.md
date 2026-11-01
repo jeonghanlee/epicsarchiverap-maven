@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-2.0.1.md` on branch release-2.0.1 (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. M7 is Complete in 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9, verified on origin/ahsoka; issue #41 is closed as completed. M25 is Complete: implementation fc52f0807b371990137bcd975ac62dc0a6c18094, milestone record c1b08d94b289585259b44d07389ad65d1066f2cf, and operator guide with final verification record 50fa32baf4dfcdf7b50d60f8091a639037df198f are on origin/ahsoka; the 25 metadata/cache tests and all 1,174 default-suite tests pass, native IOC comparison, metadata-change delivery and real browser checks passed against WARs rebuilt from c1b08d94, and issue #69 is closed as completed with six checked acceptance criteria. M27 records the requested viewer follow-up for distinct line styles, color-vision options and browser-session defaults for time/display settings and is linked to issue #71 in e42a8efd98279f807c08c23753566864045ddf44; origin/ahsoka was observed at that tip on 2026-10-30 10:59 PDT. Next: M26 is Complete: implementation f3f458e70b588f296716cc07fb7e58fdffc45fdf and its default-policy native check e91fef785f26fe5934d7f55519924c6e8bfb9b11 are on origin/ahsoka, the default verify (1,209 tests), the native checks and the browser checks passed on WARs built from the commit, and issue #70 is closed as completed with seven checked acceptance criteria. Next: M12 is Complete: commit 1bc1d76c3007210dc3c353224708fb56e8f4a4d3 is on origin/ahsoka and issue #52 is closed as completed. Work the rows in the order of the Milestone table, which the owner confirmed on 2026-10-31: M24, M13, M22, M27, M23, M28, M10, M17, M8, M11, M16, M18, M6, M9, M1 to M5 in sequence, then G1, M20, M15 and M19, and M21 last. M13 is the release gate among them; review its plan before any implementation, because the plans of M13 and M21 await their own acceptance and implementation authority. M10 and M17 need an owner decision before work. The release scope of M21 is not yet decided: whether every row must be Complete, and whether the stopped rows M15, M19, M20 and G1 resume in this release. The recorded rows are five Complete, nineteen Not started, two Open (M10 and G1), two Deferred (M15 and M19) and one Blocked (M20). The Ready rows are M13, M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24, M27 and M28; M2 to M5 wait for their predecessors, M10 awaits a decision, M15 and M19 are Deferred, and M20 waits for G1. Every former Backlog row moved to the Milestone section on 2026-10-31, and the Backlog is empty. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility. For M28, a study of configuration reload, start at `DefaultConfigService.initialize()`, `EngineContext` and `JCACommandThread`.
+Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. M7 is Complete in 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9, verified on origin/ahsoka; issue #41 is closed as completed. M25 is Complete: implementation fc52f0807b371990137bcd975ac62dc0a6c18094, milestone record c1b08d94b289585259b44d07389ad65d1066f2cf, and operator guide with final verification record 50fa32baf4dfcdf7b50d60f8091a639037df198f are on origin/ahsoka; the 25 metadata/cache tests and all 1,174 default-suite tests pass, native IOC comparison, metadata-change delivery and real browser checks passed against WARs rebuilt from c1b08d94, and issue #69 is closed as completed with six checked acceptance criteria. M27 records the requested viewer follow-up for distinct line styles, color-vision options and browser-session defaults for time/display settings and is linked to issue #71 in e42a8efd98279f807c08c23753566864045ddf44; origin/ahsoka was observed at that tip on 2026-10-30 10:59 PDT. Next: M26 is Complete: implementation f3f458e70b588f296716cc07fb7e58fdffc45fdf and its default-policy native check e91fef785f26fe5934d7f55519924c6e8bfb9b11 are on origin/ahsoka, the default verify (1,209 tests), the native checks and the browser checks passed on WARs built from the commit, and issue #70 is closed as completed with seven checked acceptance criteria. Next: M12 is Complete: commit 1bc1d76c3007210dc3c353224708fb56e8f4a4d3 is on origin/ahsoka and issue #52 is closed as completed. Work the rows in the order of the Milestone table, which the owner confirmed on 2026-10-31: M24, M29, M13, M22, M27, M23, M28, M10, M17, M8, M11, M16, M18, M6, M9, M1 to M5 in sequence, then G1, M20, M15 and M19, and M21 last. M13 is the release gate among them; review its plan before any implementation, because no unfinished row has implementation authority: the plans of M13 and M21 are accepted without it, and the plan of every other unfinished row is a draft. M24 has a draft plan whose reproduction is done; it awaits the owner's acceptance and implementation authority, and its change is in `css/browse.css`, `js/browse.js` and `help.html` of `src/main/org/epics/archiverappliance/mgmt/staticcontent`. M10 and M17 need an owner decision before work. The release scope of M21 is not yet decided: whether every row must be Complete, and whether the stopped rows M15, M19, M20 and G1 resume in this release. The recorded rows are five Complete, twenty Not started, two Open (M10 and G1), two Deferred (M15 and M19) and one Blocked (M20). The Ready rows are M13, M1, M6, M8, M9, M11, M16, M17, M18, M22, M23, M24, M27 and M28; M2 to M5 wait for their predecessors, M29 waits for M24, M10 awaits a decision, M15 and M19 are Deferred, and M20 waits for G1. Every former Backlog row moved to the Milestone section on 2026-10-31, and the Backlog is empty. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 covers selection restoration, M23 bulk selection and Find, and M24 sampling help and confirmation visibility. For M28, a study of configuration reload, start at `DefaultConfigService.initialize()`, `EngineContext` and `JCACommandThread`.
 
 ## Milestone
 
@@ -26,6 +26,7 @@ The four Complete rows come first. The rows below them are listed in the work or
 | Appliance defects | M26 | Preserve Channel Access metadata across reception and updates | Milestone | Complete | No | M25 | Precision-only and host changes reach stored configuration, short, float and byte control limits are preserved, and property-event, field metadata and API-to-screen paths have verified values and explanations; issue #70; [detail](#m26---preserve-channel-access-metadata-across-reception-and-updates) |
 | Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | Complete | No | D6, D12 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
 | Interface console | M24 | Explain sampling changes and hide irrelevant confirmation controls | Milestone | Not started | Yes |  | Change sampling shows only applicable controls and explains MONITOR, SCAN and the period; required confirmations of other operations remain visible; issue #74; [detail](#m24---explain-sampling-changes-and-hide-irrelevant-confirmation-controls) |
+| Interface console | M29 | Show the sample buffer figure in the mdBook | Milestone | Not started | No | M24 | The mdBook shows with a figure how the events of a PV pass through its sample buffer, how the slots follow the MONITOR period and which samples are lost when the buffer overflows, with values that agree with the current code, and the book builds with no broken link; [detail](#m29---show-the-sample-buffer-figure-in-the-mdbook) |
 | Appliance defects | M13 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D9, D12 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m13---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
 | Interface console | M22 | Restore viewed PVs after tab navigation | Milestone | Not started | Yes |  | Returning to the viewer restores the previously selected and plotted PVs without entering them again; deliberate removal remains effective; issue #72; [detail](#m22---restore-viewed-pvs-after-tab-navigation) |
 | Interface console | M27 | Distinguish plotted lines and retain accessible display preferences | Milestone | Not started | Yes |  | Plot lines differ beyond color; color-vision display options and time/display defaults survive navigation within the browser session; issue #71; [detail](#m27---distinguish-plotted-lines-and-retain-accessible-display-preferences) |
@@ -2021,22 +2022,30 @@ The operator reports an unlabeled checkbox in Change sampling and needs an expla
 
 ##### Scope
 
-- Reproduce the unexpected checkbox in the shipped dialog and correct its visibility without removing confirmations required by other operations.
-- Explain MONITOR and SCAN, the meaning of their period, and how the MONITOR period affects sample-buffer sizing rather than imposing an event-throttling interval.
+- Correct the visibility of the unexpected checkbox in the shipped dialog, which the reproduction of 2026-10-31 confirmed (see the decisions), without removing confirmations required by other operations.
+- Explain MONITOR and SCAN, the meaning of their period, and how the MONITOR period affects sample-buffer sizing rather than imposing an event-throttling interval. The full explanation is on the help page `help.html`; the dialog carries a short text and a link to it.
 - State the behavior of a sampling change using the actual backend path, including its effect on existing data and any collection interruption that the implementation entails.
 
-Out of scope: changing acquisition behavior, buffer sizing rules or sampling defaults; unrelated dialog redesign.
+Out of scope: changing acquisition behavior, buffer sizing rules or sampling defaults; unrelated dialog redesign; a figure of the sample buffer, which goes into the mdBook after this row as M29.
 
 ##### Completion Criteria
 
 - Change sampling has no unlabeled or irrelevant checkbox, including after another maintenance dialog was opened.
 - Type conversion still displays and requires its backup confirmation.
-- The dialog explains method and period accurately enough to distinguish MONITOR buffer sizing from SCAN timing, and its help remains readable with keyboard navigation.
+- The dialog states method and period briefly and links to the help page, which opens in a new tab and explains accurately enough to distinguish MONITOR buffer sizing from SCAN timing, and the link and the page remain usable with keyboard navigation.
 
 ##### Dependencies And Decisions
 
 - Decision Date: 2026-10-29. Record the reported control and explanation problem for later implementation.
-- Source inspection on 2026-10-29: `openMaintain` sets `maintainAckRow.hidden` from `config.ack`; `openChangeSampling` provides no `ack`, while `openChangeType` does. `browse.css` sets `dialog label` to `display: block`, a suspected override of hidden presentation; browser reproduction remains pending.
+- Source inspection on 2026-10-29: `openMaintain` sets `maintainAckRow.hidden` from `config.ack`; `openChangeSampling` provides no `ack`, while `openChangeType` does. `browse.css` sets `dialog label` to `display: block`.
+- Reproduction on 2026-10-31 11:25 PDT confirmed the cause: in the shipped dialog of Change sampling the row has `hidden` true and a computed display of `block`, drawn 398 by 22.5 px as an unlabeled checkbox, on the first opening and after the dialog Change the type had been opened and closed. Change the type shows its backup text and its checkbox is required. The row is therefore always visible in Change sampling; no earlier dialog is needed. Environment: the mgmt, engine, etl and retrieval WARs `aa-20261031-2c05b376-*`, whose `index.html`, `browse.js` and `browse.css` equal the sources, one appliance and a soft IOC with one record in a private network namespace, headless Firefox. Evidence: `work/m24-repro/browse-result.json`, `work/m24-repro/sampling-first.png` (SHA-256 11f4c4e84292c5f972699617fb0ec8e548e009c864684431a63b397e490fcb11), `work/m24-repro/type-conversion.png`, `work/m24-repro/sampling-after-type.png`, driver `work/m24-repro/run.sh` and `work/m24-repro/browse.py`. These files are in the untracked `work/m24-repro` of the workstation that holds this checkout. To repeat, run `unshare -rn bash work/m24-repro/run.sh` from the repository root: in a private network namespace it starts a soft IOC and the four WARs linked in `work/m24-repro/wars`, archives one record, drives the browser and writes `browse-result.json` and the three screenshots; the paths of the soft IOC and of Tomcat are fixed in `run.sh` for this workstation.
+- Decision Date: 2026-10-31. The owner chose to correct the visibility in `browse.css` with one rule that restores `display: none` for an element with the `hidden` attribute inside a dialog, over a rule for the one label only and over adding or removing the row from the document. Source check on the same date: the only element with `hidden` inside a dialog of the console pages is `maintainAckRow` in `index.html`; `operations.html`, `external.html` and `archive.html` have none, and `external.css` has its own `dialog label` rule that this change does not touch.
+- Decision Date: 2026-10-31. The owner chose to keep the text in the Change sampling dialog short and to put the full explanation on the help page `help.html`, which the dialog links to; the book FAQ is left as it is. Source check on the same date: `help.html` has no explanation of sampling or the buffer, and `faq.md` already states the capacity formula and the drop of the oldest sample, correct for the current formula, but it does not say that the period is the assumed fastest rate or how to choose the period.
+- Decision Date: 2026-10-31. The owner directed that the open points of the plan review be settled as proposed: the present dialog text is replaced by the short text of step 3, and the link to the help page opens in a new tab so that the dialog stays open.
+- Decision Date: 2026-10-31. The owner decided that `help.html` receives the explanation as text only, that this row closes with that text, and that the figure of the sample buffer is added to the mdBook afterwards as separate work.
+- Observed on 2026-10-31: issue #74 still carries the first draft of 2026-10-31 00:12 PDT. Its Current Behavior calls the cause suspected and not reproduced, its proposal explains the controls in the dialog alone, its third acceptance criterion names no help page or link, and its out of scope lacks the mdBook figure (M29). Before this row is closed, the body of the issue is replaced with the projection of this detail, and the closure comment names the verified result; both are steps of the issue operation, which needs its own delegation.
+- Source inspection on 2026-10-31 of the sample buffer, which the help states. A MONITOR channel stores every change it receives; its period never limits the rate and only sizes the buffer: the capacity is the write period divided by the period, rounded to a whole number and at least 1, plus the margin in seconds divided by the period rounded up (at least one), and the total is at least 2. With the defaults (write period `secondsToBuffer` 10 s, `sampleBufferMarginSeconds` 1.0 s) a period of 1.0 s gives 11 slots and a period of 0.1 s gives 110. One executed check of `ArchiveEngine.computeBufferCapacity` returned 11, 110, 3 and 22 for periods 1.0, 0.1, 5.0 and 0.5. The capacity is fixed when the channel is created. All buffers are written at the same instant every write period. When more samples arrive between two writes than the capacity holds, each further sample removes the oldest one and counts as a buffer-full loss, so the earliest samples of the interval are the ones missing. One executed run of the real `SampleBuffer` (program `work/m24-repro/Ovf.java`, untracked, compiled against `target/classes`, log4j-api, protobuf-java, commons-lang3 and json-simple) added 20 samples to a buffer of 11 slots, kept the newest 11 (values 10 to 20) and counted 9 buffer-full losses. The other mechanisms are read from the source, not executed.
+- Source inspection on 2026-10-31 of the sampling change: the management action first stores the new method and period in the type information, and sends the change to the engine only when the PV is not paused, so a paused PV takes the change when it resumes. The engine stops the channel, removes it and its write-buffer entry and archives the PV again, which also applies when a MONITOR PV stays MONITOR; a SCAN PV whose period differs by less than 0.1 s is not rebuilt, so its running channel keeps the old period while the stored type information holds the new one. A rebuilt channel interrupts the collection for the time of the rebuild; the stored data does not change.
 - No execution dependency is established.
 
 ##### Implementation Plan
@@ -2046,22 +2055,23 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: none
 
-1. Reproduce the dialog visibility through `index.html`, `browse.js` and `browse.css`; trace the sampling API and buffer behavior to draft accurate help. Checks: T1, T2.
-2. After separate plan acceptance and implementation authorization, correct visibility and add the accepted explanation, then exercise both sampling and type-conversion dialogs. Checks: T1, T2.
+1. Done on 2026-10-31: the dialog visibility is reproduced (see the decisions above) and the backend path of the sampling change is traced for the help. The trace of the sample buffer is recorded in the decisions above.
+2. After separate plan acceptance and implementation authorization, add one rule to `css/browse.css` so that an element with the `hidden` attribute inside a dialog is not displayed (decision of 2026-10-31); the source check found no other such element. Check: T1.
+3. Add the accepted explanation: a short text that replaces the present text of the dialog (the `text` of `openChangeSampling` in `js/browse.js`, "The new method and period apply at once to a running PV. The stored data does not change."), names the method and the period, keeps the statement that the stored data does not change, adds that a paused PV takes the change when it resumes and that a running PV is rebuilt with a short interruption, except a SCAN PV whose period changes by less than 0.1 s, and links to the help page in a new tab so that the dialog stays open; and the full explanation on `help.html` with the two methods, the period of each, that the MONITOR period is the assumed fastest rate and sizes the buffer without limiting what is stored, which samples are lost when it is exceeded, how to choose the period (not larger than the real interval between updates of the PV, so that the buffer holds one write interval of them, and not below the minimum the dialog field enforces, a site setting of the appliance), the rebuild of the channel with its short interruption, the unchanged stored data, the paused PV that takes the change at resume, and the SCAN period change below 0.1 s, which updates the stored setting but leaves the running channel unchanged. Check: T2.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Browser integration | Open sampling directly and after type conversion; inspect visibility and keyboard focus; check required confirmation on type conversion without submitting that operation | Browser and deployed appliance | No irrelevant checkbox in sampling; backup confirmation remains visible and required for type conversion |
-| T2 | Contract and browser integration | Compare dialog help against the shipped sampling API and buffer allocation, then change sampling on a test PV through the actual UI | Isolated test PV, browser and appliance | Help matches actual method, period, buffer and stored-data behavior |
+| T1 | Browser integration | Open sampling directly and after type conversion; assert the row is not displayed (computed display none, zero box) and that it is not in the tab order; inspect keyboard focus; check required confirmation on type conversion without submitting that operation; the driver `work/m24-repro/browse.py` of the reproduction can run these steps | Browser and deployed appliance | No irrelevant checkbox in sampling; backup confirmation remains visible and required for type conversion |
+| T2 | Contract and browser integration | On a Channel Access test PV (the rows below are returned by `getPVDetails`, and "Sample buffer capacity" only for Channel Access PVs; the console Details window does not show it), read before and after each change made through the actual UI: "Sample buffer capacity", "What's the engine's sampling period?" and "When did we request CA to make a connection to this PV?" of the engine, and "Sampling method:" and "Sampling period:" of the stored settings. Change a MONITOR PV (the capacity follows the formula of the decisions, 11 for 1.0 s and 110 for 0.1 s with the defaults, and the connection request time moves, which marks the rebuild); change a SCAN PV by less than 0.1 s (the stored period changes, the engine's period and the connection request time do not); change a paused PV (the stored settings change at once and the engine rows change after resume). Let the PV update faster than the period assumes and read "How many events lost because the sample buffer is full so far?" and the retrieved samples of the interval (the lost count rises and the oldest samples are the missing ones). Compare the help page and the dialog text with each observed value; open the help page from the dialog link and read its section with the keyboard alone | Isolated Channel Access test PV, browser and appliance | Every statement of the help page and the dialog about method, period, buffer, rebuild, paused PV and stored data agrees with the observed values; the link opens the page in a new tab while the dialog stays open, and the link and the page are reachable and readable with the keyboard alone |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | Not run | Browser and deployed appliance | Pending | none |
-| T2 | Not run | Isolated test PV, browser and appliance | Pending | none |
+| T2 | Not run | Isolated Channel Access test PV, browser and appliance | Pending | none |
 
 ##### Closure Evidence
 
@@ -2076,6 +2086,68 @@ Observed State: OPEN (2026-10-31 00:12 PDT)
 Observed Labels: bug
 Observed Milestone: none
 Last Compared: 2026-10-31 00:12 PDT; issue #74 read back with body equal to the prepared draft, three unchecked acceptance criteria, label bug, assignee jeonghanlee, no milestone; remote updatedAt 2026-10-31T07:12:17Z
+
+
+#### M29 - Show the sample buffer figure in the mdBook
+
+Origin: bfb0dc71 / M29
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+The explanation of the sample buffer that M24 puts on the help page as text is easier to follow with a figure, and the owner decided on 2026-10-31 that the figure belongs in the mdBook, after M24. The book states the capacity formula and the drop of the oldest sample in `faq.md` and describes the engine buffer in `architecture.md`, but shows no figure of the path of an event through the buffer.
+
+##### Scope
+
+- One figure in the mdBook of the path of an event of a MONITOR PV through the checks of the engine, the buffer and the write, of the capacity of the buffer for a given period (the example of 1.0 s with 11 slots and of 0.1 s with 110), and of the samples kept and dropped when more samples arrive between two writes than the buffer holds.
+- The page that carries the figure is chosen at planning; `faq.md` and `architecture.md` are the candidates.
+- The figure and its text agree with the current code and with the help page of M24.
+
+Out of scope: changing acquisition behavior, buffer sizing rules or sampling defaults; the help page and the dialog of M24; a figure on any page of the console.
+
+##### Completion Criteria
+
+- The figure is in the book source as a file that the book references, readable on the light and the dark themes of the book.
+- Every number in the figure and its text equals the value returned by the current code for the same inputs.
+- The book builds and its internal links and fragments have no error.
+
+##### Dependencies And Decisions
+
+- Decision Date: 2026-10-31. The owner decided to add the figure to the mdBook after M24 closes, as separate work, and to put it in the Milestone section. The row depends on M24 because the figure must agree with the explanation M24 writes.
+- Source of the figure: a draft page made on 2026-10-31 outside the repository. Its values were checked against the current code on the same date: `ArchiveEngine.computeBufferCapacity` returned 11 for a period of 1.0 s and 110 for 0.1 s with a write period of 10 s and a margin of 1 s, and a run of the real `SampleBuffer` (program `work/m24-repro/Ovf.java`, untracked) with 11 slots and 20 samples kept the newest 11 and counted 9 buffer-full losses.
+- The capacity of a buffer is returned by `getPVDetails` as "Sample buffer capacity" only for Channel Access PVs; the console Details window does not show it. The text of the figure must not say that the console shows it.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. After M24 is Complete, choose the page with the owner and draw the figure as a file under `docs/book/src/images` that uses colors readable on every theme of the book. Check: T1.
+2. Write the text beside the figure from the explanation of M24 and from the values above, then run the book build and the link check. Checks: T1, T2.
+
+##### Test Plan
+
+| Label | Layer | Method | Environment | Expected Result |
+| --- | --- | --- | --- | --- |
+| T1 | Book | The mdBook build and the link check over the generated HTML; view the figure on the light and the dark theme | `aa-mdbook` image and a browser | The book builds with no broken link and the figure is readable on both themes |
+| T2 | Contract | Run `ArchiveEngine.computeBufferCapacity` and the real `SampleBuffer` for every number in the figure and its text, and compare | Local build of the repository | Every number agrees with the executed value |
+
+##### Verification Results
+
+| Label | Observed At | Environment | Result | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | Not run | `aa-mdbook` image and a browser | Pending | none |
+| T2 | Not run | Local build of the repository | Pending | none |
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
 
 #### M27 - Distinguish plotted lines and retain accessible display preferences
 
