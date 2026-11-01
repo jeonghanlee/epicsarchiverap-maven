@@ -108,7 +108,7 @@ const CARDS = [
         "Fastest PVs: which PVs send the most?",
         [
             ["In short", "The five PVs with the highest sample rate; they take the largest share of the write time and of the storage."],
-            ["What to do", "A PV that is faster than needed is changed to Scan with a longer period, or given a longer period if it is on Scan already, in Change sampling in Browse PVs. A longer period on a Monitor PV only makes its buffer smaller."],
+            ["What to do", "Find a PV that is faster than needed by its name in Browse PVs, open More and choose Change sampling. Change it to Scan with a longer period, or give it a longer period if it is on Scan already. A longer period on a Monitor PV only makes its buffer smaller."],
         ],
     ],
     [
