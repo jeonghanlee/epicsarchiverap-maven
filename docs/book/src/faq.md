@@ -32,6 +32,8 @@ they keep.
   a 0.1 s PV holds 110. A PV that changes faster than its sampling
   period fills its buffer before the next write; each further update
   then drops the oldest sample in the buffer.
+  The figures of [The sample buffer](architecture.md#the-sample-buffer)
+  show the path of an update through the buffer and what an overflow keeps.
 - **SCAN** keeps only the latest update and writes at most one sample
   per sampling period, and only when the update has a new timestamp. A
   PV scanned at 1 s gives at most one sample per second, and none while
