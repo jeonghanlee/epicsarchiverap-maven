@@ -8,7 +8,7 @@ Git upstream: origin/master
 Remote tracker: jeonghanlee/epicsarchiverap-maven (aa-maven); GitHub issues per row, no GitHub milestone
 Peer register: aa-env at jeonghanlee/epicsarchiverap-env, `docs/milestone-2.0.1.md` on branch release-2.0.1 (cross-referenced per decisions D2 and D3 of the previous document, commit bfb0dc71)
 
-Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. M7 is Complete in 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9, verified on origin/ahsoka; issue #41 is closed as completed. M25 is Complete: implementation fc52f0807b371990137bcd975ac62dc0a6c18094, milestone record c1b08d94b289585259b44d07389ad65d1066f2cf, and operator guide with final verification record 50fa32baf4dfcdf7b50d60f8091a639037df198f are on origin/ahsoka; the 25 metadata/cache tests and all 1,174 default-suite tests pass, native IOC comparison, metadata-change delivery and real browser checks passed against WARs rebuilt from c1b08d94, and issue #69 is closed as completed with six checked acceptance criteria. M27 records the requested viewer follow-up for distinct line styles, color-vision options and browser-session defaults for time/display settings and is linked to issue #71 in e42a8efd98279f807c08c23753566864045ddf44; origin/ahsoka was observed at that tip on 2026-10-30 10:59 PDT. Next: M26 is Complete: implementation f3f458e70b588f296716cc07fb7e58fdffc45fdf and its default-policy native check e91fef785f26fe5934d7f55519924c6e8bfb9b11 are on origin/ahsoka, the default verify (1,209 tests), the native checks and the browser checks passed on WARs built from the commit, and issue #70 is closed as completed with seven checked acceptance criteria. Next: M12 is Complete: commit 1bc1d76c3007210dc3c353224708fb56e8f4a4d3 is on origin/ahsoka and issue #52 is closed as completed. Work the rows in the order of the Milestone table, which the owner confirmed on 2026-10-31: M29, M13, M22, M27, M23, M28, M10, M17, M8, M11, M16, M18, M6, M9, M1 to M5 in sequence, then G1, M20, M15 and M19, and M21 last. M13 is the release gate among them; review its plan before any implementation, because no unfinished row has implementation authority: the plan of M13 is accepted without it, and the plan of M21, revised on 2026-10-31, and the plan of every other unfinished row are drafts. M24 is Complete: commits 690225437bd4af4395d03103c0e6c60024da5905 and 85a1ccd4fe2321ddae67b6a6eebfc89fd99bb51e are on origin/ahsoka, observed on 2026-11-01 at 00:53 PDT, T1, T2 and T3 passed, the default suite passed 1,209 tests, and issue #74 is closed as completed with its body brought up to date. M22 is Complete: commits 98196be1bb2bc24de785dde8224d85f309426d87, 35d988cd23de13e832eb47901de9891f568c8d7f and the register commit 4efd5abe51945818c8d97d47ebc60e79fa109895 are on origin/ahsoka, T1 to T5 passed, and issue #72 is closed as completed under the title Restore console pages after tab navigation. M29 is Complete: commits c059f9df288fd4eff4cca36aa4582bb88de6e945, 3aba9b28d115dcc2eafc9ee12755e0a8dbac1021 and 535e5dc409d62905df88e5a3e99992d56dce54d1 are on origin/ahsoka, observed on 2026-11-01 at 17:13 PST, T1 to T3 passed with the default suite at 1,212 tests, and issue #75 is closed as completed under the title Show the sample buffer path, slots and overflow. M27 is Complete: commits ee71102ce300c6c457dc790b35ddb47337acec8a, ca6e4ac460ec615858f1a62f0bb53e592b2d52b5 and 84a2f18712a5820216e3a91625f05de547cd4d8e are on origin/ahsoka, observed on 2026-11-01 at 20:23 PST, T1 to T6 passed with the default suite at 1,212 tests, and issue #71 is closed as completed under the title Tell chart lines apart without color alone. M23 is Complete: commits d6bb20f9a046d732a230a73bb84c92c7f7aeec3b and the register commit 72f4bef6b6628bdcbd915e2f4a2b12145339837a are on origin/ahsoka, observed on 2026-11-02 at 01:18 PST, T1 to T7 passed with the default suite at 1,212 tests, the table limit stays 100 by the owner's decision after the measurement, and issue #73 is closed as completed under the title Select matches and suggest similar names in Browse PVs. The revision of the plan of M23 of 2026-11-02, accepted and authorized by the owner on the same day, hides Similar names when the name is typed in full (the table limit stays 100 and is not made a setting). It is implemented and verified (T8): commit 7aed8ed26f5d087d7aaa4fba2d49e09f17f385d1 (the rule in `names-worker.js` and the sentences of `help.html` and the book) and commit 2e36f4aaa457e99e51928530dbb2037e943ca9c4 (the scripts `scripts/build-book.sh`, `scripts/check-book-links.pl`, `scripts/ui-appliance.sh` and `scripts/gen-test-pvs.pl`, written for the checks of T8) are on origin/ahsoka, observed on 2026-11-02 at 09:54 PST. M10 and M17 need an owner decision before work. Release Ahsoka carries twenty rows: M12, M14, M7 and M13 (D12), M30 (D13), and M24, M29, M22, M27, M23, M28, M10, M8, M11, M16 and M1 to M5 (D15 of 2026-10-31); M25 and M26 are Complete on the branch and are part of it. M30 comes last because the owner decided that it comes later than the other rows. The plan of M21 was revised on 2026-10-31 as a draft that names those rows and corrects the issue states (#52, #47 and #41 are already closed); it awaits the owner's acceptance, and its Integrated Verification rows still cover only M7, M13 and M14 until the plan review of phase 4 adds the others. M10 is Open and needs the owner's decision before it can be worked, and M2 to M5 wait for their predecessors. M6, M9, M17, M18 and M31 are not part of the release (M31 moves the verification scripts of M23 into the owner's script tool, which the owner names at plan review); M15 keeps the reliability of the buffer as long-term work after it; M19, M20 and G1 stay out of it by D14. The recorded rows are ten Complete, seventeen Not started, two Open (M10 and G1), two Deferred (M15 and M19) and one Blocked (M20). The Ready rows are M13, M1, M6, M8, M9, M11, M16, M17, M18, M28, M30 and M31; M2 to M5 wait for their predecessors, M10 awaits a decision, M15 and M19 are Deferred, and M20 waits for G1. Every former Backlog row moved to the Milestone section on 2026-10-31, and the Backlog is empty. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 (menu return and input restoration) is Complete, M23 (Select matches and Similar names) is Complete, and M24 sampling help and confirmation visibility is Complete. For M28, a study of configuration reload, start at `DefaultConfigService.initialize()`, `EngineContext` and `JCACommandThread`.
+Next session entry point: M14 is Complete on branch ahsoka in c959153afa8169945d6804d292a0094aa14ddb3d; T1, T2 and T3 passed, origin/ahsoka contains the verified changes, and issue #47 is closed as completed. M7 implementation and local verification are finished: T1 passes with the real IOC in an isolated network namespace, T2 passes all 1,163 default-suite tests, and T3 passes all four Java PVA metadata regressions. M7 is Complete in 0ce3996fafe03e39587ca15bbe1c3e8995f69fc9, verified on origin/ahsoka; issue #41 is closed as completed. M25 is Complete: implementation fc52f0807b371990137bcd975ac62dc0a6c18094, milestone record c1b08d94b289585259b44d07389ad65d1066f2cf, and operator guide with final verification record 50fa32baf4dfcdf7b50d60f8091a639037df198f are on origin/ahsoka; the 25 metadata/cache tests and all 1,174 default-suite tests pass, native IOC comparison, metadata-change delivery and real browser checks passed against WARs rebuilt from c1b08d94, and issue #69 is closed as completed with six checked acceptance criteria. M27 records the requested viewer follow-up for distinct line styles, color-vision options and browser-session defaults for time/display settings and is linked to issue #71 in e42a8efd98279f807c08c23753566864045ddf44; origin/ahsoka was observed at that tip on 2026-10-30 10:59 PDT. Next: M26 is Complete: implementation f3f458e70b588f296716cc07fb7e58fdffc45fdf and its default-policy native check e91fef785f26fe5934d7f55519924c6e8bfb9b11 are on origin/ahsoka, the default verify (1,209 tests), the native checks and the browser checks passed on WARs built from the commit, and issue #70 is closed as completed with seven checked acceptance criteria. Next: M12 is Complete: commit 1bc1d76c3007210dc3c353224708fb56e8f4a4d3 is on origin/ahsoka and issue #52 is closed as completed. Work the rows in the order of the Milestone table, which the owner confirmed on 2026-10-31: M29, M13, M22, M27, M23, M28, M10, M17, M8, M11, M16, M18, M6, M9, M1 to M5 in sequence, then G1, M20, M15 and M19, and M21 last. M13 is the release gate among them; review its plan before any implementation, because no unfinished row has implementation authority: the plan of M13 is accepted without it, and the plan of M21, revised on 2026-10-31, and the plan of every other unfinished row are drafts. M24 is Complete: commits 690225437bd4af4395d03103c0e6c60024da5905 and 85a1ccd4fe2321ddae67b6a6eebfc89fd99bb51e are on origin/ahsoka, observed on 2026-11-01 at 00:53 PDT, T1, T2 and T3 passed, the default suite passed 1,209 tests, and issue #74 is closed as completed with its body brought up to date. M22 is Complete: commits 98196be1bb2bc24de785dde8224d85f309426d87, 35d988cd23de13e832eb47901de9891f568c8d7f and the register commit 4efd5abe51945818c8d97d47ebc60e79fa109895 are on origin/ahsoka, T1 to T5 passed, and issue #72 is closed as completed under the title Restore console pages after tab navigation. M29 is Complete: commits c059f9df288fd4eff4cca36aa4582bb88de6e945, 3aba9b28d115dcc2eafc9ee12755e0a8dbac1021 and 535e5dc409d62905df88e5a3e99992d56dce54d1 are on origin/ahsoka, observed on 2026-11-01 at 17:13 PST, T1 to T3 passed with the default suite at 1,212 tests, and issue #75 is closed as completed under the title Show the sample buffer path, slots and overflow. M27 is Complete: commits ee71102ce300c6c457dc790b35ddb47337acec8a, ca6e4ac460ec615858f1a62f0bb53e592b2d52b5 and 84a2f18712a5820216e3a91625f05de547cd4d8e are on origin/ahsoka, observed on 2026-11-01 at 20:23 PST, T1 to T6 passed with the default suite at 1,212 tests, and issue #71 is closed as completed under the title Tell chart lines apart without color alone. M23 is Complete: commits d6bb20f9a046d732a230a73bb84c92c7f7aeec3b and the register commit 72f4bef6b6628bdcbd915e2f4a2b12145339837a are on origin/ahsoka, observed on 2026-11-02 at 01:18 PST, T1 to T7 passed with the default suite at 1,212 tests, the table limit stays 100 by the owner's decision after the measurement, and issue #73 is closed as completed under the title Select matches and suggest similar names in Browse PVs. The revision of the plan of M23 of 2026-11-02, accepted and authorized by the owner on the same day, hides Similar names when the name is typed in full (the table limit stays 100 and is not made a setting). It is implemented and verified (T8): commit 7aed8ed26f5d087d7aaa4fba2d49e09f17f385d1 (the rule in `names-worker.js` and the sentences of `help.html` and the book) and commit 2e36f4aaa457e99e51928530dbb2037e943ca9c4 (the scripts `scripts/build-book.sh`, `scripts/check-book-links.pl`, `scripts/ui-appliance.sh` and `scripts/gen-test-pvs.pl`, written for the checks of T8) are on origin/ahsoka, observed on 2026-11-02 at 09:54 PST. M10 and M17 need an owner decision before work. Release Ahsoka carries eighteen rows: M12, M14, M7 and M13 (D12), M30 (D13), and M24, M29, M22, M27, M23, M10, M8, M11 and M1 to M5 (D15 of 2026-10-31); M28 and M16, which D15 named, moved on 2026-11-02 to release Ghost (D16); M25 and M26 are Complete on the branch and are part of it. M30 comes last because the owner decided that it comes later than the other rows. The plan of M21 was revised on 2026-10-31 as a draft that names those rows and corrects the issue states (#52, #47 and #41 are already closed); it awaits the owner's acceptance, and its Integrated Verification rows still cover only M7, M13 and M14 until the plan review of phase 4 adds the others. M10 is Open and needs the owner's decision before it can be worked, and M2 to M5 wait for their predecessors. M6 and M31 are not part of the release, and M9, M15, M16, M17, M18, M19, M20, M28 and G1 are carried by release Ghost (M32, D16), the long-term release held as a row of this register until the owner opens it (M31 moves the verification scripts of M23 into the owner's script tool, which the owner names at plan review); M15 keeps the reliability of the buffer as long-term work after it; M19, M20 and G1 stay out of it by D14. The recorded rows are ten Complete, eighteen Not started, two Open (M10 and G1), two Deferred (M15 and M19) and one Blocked (M20). The Ready rows are M13, M1, M6, M8, M9, M11, M16, M17, M18, M28, M30 and M31; M2 to M5 wait for their predecessors, M10 awaits a decision, M15 and M19 are Deferred, and M20 waits for G1. Every former Backlog row moved to the Milestone section on 2026-10-31, and the Backlog is empty. For the viewer follow-ups, start at `src/main/org/epics/archiverappliance/mgmt/staticcontent/js/browse.js`: M22 (menu return and input restoration) is Complete, M23 (Select matches and Similar names) is Complete, and M24 sampling help and confirmation visibility is Complete. For M28, a study of configuration reload, start at `DefaultConfigService.initialize()`, `EngineContext` and `JCACommandThread`.
 
 ## Milestone
 
@@ -51,7 +51,8 @@ The four Complete rows come first. The rows below them are listed in the work or
 | Verification | M19 | Verify signal storage and important-signal delivery under client overload | Milestone | Deferred | No |  | Long-term plan, deferred on 2026-10-22: verify signal storage first, important-signal storage and delivery second, and client request handling last; issue #55; [detail](#m19---verify-signal-storage-and-important-signal-delivery-under-client-overload) |
 | Configuration | M30 | Review the sampling policies against measured event rates and decide the optimized values | Milestone | Not started | Yes | D13 | The shipped policies set the MONITOR period from the measured event rate so that the buffer holds a write interval and its margin, a decision records the measured table and the values, and a PV at its expected rate loses no sample to a full buffer on the real path; issue #76; [detail](#m30---review-the-sampling-policies-against-measured-event-rates-and-decide-the-optimized-values) |
 | Scripts and checks | M31 | Move the reusable verification scripts into the owner's script tool | Milestone | Not started | Yes |  | The scripts for the book build and its link check, the test PV set and the development appliance run from the owner's script tool against this repository with the results they gave under `scripts/`; [detail](#m31---move-the-reusable-verification-scripts-into-the-owners-script-tool) |
-| Release Ahsoka | M21 | Release Ahsoka | Milestone | Not started | No | M12, M14, M7, M13, M24, M29, M22, M27, M23, M28, M10, M8, M11, M16, M1, M2, M3, M4, M5, M30, D12, D13, D15 | Release Ahsoka is built, tagged and installed from its bundle with every Release Verification of the detail Pass and the issues of the twenty named rows closed; [detail](#m21---release-ahsoka) |
+| Release Ahsoka | M21 | Release Ahsoka | Milestone | Not started | No | M12, M14, M7, M13, M24, M29, M22, M27, M23, M10, M8, M11, M1, M2, M3, M4, M5, M30, D12, D13, D15, D16 | Release Ahsoka is built, tagged and installed from its bundle with every Release Verification of the detail Pass and the issues of the eighteen named rows closed; [detail](#m21---release-ahsoka) |
+| Release Ghost | M32 | Release Ghost | Milestone | Not started | No | M9, M15, M16, M17, M18, M19, M20, M28, G1, D16 | Release Ghost is the long-term release: the rows that leave release Ahsoka or stay outside it are Complete, and the owner has set its version, branch and tests; [detail](#m32---release-ghost) |
 
 ### Decisions
 
@@ -72,6 +73,7 @@ The four Complete rows come first. The rows below them are listed in the work or
 | D13 | Release Ahsoka also carries the review of the sampling policies: the shipped policies give every MONITOR policy a period of 1.0 s and so a buffer of 11 slots (findings of M15 of 2026-10-31), and the review measures the sampling rates and periods on the real path, decides the policy values and changes the shipped policies, as M30. The reliability of the stored signal over the long term, including an automatic adjustment of the buffer at run time, stays in M15 and follows release Ahsoka. | 2026-10-31 |
 | D14 | M19, M20 and G1 are not part of release Ahsoka. M19 states the higher-level requirement that the appliance keeps storing the signal first, under any client load; the work on the sample buffer, which M30 does for the policies in release Ahsoka and M15 does for the buffer after it, implements one part of that requirement and measures a part of what M19 would verify, but M19 stays a long-term plan. M20 is the 24-hour campaign that waits for G1. | 2026-10-31 |
 | D15 | Release Ahsoka also carries the rows M29, M22, M27, M23, M28, M10, M8, M11, M16 and the analyzer rows M1 to M5, in addition to the rows of D12 and D13; M29 follows M24 in the release instead of following the release. The rows M6, M9, M17 and M18 are not part of it, and neither are M15, M19, M20 and G1 (D13, D14). M10 is Open and needs the owner's decision before it can be worked, and M2 to M5 wait for their predecessors. | 2026-10-31 |
+| D16 | Release Ghost is the long-term release, held as a row of this register (the owner chose this on 2026-11-02 instead of a canonical document of its own). M9, M15, M16, M17, M18, M19, M20, M28 and G1 are part of it and not of release Ahsoka. M16 and M28, which D15 named for release Ahsoka, leave release Ahsoka; D15 holds for the other rows it names. M20, which waits for G1, goes with it and stays outside release Ahsoka as D14 left it. A 24-hour run of the form of D11 is run before release Ahsoka on a bundle built from the version commit, which the owner decided on 2026-11-02; the plan of M21 contains it as Release Verification 15. | 2026-11-02 |
 
 ### ID Migration
 
@@ -1272,6 +1274,7 @@ Out of scope: bounding the number of concurrent PVAccess calls (M8); changing th
 ##### Dependencies And Decisions
 
 - D8 (Decision Date 2026-10-24): the shipped defaults stay; the measurements move here from M85 (previous document, commit bfb0dc71).
+- Decision Date: 2026-11-02 (D16). This row is part of release Ghost.
 
 ##### Implementation Plan
 
@@ -1477,6 +1480,7 @@ Out of scope until the plan is written: the exact store layout of the boundary; 
 - M73 (previous document, commit bfb0dc71) is the observation this row answers; D4 defers the row to the next major release (Decision Date: 2026-10-17) and limits this release to M77 (previous document, commit bfb0dc71).
 - Transition: Deferred on 2026-10-17 by D4; it returns to Not started when the next major release opens.
 - Decision Date: 2026-10-31. The owner decided that the reliability of the buffer and its adaptation stay in this row, as long-term work that follows release Ahsoka; release Ahsoka takes only the review of the sampling policies, as M30 (D13).
+- Decision Date: 2026-11-02 (D16). This row is part of release Ghost.
 
 ##### Implementation Plan
 
@@ -1567,6 +1571,7 @@ Out of scope: the M37 (previous document, commit bfb0dc71) scripts; the eight co
 - M37 (previous document, commit bfb0dc71): the language (Bash), the per-request timeout and the shared mechanics come from M37 (previous document, commit bfb0dc71).
 - Decisions carried from M37 (previous document, commit bfb0dc71) (Decision Date 2026-10-04): consolidateArchivedData.py checks the result of each step and resumes only the PVs it paused itself; addPostProcessingOperator.py requests getAllPVs with an explicit limit; the three type-info scripts keep posting the complete PVTypeInfo with override=true, add a readback that confirms only the intended field changed, and document that a concurrent change between read and post can be overwritten.
 - Constraints carried from the research: the two consolidation scripts end in different states and stay separate procedures; removeMetaFields.py has no internal pause or resume; no automatic retry of a mutation.
+- Decision Date: 2026-11-02 (D16). The owner moved this row from release Ahsoka to release Ghost; D15 no longer names it.
 
 ##### Implementation Plan
 
@@ -1637,6 +1642,7 @@ Out of scope: the alert checks themselves (M37 (previous document, commit bfb0dc
 - Origin: split from M37 (previous document, commit bfb0dc71) by the owner on 2026-10-04; unassigned until the owner assigns it.
 - M37 (previous document, commit bfb0dc71): the alert checks and their stdout and exit-status contract come from M37 (previous document, commit bfb0dc71).
 - Decision carried from M37 (previous document, commit bfb0dc71) (Decision Date 2026-10-04): emailHandler.py reads its configuration after the calling script has parsed its arguments.
+- Decision Date: 2026-11-02 (D16). This row is part of release Ghost.
 
 ##### Implementation Plan
 
@@ -1700,6 +1706,7 @@ Out of scope: the Channel Archiver XML-RPC data server (`CA_XMLRPC`); the interf
 ##### Dependencies And Decisions
 
 - Origin: recorded on 2026-10-12 at the owner's direction during the review of the management interface, where the Integration page keeps only the external Archiver Appliance servers.
+- Decision Date: 2026-11-02 (D16). This row is part of release Ghost.
 
 ##### Implementation Plan
 
@@ -1772,6 +1779,7 @@ Out of scope: immediate implementation or execution; changing M85 (previous docu
 - Decision Date: 2026-10-31 (D14). The owner decided that this row is not part of release Ahsoka. It is the higher-level requirement; the sample buffer work that M30 does for the policies in the release and M15 does after it implements one part of it, and what M30 measures (buffer losses against event rates on the real path) is an input for the plan of this row. The row stays a long-term plan.
 - Related evidence: M85 (previous document, commit bfb0dc71) request-protection measurements and M8 concurrency planning. No execution dependency is assigned by this record.
 - Open planning details: important-signal selection, delivery semantics, allowable storage/delivery latency, client behavior during overload, deployment resources and observation duration. These are future plan inputs, not permission to implement.
+- Decision Date: 2026-11-02 (D16). This row is part of release Ghost.
 
 ##### Implementation Plan
 
@@ -1845,6 +1853,7 @@ Out of scope: reopening completed ETL/journal acceptance because this campaign i
 - M46 (previous document, commit bfb0dc71): the owner placed this additional campaign after four-hour buffer-fix acceptance.
 - Decision Date: 2026-10-15. Keep this unassigned in Backlog until the required Ansible tools are ready. It does not block independent current functionality acceptances.
 - Decision Date: 2026-10-31 (D14). The owner decided that this row, with G1, is not part of release Ahsoka.
+- Decision Date: 2026-11-02 (D16). This row is part of release Ghost, with G1; it stays outside release Ahsoka (D14).
 
 ##### Implementation Plan
 
@@ -2548,6 +2557,7 @@ Out of scope: implementing configuration reload or an API; preparing environment
 
 - Decision Date: 2026-10-31. Register issue #68 as backlog work. This entry records a study; no implementation of reload or of an API is authorized.
 - No execution dependency is established.
+- Decision Date: 2026-11-02 (D16). The owner moved this row from release Ahsoka to release Ghost; D15 no longer names it.
 
 ##### Implementation Plan
 
@@ -2624,33 +2634,36 @@ Status: Not started
 
 ##### Summary
 
-Release Ahsoka carries twenty rows on the branch ahsoka: M12, M14, M7 and M13 (D12), M30 (D13) and M24, M29, M22, M27, M23, M28, M10, M8, M11, M16 and M1 to M5 (D15), worked in the order of the work table with M30 last by the owner's decision of 2026-10-31; the rows M25 and M26, which are Complete on the branch, are part of it. It follows release 2026-10, whose install and run check D11 accepts. This row owns the release-wide re-runs, the version change, the release actions and the final checks; the work of those rows is implemented, verified and accepted in their own details. The combined branch is the branch ahsoka once those rows are Complete. Phase 4 is the cycle planning of the `release-cycle` procedure, in which the owner reviews and accepts each plan and records the implementation authority separately. The soft IOC is the one of D3.
+Release Ahsoka carries eighteen rows on the branch ahsoka: M12, M14, M7 and M13 (D12), M30 (D13) and M24, M29, M22, M27, M23, M10, M8, M11 and M1 to M5 (D15), worked in the order of the work table with M30 last by the owner's decision of 2026-10-31; the rows M25 and M26, which are Complete on the branch, are part of it. It follows release 2026-10, whose install and run check D11 accepts. This row owns the release-wide re-runs, the version change, the release actions and the final checks; the work of those rows is implemented, verified and accepted in their own details. The combined branch is the branch ahsoka once those rows are Complete. Phase 4 is the cycle planning of the `release-cycle` procedure, in which the owner reviews and accepts each plan and records the implementation authority separately. The soft IOC is the one of D3.
 
 ##### Scope
 
-- Each of the twenty rows named in the Summary is Complete in its own detail before this row starts its checks.
+- Each of the eighteen rows named in the Summary is Complete in its own detail before this row starts its checks.
 - The Integrated Verification rows run on the combined branch before the version change.
-- The project version in `pom.xml` is set to Ahsoka, the branch ahsoka is merged into master with a merge commit, the annotated tag Ahsoka is created on that merge commit, and every issue of those rows that is still open then closes through a `Closes` trailer of the version commit when it reaches master; on 2026-10-31 that is #45, #74, #72, #71, #73, #68, #59, #62, #60, #63, #75, #76 and #39, while #52, #47 and #41 are already closed; #39 is shared by M1 to M5 and closes only when all five are Complete.
+- The project version in `pom.xml` is set to Ahsoka, the branch ahsoka is merged into master with a merge commit, the annotated tag Ahsoka is created on that merge commit, and every issue of those rows that is still open then closes through a `Closes` trailer of the version commit when it reaches master; on 2026-10-31 that is #45, #74, #72, #71, #73, #59, #62, #60, #75, #76 and #39, while #52, #47 and #41 are already closed; #39 is shared by M1 to M5 and closes only when all five are Complete.
 - The sentence of `README.md` that names the form of a release tag is changed in a docs commit of its own, before the version change.
 - The documented install-from-bundle path runs on Debian 13 and on Rocky Linux 8.10 with the bundle built from the tag Ahsoka.
+- A 24-hour run of the form of D11 runs on a bundle built from the version commit, before the merge into master (D16).
 
-Out of scope: any other Backlog row, in particular M6, M9, M17 and M18, which D15 does not name, M15, which D13 leaves to the time after the release, and M19, M20 and G1, which D14 leaves out of the release; a long run of the tag in the environment repository, which the owner decides after the release; the analyzer rows.
+Out of scope: any other Backlog row, in particular M6, M9, M17 and M18, which D15 does not name, M28 and M16, which D16 moved to release Ghost, M15, which D13 leaves to the time after the release and D16 puts in release Ghost, and M19, M20 and G1, which D14 leaves out of the release; a run of the tag in the environment repository that is longer than the 24-hour run of Release Verification 15, which the owner decides after the release; the analyzer rows.
 
 ##### Completion Criteria
 
-- The twenty rows named in the Summary are Complete.
+- The eighteen rows named in the Summary are Complete.
 - Every Release Verification row below reads Pass with reachable evidence.
 - The tag Ahsoka is an annotated tag on the merge commit, that commit is on origin/master, and the Maven workflow succeeded on it.
-- The issues of those rows are observed closed: #52, #47, #41, #45, #74, #72, #71, #73, #68, #59, #62, #60, #63, #75, #76 and #39.
+- The issues of those rows are observed closed: #52, #47, #41, #45, #74, #72, #71, #73, #59, #62, #60, #75, #76 and #39.
 - `README.md` names the tag of a release as the name of the release, for example `2026-10` or `Ahsoka`, and no longer as a form `YYYY-MM` (Release Verification 14).
+- The 24-hour run of the form of D11 on the bundle of the version commit passes every check without an error cycle (Release Verification 15).
 
 ##### Dependencies And Decisions
 
-- The twenty rows named in the Summary: the checks of this row run on their combined result. M10 is Open and needs the owner's decision on its stamping rule before it can be worked, and M2 to M5 wait for their predecessors.
+- The eighteen rows named in the Summary: the checks of this row run on their combined result. M10 is Open and needs the owner's decision on its stamping rule before it can be worked, and M2 to M5 wait for their predecessors.
 - D12 (Decision Date 2026-10-27): the scope, the name and the order.
+- D16 (Decision Date 2026-11-02): M28 (#68) and M16 (#63) leave this release for release Ghost, so this plan names eighteen rows and the issues #68 and #63 are no longer closed by it. The same decision has the 24-hour run of the form of D11 run before this release, on a bundle built from the version commit: this plan contains it as Release Verification 15, and the revision awaits the owner's acceptance.
 - M24, M30 and D13 (Decision Date 2026-10-31): the review of the sampling policies is a row of this release, added to the four rows of D12, and the owner placed it after the others; M24, which the owner directed to be worked on the branch ahsoka, is named with them. This plan is revised on 2026-10-31 to name the twenty rows of D12, D13 and D15 and to correct the issue states: #52, #47 and #41 were already closed on 2026-10-29 and 2026-10-30, so the version commit no longer closes them. The revision awaits the owner's acceptance, and its implementation authority is still none.
 - The owner decided on 2026-10-28 that the sentence of `README.md` about the tag name is changed in a docs commit of its own before the version change, that the clean hosts of the installation check are test guests requested from the provisioning session when the check starts and returned with a finished notice, and that a long run of the tag is not part of this row.
-- The Integrated Verification rows are shared-surface candidates: M7 fills `MetaInfo` and M14 updates it (details of M7 and M14), and `ChangeTypeForPV` of M13 reads and writes the same `PVTypeInfo` as `MetaInfo.updateTypeInfo` through `getTypeInfoForPV` and `updateTypeInfoForPV`. M24 changes console texts and the page `help.html`, and M30 changes `policies.py`; neither shares a code path with M7, M13 or M14 by the details of M24 and M30. The viewer rows M22, M23, M27 and M1 to M5 change the console and the viewer, M8 and M11 change retrieval, and M28 is a study; whether any of them shares a code path with M7, M13, M14 or M24 is confirmed by the plan review of phase 4, which also adds the Integrated Verification rows for them, since the rows below cover only M7, M13 and M14. The plan review confirms or removes each.
+- The Integrated Verification rows are shared-surface candidates: M7 fills `MetaInfo` and M14 updates it (details of M7 and M14), and `ChangeTypeForPV` of M13 reads and writes the same `PVTypeInfo` as `MetaInfo.updateTypeInfo` through `getTypeInfoForPV` and `updateTypeInfoForPV`. M24 changes console texts and the page `help.html`, and M30 changes `policies.py`; neither shares a code path with M7, M13 or M14 by the details of M24 and M30. The viewer rows M22, M23, M27 and M1 to M5 change the console and the viewer, M8 and M11 change retrieval, and M28 is no longer part of this release; whether any of them shares a code path with M7, M13, M14 or M24 is confirmed by the plan review of phase 4, which also adds the Integrated Verification rows for them, since the rows below cover only M7, M13 and M14. The plan review confirms or removes each.
 
 ##### Implementation Plan
 
@@ -2659,10 +2672,10 @@ Plan Acceptance: none
 Implementation Authorization: none
 Superseded Plan Artifacts: the plan accepted by the owner on 2026-10-28, which named the four rows M12, M14, M7 and M13, as it stands in commit 32a071edd0c2fff1bc8eaaccc99578226aa9ebe7
 
-1. When those twenty rows are Complete, run the Integrated Verification rows on the combined branch. Closes with Release Verification 13, 1 and 2.
+1. When those eighteen rows are Complete, run the Integrated Verification rows on the combined branch. Closes with Release Verification 13, 1 and 2.
 2. Commit the README sentence, push the branch ahsoka (Release Execution 1) and read the Maven workflow on its tip. Closes with Release Verification 14 and 3.
-3. Check the version, change it, commit it with the trailers, push the branch (Release Execution 2 and 3) and read the Maven workflow on the version commit. Closes with Release Verification 4, 5 and 6.
-4. Merge into master, push master, create and push the tag (Release Execution 4 to 7) and read the Maven workflow runs on the merge commit, the one of the master push and the one that the tag push starts. Closes with Release Verification 7 and 8.
+3. Check the version, change it, commit it with the trailers, push the branch (Release Execution 2 and 3) and read the Maven workflow on the version commit; build the bundle from that commit and run the 24-hour run of D11 on it before the merge. Closes with Release Verification 4, 5, 6 and 15.
+4. After Release Verification 6 and 15 read Pass, merge into master, push master, create and push the tag (Release Execution 4 to 7) and read the Maven workflow runs on the merge commit, the one of the master push and the one that the tag push starts. Closes with Release Verification 7 and 8.
 5. Install from the bundle of the tag on the two supported distributions, observe the closed issues, delete the branch (Release Execution 8) and record the results in this register (Release Execution 9). Closes with Release Verification 9, 10, 11 and 12.
 
 ##### Integrated Verification
@@ -2678,6 +2691,7 @@ Superseded Plan Artifacts: the plan accepted by the owner on 2026-10-28, which n
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Release Verification 9 | post-release | Debian 13, a clean test guest requested from the provisioning session for this check, with `curl`, which step 4 of the install page uses; a finished notice returns it | the bundle built from the tag Ahsoka, once, on the development host (JDK 21 and git installed) in a fresh clone of origin after Release Execution 7 with the tag checked out and `./mvnw -B clean package -DskipTests` (`docs/book/src/building.md`); the file name `aa-<date>-<commit>.tar.gz` is recorded, its commit part equals the first eight characters of the merge commit recorded at Release Execution 4, and the file is copied to the clean host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | follow every step of the install page with that bundle, the soft IOC of `src/resources/test/st.cmd` started on the development host as `<ioc_address>` (reachable from the clean host over Channel Access, UDP 5064 and the server TCP port), and `SR:BPM:01:X` of `ConsoleChartPVs.db` as `<pv_name>` | the four instances report `STARTUP_COMPLETE`, the PV reaches `connectionState` true, and the read-back reply holds at least one sample, counted by `curl -s "http://localhost:17668/retrieval/data/getData.json?pv=<pv_name>" \| grep -o '"val"' \| wc -l` | the four `startupState` lines, the `getPVStatus` reply, the sample count, the bundle file name, the `uname -m` output and the `sha256sum` of the bundle on the development host and on this host, written into the result row |
 | Release Verification 10 | post-release | Rocky Linux 8.10, a clean test guest requested the same way, with `curl`; a finished notice returns it | the same bundle, copied to this host | x86_64, confirmed with `uname -m` at the run | `docs/book/src/install-bundle.md` | the same steps with the same bundle, IOC and PV | the same result | the same items, written into the result row; the two `sha256sum` values are equal to those of the Debian 13 row |
+| Release Verification 15 | post-change | a test guest requested from the provisioning session when the run starts and returned with a finished notice (decision of 2026-10-28), of the distribution that the record named in D11 names | the bundle built from the version commit recorded at Release Execution 2, once, on the development host in a fresh clone with that commit checked out and `./mvnw -B clean package -DskipTests` (`docs/book/src/building.md`); the file name `aa-<date>-<commit>.tar.gz` is recorded and its commit part equals the first eight characters of that commit | x86_64, confirmed with `uname -m` at the run | the installer of jeonghanlee/epicsarchiverap-env, as for the run of D11 | the run of D11 on that bundle: 903 PVs registered and archived for 24 hours, the collector cycles of the installer for the whole day, and a retrieval over the whole day of 16 PVs | every check of D11 passes in every cycle with no error cycle: the service, the archived and connected counts, the sample completeness, the dropped and stale counts, the move from the short-term to the medium-term store, the retrieval of 16 PVs complete and the health service; memory and disk are recorded as observed values only | the record of the run in the docs/reports folder of jeonghanlee/epicsarchiverap-env, with the commit that carries it, named in the result row |
 
 ##### Version Changes
 
@@ -2692,14 +2706,14 @@ The owner's push trigger for steps 1, 3 and 5 covers the outgoing commits named 
 | Step | Action | Authorization | Expected Result | Evidence |
 | --- | --- | --- | --- | --- |
 | 1 | Change the sentence of `README.md` that names the form of a release tag to "A release is an annotated tag named after the release, for example `2026-10` or `Ahsoka`." and commit it on its own; then push the branch ahsoka with a plain `git push` (the branch exists on origin with its upstream) and record the tip with `git rev-parse HEAD` | commit delegation and push delegation | the README commit is separate from the version commit; origin/ahsoka equals the recorded tip and the Maven workflow runs on it | pending |
-| 2 | After Release Verification 3 reads Pass, run the pre-check (Release Verification 4), edit the version line of `pom.xml` (`  <version>2026-10</version>` to `  <version>Ahsoka</version>`), run the post-check (Release Verification 5), commit it on the branch ahsoka with a `Closes` trailer for each issue of the twenty rows that is still open then (on 2026-10-31 #45, #74, #72, #71, #73, #68, #59, #62, #60, #63, #75, #76 and #39) and record the commit with `git rev-parse HEAD` | commit delegation | `git show --stat` lists only `pom.xml` with one line changed, the message carries one trailer for each issue still open, and the commit ID is recorded | pending |
+| 2 | After Release Verification 3 reads Pass, run the pre-check (Release Verification 4), edit the version line of `pom.xml` (`  <version>2026-10</version>` to `  <version>Ahsoka</version>`), run the post-check (Release Verification 5), commit it on the branch ahsoka with a `Closes` trailer for each issue of the eighteen rows that is still open then (on 2026-10-31 #45, #74, #72, #71, #73, #59, #62, #60, #75, #76 and #39) and record the commit with `git rev-parse HEAD` | commit delegation | `git show --stat` lists only `pom.xml` with one line changed, the message carries one trailer for each issue still open, and the commit ID is recorded | pending |
 | 3 | Push the branch ahsoka | push delegation | the Maven workflow runs on the version commit recorded at step 2 | pending |
-| 4 | After Release Verification 6 reads Pass, run `git fetch`, check out master (`git rev-list --count ahsoka..master` prints 0 and `git rev-parse master origin/master` prints one ID twice), merge with `git merge --no-ff ahsoka -m "Merge ahsoka: Ahsoka release"` and record the merge commit with `git rev-parse HEAD` | user-run | a merge commit on master (`git rev-list --parents -n 1 HEAD` prints three IDs); `git rev-list --count ahsoka ^HEAD` prints 0; the merge commit ID is recorded | pending |
+| 4 | After Release Verification 6 and 15 read Pass, run `git fetch`, check out master (`git rev-list --count ahsoka..master` prints 0 and `git rev-parse master origin/master` prints one ID twice), merge with `git merge --no-ff ahsoka -m "Merge ahsoka: Ahsoka release"` and record the merge commit with `git rev-parse HEAD` | user-run | a merge commit on master (`git rev-list --parents -n 1 HEAD` prints three IDs); `git rev-list --count ahsoka ^HEAD` prints 0; the merge commit ID is recorded | pending |
 | 5 | Push master | push delegation | origin/master equals the merge commit, the issues still open close and the Maven workflow runs on it | pending |
 | 6 | After Release Verification 7 reads Pass, create the annotated tag Ahsoka on the merge commit with the message `Release Ahsoka` | tag create delegation | the tag object peels to the merge commit | pending |
 | 7 | Push the tag Ahsoka | tag push delegation | the remote tag object equals the local tag object | pending |
 | 8 | Delete the branch ahsoka, local and on origin | user-run | `git branch --list ahsoka` and `git ls-remote --heads origin ahsoka` print nothing | pending |
-| 9 | Record the results of Release Verification 1 to 14 in this register, commit it and push master | commit delegation and push delegation | `git rev-parse master origin/master` prints one ID twice; the push changes only the register and starts no run | pending |
+| 9 | Record the results of Release Verification 1 to 15 in this register, commit it and push master | commit delegation and push delegation | `git rev-parse master origin/master` prints one ID twice; the push changes only the register and starts no run | pending |
 
 ##### Release Verification Plan
 
@@ -2715,10 +2729,11 @@ The owner's push trigger for steps 1, 3 and 5 covers the outgoing commits named 
 | Release Verification 8 | Release object | post-release | `git cat-file -t refs/tags/Ahsoka`, `git rev-parse refs/tags/Ahsoka`, `git rev-parse 'refs/tags/Ahsoka^{commit}'`, `git branch -r --contains <merge-commit>` and `git ls-remote --tags origin refs/tags/Ahsoka`, where `<merge-commit>` is the ID recorded at Release Execution 4; the Maven workflow run that the tag push starts on the same commit once Release Execution 7 is done | the repository, origin and GitHub Actions | an annotated tag on the merge commit, that commit contained in origin/master, the remote tag object equal to the local one, and the three jobs of the tag run succeed | the object IDs and the run URL |
 | Release Verification 9 | Production | post-release | the production test of the Debian 13 row | Debian 13 | the expected result of that row | the record named there |
 | Release Verification 10 | Production | post-release | the production test of the Rocky Linux 8.10 row | Rocky Linux 8.10 | the expected result of that row | the record named there |
-| Release Verification 11 | Tracker | post-release | `gh issue view` of #52, #47, #41, #45, #74, #72, #71, #73, #68, #59, #62, #60, #63, #75, #76 and #39 | GitHub | every one of those issues is closed | the observed states |
+| Release Verification 11 | Tracker | post-release | `gh issue view` of #52, #47, #41, #45, #74, #72, #71, #73, #59, #62, #60, #75, #76 and #39 | GitHub | every one of those issues is closed | the observed states |
 | Release Verification 12 | Branch | post-release | `git branch --list ahsoka` and `git ls-remote --heads origin ahsoka` after Release Execution 8 | the repository and origin | both print nothing | the command output |
-| Release Verification 13 | Status | pre-change | read the Status line of the details of the twenty rows named in the Summary in this register | this register | all twenty read Complete | the twenty Status lines |
+| Release Verification 13 | Status | pre-change | read the Status line of the details of the eighteen rows named in the Summary in this register | this register | all eighteen read Complete | the eighteen Status lines |
 | Release Verification 14 | Documentation | pre-change | `grep -n "annotated tag" README.md` on the tip recorded at Release Execution 1 | the working tree | the line names the tag as the name of the release and not as a form `YYYY-MM` | the command output |
+| Release Verification 15 | Production | post-change | the production test of the 24-hour row | a test guest | the expected result of that row | the record named there |
 
 ##### Release Verification Results
 
@@ -2738,6 +2753,7 @@ The owner's push trigger for steps 1, 3 and 5 covers the outgoing commits named 
 | Release Verification 12 | Not run | repository and origin | Pending | none |
 | Release Verification 13 | Not run | this register | Pending | none |
 | Release Verification 14 | Not run | working tree | Pending | none |
+| Release Verification 15 | Not run | test guest | Pending | none |
 
 ##### Closure Evidence
 
@@ -2746,6 +2762,49 @@ The owner's push trigger for steps 1, 3 and 5 covers the outgoing commits named 
 ##### GitHub Projection
 
 none: the issues of the named rows carry the work; this row has no issue.
+
+#### M32 - Release Ghost
+
+Origin: bfb0dc71 / M32
+Identity History: none
+GitHub Issue: none
+Status: Not started
+
+##### Summary
+
+Release Ghost is the long-term release that follows release Ahsoka. It carries the rows that the owner moved out of release Ahsoka or left outside it: M9, M15, M16, M17, M18, M19, M20 and M28, and the external gate G1 (D16). Its version, branch, order and tests are not planned; the owner sets them when release Ahsoka is done. The owner chose on 2026-11-02 to hold this release as a row of this register; the rule of one canonical document for each release line asks for a document of its own once the release is opened.
+
+##### Scope
+
+- Each of the rows named in the Summary is Complete, or retired by a recorded owner decision, in its own detail before this row starts its checks; the gate G1 is Complete.
+
+Out of scope: every row of release Ahsoka.
+
+##### Completion Criteria
+
+- The rows named in the Summary are Complete or retired by a recorded owner decision.
+- When the release is opened, the owner has set its version and its branch, and its rows and its release sections are in a canonical document of their own.
+
+##### Dependencies And Decisions
+
+- D16 (Decision Date 2026-11-02): the name Ghost, the rows it carries, and the choice to hold it as a row of this register.
+
+##### Implementation Plan
+
+Plan Status: draft
+Plan Acceptance: none
+Implementation Authorization: none
+Superseded Plan Artifacts: none
+
+1. When release Ahsoka is done, the owner sets the version, the branch and the order of the rows; its rows move to a canonical document of their own, in which the release sections (Integrated Verification, Production Environment Tests, Version Changes, Release Execution and Release Verification) are written with the `release-cycle` procedure. This row is therefore an ordinary row and carries none of those sections: the register has one final release detail, which is M21.
+
+##### Closure Evidence
+
+- none
+
+##### GitHub Projection
+
+none: this row has no issue.
 
 ## Backlog
 
