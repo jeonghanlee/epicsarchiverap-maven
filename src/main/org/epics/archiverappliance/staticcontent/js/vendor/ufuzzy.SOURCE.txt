@@ -1,0 +1,2 @@
+uFuzzy 1.0.19, npm package @leeoniya/ufuzzy, tarball integrity sha512-0pikDeYt0IHEUPza5RTCDXc/17S1pTrYnReEMp8Aa6k1ovzw5QdZLwicW8TjljwEZRb6oYag0xmALohrcq/yOQ==
+uFuzzy.iife.min.js is dist/uFuzzy.iife.min.js of that tarball, SHA-256 3eef8ba0ad55444c31f0e86f8375f25916515402cf2d4d7b5a2c01b4b67f2e19

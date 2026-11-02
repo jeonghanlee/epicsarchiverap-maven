@@ -232,6 +232,11 @@ d3_recorded=$(grep -o -E '[0-9a-f]{64}' "${UI}/staticcontent/js/vendor/d3.SOURCE
 d3_actual=$(sha256sum "${UI}/staticcontent/js/vendor/d3.min.js" | cut -d' ' -f1)
 assert_eq "${d3_actual}" "${d3_recorded}" "d3.min.js matches the SHA-256 recorded in d3.SOURCE.txt"
 
+# ---- the vendored search library is the file its record names ----------------------------------------
+ufuzzy_recorded=$(grep -o -E '[0-9a-f]{64}' "${UI}/staticcontent/js/vendor/ufuzzy.SOURCE.txt" | head -1 || true)
+ufuzzy_actual=$(sha256sum "${UI}/staticcontent/js/vendor/uFuzzy.iife.min.js" | cut -d' ' -f1)
+assert_eq "${ufuzzy_actual}" "${ufuzzy_recorded}" "uFuzzy.iife.min.js matches the SHA-256 recorded in ufuzzy.SOURCE.txt"
+
 # ---- scripts, styles and images named by a page exist ----------------------------------------------
 # comm/ is the shared folder staticcontent/, which the build serves as ui/comm of every web application.
 while IFS= read -r page; do
@@ -486,6 +491,8 @@ if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
         "${A}/retrieval/staticcontent/viewer/viewer.js" "sed -i 's|meanSample_|mean_|' \"\$F\""
     expect_rejected "a vendored chart library that differs from its record" "matches the SHA-256 recorded" \
         "${A}/staticcontent/js/vendor/d3.min.js" "printf '\\n' >> \"\$F\""
+    expect_rejected "a vendored search library that differs from its record" "uFuzzy.iife.min.js matches the SHA-256 recorded" \
+        "${A}/staticcontent/js/vendor/uFuzzy.iife.min.js" "printf '\\n' >> \"\$F\""
     expect_rejected "a faint text color below the contrast limit" "contrast of at least 4.5:1" \
         "${A}/staticcontent/css/main.css" "sed -i 's|--ink-3: var(--c-muted);|--ink-3: #9aa9ae;|' \"\$F\""
     expect_rejected "an information card whose first row is not In short" "the first row is not In short" \

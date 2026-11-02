@@ -127,6 +127,8 @@ const state = {
     count: 0,
     asOf: 0,
     overflow: false,
+    matchNote: false,
+    similar: [],
     partial: false,
     query: "",
     mode: "contains",
@@ -235,6 +237,7 @@ worker.onmessage = (event) => {
         state.total = message.total;
         state.groups = message.groups || {};
         state.partial = Boolean(message.partial);
+        state.similar = Array.isArray(message.similar) ? message.similar : [];
         renderFinder();
     }
 };
@@ -270,6 +273,24 @@ function runSearch() {
     writeAddress();
 }
 
+/**
+ * The names close to the text of a search that finds few or no PV, under the list of matches. They are not matches: the count of the
+ * list and "Select matches" do not use them, and a click selects one name as a click in the list does.
+ */
+function renderSimilar() {
+    const names = state.selectedOnly ? [] : state.similar;
+    const box = $("similarBox");
+    box.hidden = !names.length;
+    const list = $("similar");
+    list.textContent = "";
+    for (const name of names) {
+        const selected = state.selected.includes(name);
+        const button = node("button", { type: "button", class: "plain", "aria-pressed": String(selected), title: selected ? "Selected; click to clear it" : "Select this PV" }, name);
+        button.addEventListener("click", () => toggle(name));
+        list.append(node("li", null, button));
+    }
+}
+
 function renderFinder() {
     const groups = $("groups");
     groups.textContent = "";
@@ -289,6 +310,7 @@ function renderFinder() {
 
     $("count").textContent = countText();
     renderResults();
+    renderSimilar();
     renderArchiveOffer();
 }
 
@@ -343,7 +365,54 @@ function updateListTools() {
     $("listSelected").disabled = !state.selected.length;
     $("listSelected").setAttribute("aria-pressed", String(state.selectedOnly));
     $("listClear").disabled = !state.selected.length;
+    // The list shows the selected PVs, not the matches, while Selected only is on; the control acts on the matches.
+    $("listAll").disabled = state.selectedOnly || !state.results.length;
     $("count").textContent = countText();
+}
+
+/**
+ * Adds the PVs of the list of matches to the table in the order of the list, up to the limit of the table. A PV that is
+ * selected stays and is not added twice, and no selected PV is removed to make room. The note says how many were added.
+ */
+function selectMatches() {
+    const matches = state.results;
+    const chosen = new Set(state.selected);
+    const fresh = matches.filter((name) => !chosen.has(name));
+    const room = Math.max(0, LIMITS.table - state.selected.length);
+    const added = fresh.slice(0, room);
+    for (const name of added) {
+        state.selected.push(name);
+    }
+    if (!state.focus && added.length) {
+        state.focus = added[0];
+    }
+    const count = `${state.total.toLocaleString()}${state.partial ? " or more" : ""}`;
+    let note;
+    if (!fresh.length) {
+        note = `All ${count} matches are already selected.`;
+    } else if (!added.length) {
+        note = `The table holds at most ${LIMITS.table} PVs; no match was added.`;
+    } else if (added.length < fresh.length) {
+        note = `Added ${added.length.toLocaleString()} of ${count} matches; the table holds at most ${LIMITS.table} PVs.`;
+    } else {
+        note = `Added ${added.length.toLocaleString()} of ${count} matches.`;
+    }
+    if (state.partial) {
+        note += " The list is partial, so only the names it holds were used.";
+    } else if (matches.length < state.total) {
+        note += ` The list holds the first ${matches.length.toLocaleString()} of them.`;
+    }
+    afterSelection();
+    $("limitNote").textContent = note;
+    state.matchNote = true;
+}
+
+/** The note of "Select matches" describes that action only, so the next change of the selection removes it. */
+function dropMatchNote() {
+    if (state.matchNote) {
+        $("limitNote").textContent = "";
+        state.matchNote = false;
+    }
 }
 
 /** Shows only the selected PVs in the list, or the matches again. */
@@ -469,6 +538,7 @@ function moveInResults(event) {
 // ---- selection, status, data ---------------------------------------------------------------
 
 function toggle(name) {
+    dropMatchNote();
     const index = state.selected.indexOf(name);
     if (index >= 0) {
         state.selected.splice(index, 1);
@@ -487,6 +557,7 @@ function toggle(name) {
 function afterSelection() {
     state.plotted = state.plotted.filter((name) => state.selected.includes(name));
     renderResults();
+    renderSimilar();
     renderTable();
     refreshStatus();
     refreshData();
@@ -835,6 +906,7 @@ function togglePlottedOnly() {
 
 /** Unticks every chosen PV, so that the table is empty and nothing is plotted. */
 function clearSelection() {
+    dropMatchNote();
     state.selected = [];
     state.focus = null;
     afterSelection();
@@ -1872,6 +1944,8 @@ function wire() {
     $("selNone").addEventListener("click", clearSelection);
     $("listSelected").title = "Show only the selected PVs in the list; press again to show the matches";
     $("listSelected").addEventListener("click", toggleSelectedOnly);
+    $("listAll").title = `Add the PVs of the list to the table, up to ${LIMITS.table}; the PVs already selected stay`;
+    $("listAll").addEventListener("click", selectMatches);
     $("listClear").title = "Untick every PV, so that the table is empty";
     $("listClear").addEventListener("click", clearSelection);
     // The Last event cells are written in the chosen zone; the chart widget redraws itself.

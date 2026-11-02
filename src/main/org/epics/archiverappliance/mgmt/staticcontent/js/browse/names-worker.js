@@ -5,6 +5,16 @@
 // an addition. The count is checked every POLL_MS; additions come from getRecentlyAddedPVs; the whole list
 // is read again when the count falls, when the snapshot is a day old, or when an addition may be incomplete.
 // Above the index limit (set by the page) the list is not held here and a search is answered by the server.
+// uFuzzy (js/vendor/uFuzzy.iife.min.js of the shared folder, ui/comm/ of the web application) finds names that are close to a
+// text with a typo or with a missing character; it builds no index, so the list of names is searched as it is.
+importScripts("../../comm/js/vendor/uFuzzy.iife.min.js");
+
+const SIMILAR_FEWER_THAN = 10;
+const SIMILAR_PER_SETTING = 10;
+const SIMILAR_MAX = 20;
+const SIMILAR_MIN_CHARS = 3;
+let similarEngines = null;
+
 const POLL_MS = 15000;
 const RESYNC_MS = 24 * 60 * 60 * 1000;
 let indexLimit = 500000;
@@ -297,6 +307,46 @@ function summarize(source, message, test, requireKnown) {
     return { found, groups, total };
 }
 
+/**
+ * Names close to the text of a Contains search that has fewer exact matches than SIMILAR_FEWER_THAN: up to SIMILAR_PER_SETTING names of
+ * the typo setting of uFuzzy, then up to SIMILAR_PER_SETTING names that only its setting for missing characters finds, each in the order
+ * uFuzzy gives them, without the exact matches and at most SIMILAR_MAX. None for another mode, a text of fewer than SIMILAR_MIN_CHARS
+ * characters, a chosen prefix or Show report, or an answer of the server (the list of names is not held then).
+ */
+function similarNames(message, exact) {
+    const query = message.query.trim();
+    if (overflow || message.mode !== "contains" || message.prefix || message.allowed || query.length < SIMILAR_MIN_CHARS || exact.total >= SIMILAR_FEWER_THAN) {
+        return [];
+    }
+    try {
+        if (!similarEngines) {
+            similarEngines = [new uFuzzy({ intraMode: 1 }), new uFuzzy({ intraIns: 1 })];
+        }
+        const skip = new Set(exact.found);
+        const out = [];
+        for (const engine of similarEngines) {
+            const [matched, info, order] = engine.search(names, query, 3, 1000);
+            const indexes = order ? order.map((at) => info.idx[at]) : matched || [];
+            let taken = 0;
+            for (const at of indexes) {
+                const name = names[at];
+                if (skip.has(name)) {
+                    continue;
+                }
+                skip.add(name);
+                out.push(name);
+                taken += 1;
+                if (taken >= SIMILAR_PER_SETTING || out.length >= SIMILAR_MAX) {
+                    break;
+                }
+            }
+        }
+        return out;
+    } catch (error) {
+        return [];
+    }
+}
+
 async function search(message) {
     let test;
     try {
@@ -340,7 +390,7 @@ async function search(message) {
             // The local answer stands.
         }
     }
-    self.postMessage({ type: "result", id: message.id, names: result.found, total: result.total, groups: result.groups, partial });
+    self.postMessage({ type: "result", id: message.id, names: result.found, total: result.total, groups: result.groups, partial, similar: similarNames(message, result) });
 }
 
 // ---- messages -------------------------------------------------------------------------------------
