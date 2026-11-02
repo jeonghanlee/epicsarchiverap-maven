@@ -38,6 +38,15 @@ times of the Details window are written in the chosen zone; the choice is
 kept in the browser and passed to the analyzer in the address as `tz`.
 The five cities follow their own daylight saving time at each instant.
 
+Beside the time zone, Profile chooses how the lines of the charts are
+told apart: Default, Red-green for a reader who cannot tell red from
+green, or Monochrome for a reader who sees no color. In each profile
+every line has its own combination of color, dash pattern and marker, and
+the legend shows the same combination as the line. The choice is kept in
+the browser, as the time zone is, and the Analyzer entry of the menu and
+the links of Browse that open the analyzer pass it to the data viewer in
+the address as `profile`.
+
 The addresses `metrics.html`, `storage.html`, `appliance.html`,
 `reports.html`, `pvdetails.html`, `integration.html` and `cacompare.html`
 forward to the page that replaced them; `pvdetails.html?pv=<name>` opens that PV on the Browse PVs
@@ -377,7 +386,7 @@ takes under 50 ms.
 | Supported | The current releases of Firefox, Edge and Safari; no jQuery, no framework and no build tool. Checked in Firefox, Edge and the WebKitGTK engine of Safari, not in the Safari application |
 | Content security policy | `script-src 'self'` on every page: no inline script, event-handler attribute or style attribute, and no outside host |
 | `connect-src` | `'self'`, and `http:` and `https:` on the Browse PVs page and the Retrieval performance page, which read the data retrieval address the appliance reports |
-| Stored in the browser | The snapshot of the names (IndexedDB database `aa-browse-names`), the time zone of the console (`aa.timeZone`) and the period of the Refresh control (`aa.browse.refresh`), both in local storage; nothing else |
+| Stored in the browser | The snapshot of the names (IndexedDB database `aa-browse-names`), the time zone of the console (`aa.timeZone`), the display profile of the charts (`aa.chartProfile`) and the period of the Refresh control (`aa.browse.refresh`), all in local storage, and the last address of each menu entry (`aa.lastAddress:` followed by the page of the entry, for example `aa.lastAddress:index.html`), in session storage; nothing else |
 | Data inserted into a page | Only as text, never as markup |
 
 ## Files and site skin

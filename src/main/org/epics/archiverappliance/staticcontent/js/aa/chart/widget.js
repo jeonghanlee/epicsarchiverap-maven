@@ -5,6 +5,7 @@ import { infoButton } from "../card.js";
 import { node } from "../dom.js";
 import { MARKER_LIMIT, drawTimeSeries } from "./draw.js";
 import { currentZone, onZoneChange } from "../timezone.js";
+import { onProfileChange, withProfile } from "./profile.js";
 import { buildChartOptions, CHART_OPTIONS } from "./options.js";
 
 // The options, the open tab and the state of the panel of each chart, by the id the page gives it. A page that builds its
@@ -141,6 +142,8 @@ export function createChart(host, config) {
 
     // A change of the zone of the application redraws the last data in the new zone.
     onZoneChange(() => redraw());
+    // A change of the display profile draws the last data again with the combinations of the new profile.
+    onProfileChange(() => redraw());
 
     /** The projection is on while the panel is open on its Projection tab. */
     const projectionOn = () => memory.optionsOpen && memory.optionsTab === "projection";
@@ -155,7 +158,7 @@ export function createChart(host, config) {
         last = data;
         for (const anchor of links) {
             anchor.hidden = !data.analyzerHref;
-            anchor.setAttribute("href", data.analyzerHref || "#");
+            anchor.setAttribute("href", data.analyzerHref ? withProfile(data.analyzerHref) : "#");
         }
         drawTimeSeries(chartHost, {
             series: data.series,
@@ -251,7 +254,7 @@ export function createChart(host, config) {
         const bigLink = trackLink(analyzerLink("openAnalyzerBig"));
         bigLink.hidden = !(last && last.analyzerHref);
         if (last && last.analyzerHref) {
-            bigLink.setAttribute("href", last.analyzerHref);
+            bigLink.setAttribute("href", withProfile(last.analyzerHref));
         }
         const bigInfo = node("span", { id: idOf("chartDialogInfo") });
         if (config.help) {

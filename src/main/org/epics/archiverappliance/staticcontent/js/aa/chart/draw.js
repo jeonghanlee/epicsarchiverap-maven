@@ -8,7 +8,7 @@ import { attachGestures, RANGES } from "./gestures.js";
 import { buildLegend, HIDDEN } from "./legend.js";
 import { labelLayout } from "./layout.js";
 import { axisWidthOf, makeValueScale, PLOT_LEAST } from "./scales.js";
-import { DASHES, finiteSeries, lineLook, movingStats, splitOnGaps } from "./series.js";
+import { DASHES, finiteSeries, lineLook, markerPath, movingStats, splitOnGaps } from "./series.js";
 import { buildStatistics } from "./statistics.js";
 import { buildRangeStrip } from "./strip.js";
 import { format } from "./text.js";
@@ -62,6 +62,8 @@ export function drawTimeSeries(host, input) {
     }
     const { series, from, to, gapMs } = input;
     const legend = input.legend === true;
+    // A chart without a legend can still draw its lines through the combinations of the profile (combinations true).
+    const styled = legend || input.combinations === true;
     const all = finiteSeries(series);
     if (!all.length) {
         host.textContent = "No samples in this time range.";
@@ -221,7 +223,7 @@ export function drawTimeSeries(host, input) {
     const inView = (s) => s.points.filter((p) => p.t >= from.getTime() && p.t <= to.getTime());
     ordered.forEach((s) => {
         const slot = all.indexOf(s);
-        const look = legend ? lineLook(s, slot) : null;
+        const look = styled ? lineLook(s, slot) : null;
         const color = look ? look.color : null;
         for (const part of splitOnGaps(s.points, gapMs)) {
             // A band of one standard deviation and a running average of the last samples, under the line itself.
@@ -274,14 +276,16 @@ export function drawTimeSeries(host, input) {
         for (const s of ordered) {
             const inside = inView(s);
             const stride = Math.max(1, Math.ceil(inside.length / MARK_CAP));
+            const look = styled ? lineLook(s, all.indexOf(s)) : null;
             for (const point of inside.filter((p, i) => i % stride === 0)) {
-                const dot = plotArea.append("circle")
-                    .attr("class", s.focus ? "dot focus" : "dot")
-                    .attr("cx", x(point.t))
-                    .attr("cy", yOf(s)(point.v))
-                    .attr("r", 2.4);
-                if (legend) {
-                    dot.style("stroke", lineLook(s, all.indexOf(s)).color);
+                const cx = x(point.t);
+                const cy = yOf(s)(point.v);
+                const dot = look
+                    ? plotArea.append("path").attr("d", markerPath(look.marker)).attr("transform", `translate(${cx},${cy})`)
+                    : plotArea.append("circle").attr("cx", cx).attr("cy", cy).attr("r", 2.4);
+                dot.attr("class", s.focus ? "dot focus" : "dot");
+                if (look) {
+                    dot.style("stroke", look.color);
                 }
             }
         }

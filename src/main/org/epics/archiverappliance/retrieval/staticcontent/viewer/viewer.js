@@ -2,6 +2,7 @@
 // pv (repeatable), from and to (ISO 8601). Data comes from this retrieval server only.
 import { axisRoom, drawTimeSeries, labelRoom } from "../comm/js/aa/chart.js";
 import { node } from "../comm/js/aa/dom.js";
+import { currentProfile, mountProfileSelectIn, onProfileChange } from "../comm/js/aa/chart/profile.js";
 
 const DATA = "../../data/getData.json";
 const MATCHING = "../../bpl/getMatchingPVs";
@@ -171,6 +172,8 @@ function render() {
                 gapMs: Infinity,
                 // The bar of the viewer already holds the time range, and one chart is drawn for each unit.
                 strip: false,
+                // The lines take the combinations of the display profile, as the charts of the console do.
+                combinations: true,
             },
         });
     }
@@ -274,6 +277,10 @@ function wire() {
     });
 }
 
+// The profile of the address, if it has one, is kept before the address is written again without it.
+currentProfile();
+mountProfileSelectIn(document.querySelector(".viewer-bar"));
+onProfileChange(render);
 readAddress();
 wire();
 render();

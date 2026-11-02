@@ -8,6 +8,7 @@ import { drawHistogram, drawScatter } from "../comm/js/aa/plots.js";
 import { valueParts, dateTimeText, instantTitle } from "./browse/format.js";
 import { buildDetails } from "./browse/details.js";
 import { currentZone, onZoneChange } from "../comm/js/aa/timezone.js";
+import { onProfileChange, withProfile } from "../comm/js/aa/chart/profile.js";
 
 // Initial limits of the table, the chart, the concurrent requests and the indexed names. They are configuration; measurement and use adjust them.
 const LIMITS = { table: 100, chart: 5, concurrentRequests: 6, indexed: 500000 };
@@ -768,7 +769,7 @@ function analyzerHref(names) {
     if (currentZone() !== "browser") {
         query.set("tz", currentZone());
     }
-    return `analyzer.html?${query}`;
+    return withProfile(`analyzer.html?${query}`);
 }
 
 function plotCell(name) {
@@ -1875,6 +1876,7 @@ function wire() {
     $("listClear").addEventListener("click", clearSelection);
     // The Last event cells are written in the chosen zone; the chart widget redraws itself.
     onZoneChange(() => renderTable());
+    onProfileChange(() => renderTable());
     // A tap that leaves the cell where the note of the Plot limit was shown hides it.
     document.addEventListener("click", () => {
         if (state.plotNoteStays) {

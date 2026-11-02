@@ -171,3 +171,20 @@ button.plain:hover {
         min-height: 44px;
     }
 }
+
+/* The display profile of the charts, at the end of the bar of the viewer. */
+.viewer-bar label.chart-profile {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.viewer-bar select.chart-profile {
+    margin-left: 0.4rem;
+    min-height: 2rem;
+    padding: 0.2rem 0.4rem;
+    font: inherit;
+    color: var(--c-brand);
+    background: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 4px;
+}

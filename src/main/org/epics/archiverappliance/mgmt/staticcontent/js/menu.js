@@ -40,9 +40,26 @@
             storage.remove(key);
         }
     };
+    // The Analyzer entry carries the display profile of the charts in its address, which analyzer-forward.js passes on to the
+    // viewer. The profile is kept by aa/chart/profile.js under this key; a module cannot be imported here, so the key and the
+    // event of that module are read directly. Default is not written, as the browser time zone is not.
+    const PROFILE_KEY = "aa.chartProfile";
+    const chosenProfile = () => {
+        try {
+            const id = window.localStorage.getItem(PROFILE_KEY);
+            return id && id !== "default" && /^[a-z]+$/.test(id) ? id : "";
+        } catch (e) {
+            return "";
+        }
+    };
     const restore = () => {
         entryHref.forEach((plain, link) => {
             if (link === current || /[?#]/.test(plain)) {
+                return;
+            }
+            if (plain === "analyzer.html") {
+                const id = chosenProfile();
+                link.setAttribute("href", id ? `${plain}?profile=${encodeURIComponent(id)}` : plain);
                 return;
             }
             const saved = storage.get(plain);
@@ -55,6 +72,7 @@
     };
     restore();
     window.addEventListener("hashchange", record);
+    document.addEventListener("aa-chart-profile", restore);
     window.addEventListener("pagehide", record);
     window.addEventListener("pageshow", (event) => {
         if (event.persisted) {

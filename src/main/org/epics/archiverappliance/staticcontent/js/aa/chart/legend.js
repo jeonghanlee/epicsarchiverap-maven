@@ -1,7 +1,7 @@
 // The legend under a chart and the names of the lines a viewer has hidden through it.
 
 import { SVG_NS } from "../dom.js";
-import { lineLook } from "./series.js";
+import { lineLook, markerPath } from "./series.js";
 
 // The names of the lines a viewer has hidden through the legend, kept per chart host across redraws.
 export const HIDDEN = new WeakMap();
@@ -32,6 +32,14 @@ export function buildLegend(host, all, hidden, redraw) {
             line.setAttribute("stroke-dasharray", look.dash);
         }
         swatch.append(line);
+        // The marker of the combination sits on the line, so the legend shows what a chart with its samples marked draws.
+        const marker = document.createElementNS(SVG_NS, "path");
+        marker.setAttribute("d", markerPath(look.marker, 36));
+        marker.setAttribute("transform", "translate(15,5)");
+        marker.setAttribute("fill", "#ffffff");
+        marker.setAttribute("stroke", look.color);
+        marker.setAttribute("stroke-width", "1.2");
+        swatch.append(marker);
         item.append(swatch, document.createTextNode(s.name));
         if (s.egu) {
             const unit = document.createElement("span");
