@@ -311,11 +311,16 @@ function summarize(source, message, test, requireKnown) {
  * Names close to the text of a Contains search that has fewer exact matches than SIMILAR_FEWER_THAN: up to SIMILAR_PER_SETTING names of
  * the typo setting of uFuzzy, then up to SIMILAR_PER_SETTING names that only its setting for missing characters finds, each in the order
  * uFuzzy gives them, without the exact matches and at most SIMILAR_MAX. None for another mode, a text of fewer than SIMILAR_MIN_CHARS
- * characters, a chosen prefix or Show report, or an answer of the server (the list of names is not held then).
+ * characters, a text equal to the name of an exact match (the name is typed in full), a chosen prefix or Show report, or an answer of the
+ * server (the list of names is not held then).
  */
 function similarNames(message, exact) {
     const query = message.query.trim();
     if (overflow || message.mode !== "contains" || message.prefix || message.allowed || query.length < SIMILAR_MIN_CHARS || exact.total >= SIMILAR_FEWER_THAN) {
+        return [];
+    }
+    const typed = query.toLowerCase();
+    if (exact.found.some((name) => name.toLowerCase() === typed)) {
         return [];
     }
     try {
