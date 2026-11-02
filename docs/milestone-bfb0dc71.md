@@ -26,7 +26,7 @@ The four Complete rows come first. The rows below them are listed in the work or
 | Appliance defects | M26 | Preserve Channel Access metadata across reception and updates | Milestone | Complete | No | M25 | Precision-only and host changes reach stored configuration, short, float and byte control limits are preserved, and property-event, field metadata and API-to-screen paths have verified values and explanations; issue #70; [detail](#m26---preserve-channel-access-metadata-across-reception-and-updates) |
 | Appliance defects | M12 | Delete the moved partition of a zip store that is an ETL source | Milestone | Complete | No | D6, D12 | After a move out of a `ZIP_PER_PV` store the archive no longer holds the `.pb` entry of the moved partition nor its post-processor entries, the next store holds the data once, the explicit deletion keeps working and the suite passes; issue #52; [detail](#m12---delete-the-moved-partition-of-a-zip-store-that-is-an-etl-source) |
 | Interface console | M24 | Explain sampling changes and hide irrelevant confirmation controls | Milestone | Complete | No |  | Change sampling shows only applicable controls and explains MONITOR, SCAN and the period; required confirmations of other operations remain visible; issue #74; [detail](#m24---explain-sampling-changes-and-hide-irrelevant-confirmation-controls) |
-| Interface console | M29 | Show the sample buffer figure in the mdBook | Milestone | Not started | Yes | M24 | The mdBook shows with a figure how the events of a PV pass through its sample buffer, how the slots follow the MONITOR period and which samples are lost when the buffer overflows, with values that agree with the current code, and the book builds with no broken link; issue #75; [detail](#m29---show-the-sample-buffer-figure-in-the-mdbook) |
+| Interface console | M29 | Show the sample buffer figure in the mdBook | Milestone | In progress | No | M24 | The mdBook shows with a figure how the events of a PV pass through its sample buffer, how the slots follow the MONITOR period and which samples are lost when the buffer overflows, with values that agree with the current code, and the book builds with no broken link; issue #75; [detail](#m29---show-the-sample-buffer-figure-in-the-mdbook) |
 | Appliance defects | M13 | Let a type change to a string or a waveform type succeed | Milestone | Not started | Yes | D9, D12 | `changeTypeForPV` to `DBR_SCALAR_STRING` and to `DBR_WAVEFORM_DOUBLE` on a PV archived as `DBR_SCALAR_DOUBLE` returns 200, the PV resumes with the new type and its dropped-events count stops growing, the earlier samples stay readable across the change, and the record-change checks of `src/resources/test/st.cmd` with `RECORD_CHANGE=Types` pass for all four records; issue #45; [detail](#m13---let-a-type-change-to-a-string-or-a-waveform-type-succeed) |
 | Interface console | M22 | Restore console pages after tab navigation | Milestone | Complete | No |  | Returning to a console page through the menu restores its last address, starting with the previously selected and plotted PVs of the viewer; the PV name inputs use the browser's input memory and suggest names; deliberate removal remains effective; issue #72; [detail](#m22---restore-console-pages-after-tab-navigation) |
 | Interface console | M27 | Distinguish plotted lines and retain accessible display preferences | Milestone | Not started | Yes |  | Plot lines differ beyond color; color-vision display options and time/display defaults survive navigation within the browser session; issue #71; [detail](#m27---distinguish-plotted-lines-and-retain-accessible-display-preferences) |
@@ -2159,7 +2159,7 @@ Last Compared: 2026-11-01 00:58 PDT; issue #74 body replaced again with the proj
 Origin: bfb0dc71 / M29
 Identity History: none
 GitHub Issue: #75 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/75)
-Status: Not started
+Status: In progress
 
 ##### Summary
 
@@ -2167,47 +2167,59 @@ The explanation of the sample buffer that M24 puts on the help page as text is e
 
 ##### Scope
 
-- One figure in the mdBook of the path of an event of a MONITOR PV through the checks of the engine, the buffer and the write, of the capacity of the buffer for a given period (the example of 1.0 s with 11 slots and of 0.1 s with 110), and of the samples kept and dropped when more samples arrive between two writes than the buffer holds.
-- The page that carries the figure is chosen at planning; `faq.md` and `architecture.md` are the candidates.
-- The figure and its text agree with the current code and with the help page of M24.
+- Three figures in the mdBook, drawn as SVG files under `docs/book/src/images` with their own light background so that they are readable on every theme of the book, each with a text alternative: (1) the path of an event of a MONITOR PV through the checks of the engine (`wrong timestamp`), the buffer (`type change`, `buffer full`), the swap of the buffer at each write period, which happens only when the buffer holds samples, and the write to the short term store, which retries the same batch while new samples fill the new buffer when a write fails, with the three places where a sample is lost marked; (2) the capacity of the buffer for a given period, with the examples of 1.0 s with 11 slots and of 0.1 s with 110; (3) the samples kept and dropped when more samples arrive between two writes than the buffer holds (20 samples into 11 slots keep the newest 11 and lose the oldest 9), and the update rate above which the loss starts (the capacity divided by the write period).
+- The figures and their text are one new section "The sample buffer" of `architecture.md`, placed after the engine bullets of its data-flow description; `faq.md` keeps its text and gets one sentence that links to the section.
+- One unit test in the repository that pins the overflow numbers of figure 3 on the real `SampleBuffer` (20 samples into 11 slots: the newest 11 kept, 9 counted as buffer-full losses), next to `SampleBufferOverFlowTest`, because `SampleBufferCapacityTest` already pins 11 and 110 but no test pins the kept and dropped samples.
+- The figures and their text agree with the current code and with the help page of M24.
 
-Out of scope: changing acquisition behavior, buffer sizing rules or sampling defaults; the help page and the dialog of M24; a figure on any page of the console.
+Out of scope: changing acquisition behavior, buffer sizing rules or sampling defaults; the help page and the dialog of M24; a figure on any page of the console; a figure of the case in which a PV updates more slowly than its period and leaves slots empty (the help page of M24 says it in text); the history of the earlier capacity formula.
 
 ##### Completion Criteria
 
-- The figure is in the book source as a file that the book references, readable on the light and the dark themes of the book.
-- Every number in the figure and its text equals the value returned by the current code for the same inputs.
-- The book builds and its internal links and fragments have no error.
+- The three figures are SVG files in the book source that the book references, each with a text alternative, and they are readable on the light and the coal theme of the book.
+- The section "The sample buffer" of `architecture.md` carries them, and `faq.md` links to it.
+- Every number in the figures and their text equals the value returned by the current code for the same inputs, and the overflow numbers are pinned by a unit test that passes.
+- The book builds with the `aa-mdbook` image, which holds the mdBook and admonish versions that the CI uses, and every link and fragment of the generated pages resolves.
+- The title and the body of issue #75 describe the three figures, the new section and the test before the issue is closed.
 
 ##### Dependencies And Decisions
 
 - Decision Date: 2026-10-31. The owner decided to add the figure to the mdBook after M24 closes, as separate work, and to put it in the Milestone section. On the same date the owner added this row to release Ahsoka, after M24 and before the release (D15). The row depends on M24 because the figure must agree with the explanation M24 writes.
 - Source of the figure: a draft page made on 2026-10-31 outside the repository. Its values were checked against the current code on the same date: `ArchiveEngine.computeBufferCapacity` returned 11 for a period of 1.0 s and 110 for 0.1 s with a write period of 10 s and a margin of 1 s, and a run of the real `SampleBuffer` (program `work/m24-repro/Ovf.java`, untracked) with 11 slots and 20 samples kept the newest 11 and counted 9 buffer-full losses.
+- Decision Date: 2026-11-01. The owner directed that the findings of the first second-person review of this plan be applied: the title and the body of issue #75 ("Show the sample buffer path and sizing in a figure of the manual") describe one figure, so before the issue is closed they are replaced with the projection of this detail through the issue operation, as was done for issues #72 and #74; the link check of T1 is a script that is named in the test, not a check described in words.
+- Decision Date: 2026-11-01. The owner directed that the findings of the first third-person review of this plan be applied: the book is built with the `aa-mdbook` image only, because the local `mdbook` (0.4.48, no admonish) is not the build of the CI (0.4.52 with admonish 1.20.0), and figure 1 shows that the buffer is swapped only when it holds samples and that a failed write is retried with the same batch.
+- Decision Date: 2026-11-01. The owner accepted the recommended choices of the new plan: the figures go to a new section of `architecture.md` with a link from `faq.md`, because three figures and their text are longer than one answer of the FAQ; the figures are SVG files with their own light background, because an image does not follow the theme that the reader chooses in the book; the overflow numbers are pinned by a unit test, because nothing else guards the numbers that figure 3 states; the fourth figure of the draft is not part of this row.
+- The draft page of 2026-10-31 is Korean, so the figures are drawn again in English; it also holds a capacity table and a table of the three losses that stay outside this row except for the loss places of figure 1. `SampleBufferCapacityTest` pins 11, 110 and 2 for the default write period and margin, and `SampleBufferOverFlowTest` checks only that a loss is counted.
 - The capacity of a buffer is returned by `getPVDetails` as "Sample buffer capacity" only for Channel Access PVs; the console Details window does not show it. The text of the figure must not say that the console shows it.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
-Superseded Plan Artifacts: none
+Plan Status: accepted
+Plan Acceptance: 2026-11-01; owner acceptance of the plan after three third-person and three second-person passes, the last of each with no finding above the floor
+Implementation Authorization: 2026-11-01, owner directed to implement and verify the accepted plan
+Superseded Plan Artifacts: the plan of 2026-10-31, which left the page to planning and checked the figure with one build and one comparison
 
-1. After M24 is Complete, choose the page with the owner and draw the figure as a file under `docs/book/src/images` that uses colors readable on every theme of the book. Check: T1.
-2. Write the text beside the figure from the explanation of M24 and from the values above, then run the book build and the link check. Checks: T1, T2.
+1. After plan acceptance and implementation authorization, add the unit test of the overflow numbers and run it with `SampleBufferCapacityTest` to obtain the values that the figures state. Check: T2.
+2. Draw the three figures as English SVG files under `docs/book/src/images`, with a light background, readable text and a text alternative.
+3. Write the section "The sample buffer" in `architecture.md` from the explanation of M24 and the executed values, and add the sentence with the link to `faq.md`. Check: T3.
+4. Build the book with the `aa-mdbook` image (a local `mdbook` is a preview only: it is another version and lacks the admonish preprocessor), check every link and fragment of the generated pages with the script of T1, and look at the figures on the light and the coal theme in a browser. Check: T1.
+5. Before the issue is closed, replace the title and the body of issue #75 with the projection of this detail through the issue operation and read them back.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Book | The mdBook build and the link check over the generated HTML; view the figure on the light and the dark theme | `aa-mdbook` image and a browser | The book builds with no broken link and the figure is readable on both themes |
-| T2 | Contract | Run `ArchiveEngine.computeBufferCapacity` and the real `SampleBuffer` for every number in the figure and its text, and compare | Local build of the repository | Every number agrees with the executed value |
+| T1 | Book | Build with the `aa-mdbook` image of the CI; run a script over the generated HTML (kept under `work/`, untracked, so the register records its result and its command) that checks that every relative `href` and `src` names a file of the output, that a link which starts with the `site-url` of `book.toml` (`/epicsarchiverap-maven/`) is resolved against the root of the output, and that every `#fragment` is an `id` of its target page, and prints the number of links checked and the number that fail; open the section on the light and the coal theme and look at each figure | `aa-mdbook` image and a browser | The book builds, the script reports the links it checked and none that fails, and the figures and their text are readable on both themes |
+| T2 | Contract | Run `SampleBufferCapacityTest` and the new overflow test on the real `ArchiveEngine.computeBufferCapacity` and `SampleBuffer`, and compare each number of the figures and their text with the executed value | Local build of the repository | The tests pass and every number agrees with the executed value |
+| T3 | Contract | Compare each label of figure 1 and each statement of the section with `ArchiveChannel.addValueToBuffer`, `SampleBuffer.add` and `samplesToWrite`, `WriterRunnable` and the help page of M24 | The source files at the commit under test | Each label and statement describes what the code does, and no statement says that the console shows the capacity |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | `aa-mdbook` image and a browser | Pending | none |
-| T2 | Not run | Local build of the repository | Pending | none |
+| T1 | 2026-11-01 14:58 PST | `aa-mdbook` image (mdBook 0.4.52 with admonish, as in the CI) and headless Firefox 153.6.0 ESR | Pass | `docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs/book:/book" aa-mdbook build` built the book; `work/m29-linkcheck.py docs/book/book` checked 1,199 links in 21 pages with 0 failures, and on a copy with a broken fragment and a missing figure it reported both. The three figures loaded (780 px wide, complete) and were read in the built `architecture.html` on the light and the coal theme, each on its own white background. The admonish preprocessor prints a warning that it was built against mdBook 0.4.51; the build is unaffected. |
+| T2 | 2026-11-01 14:58 PST | JDK 21.0.13, offline wrapper Maven | Pass | `./mvnw -B -ntp -o test -Dtest=SampleBufferKeepsNewestTest,SampleBufferCapacityTest`: 7 tests, no failure. `SampleBufferCapacityTest` returns 11 for 1.0 s and 110 for 0.1 s; the new tests show 20 samples into 11 slots keep the samples 10 to 20 and count 9 buffer-full losses, an empty buffer is not swapped, and a failed write returns the same batch while new samples go to the new buffer. The rates of the figure (1.1 and 11 updates per second) are 11 and 110 slots divided by the 10 s write period. The default suite `./mvnw -B -ntp -o verify -DargLine=-Xmx2g -DforkCount=1 -DreuseForks=true` finished with 1,212 tests (1,209 before this change and the 3 new ones), no failure, no error and no skip, BUILD SUCCESS in 13 min 39 s. |
+| T3 | 2026-11-01 14:58 PST | The source files of the working tree | Pass | Each label of figure 1 was compared with the code: the timestamp check of `ArchiveChannel.addValueToBuffer` and `isfutureorpastOrSame` (too far from the server clock by `server_ioc_drift_seconds`, earlier than or equal to the previous sample, an equal timestamp not counted), `SampleBuffer.add` (type change, buffer full with `removeFirst` and the buffer-full counter), `SampleBuffer.samplesToWrite` (an empty buffer gives nothing, the same batch until `samplesWritten`) and `WriterRunnable.writeBatch` (`appendData` after the swap). The three losses have separate counters in `PVMetrics`. The capacity as Sample buffer capacity is added for Channel Access PVs only in `PVDetails`, and the section does not say that the console shows it. The text agrees with the help page of M24 (11 and 110 slots, the oldest sample pushed out). |
 
 ##### Closure Evidence
 
