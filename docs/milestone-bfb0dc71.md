@@ -1395,8 +1395,8 @@ The audit of the retrieval protection (M85 (previous document, commit bfb0dc71) 
 
 ##### Scope
 
-- Run each candidate as a real request through a built appliance at a 512 MiB heap, started through `RetrievalMemoryNetworkFixture` (heap from `archappl.memory.test.heap`, default 512m; a generated 1 Hz store of `MemoryQualification:SineV1` over 30 days; the Memory admission tests paragraph of `TESTING.md` describes it): `median_3600` over 30 days next to `mean_3600`; `firstSample`, `deadBand`, `flyers` and `ignoreflyers` over the raw range of one PV (the operator names are case sensitive, and a name that matches no operator is refused as unknown, which is not a result for the candidate); `getDataForPVs` with many `pv` parameters; `getDataAtTime` with a list of 10,000 names; the PVAccess call with a long list. Record the status, the memory after collection and whether the JVM stayed alive.
-- For a candidate that exhausts the heap or ends the JVM, extend the declared-size estimate or add the in-loop check at the place named above, with a test that fails without it; for one that is refused or completes safely, record it as examined.
+- Run each candidate as a real request through a built appliance at a 512 MiB heap, started through `RetrievalMemoryNetworkFixture` (heap from `archappl.memory.test.heap`, default 512m; a generated 1 Hz store of `MemoryQualification:SineV1` over 30 days; the Memory admission tests paragraph of `TESTING.md` describes it): `median_3600` over 30 days next to `mean_3600`; `firstSample`, `deadBand`, `flyers` and `ignoreflyers` over the raw range of one PV (the operator names are case sensitive, and a name that matches no operator is refused as unknown, which is not a result for the candidate); `getDataForPVs` by POST with a JSON body (`Content-Type: application/json`, an array of names) of 10,000 names, which `getPVNamesFromPostBody` reads from the body; the type is sent exactly as `application/json`, without a charset, because the server compares the whole string and reads any other type as plain text, one name per line, so that a JSON array on one line becomes a single name that matches nothing and the result would not be a result for the candidate; and by GET with the most names that the address allows (the request line of the container is limited to 8 KiB by `maxHttpHeaderSize`, and request parameters beyond `maxParameterCount`, default 10,000, are ignored), a limit that is measured first and recorded; `getDataAtTime` with a list of 10,000 names; the PVAccess call with a list of 10,000 names. Record the status, the memory after collection and whether the JVM stayed alive.
+- For a candidate that exhausts the heap or ends the JVM, extend the declared-size estimate or add the in-loop check at the place named above, with a test that fails without it; for one that is refused or completes safely, record it as examined in `docs/CLOSED_DOORS.md`, after the owner decides its fate (D10): a section of its own gives the examined commit and the date of the decision, and one row for each such candidate gives the Candidate, the Verdict, the Premise and the Evidence, in the way of CD-18.
 
 Out of scope: the thread and valve limits and the other qualification cells (M9); bounding the concurrent PVAccess calls (M8); a change of the memory thresholds without a measurement that motivates it.
 
@@ -1404,29 +1404,33 @@ Out of scope: the thread and valve limits and the other qualification cells (M9)
 
 - Each of the five candidates has a recorded real-request result at 512 MiB: refused, meaning HTTP 400 or 503 with the name of the condition in the response; or completed, meaning HTTP 200 with the whole answer and the JVM still running; or exhausted, meaning an `OutOfMemoryError` in the console log or the JVM ended. A refusal for an operator name that matches no operator is not a result. For the PVAccess call there is no HTTP status: refused means the retrieval log names the condition and the client ends at its own timeout, and completed means the whole answer arrives.
 - Every candidate that exhausted the heap has a correction with a test that fails without it and passes with it.
+- Each candidate that is refused or completes safely, and that the owner decides to keep, is recorded in `docs/CLOSED_DOORS.md` as examined, in the way of CD-18.
 - The retrieval page of the book names the operators that declare no size, if any remain.
 
 ##### Dependencies And Decisions
 
-- D10 (Decision Date 2026-10-24): long-term, not checked before the merge to master.
+- Decision Date: 2026-11-02. The owner decided that the request harness is an integration test class kept in `src/test`, in the way of `RetrievalMemoryNetworkTest`, and not a driver used once.
+- Decision Date: 2026-11-02. The owner decided the sizes of the three name lists: 10,000 names for each of them. `getDataForPVs` accepts its names in the body of a POST and in the address of a GET; the 10,000 names are sent in the body, because the address of a GET cannot carry them (about 8 KiB), and the GET is also run with the most names that the address allows, so that a result at a size the servlet did not see is not recorded as safe.
+- D10 (Decision Date 2026-10-24): the five candidates enter as long-term work and are not checked before the merge to master. D15 (Decision Date 2026-10-31) supersedes this for this row: M11 is part of release Ahsoka, so the candidates are checked before that merge.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-11-02, after five third-person and two second-person passes of the plan with its sizes, the last of each with no finding above the floor
+Implementation Authorization: 2026-11-02, owner authorized implementing and verifying the accepted plan (steps 1 to 4); no commit or push is authorized by it
 Superseded Plan Artifacts: none
 
-1. A request harness that sends each candidate at a 512 MiB heap and records the status, the memory after collection and the JVM state. Check: T1.
+1. A new integration test class in `src/test` next to `RetrievalMemoryNetworkTest`, started through `RetrievalMemoryNetworkFixture`, that sends each candidate at a 512 MiB heap and records the status, the memory after collection and the JVM state. Check: T1.
 2. For each candidate that exhausts the heap, the estimate or the in-loop check and its test. Check: T2.
-3. The book page. Check: T3.
+3. After the owner decides the fate of each candidate that is refused or completes safely (D10), a section in `docs/CLOSED_DOORS.md` with the examined commit and the date of the decision, and one row for each such candidate. Check: T1.
+4. The book page. Check: T3.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Integration, measurement | The five candidates as real requests at a 512 MiB heap through `RetrievalMemoryNetworkFixture`, in the forms named in Scope | JDK 21, Tomcat 9.0.121, built WARs, `softIocPVX` | A recorded result for each: refused with 400 or 503 and a named condition, or completed without exhausting the heap; no OutOfMemoryError that ends the JVM |
-| T2 | Integration | For each candidate that exhausted the heap, the same request on the corrected code and on the code before it | same | Fails without the correction and is refused or completes with it |
+| T1 | Integration, measurement | The five candidates as real requests at a 512 MiB heap through `RetrievalMemoryNetworkFixture`, in the forms named in Scope, by the new integration test, which carries `@Tag("integration")` and runs after `package` (the WARs built on the same day and commit) with `./mvnw test -P integration -Dtest=<class>`; the integration set is not part of the CI `verify`, so the result is recorded in this detail | JDK 21, Tomcat 9 from `TOMCAT_HOME` (the version is recorded at the run), built WARs, `softIocPVX` | A recorded result for each: refused with 400 or 503 and a named condition, or completed without exhausting the heap; no OutOfMemoryError that ends the JVM; for each candidate that is refused or completes safely, the owner has decided to keep it and its row is in `docs/CLOSED_DOORS.md` |
+| T2 | Integration | For each candidate that exhausted the heap, the same request on the corrected code and on the code before it, run in the way of T1 | same | Fails without the correction and is refused or completes with it |
 | T3 | Book | The mdBook build and the link check with the retrieval page naming the operators that declare no size | `aa-mdbook` image | The book builds with no broken link |
 
 ##### Verification Results
