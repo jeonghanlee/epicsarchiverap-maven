@@ -34,7 +34,7 @@ The four Complete rows come first. The rows below them are listed in the work or
 | Configuration | M28 | Study dynamic configuration reload and immediate API application | Milestone | Not started | Yes |  | A recommendation, supported by code references and by measurement on the real configuration and acquisition paths, classifies each configuration setting as dynamically applicable, requiring Channel Access context recreation or requiring a restart, compares 60-second polling with explicit API application, and states its unsupported cases and the behavior that remains unverified; issue #68; [detail](#m28---study-dynamic-configuration-reload-and-immediate-api-application) |
 | Retrieval protection | M10 | Decide the stamping and filtering rule of summary bins at the window edges | Milestone | Open | No | D8 | A recorded decision on whether a bin whose samples lie inside the requested window is returned when its midpoint stamp lies after the window end, checked against the archive viewers and the Python clients; if the rule changes, such a bin is returned regardless of the request time and `VariousPostProcessorTest` passes with its original one-day window; if it stays, the retrieval page of the book states it; issue #59; [detail](#m10---decide-the-stamping-and-filtering-rule-of-summary-bins-at-the-window-edges) |
 | Scripts and checks | M17 | Mail delivery for the alert checks | Milestone | Not started | Yes |  | emailHandler.py's mail delivery is available to the on-demand alert checks of M37 (previous document, commit bfb0dc71) with a defined configuration, timeout and failure contract and is verified against a real SMTP endpoint; [detail](#m17---mail-delivery-for-the-alert-checks) |
-| Retrieval protection | M8 | Bound the concurrent calls of the PVAccess retrieval service | Milestone | Not started | Yes | D7 | The retrieval PVAccess service runs at most a measured number of calls at a time and refuses the next with a message in its log; a test with more long calls than that, on separate connections, fails on the old code and passes on the new; [detail](#m8---bound-the-concurrent-calls-of-the-pvaccess-retrieval-service) |
+| Retrieval protection | M8 | Bound the concurrent calls of the PVAccess retrieval service | Milestone | Not started | Yes | D7 | The retrieval PVAccess service runs at most a configured number of calls at a time (default 100, not derived from a load measurement) and refuses the next with a message in its log; a test with more long calls than that, on separate connections, fails on the old code and passes on the new; [detail](#m8---bound-the-concurrent-calls-of-the-pvaccess-retrieval-service) |
 | Retrieval protection | M11 | Check the retrieval operators outside the declared-size check | Milestone | Complete | No | D10 | Each of the five candidates, `FirstSamplePP`, `DeadBand`, `Fliers` and `IgnoreFliers`; the per-bin values of `Median`, `Kurtosis` and `Skewness`; the number of `pv` parameters of `getDataForPVs`; the names posted to `getDataAtTime`; the `;` separated names of the PVAccess call, has a recorded real-request result at a 512 MiB heap, refused with a named condition or completed without exhausting the heap, and every candidate that exhausted it has a correction with a test that fails without it; issue #60; [detail](#m11---check-the-retrieval-operators-outside-the-declared-size-check) |
 | Scripts and checks | M16 | Modernize the retained state-changing sample scripts | Milestone | Not started | Yes |  | Each of the seven retained scripts that change appliance state has a defined input, response, timeout and failure contract, keeps its recorded procedure, and passes real-entry-point verification against the appliance; the scripting page documents each; [detail](#m16---modernize-the-retained-state-changing-sample-scripts) |
 | Scripts and checks | M18 | Verify the proxy to an external Archiver Appliance | Milestone | Not started | Yes |  | An integration test on two appliances registers the second as an external `ARCHAPPL_PBRAW` server of the first and observes, through the first, the data, the name match and the value at a time of a PV archived only on the second; [detail](#m18---verify-the-proxy-to-an-external-archiver-appliance) |
@@ -1192,8 +1192,8 @@ The PVAccess server of `core-pva` 5.0.5 runs an RPC call on the receive thread o
 
 ##### Scope
 
-- The retrieval PVAccess service (`PvaDataRetrievalService`) takes a permit for each call and refuses the call when none is free, with a message in the log of the retrieval application; as for any refused PVAccess call, the caller sees its own timeout (decision (4) of M85 (previous document, commit bfb0dc71)).
-- The number of permits is a measured value; the valve concurrency that M85 (previous document, commit bfb0dc71) chooses is its starting point.
+- The retrieval PVAccess service (`PvaDataRetrievalService`) takes a permit for each call and refuses the call when none is free, with a message in the log of the retrieval application. What the caller sees for a refused call is observed in T2: decision (4) of M85 (previous document, commit bfb0dc71) and the M11 observation say its own timeout, while the library sends an error reply for an exception from `call`.
+- The number of permits is read from a property of its own, separate from the valve concurrency. Its default is the valve default, 100, and is recorded as not derived from a load measurement (D8); the measurement belongs to M9. A permit count above the number of connections that call at the same time never refuses, because calls on one connection run one after the other.
 
 Out of scope: the duration of a call, which no layer bounds in PVAccess; the management PVAccess service (`PvaMgmtService`); the HTTP valves (M85 (previous document, commit bfb0dc71)).
 
@@ -1201,36 +1201,42 @@ Out of scope: the duration of a call, which no layer bounds in PVAccess; the man
 
 - With more long calls than permits, on separate connections, the permits are used and the next call is refused with a message in the log of the retrieval application.
 - When a call ends, the next call is accepted.
+- The number of permits is read from its own property: the default is 100 and a set value replaces it.
 - The default suite and the PVAccess integration classes pass.
 
 ##### Dependencies And Decisions
 
 - D7 (Decision Date 2026-10-21): entered from the audit of M85 (previous document, commit bfb0dc71); it does not block M85 (previous document, commit bfb0dc71) or the merge.
-- Open at the plan: the number of permits; whether the duration of a call is bounded and how; whether the management service takes the same limiter.
+- Decided at the plan review (Decision Date 2026-11-02): the permit default is 100, as the valve default, without a load measurement; the property is its own and not the valve property; the duration of a call and the management service stay out of scope.
+- Observed in T2 (2026-11-02): a refused call stays pending at the caller for the 10 s the test waits, as M11 observed, although the library sends an error reply for an exception from `call`; a call that takes long is made through the real path by holding the PB file reads of two day-long raw calls (`PbReadHold`) in the 512 MiB fixture.
+- Below the floor, recorded for a later stage (third-person review of 2026-11-02, owner confirmed): the refusal writes one warning line per refused call, so a flood of refused calls writes as many lines; an invalid value of the property stops only the PVAccess service at servlet init, while an invalid memory setting stops the config service.
+- Below the floor, recorded for a later stage (second-person review of 2026-11-02, owner confirmed): the book gives no rule for choosing a permit count other than the default; the load measurement that would support one belongs to M9.
+- Below the floor, recorded for a later stage (third-person review of 2026-11-02, owner confirmed): two `assertTrue(!x)` calls in `PvaCallLimiterNetworkTest` read better as `assertFalse`.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-11-02, after the plan review with three owner decisions and one re-review whose four findings are incorporated
+Implementation Authorization: 2026-11-02, owner authorized implementing and verifying the accepted plan (steps 1 to 3); no commit or push is authorized by it
 Superseded Plan Artifacts: none
 
 1. A limiter class with a fixed number of permits that never waits. Check: T1.
-2. The retrieval service takes a permit around each call and releases it in a `finally`. Check: T1 and T2.
+2. The retrieval service takes a permit around each call, before the memory request begins, and releases it in a `finally`. A refusal writes a message to the log of the retrieval application. Check: T1 and T2.
+3. The number of permits comes from its own property with the default 100; the book page of retrieval states that the default is not derived from a load measurement and that a count above the simultaneous connections never refuses. The test T2 sets the property to a small number. The property takes one of the two existing prefixes, `archappl.valve.` or `org.epics.archiverappliance.retrieval.memory.`, and enters the table of properties of the book. Check: T1, T2 and the book link check.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Unit | The limiter with more concurrent takers than permits, and a release | JDK 21 | Only the permits are granted, the others are refused at once, and a released permit is granted again |
-| T2 | Integration | A PVAccess retrieval service with a call that takes long, called from more connections than permits, with the logger of the library on | JDK 21, Tomcat 9.0.121, `softIocPVX` | The calls up to the permits are answered, the next is refused with a message in the log, a call after one has ended is answered; fails on the old code |
+| T1 | Unit | The limiter with more concurrent takers than permits, and a release | JDK 21 | Only the permits are granted, the others are refused at once, and a released permit is granted again; the permit count is 100 without the property and the set value with it |
+| T2 | Integration | A PVAccess retrieval service with a call that takes long, called from more connections than permits, with the logger of the library on | JDK 21, Tomcat 9.0.121, `softIocPVX` | The calls up to the permits are answered, the next is refused with a message in the log, a call after one has ended is answered; on the old code every call is accepted, so the call beyond the permits is answered and no refusal message appears, and the test fails |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | pending | | | |
-| T2 | pending | | | |
+| T1 | 2026-11-02 20:20 PST | JDK 21 | Pass: 5 tests; 40 concurrent takers on 5 permits grant exactly 5; a released permit is granted again; the count is 100 without the property and the set value with it; a non-integer or zero value is rejected | `PvaCallLimiterTest`, working tree on top of 8af7d922 |
+| T2 | 2026-11-02 23:50 PST | JDK 21, Tomcat 9.0.121, WAR built from the working tree, 512 MiB heap, private network namespace | Pass with 2 permits: three failing calls (name not archived), one after the other, fail inside the retrieval and none is refused; two day-long raw calls on separate connections held in their PB reads; the third call refused with one message in the log of the retrieval application and seen pending by the caller; the held calls kept running and completed after the release; a call after them answered and not refused. On the unchanged service the test fails at the refusal message (0 messages); on a service that returns the permit only on the normal path it fails at the third failing call (refused, permits leaked) | `PvaCallLimiterNetworkTest`; the pass, the old-code failure and the mutant failure are separate runs of the same test; `PvaMemoryNetworkTest` (4) and `PvaOperatorMemoryNetworkTest` (2) pass; the default suite passes; the book builds and 1,201 links resolve |
 
 ##### Closure Evidence
 
