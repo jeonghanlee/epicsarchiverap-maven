@@ -262,6 +262,12 @@ the number of bins or points times a byte count for each. A raw read streams
 its data and declares nothing, so it completes while there is no memory
 pressure, even when it is longer than the heap.
 
+The operators `firstSample`, `deadBand`, `flyers`, and `ignoreflyers` declare
+no size either. While they build the result they keep the events they select in
+memory. The declared-size check does not count that memory. The pressure check,
+which runs while the request reads events, stops such a request with HTTP 503
+when the memory after collection passes its threshold.
+
 Admission refuses every new request while the memory after collection stays
 above its threshold, and accepts requests again once the data that caused the
 state is released. Pressure stops only requests above the allocation floor,
