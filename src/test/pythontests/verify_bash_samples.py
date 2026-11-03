@@ -304,9 +304,13 @@ def list_type_changes_cases(run):
     pv = ensure_type_change(run)
 
     def names_changed_pv(original, replacement):
-        reason = same_output(original, replacement)
-        if reason:
-            return reason
+        # Intentional difference: the engine pauses the changed PV and the report lists it with its two types;
+        # the original reads the details of the PV, which carry no engine fields once the channel is gone, and
+        # ends with a KeyError, while the replacement prints the PV from the report row.
+        if original.returncode == 0 or "KeyError" not in original.stderr:
+            return f"the original was expected to fail on the paused PV; exit {original.returncode}"
+        if replacement.returncode != 0 or replacement.stderr:
+            return f"replacement exit {replacement.returncode}, stderr {replacement.stderr!r}"
         if pv not in replacement.stdout or "Current DBR_SCALAR_DOUBLE" not in replacement.stdout:
             return "output does not show the changed PV with its CA type"
         return None

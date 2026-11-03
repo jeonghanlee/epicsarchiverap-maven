@@ -82,6 +82,22 @@ class ListTypeChangesBashTest(unittest.TestCase):
         self.assertEqual(urlsplit(self.requests[0]).path, "/mgmt/bpl/getPVsByDroppedEventsTypeChange")
         self.assertEqual(parse_qs(urlsplit(self.requests[2]).query), {"pv": ["TEST:a"]})
 
+    def test_paused_pv_row_prints_its_types_without_reading_details(self):
+        self.report = (200, json.dumps([{"pvName": "TEST:a", "eventsDropped": "3"},
+                                        {"pvName": "TEST:paused", "oldType": "DBR_SCALAR_DOUBLE", "newType": "DBR_SCALAR_INT"}]).encode())
+        result = self.cli(self.url)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, self.line("TEST:a") + self.line("TEST:paused", "DBR_SCALAR_DOUBLE", "DBR_SCALAR_INT"))
+        self.assertEqual(result.stderr, "")
+        self.assertEqual([parse_qs(urlsplit(r).query).get("pv") for r in self.requests], [None, ["TEST:a"]])
+
+    def test_row_with_one_type_reads_the_details(self):
+        self.report = (200, json.dumps([{"pvName": "TEST:a", "oldType": "DBR_SCALAR_DOUBLE"}]).encode())
+        result = self.cli(self.url)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, self.line("TEST:a"))
+        self.assertEqual(parse_qs(urlsplit(self.requests[1]).query), {"pv": ["TEST:a"]})
+
     def test_empty_report_prints_nothing(self):
         self.report = (200, b"[]")
         result = self.cli(self.url)

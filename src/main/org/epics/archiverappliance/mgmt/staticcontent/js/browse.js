@@ -62,7 +62,7 @@ const REPORTS = {
     silent: { endpoint: "../bpl/getSilentPVsReport", params: TOP, value: "lastKnownEvent", ranked: true, note: "Silent longest first. Beside each PV: the time of its last event." },
     droppedtime: { endpoint: "../bpl/getPVsByDroppedEventsTimestamp", params: TOP, value: "eventsDropped", ranked: true, note: "Highest first. Beside each PV: events dropped for a wrong time stamp." },
     droppedbuffer: { endpoint: "../bpl/getPVsByDroppedEventsBuffer", params: TOP, value: "eventsDropped", ranked: true, note: "Highest first. Beside each PV: events dropped by buffer overflow." },
-    droppedtype: { endpoint: "../bpl/getPVsByDroppedEventsTypeChange", params: TOP, value: "eventsDropped", ranked: true, note: "Highest first. Beside each PV: events dropped by a type change." },
+    droppedtype: { endpoint: "../bpl/getPVsByDroppedEventsTypeChange", params: TOP, value: "eventsDropped", ranked: true, note: "Highest first. Beside each PV: events dropped by a type change. The PVs the engine paused for a type change follow, without a count." },
 };
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

@@ -493,9 +493,10 @@ order.
 ### Report type changes and engine activity
 
 [listTypeChanges.bash](samples/listTypeChanges.bash) lists each PV that
-drops events because its type changed, with the type it started with and
-the type Channel Access reports. A PV whose details cannot be read is
-reported on stderr, the remaining PVs are listed, and the script exits 1.
+drops events because its type changed, including the PVs the engine paused
+for that reason, with the type it started with and the type the control
+system now reports. A PV whose details cannot be read is reported on
+stderr, the remaining PVs are listed, and the script exits 1.
 [checkForEngineActivity.bash](samples/checkForEngineActivity.bash) walks a
 storage folder twice, `-t` seconds apart, and counts files whose path or
 size changed; it makes no HTTP request and exits 1 when nothing changed.

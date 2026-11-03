@@ -214,9 +214,10 @@ When a store runs full, ETL follows the `OutOfSpaceHandling` key
   Operations page or the three selections of the Show list that name
   dropped events. The Overview shows a Problem verdict while any PV
   dropped a sample.
-- **Type changes:** when a PV changes its data type, the appliance stops
-  archiving its new samples; the **Most events dropped by a type change**
-  selection lists them. Either rename the paused PV and archive it again
+- **Type changes:** when a PV changes its data type, the engine drops its
+  new samples and pauses it, with the reason in its Details; the **Most
+  events dropped by a type change** selection lists such a PV with its old
+  and its new type. Either rename the paused PV and archive it again
   under its name, which keeps the old data under the new name, or
   convert its archived data with **Change type** on the paused PV, which
   rewrites the data (back it up first). The conversion takes a numeric PV to another number type, to a string (the text of each number) or to a numeric waveform (a vector of one element); a string waveform and a byte blob have no conversion, so the call fails and the stored data keep their type. The type information keeps one element for a waveform, while the new samples have the size of the record, which the engine reads from the channel. The window reports `<PV> is stored
