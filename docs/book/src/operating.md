@@ -219,7 +219,7 @@ When a store runs full, ETL follows the `OutOfSpaceHandling` key
   selection lists them. Either rename the paused PV and archive it again
   under its name, which keeps the old data under the new name, or
   convert its archived data with **Change type** on the paused PV, which
-  rewrites the data (back it up first). The window reports `<PV> is stored
+  rewrites the data (back it up first). The conversion takes a numeric PV to another number type, to a string (the text of each number) or to a numeric waveform (a vector of one element); a string waveform and a byte blob have no conversion, so the call fails and the stored data keep their type. The type information keeps one element for a waveform, while the new samples have the size of the record, which the engine reads from the channel. The window reports `<PV> is stored
   as <type>` when the call succeeds. Before you resume the PV, check the
   **Data type** in **Details** and read back a sample of the stored data;
   if the data did not change, rename the PV and archive it again.

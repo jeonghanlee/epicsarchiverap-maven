@@ -64,7 +64,7 @@ authority on names and parameters.
 | `searchPV` | `pv` (complete name, optionally with `pva://` or `ca://`), `timeout` (s, default 5, at most 30) | whether a server holds the name, and its type, without archiving it |
 | `getPVDetails` | `pv` | the detailed statistics of a PV |
 | `getMetaGets` | none | the PVs for which the engine is gathering the first data, waiting for the first connection or measuring |
-| `changeTypeForPV` | `pv`, `newtype` (for example `DBR_SCALAR_DOUBLE`) | change the type of a paused PV |
+| `changeTypeForPV` | `pv`, `newtype` (for example `DBR_SCALAR_DOUBLE`) | change the type of a paused PV and convert its stored data; the answer names the old and the new type, and a target without a conversion (a string waveform, a byte blob) fails |
 | `consolidateDataForPV` | `pv`, `storage` (such as `STS` or `MTS`), `date` | move the data of a paused PV up to a store |
 
 `archivePV` lets the policy of the site choose the method and the period of a PV when the request has no `samplingperiod`, and then ignores `samplingmethod` and `controllingPV`. With a `samplingperiod`, the given period and the method, `MONITOR` unless `SCAN` is given, replace the choice of the policy.
