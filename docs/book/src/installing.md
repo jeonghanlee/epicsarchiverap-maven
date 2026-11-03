@@ -163,6 +163,7 @@ attribute reads a JVM system property:
 | `archappl.valve.concurrency` | `SemaphoreValve` `concurrency` | 100 |
 | `archappl.valve.stuckThresholdSeconds` | `StuckThreadDetectionValve` `threshold` | 600 |
 | `archappl.valve.interruptThresholdSeconds` | `StuckThreadDetectionValve` `interruptThreadThreshold` | 900 |
+| `archappl.valve.pvaConcurrency` | none; not a valve: the calls the retrieval PVAccess service runs at a time | 100 |
 
 The semaphore valve answers HTTP 503 at once to a request above the
 concurrency. A valve declared on a context counts every URL of the web
@@ -183,9 +184,18 @@ concurrency default is not derived from a load measurement; set it below the
 instance's `maxThreads` and above the concurrent requests the instance is
 expected to serve.
 
-A PVAccess call that a memory check refuses or stops gets no answer, so a
-PVAccess client must set its own call timeout. The valves cover HTTP only,
-and the PVAccess service does not limit its concurrent calls.
+The PVAccess server is not behind the Tomcat pipeline, so the valves do not
+reach it. The retrieval PVAccess service takes at most
+`archappl.valve.pvaConcurrency` calls at a time, 100 by default, and refuses
+the next call at once with a log message that begins
+`PVAccess retrieval call refused`. The default is not derived from a load
+measurement. Set it as a JVM system property and restart the instance. The
+server runs the calls of one connection one after the other, so a count above
+the number of connections that call at the same time never refuses.
+
+A PVAccess call that a memory check refuses or stops, or that finds all call
+permits in use, gets no answer, so a PVAccess client must set its own call
+timeout.
 
 ### Starting and stopping
 

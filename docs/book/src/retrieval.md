@@ -221,7 +221,7 @@ caused it.
 
 ## Limits on a request
 
-Four layers limit a request, from the JVM to the single call:
+Five layers limit a request, from the JVM to the single call:
 
 - The JVM options `-XX:+ExitOnOutOfMemoryError` and
   `-XX:+HeapDumpOnOutOfMemoryError` end a JVM that throws an
@@ -232,6 +232,8 @@ Four layers limit a request, from the JVM to the single call:
   answer HTTP 503 at once to a request above the concurrency limit and
   interrupt a request that runs past the interrupt threshold. The
   [installation page](installing.md#environment) lists their properties.
+- The retrieval PVAccess service takes at most a set number of calls at a
+  time and refuses the next. The valves do not reach PVAccess.
 - Three memory checks in the retrieval application refuse a request that
   declares too much, refuse requests while memory is short, and stop the
   largest allocators while memory is short.
@@ -310,11 +312,14 @@ complete, and never a complete answer.
 
 ### Calls over PVAccess
 
-A PVAccess call that a memory check refuses or stops gets no answer, so the
-caller ends at its own timeout. A PVAccess client must set a call timeout. The
-retrieval log names the condition, and the client library logs a warning whose
-exception carries the message. The valves and the request deadline cover HTTP
-only, and the PVAccess service does not limit its concurrent calls.
+A PVAccess call that a memory check refuses or stops, or that finds all call
+permits in use, gets no answer, so the caller ends at its own timeout. A
+PVAccess client must set a call timeout. The retrieval log names the
+condition; a call refused for want of a permit logs a message that begins
+`PVAccess retrieval call refused`. The client library logs a warning whose
+exception carries the message. The valves and the request deadline cover HTTP only. The PVAccess
+service limits its concurrent calls with its own permits, set by
+`archappl.valve.pvaConcurrency` (see the [installation page](installing.md#environment)).
 
 ## The data viewer
 
