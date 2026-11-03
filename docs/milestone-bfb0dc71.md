@@ -2848,47 +2848,58 @@ Status: Not started
 
 ##### Summary
 
-The report `getPVsByDroppedEventsTypeChange`, which the Browse PVs selection **Most events dropped by a type change** shows, skips every paused PV (`DroppedEventsTypeChangeReport`, `typeInfo.isPaused()`). Since the engine pauses a PV at its first event of another type (commit 9c940e5f, issue #46), such a PV is always paused and the report never lists it; the type information of the PV keeps the reason in `pauseReason`, which `getPVDetails` and the Details window show. Observed on 2026-11-03 in T2 of M13: the engine paused four PVs whose records changed their type, and the report was empty in three runs, also for a PV that was resumed without a type change and paused again. The section on type changes of `operating.md` says that the selection lists these PVs.
+The report `getPVsByDroppedEventsTypeChange`, which the Browse PVs selection **Most events dropped by a type change** shows, skips every paused PV (`DroppedEventsTypeChangeReport`, `typeInfo.isPaused()`). Since the engine pauses a PV at its first event of another type (commit 9c940e5f, issue #46), such a PV is always paused and the report never lists it; the type information of the PV keeps the reason in `pauseReason`, which `getPVDetails` and the Details window show. Observed on 2026-11-03 in T2 of M13: the engine paused four PVs whose records changed their type, and the report was empty in three runs, also for a PV that was resumed without a type change and paused again. The section on type changes of `operating.md` says that the selection lists these PVs. Two facts deepen the cause: the engine removes the channel of the PV when it pauses it (`ArchiveEngine.pauseArchivingPV` ends in `destoryPv`), and the report reads only the channel list of the engine, so removing the paused check alone would not list the PV; and `eventsDropped` is the count `invalidTypeLostEventCount` of the channel's `PVMetrics`, kept in memory only, which goes with the channel. A PVAccess PV whose record came back with another type reaches the same pause through the sample buffer (`EPICS_V4_PV` re-reads the type from the structure after a reconnect, the buffer drops the first event of the other type, and `ArchiveChannel.addValueToBuffer` pauses the PV); this path was read in the code and never run. The readers of the report are the Browse PVs selection and its State column (`N lost`), the scripts `listTypeChanges.bash` and `checkTypeChangedPVs.bash` of the book, which a scheduler runs as an alert, and the live runner `verify_bash_samples.py`, which waits for the PV in the report.
 
 ##### Scope
 
-- An operator can find every PV that the engine paused because its type changed, from the Browse PVs page and from the book. The means is an owner decision open at the plan: the report lists the PVs that the engine paused for a type change, or the selection and the book point to the paused PVs and their reason.
+- The report `getPVsByDroppedEventsTypeChange` of the management web application lists, in addition to the PVs that the engines report, every PV of the cluster (`getAllPVs`) whose type information is paused with a `pauseReason` that names a type change, under the same `limit` as the rows of the engines; such a row carries `pvName`, the old and the new type taken from the reason, and no `eventsDropped`, because that count went with the channel. The Browse PVs selection, the State column, the two scripts of the book and the live runner keep reading this one report.
+- `listTypeChanges.bash` prints the old and the new type of such a PV from the report row, because the details of a paused PV carry no engine fields.
+- The book and the note of the selection say what the report lists.
+- The live runner `verify_bash_samples.py` compares each Bash script with the Python original it replaced, read from commit d1cd363c. For `checkTypeChangedPVs` the original and the Bash script still agree, because both read only `pvName`; for `listTypeChanges` the paused PV is an intentional difference that its judge names, because the original reads the details of such a PV, which carry no engine fields.
 
-Out of scope: the conversion of the stored data of such a PV (M13).
+Out of scope: the conversion of the stored data of such a PV (M13); a PVAccess structure that changes while the connection stays up, which the engine neither counts nor pauses (an error line per event); the count of the events dropped before the pause, which is not kept.
 
 ##### Completion Criteria
 
-- An operator can find from the Browse PVs page and from the book every PV that the engine paused because its type changed.
-- A test with a real engine channel whose record changes its type checks the result, and fails on the code of today.
+- The report lists every PV that the engine paused for a type change, with its old and its new type, over Channel Access and over PVAccess, and the Browse PVs selection shows it; the alert script `checkTypeChangedPVs.bash` exits 1 for it and `listTypeChanges.bash` prints its two types.
+- A test with a real engine channel whose record changes its type checks the report for a Channel Access PV and for a PVAccess PV, and fails on the code of today.
+- The default suite, the tests of the two scripts and the live runner pass.
 
 ##### Dependencies And Decisions
 
 - D17 (Decision Date 2026-11-03): the row belongs to release Ahsoka; its place in the order is not set and it stands after M13.
-- Open at the plan: the means of the Scope.
+- Decided at the plan review (Decision Date 2026-11-03): the report itself lists the paused PVs (the one place every reader uses), its rows for them carry the two types and no `eventsDropped`, and the test covers Channel Access and PVAccess.
+- Observed at the implementation (2026-11-03): the report that the management returns is the rows of the engines followed by one row for each PV the engine paused for a type change; a row without `eventsDropped` is read as no count by the Browse PVs page and by the sums of the State column; five runs of T3 were needed because the check itself had four defects, none in the product.
+- Below the floor, recorded for a later stage (reviews of 2026-11-03, owner confirmed): the check `work/run-m33-t3.bash` needed five runs because of its own defects; the item on type changes in `operating.md` now holds the convertible types, the element count, the window message and the check steps in one list item, which a later edit of that section may split.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-11-03, after the plan review with three owner decisions (the report itself lists the paused PVs, the rows carry the two types and no count, the test covers Channel Access and PVAccess) and three third-person passes, the last two with no finding above the floor
+Implementation Authorization: 2026-11-03, owner authorized implementing and verifying the accepted plan (steps 1 to 5); no commit or push is authorized by it
 Superseded Plan Artifacts: none
 
-1. T1 first: a test in the manner of `TypeChangePauseTest` (a soft IOC, the PV archived as a double, the IOC replaced by one that serves the name as an integer) reads what an operator reads for such a PV and fails on the code of today. Check: T1.
-2. After the owner decides the means, change the report, or the selection and the page of the book, accordingly. Check: T1 and T2.
+1. T1 first: a test in the manner of `TypeChangePauseTest` (a soft IOC, the PV archived as a double, the IOC replaced by one that serves the name as an integer), once with a Channel Access name and once with a `pva://` name, reads the report through the shipped `DroppedEventsTypeChangeReport` with a real `ConfigService` and fails on the code of today. Check: T1. The report also calls the engine URL of the test configuration over HTTP; no engine web application answers there, so that part of the report is empty in T1 and may wait for a connection timeout, and T3 checks the combined report.
+2. In `src/main/org/epics/archiverappliance/mgmt/bpl/reports/DroppedEventsTypeChangeReport.java` the management report adds, after the rows of the engines, one row for every PV of the cluster (`getAllPVs`) whose type information is paused with a reason that names a type change, with `pvName`, `oldType` and `newType` parsed from the reason, under the same `limit`; the engine report is not changed. Check: T1.
+3. `docs/book/src/samples/listTypeChanges.bash` takes the two types from the report row when the row has them and reads the details only otherwise; its test under `src/test/pythontests` covers a row of each kind. Check: T2.
+4. The note of the selection in `browse.js`, the section on type changes of `operating.md`, the scripts section of `scripting.md` and the header of `checkTypeChangedPVs.bash` say that the report lists the PVs the engine paused for a type change. Check: T3 and the book link check.
+5. In `src/test/pythontests/verify_bash_samples.py` the judge of `listTypeChanges` names the paused PV as an intentional difference from the Python original; the judge of `checkTypeChangedPVs` is not changed. Check: T3.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Integration | The engine with a real channel, in the manner of `TypeChangePauseTest`: the PV is archived as a double, its record comes back as an integer, the engine pauses it, and the test reads the report or the page that the decision names | JDK 21, soft IOC (`localEpics`) | The PV that the engine paused for a type change is found; fails on the code of today |
-| T2 | Integration, manual | The Browse PVs selection and the book page in a console served by a local appliance whose PV was paused by the engine for a type change | JDK 21, Tomcat 9, EPICS 7.0.10, a browser | The PV is found from the console as the book says |
+| T1 | Integration | The engine with a real channel, in the manner of `TypeChangePauseTest`: the PV is archived as a double, its record comes back as an integer, the engine pauses it, and the test reads `DroppedEventsTypeChangeReport` through the real `ConfigService`; one case over Channel Access and one over PVAccess (`pva://`) | JDK 21, soft IOC (`localEpics`, `softIocPVX`) | Each paused PV is listed with its old and its new type and without `eventsDropped`; fails on the code of today |
+| T2 | Unit | The tests of `listTypeChanges.bash` and `checkTypeChangedPVs.bash` under `src/test/pythontests` with the outer HTTP boundary controlled, with a report that holds an engine row and a paused-PV row | JDK 21, Python 3, Bash | `listTypeChanges.bash` prints the two types of the paused PV from the row and exits 0; `checkTypeChangedPVs.bash` exits 1 and names it |
+| T3 | Integration, manual | A local appliance in a private network namespace with the soft IOC of M13 T2: the four records restarted on other types, then the Browse PVs selection, the two scripts and `verify_bash_samples.py` against it | JDK 21, Tomcat 9, EPICS 7.0.10, a browser | The four PVs appear in the selection with their types, `checkTypeChangedPVs.bash` exits 1, `listTypeChanges.bash` prints them, and the live runner passes with the paused PV as its named difference |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | pending | | | |
-| T2 | pending | | | |
+| T1 | 2026-11-03 10:39 PST | JDK 21, soft IOC (`softIocPVX`, EPICS 7.0.10) in a private network namespace, the real `ConfigServiceForTests` and `ArchiveEngine` (only the HTTP request and response are stand-ins) | Pass: `TypeChangeReportTest`, 2 cases. The PV is archived as a double, the IOC is replaced by one that serves the name as an integer, the engine pauses the PV and removes its channel, and `DroppedEventsTypeChangeReport` lists it with `oldType` DBR_SCALAR_DOUBLE, `newType` DBR_SCALAR_INT and no `eventsDropped`, over Channel Access and over PVAccess (the protocol of the type information); the report does not list the PV before the change. On the unchanged report both cases fail at the listing, and the PVAccess case first needed the PV registered to its appliance and archived with `usePVAccess` | `TypeChangeReportTest` (2); the engine URL of the test configuration refuses the connection, so the engine part of the report is empty there; `DroppedEventsTypeChangeReportRowsTest` (5 tests, real configuration service) covers the order, the two types, the PV an engine already reports and the limit, and a mutant that drops the skip of the reported PVs and one that ignores the limit are each caught by one test |
+| T2 | 2026-11-03 12:00 PST | Python 3.13, Bash, jq, the outer HTTP boundary controlled | Pass: `test_list_type_changes_bash.py` 10 tests, with a new case for a row that carries both types (printed from the row, no `getPVDetails` request) and one for a row with one type (the details are read); `test_check_type_changed_pvs_bash.py` 4 tests unchanged | the two files under `src/test/pythontests`; `shellcheck -S warning` of both scripts is clean |
+| T3 | 2026-11-03 11:46 PST | JDK 21, Tomcat 9.0.121, EPICS 7.0.10 with pvxs 1.5.1, WARs built from the working tree on 4c70f9fd, private network namespace, headless Firefox (Marionette) | Pass: the four records of `st.cmd` archived as scalar doubles, the IOC restarted with `RECORD_CHANGE=Types`, the engine paused all four (`pauseReason` "type changed from DBR_SCALAR_DOUBLE to ..."); the combined report lists the four with their two types and no `eventsDropped`; `checkTypeChangedPVs.bash` exits 1 with "4 PVs have changed type" and the four names; `listTypeChanges.bash` exits 0 with the four lines; the Browse PVs selection "Most events dropped by a type change" shows the four PVs and its note; the live runner `verify_bash_samples.py` passes its 4 comparisons for the two scripts, with the original `listTypeChanges.py` failing on the paused PV (a `KeyError` for the engine field) as the judge names it | `work/run-m33-t3.bash` (not tracked) and its run folder with the report, the screenshot and the runner evidence; five runs: the earlier four failed on defects of the check itself (the report row read, the page address, the wait for the ports of the stopped appliance) and not on the product |
 
 ##### Closure Evidence
 
