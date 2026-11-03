@@ -147,6 +147,44 @@ public final class RetrievalMemoryNetworkFixture implements AutoCloseable {
                 .timeout(TIMEOUT).GET().build(), HttpResponse.BodyHandlers.ofString());
     }
 
+    /**
+     * Samples the server over JMX every 50 ms until it is closed: the used heap, which holds garbage that is not yet
+     * collected, and the old generation after the last collection, which is the value the memory protection compares
+     * with its admission and pressure thresholds. Each peak is the largest sample.
+     */
+    public final class HeapPeak implements AutoCloseable {
+        private volatile long peak;
+        private volatile long peakCollected;
+        private volatile boolean running = true;
+        private final Thread sampler = new Thread(() -> {
+            while (running) {
+                try {
+                    peak = Math.max(peak, memory.getHeapMemoryUsage().getUsed());
+                    peakCollected = Math.max(peakCollected, oldPool.getCollectionUsage().getUsed());
+                    Thread.sleep(50);
+                } catch (Exception endedOrInterrupted) {
+                    return;
+                }
+            }
+        }, "heap-peak-sampler");
+
+        private HeapPeak() {
+            sampler.setDaemon(true);
+            sampler.start();
+        }
+
+        public long peak() { return peak; }
+
+        public long peakCollected() { return peakCollected; }
+
+        @Override public void close() throws InterruptedException {
+            running = false;
+            sampler.join(2000);
+        }
+    }
+
+    public HeapPeak startHeapPeak() { return new HeapPeak(); }
+
     public static boolean hasData(HttpResponse<String> response) {
         if (response.statusCode() != 200 || !(JSONValue.parse(response.body()) instanceof JSONArray rows)
                 || rows.isEmpty()) return false;
