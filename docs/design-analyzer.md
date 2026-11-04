@@ -1,7 +1,7 @@
 # Analyzer design
 
-Date: 2026-10-19
-Status: draft 1, gathered from the register; four items are open (see Decisions)
+Date: 2026-11-04
+Status: draft 2; four items are open (see Decisions)
 Register: `docs/milestone-bfb0dc71.md` M1 (phase A: page, header and address), M2 (phase B: interaction, options and export), M3 (phase C: tools for one signal), M4 (phase D: tools for two and several signals), M5 (phase E: waveforms and images); the chart component is row M59 (previous document, commit bfb0dc71), complete; issue #39
 Register decisions of `docs/milestone-bfb0dc71.md`: register D1 (console pages), register D2 (the analyzer as a self-contained analysis tool built with the bundled D3) and register D5 (the five phases); D1 to D6 under Decisions are the decisions of this note
 
@@ -17,7 +17,7 @@ This document gathers the design of the analyzer: what it is, how it relates to 
 - **Console:** the management interface, served by the management web application; its menu has the entries Archive PVs, Browse PVs, System, Help and Analyzer (register decision D1).
 - **Chart component:** the shared drawing code under `staticcontent/js/aa/chart/`, served to both web applications as `ui/comm/js/aa/`; `createChart` builds a chart with its options, legend, projection, statistics and range strip; `drawTimeSeries` draws one chart.
 - **Simple form:** the chart component as the console pages use it: one axis per unit, a legend, a tooltip, ranges chosen with the pointer, the Y projection with its statistics, the Chart options and an enlarged window (M59 (previous document, commit bfb0dc71)).
-- **Signal:** one PV as a time series. Its kind is decided from its type information: a numeric scalar, a state or string, a waveform (an array), or an image (an array whose element count is width times height).
+- **Signal:** one PV as a time series. Type information identifies its data form, such as numeric scalar, enum/string or numeric array; it does not establish a physical source or probability distribution. Image interpretation requires declared dimensions compatible with the selected array, and a physical array axis requires metadata or user input.
 - **Tool:** one analysis the analyzer offers for a kind of signal (a summary, a distribution, a fit, a scatter plot, a spectrum).
 - **Address:** the query string of the analyzer, which names the PVs, the time window, the zone and the options; a page that opens the analyzer builds it, and the analyzer writes it back as the page changes.
 
@@ -100,11 +100,17 @@ The register splits the scenarios over its phases. Scenario 1 needs the Trend ta
 
 ### Page composition
 
-Open. The analyzer holds the trend with its options, the distribution and statistics, the tools of two signals (scatter, profile, fit), the tools of several signals (matrix, ranking, graph), the comparison of two ranges, and the waveform and image tools. How these are arranged on one page, whether as tabs by kind of analysis, by kind of signal (one numeric, two numeric, several, waveform, image), or as panels under one chart, is decided by the owner from a clickable mockup, before M1 is accepted.
+The current proposal uses eight analysis tabs: Trend, Distribution, Correlation, Dependency, Spectrum, Compare, Waveform and Image. Common PV selection and time range stay above them. The active view contains its input selectors, plot and result table; a right-hand panel contains Signals, Axes, Options, Data and Export. Its availability depends on the selected signal types and the implemented tools.
 
-The register proposes tabs by kind of analysis: Trend, Distribution, Correlation, Dependency, Spectrum, Compare, Waveform and Image, each enabled by the kind of the chosen signals, and a drawer with the tabs Signals, Axes, Options, Data and Export. The scenarios and the phases use these names.
+[Analyzer interface design](design-analyzer-ui.md) specifies the complete page, each view, shared and local state, unavailable tools, data handling, compact layouts and the M1-M5 boundaries. The [clickable mockup](../work/analyzer-mockup/index.html) demonstrates the full composition and a separate M1 foundation mode using explicitly synthetic examples.
 
- The composition decides where the range strip goes (one for the page or one per chart) and where the options sit.
+The owner reviews the composition, range-strip placement, configuration panels and unavailable-tool presentation from this proposal before M1 is accepted. The request to design the complete interface does not accept the layout or authorize product implementation. The existing open gesture and numerical-method choices remain open.
+
+### Input suitability checks
+
+The plans include input checks now; each analysis tab or tool implements and verifies its checks during its own development in M3, M4 or M5 (Decision 2026-11-04). A complete cross-tab validator is not an additional M1 deliverable or prerequisite. M1 retains its existing Trend foundation and unavailable-tool presentation.
+
+When a PV is selected, available metadata establishes possible data forms and missing information. Before a calculation, inspect the actual selected observations for the method's required type, sample count, timing, units, dimensions and numerical conditions. Recheck after changing the PV, time range, frame or analysis settings. Known incompatibility prevents that calculation with a specific reason; missing required meaning or metadata prompts for explicit user input. A PV name, unit or numeric type does not by itself establish temperature, RF, camera, count-process or distribution semantics, and a successful numerical fit does not certify those assumptions. The per-tab contract is specified in `design-analyzer-ui.md`.
 
 ### Drawing options and gestures
 
@@ -116,7 +122,9 @@ In addition to the simple form, the analyzer offers:
 
 ### Address
 
-The names: `pv` (repeated), `from`, `to`, `tz` (the zone, absent for the browser zone), `view` (the tab), `shape` (`step` by default, `line`, `smooth`, `points`), `yscale` (`linear` by default, `symlog`, `log`, `sqrt`), `marks` (`auto` by default, `on`, `off`), `avg` (`1` when the running average is on), `band` (`1` when the standard deviation band is on), `window` (the window in samples of both, 30 by default; a second name follows if the Open row on the window decides two), `yproj` (`1`), `yrange` (repeated, `unit:low:high`, `none` for a PV with no unit), `interval` (`raw` or the averaging interval in seconds, automatic when absent), `split` (`none` by default, `unit`). M2 adds the names of its options, and the tools of M3, M4 and M5 add their own names when they are designed. The control of the Browse PVs page adds the options chosen on the page to the address it opens.
+The names: `pv` (repeated), `from`, `to`, `tz` (a supported zone or `browser`), `profile` (`default`, `redgreen` or `mono`), `view` (the tab), `shape` (`step` by default, `line`, `smooth`, `points`), `yscale` (`linear` by default, `symlog`, `log`, `sqrt`), `marks` (`auto` by default, `on`, `off`), `avg` (`1` when the running average is on), `band` (`1` when the standard deviation band is on), `window` (the window in samples of both, 30 by default; a second name follows if the Open row on the window decides two), `yproj` (`1`), `yrange` (repeated, `unit:low:high`, `none` for a PV with no unit), `interval` (`raw` or the averaging interval in seconds, automatic when absent), `split` (`none` by default, `unit`). M2 adds the names of its options, and the tools of M3, M4 and M5 add their own names when they are designed. The control of the Browse PVs page adds the options chosen on the page to the address it opens.
+
+Decision 2026-11-04 (D8): valid explicit `tz` and `profile` take precedence independently. For direct legacy links, missing `tz` uses Browser regardless of a stored zone; missing `profile` uses the retrieval origin's valid stored profile, or Default if none. Unreadable values are ignored and follow the corresponding missing-value rule. New source-page links, including the menu, and Copy link always include both effective preferences, including `tz=browser` and `profile=default`; changing the range retains them. This preserves the selected legacy fallback while keeping new links independent of destination preferences.
 
 ### Tools by kind of signal (M3 and M4)
 
@@ -203,13 +211,15 @@ The analyzer stays in the retrieval WAR and is served at `/retrieval/ui/viewer/`
 
 M1 (phase A) implements Page and header, Page composition and Address; M2 (phase B) implements Drawing options and gestures, Export and the address names of the options it adds; M3 (phase C) implements the tools of one signal and the comparison of two ranges in Tools by kind of signal; M4 (phase D) implements the tools of two and several signals, the fits and the derived signals; M5 (phase E) implements Waveforms and images. Data access serves the Trend tab of M1 and the interval and the one batch of requests after a gesture of M2. Each row keeps its own Test Plan; the checks of the page composition belong to M1.
 
+Per-tool input suitability checks follow their tool: M3 covers Distribution, Spectrum, Compare and its Trend additions; M4 covers Correlation, Dependency and fits, including histogram fitting; M5 covers Waveform and Image. Their canonical details include verification of unsupported, insufficient and unknown inputs alongside valid data.
+
 ## Testing
 
 Every check runs on a local appliance with the shipped soft IOC fixture (`src/resources/test/ConsoleChartPVs.db`) and real pointer and touch actions in the browser; the computations of M3 and M5 are checked on signals of known parameters. The static check and `MgmtPageLinksTest` cover the page, the entry and the forward; the default suite and the two workflows gate each row.
 
 ## Decisions
 
-D1 to D6 are the decisions of this note. register D1, D2 and D5 are decisions of the register. The four Open rows are undecided; the owner decides each, as the row states.
+D1 to D8 are the decisions of this note. register D1, D2 and D5 are decisions of the register. The four Open rows are undecided; the owner decides each, as the row states.
 
 | ID | Decision | Date |
 | --- | --- | --- |
@@ -219,7 +229,9 @@ D1 to D6 are the decisions of this note. register D1, D2 and D5 are decisions of
 | D4 | The Distribution, scatter plot and Summary panels stay on the Browse PVs page as additional information; the analyzer carries the full forms (replaces the decision of 2026-10-15) | 2026-10-19 |
 | D5 | The time axis carries the four labels, at fixed fractions of the span in the chosen zone, that the component draws; no further work | 2026-10-19 |
 | D6 | The analyzer carries the same menu as the console pages; an entry pressed on either side navigates to the page on the other side | 2026-10-19 |
-| Open | The page composition (tabs or panels, by kind of analysis or by kind of signal), from a mockup; the owner decides before M1 is accepted | |
+| D7 | Record per-tool input suitability checks in the plans; implement and verify them with each analysis tab or tool in M3-M5, without adding a prerequisite or completion criterion to M1 | 2026-11-04 |
+| D8 | Preserve legacy preference fallback: missing `tz` uses Browser; missing `profile` uses the retrieval origin's valid stored profile or Default. Valid explicit values win independently; new source-page and copied links always specify both preferences, including Browser and Default | 2026-11-04 |
+| Open | The eight-analysis-tab proposal in `design-analyzer-ui.md`: common controls, range strip, configuration panels and unavailable-tool presentation, from `work/analyzer-mockup/index.html`; the owner decides before M1 is accepted | |
 | Open | The assignment of the drag on the plot: select (as in the simple form) with Shift to pan, or pan with Shift to select, or a mode control on the range strip; the reference tools (Bokeh, Plotly) use the mode control with one drag tool active at a time and the wheel and hover always on; the owner decides before the plan of M2 is accepted | |
 | Open | Whether a line carries a label at its end besides its entry in the legend, which names every line in the simple form (register M58 (previous document, commit bfb0dc71), decision of 2026-10-14); the owner decides before the plan of M2 is accepted | |
 | Open | The window of the running average and the band: one shared window (`window`, as the component and the address have it) or two; the owner decides before the plan of M2 is accepted | |
