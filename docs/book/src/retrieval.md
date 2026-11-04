@@ -168,6 +168,8 @@ operators have no `Sample` variant. Of `optimized` and `optimLastSample`
 only `optimized` has one, `optimizedSample`; `optimLastSampleSample` is
 accepted and fills the empty bins like `optimLastSample`.
 
+The event of a bin is stamped at the middle of the bin. When the request ends inside a bin that holds samples and the middle of that bin lies after the end, the event of that bin is stamped at the end of the request, so that the event stays inside the requested window and the newest samples are not left out. The bins after it keep their stamp and are not returned.
+
 In a request with several PVs, each PV takes the operator in its own name
 or, when its name carries none, the operator of `pp`. The operator of one
 PV never reaches another.

@@ -35,6 +35,7 @@ public class FillsCollectorEventStream implements EventStream, RemotableOverRaw 
 	private int intervalSecs;
 	private Iterator<Event> theOneAndOnlyIterator;
 	private boolean fillOperator = true;
+	private Instant windowEnd = null;
 	public FillsCollectorEventStream(long firstBin, long lastBin, int intervalSecs, RemotableEventStreamDesc desc, LinkedHashMap<Long, Event> consolidatedData) {
 		this.firstBin = firstBin;
 		this.lastBin = lastBin;
@@ -46,6 +47,14 @@ public class FillsCollectorEventStream implements EventStream, RemotableOverRaw 
 	public FillsCollectorEventStream(long firstBin, long lastBin, int intervalSecs, RemotableEventStreamDesc desc, LinkedHashMap<Long, Event> consolidatedData, boolean fillOperator) {
 		this(firstBin,lastBin,intervalSecs,desc,consolidatedData);
 		this.fillOperator = fillOperator;
+	}
+
+	/**
+	 * @param windowEnd the end of the request window; the event of the bin that contains it is stamped no later than it, see {@link BinTimeStamp}
+	 */
+	public FillsCollectorEventStream(long firstBin, long lastBin, int intervalSecs, RemotableEventStreamDesc desc, LinkedHashMap<Long, Event> consolidatedData, boolean fillOperator, Instant windowEnd) {
+		this(firstBin, lastBin, intervalSecs, desc, consolidatedData, fillOperator);
+		this.windowEnd = windowEnd;
 	}
 
 	
@@ -105,7 +114,7 @@ public class FillsCollectorEventStream implements EventStream, RemotableOverRaw 
                     Instant eventTs = null;
 					if(fillOperator) {
 						logger.debug("For fill operators, we put the event time stamp in the center of the bin.");
-						eventTs = TimeUtils.convertFromEpochSeconds(epochSeconds, 0);
+						eventTs = BinTimeStamp.of(binNum, intervalSecs, 0, consolidatedData.containsKey(binNum), windowEnd);
 					} else {
 						logger.debug("This non-fill operators, we use the event's timestamp as is");
 						eventTs = currentEvent.getEventTimeStamp();

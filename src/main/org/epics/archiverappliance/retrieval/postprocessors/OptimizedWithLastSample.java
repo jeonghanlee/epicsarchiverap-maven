@@ -54,6 +54,7 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
     private int intervalSecs = PostProcessors.DEFAULT_SUMMARIZING_INTERVAL;
     protected LinkedHashMap<Long, SummaryValue> consolidatedData = new LinkedHashMap<Long, SummaryValue>();
     long firstBin = 0;
+    Instant windowEnd = null;
     long lastBin = Long.MAX_VALUE;
     long currentBin = -1;
     int currentMaxSeverity = 0;
@@ -129,6 +130,7 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
     
     @Override
     public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
+        windowEnd = end;
 
         intervalSecs = (int) ((end.toEpochMilli() - start.toEpochMilli()) / (1000L * numberOfPoints));
         
@@ -183,7 +185,7 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
       if(consolidatedData.isEmpty()) { 
         return new ArrayListEventStream(0, srcDesc);      
       } else { 
-        return new SummaryStatsCollectorEventStream(this.firstBin == 0 ? 0 : this.firstBin-1, this.lastBin, this.intervalSecs, srcDesc, consolidatedData, inheritValuesFromPreviousBins, zeroOutEmptyBins(), true, 6);
+        return new SummaryStatsCollectorEventStream(this.firstBin == 0 ? 0 : this.firstBin-1, this.lastBin, this.intervalSecs, srcDesc, consolidatedData, inheritValuesFromPreviousBins, zeroOutEmptyBins(), true, 6, windowEnd);
       }
     }
 
@@ -350,7 +352,7 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
                 }
             }
             return new SummaryStatsCollectorEventStream(firstBin, lastBin, intervalSecs, srcDesc, consolidatedData,
-                inheritValuesFromPreviousBins, zeroOutEmptyBins(), true, 6);
+                inheritValuesFromPreviousBins, zeroOutEmptyBins(), true, 6, windowEnd);
           }
         }
       };
