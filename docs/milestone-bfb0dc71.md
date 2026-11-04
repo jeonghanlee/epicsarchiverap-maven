@@ -1348,45 +1348,56 @@ Status: Open
 
 `SummaryStatsCollectorEventStream` stamps the event of each bin at the bin midpoint and `MergeDedupConsumer.java:154` drops every event stamped after the requested end. When the bin is longer than the time between the request end and the last sample, the event of the last bin lies after the end and is dropped: a `mean_432000` request whose window ends inside the current five-day bin returns no event for that bin although its samples are inside the window (observed 2026-10-24 with `VariousPostProcessorTest`, 101 samples, HTTP 200 and an empty stream; the raw retrieval returned all 101). The test was corrected in 5efbd25b by ending its request at the next bin edge (M89 (previous document, commit bfb0dc71), issue #56); the product behaviour is unchanged and the rule has not been decided.
 
+The midpoint stamp is not the stamp of the summary operators alone. `FillsCollectorEventStream` (`firstFill`, `lastFill`) stamps its bins with the same expression, and `LinearInterpolation` and `LoessInterpolation` extend `SummaryStatsPostProcessor` and so use the same collector, while `CAPlotBinning` stamps at the bin start and at quarter points of the bin and is not affected. The only place that drops an event stamped after the end is `MergeDedupConsumer.java:154`. The chart of the console (`browse/api.js:77`) and the viewer of the retrieval web application (`viewer.js:53`) ask for `meanSample_<seconds>(pv)` over a window whose end can be now, so the same bin may be missing at their right edge; this was read in the code and not observed. The analyzer page requests no data itself.
 ##### Scope
 
-- Decide whether a bin whose samples lie inside the requested window is returned when its midpoint stamp lies outside the window, and with which timestamp (midpoint, bin start or window end); whether the inherited first bin follows the same rule; what the archive viewers and the Python clients expect.
-- If the rule changes: the retrieval returns one event for such a bin regardless of the request time, the raw retrieval is unchanged, and `VariousPostProcessorTest` passes with its original one-day window again. If it stays: the retrieval page of the book states it.
+- Decide the rule for a bin whose samples lie inside the requested window when its midpoint stamp lies after the window end: keep the rule and state it in the book, return the bin at its midpoint, stamp it at the window end, or stamp it at the bin start; and whether the inherited first bin follows the same rule. The rule covers every operator that stamps its bins at the midpoint: the summary operators (the children of `SummaryStatsPostProcessor`, among them `mean`, `meanSample` and `median`), `firstFill`, `lastFill`, `linear` and `loess`.
+- The consumers checked are the chart of the console (`browse/api.js`) and the viewer of the retrieval web application (`viewer.js`), by a real request through a local appliance, and the code examples of the book for MATLAB, Python and the Phoebus Data Browser.
+- If the rule changes: the retrieval returns one event for such a bin regardless of the request time for every operator named above, the raw retrieval is unchanged, and `VariousPostProcessorTest` passes with its original one-day window again. If it stays: the retrieval page of the book states it.
 
-Out of scope: the test window of `VariousPostProcessorTest` (M89 (previous document, commit bfb0dc71)); post-processors that are not summaries.
+Out of scope: the test window of `VariousPostProcessorTest` (M89 (previous document, commit bfb0dc71)); operators that stamp at the bin start or at quarter points (`caplotbinning`) and the raw retrieval; the source of clients outside this repository.
 
 ##### Completion Criteria
 
-- The decision is recorded with the clients it was checked against.
+- Each operator named in the Scope is requested with an end inside a bin, and the result of each request is recorded.
+- The decision is recorded with the consumers it was checked against.
 - The product or the book reflects the decision as stated in Scope.
 
 ##### Dependencies And Decisions
 
 - D8 (Decision Date 2026-10-24): entered from M89 (previous document, commit bfb0dc71); the row stays Open until the owner decides the rule.
+- Decided at the plan review (Decision Date 2026-11-03): the consumers are the chart of the console and the viewer of the retrieval web application (by a real request) and the code examples of the book, not clients outside the repository; the operators are all those that stamp at the midpoint. The rule itself is decided after the requests of T1 and the reading of T2 show the choices and their effects.
+- Reading of the consumers (2026-11-03), for the owner's decision of the rule: the chart of the console (`bin = ceil(seconds / 600)`) and the viewer of the retrieval web application (`bin = ceil(seconds / 700)`) request `meanSample_<bin>` and plot every returned point at its stamp without clipping it to the window, so the dropped bin is a missing latest value of at most half a bin, a thousandth of the window or less (3 s of a 1 h window, 14 min of 7 days); the code examples of the book for MATLAB and Python print the events as returned, and the section of the Phoebus Data Browser only sets the URLs, so what these clients do with an event stamped after the window end is not in the repository and was not checked. At the start edge `MergeDedupConsumer` keeps the last event stamped at or before the start and returns it as the first event, so a bin stamped before the window is returned there while a bin stamped after the window end is dropped at the end; this was read in the code and not run.
+- Decided after the reading (Decision Date 2026-11-03): the rule is to stamp the event of the bin that contains the window end at the window end when its midpoint lies after it (stamp = the earlier of the midpoint and the window end), for every operator named in the Scope, so that the event stays inside the window; the bins after that bin keep their midpoint stamp and are still dropped. `SummaryBinEdgeProbeTest` becomes the regression test of the rule. Read in the code for step 3, not yet run: the post-processor holds the request end (`SummaryStatsPostProcessor.end`), the two collectors (`SummaryStatsCollectorEventStream`, `FillsCollectorEventStream`) stamp at `binNum*intervalSecs + intervalSecs/2` and do not receive it, `MergeDedupConsumer` drops only events stamped after the end, so an event stamped at the end stays; an empty bin that contains the end and is filled with the previous value would now produce an event at the end, where `meanSample` produces none.
+- Refinement made at the implementation (2026-11-03): the rule is applied to a bin that holds samples of its own; an empty bin that only repeats the value of the previous bin keeps its midpoint and is still dropped, so no new event appears at the window end for it. This replaces the effect expected at the decision for the operators that fill empty bins.
+- Decided at the review of 2026-11-03 (owner confirmed): the collectors are shared with the PVAccess retrieval, whose consumer `PvaMergeDedupConsumer` does not drop events after the end, so over PVAccess the event of such a bin was returned with its midpoint after the end and is now stamped at the end; this was read in the code and is not checked by a test, and the issue itself showed only over HTTP. It is recorded in Closure Evidence as not measured.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-11-03, after the plan review with two owner decisions (the consumers, the operators) and two third-person passes, the last with no finding above the floor; the acceptance covers steps 1 and 2, and step 3 waits for the rule that the owner decides after them
+Implementation Authorization: 2026-11-03, owner approved implementing and verifying steps 1 and 2 of the accepted plan (the tests of the operators and the reading of the consumers) and, after deciding the rule on the same day, step 3 (stamp the event of the bin that contains the window end at the window end); no commit or push is authorized by it
 Superseded Plan Artifacts: none
 
-1. Read how the archive viewers and the Python clients consume summary bins at the window edges and present the choices to the owner. Check: T1.
-2. Apply the decided rule to the product or the book. Check: T2.
+1. T1 first: a test of its own in the manner of `VariousPostProcessorTest` (the same archive of 101 samples through the real retrieval; the existing test is not extended) requests `mean`, `meanSample`, `firstFill`, `lastFill`, `linear` and `loess` with an end inside the current bin and records which return no event, then `meanSample_<seconds>` is requested as the chart of the console does on a local appliance. Check: T1.
+2. Read the chart of the console, the viewer of the retrieval web application and the code examples of the book against the four rules, and present the choices with what each changes for those consumers; the owner decides. Check: T2.
+3. Apply the decided rule to the product or the book. Check: T3.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Review | The consumers of summary bins read against the three choices | repository and client sources | A decision record naming the clients checked |
-| T2 | Integration or book | If the rule changes, `VariousPostProcessorTest` with its original one-day window on a date just after a bin edge; if it stays, the book build with the stated rule | JDK 21, Tomcat 9.0.121, `softIocPVX`; or the `aa-mdbook` image | One event per operator on any date; or the page states the rule |
+| T1 | Integration | A test of its own, in the manner of `VariousPostProcessorTest`, requests each operator of the Scope with an end inside the current bin through the shipped retrieval and a 101-sample archive; the chart request `meanSample_<seconds>` through a local appliance whose window ends now | JDK 21, Tomcat 9.0.121, `softIocPVX`, a browser | The operators that return no event for that bin are named; the missing right edge of the chart is observed or not |
+| T2 | Review | The chart of the console, the viewer of the retrieval web application and the code examples of the book read against the four rules | repository sources | A decision record naming the consumers checked and the effect of each rule on them |
+| T3 | Integration or book | If the rule changes, `VariousPostProcessorTest` with its original one-day window on a date just after a bin edge, and the test of T1 for each operator of the Scope; if it stays, the book build with the stated rule | JDK 21, Tomcat 9.0.121, `softIocPVX`; or the `aa-mdbook` image | One event for the bin for every operator on any date; or the page states the rule |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | pending | | | |
-| T2 | pending | | | |
+| T1 | 2026-11-03 15:04 PST | JDK 21, Tomcat 9.0.121, soft IOC (`softIocPVX`) in a private network namespace, WARs built from 4ac950f3 | Observed: with the window ending 132,933 s before the midpoint of the current bin of 432,000 s, the raw retrieval returns all 12 samples and each of `mean`, `meanSample`, `median`, `firstFill`, `lastFill`, `linear` and `loess` returns no event; with the window ending at the next bin edge each returns one event. The step is complete; the test has not been decided as a regression test and stays untracked | `SummaryBinEdgeProbeTest` (untracked), `target/summary-bin-edge-probe.txt`; the first run found only 6 of the 12 raw samples because the values were put faster than the 1 s sampling period of the policy, and the test was corrected |
+| T2 | 2026-11-03 15:05 PST | repository sources and the owner | Pass: the chart of the console and the viewer of the retrieval web application plot every returned point without clipping it to the window, the code examples of the book print the events as returned, and the section of the Phoebus Data Browser sets only the URLs; the effect of each of the four rules on these consumers is in the reading of Dependencies And Decisions, and the owner decided the stamp at the window end on 2026-11-03. What clients outside the repository do with an event stamped after the window end was not checked | the reading and the decision recorded above |
+| T3 | 2026-11-03 15:36 PST | JDK 21, Tomcat 9.0.121, soft IOC (`softIocPVX`) in a private network namespace, WARs built from the working tree on 4ac950f3 | Pass: `SummaryBinEdgeStampTest` with the window ending 132,354 s before the midpoint of the current bin of 432,000 s: each of `mean`, `meanSample`, `median`, `firstFill`, `lastFill`, `linear` and `loess` returns one event stamped at the window end, and one event when the window ends at the next bin edge, where the raw retrieval returns all 12 samples (on the unchanged code the same request returned no event for any of them, step T1); `VariousPostProcessorTest` passes with its original one-day window (449 s); `BinTimeStampTest` (8 tests, the helper and both collectors with real values) passes, and a mutant that drops the condition that the midpoint lies after the end and one that drops the condition that the bin holds samples are caught by 4 and 2 of its tests; the default suite passes 1,247 tests; the book builds and 1,201 links resolve | `SummaryBinEdgeStampTest`, `VariousPostProcessorTest`, `BinTimeStampTest` and the changed collectors; `optimized` and `optimLastSample` use the same collector and the same rule, and `lastSample` stamps at the sample time and is not changed |
 
 ##### Closure Evidence
 
