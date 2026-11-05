@@ -8,7 +8,8 @@ import { drawHistogram, drawScatter } from "../comm/js/aa/plots.js";
 import { valueParts, dateTimeText, instantTitle } from "./browse/format.js";
 import { buildDetails } from "./browse/details.js";
 import { currentZone, onZoneChange } from "../comm/js/aa/timezone.js";
-import { onProfileChange, withProfile } from "../comm/js/aa/chart/profile.js";
+import { onProfileChange } from "../comm/js/aa/chart/profile.js";
+import { withChartState } from "../comm/js/aa/chart/state.js";
 
 // Initial limits of the table, the chart, the concurrent requests and the indexed names. They are configuration; measurement and use adjust them.
 const LIMITS = { table: 100, chart: 5, concurrentRequests: 6, indexed: 500000 };
@@ -836,11 +837,7 @@ function analyzerHref(names) {
     }
     query.set("from", from.toISOString());
     query.set("to", to.toISOString());
-    // The analyzer, a service of its own, gets the chosen zone in the address; the browser zone needs no parameter.
-    if (currentZone() !== "browser") {
-        query.set("tz", currentZone());
-    }
-    return withProfile(`analyzer.html?${query}`);
+    return withChartState(`analyzer.html?${query}`, chart?.getState());
 }
 
 function plotCell(name) {
@@ -1931,7 +1928,7 @@ function wire() {
         onZoom: zoomTo,
         onPan: panBy,
         onReset: resetWindow,
-        onOptionsChange: () => renderTable(),
+        onStateChange: () => renderTable(),
     });
     $("plotFirst").textContent = `First ${LIMITS.chart}`;
     $("plotFirst").title = `Turn on the Plot boxes of the first ${LIMITS.chart} PVs of the table and turn off the others`;

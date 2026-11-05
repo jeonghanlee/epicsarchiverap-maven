@@ -3,48 +3,123 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
-    />
-    <title>Archived data</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <title>Archiver Appliance - Analyzer</title>
     <link rel="stylesheet" href="../comm/css/main.css" />
     <link rel="stylesheet" href="../comm/css/chart.css" />
     <link rel="stylesheet" href="viewer.css" />
     <script src="../comm/js/vendor/d3.min.js" defer></script>
     <script type="module" src="viewer.js"></script>
+    <script src="../js/menu.js" defer></script>
   </head>
-  <body class="viewer-page">
-    <header class="viewer-bar">
-      <h1>Archived data</h1>
-      <form id="addForm" class="add">
-        <label for="pvName" class="hint">Add a PV</label>
-        <input id="pvName" type="search" list="suggestions" placeholder="SR:C01:BPM1:X" spellcheck="false" />
-        <datalist id="suggestions"></datalist>
-        <button type="submit">Add</button>
-      </form>
-      <div class="ranges" id="ranges" role="group" aria-label="Time range">
-        <button type="button" data-minutes="10">10m</button>
-        <button type="button" data-minutes="60">1h</button>
-        <button type="button" data-minutes="360">6h</button>
-        <button type="button" data-minutes="1440">24h</button>
-        <button type="button" data-minutes="10080">7d</button>
-      </div>
-      <form id="spanForm" class="span">
-        <label>From <input id="fromTime" type="datetime-local" step="1" /></label>
-        <label>To <input id="toTime" type="datetime-local" step="1" /></label>
-        <button type="submit">Show</button>
-      </form>
-    </header>
+  <body class="viewer-page" data-common-prefix="../" data-console-navigation="external" data-menu-page="analyzer.html">
+    <div class="pageheader">
+      <!-- @begin(site_header) -->
+      <span><picture><source media="(max-width: 359px)" srcset="../comm/img/wordmark.svg" /><img src="../comm/img/archiverheader.svg" alt="Archiver Appliance" /></picture></span>
+      <!-- @end(site_header) -->
+      <!-- @begin(site_logo) -->
+      <span id="siteimages"><img src="../comm/img/sitelogo.svg" alt="Store signals, analyze in place" /></span>
+      <!-- @end(site_logo) -->
+    </div>
 
+    <!-- @begin(site_navbar) -->
+    <div class="navbar">
+      <nav class="nav" aria-label="Main menu">
+        <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Menu" />
+        <label class="menu-button" for="menu-toggle">Menu</label>
+        <ul class="mainmenu" id="mainmenu">
+          <li><a href="archive.html">Archive PVs</a></li>
+          <li><a href="index.html">Browse PVs</a></li>
+          <li><a href="system.html" data-pages="system.html operations.html retrieval.html external.html">System</a></li>
+          <li><a href="help.html" id="help">Help</a></li>
+          <li><a href="analyzer.html">Analyzer</a></li>
+        </ul>
+      </nav>
+    </div>
+    <!-- @end(site_navbar) -->
     <main class="viewer">
-      <ul id="chips" class="chips-list" aria-label="PVs shown"></ul>
-      <p id="message" class="message" role="status"></p>
-      <div id="charts"></div>
-      <p class="tools">
-        <button type="button" id="copyLink" class="plain">Copy link</button>
-        <button type="button" id="downloadCsv" class="plain">Download CSV</button>
-      </p>
+      <h1>Analyzer</h1>
+      <p id="headerMessage" class="message" role="status"></p>
+      <section class="selection" aria-label="Signals and common time range">
+        <form id="addForm" class="add">
+          <label for="pvName">Archived PV</label>
+          <input id="pvName" type="search" list="suggestions" placeholder="Search an archived PV" spellcheck="false" required />
+          <datalist id="suggestions"></datalist>
+          <button type="submit">Plot</button>
+        </form>
+        <ul id="chips" class="chips-list" aria-label="Selected signals"></ul>
+        <form id="spanForm" class="span">
+          <label>From <input id="fromTime" type="datetime-local" step="0.001" required /></label>
+          <label>To <input id="toTime" type="datetime-local" step="0.001" required /></label>
+          <button type="submit">Show</button>
+          <div class="ranges" id="ranges" role="group" aria-label="Time range shortcuts">
+            <button type="button" data-minutes="10">10m</button>
+            <button type="button" data-minutes="60">1h</button>
+            <button type="button" data-minutes="360">6h</button>
+            <button type="button" data-minutes="1440">24h</button>
+            <button type="button" data-minutes="10080">7d</button>
+          </div>
+        </form>
+        <p id="rangeError" class="error" role="alert"></p>
+        <div id="timeControls" aria-label="Common time range controls"></div>
+      </section>
+      <div class="analysis-tabs" id="analysisTabs" role="tablist" aria-label="Analysis">
+        <button type="button" role="tab" id="trendTab" aria-controls="trendPanel" aria-selected="true" data-view="trend">Trend</button>
+        <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="distribution">Distribution</button>
+        <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="correlation">Correlation</button>
+        <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="dependency">Dependency</button>
+        <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="spectrum">Spectrum</button>
+        <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="compare">Compare</button>
+        <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="waveform">Waveform</button>
+        <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="image">Image</button>
+      </div>
+      <div id="unavailableView" class="unavailable" role="status" hidden>
+        <p id="unavailableReason"></p>
+        <button id="returnTrend" type="button" hidden>Return to Trend</button>
+      </div>
+      <section id="trendPanel" role="tabpanel" aria-labelledby="trendTab">
+        <div class="view-heading">
+          <h2>Trend</h2>
+          <button id="toggleSettings" type="button" class="plain" aria-expanded="true" aria-controls="settings">Hide settings</button>
+        </div>
+        <div id="workspace" class="workspace">
+          <div class="results">
+            <p id="sourceNote" class="note"></p>
+            <div id="charts"></div>
+            <div id="statistics"></div>
+          </div>
+          <aside id="settings" class="settings" aria-label="Trend settings">
+            <h2>Trend settings</h2>
+            <div id="settingsTabs" class="settings-tabs" role="tablist" aria-label="Trend settings">
+              <button id="signalsTab" type="button" role="tab" data-panel="signals" aria-controls="signalsPanel" aria-selected="true">Signals</button>
+              <button id="axesTab" type="button" role="tab" data-panel="axes" aria-controls="axesPanel" aria-selected="false" tabindex="-1">Axes</button>
+              <button id="optionsTab" type="button" role="tab" data-panel="options" aria-controls="optionsPanel" aria-selected="false" tabindex="-1">Options</button>
+              <button id="dataTab" type="button" role="tab" data-panel="data" aria-controls="dataPanel" aria-selected="false" tabindex="-1">Data</button>
+              <button id="exportTab" type="button" role="tab" data-panel="export" aria-controls="exportPanel" aria-selected="false" tabindex="-1">Export</button>
+            </div>
+            <div id="signalsPanel" role="tabpanel" aria-labelledby="signalsTab"><ul id="signals" class="signal-list"></ul></div>
+            <div id="axesPanel" role="tabpanel" aria-labelledby="axesTab" hidden><div id="axes"></div></div>
+            <div id="optionsPanel" role="tabpanel" aria-labelledby="optionsTab" hidden>
+              <div id="chartOptions"></div>
+              <label class="check"><input id="projection" type="checkbox" /> Y projection</label>
+            </div>
+            <div id="dataPanel" role="tabpanel" aria-labelledby="dataTab" hidden>
+              <p id="dataNote" class="note"></p>
+              <div id="dataStatistics"></div>
+            </div>
+            <div id="exportPanel" role="tabpanel" aria-labelledby="exportTab" hidden>
+              <p>The CSV contains the retrieved numeric samples used by this view, including hidden lines. The interval column identifies stored samples or means.</p>
+              <button type="button" id="downloadCsv">Download CSV</button>
+              <p>A link restores the view settings; archived data can change after it is copied.</p>
+              <button type="button" id="copyLink">Copy link</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+      <footer class="viewer-status"><p id="message" class="message" role="status"></p><p id="activeRange" class="note"></p></footer>
     </main>
+      <!-- @begin(site_footer) -->
+      <div class="pagefooter"></div>
+      <!-- @end(site_footer) -->
   </body>
 </html>

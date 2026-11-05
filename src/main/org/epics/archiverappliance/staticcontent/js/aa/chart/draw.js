@@ -4,7 +4,9 @@
 const d3 = globalThis.d3;
 
 import { CHART_OPTIONS } from "./options.js";
-import { attachGestures, RANGES } from "./gestures.js";
+import { RANGES } from "./gestures.js";
+import { createPlotCanvas } from "./canvas.js";
+import { preserveViewport } from "./viewport.js";
 import { buildLegend, HIDDEN } from "./legend.js";
 import { labelLayout } from "./layout.js";
 import { axisWidthOf, makeValueScale, PLOT_LEAST } from "./scales.js";
@@ -14,10 +16,6 @@ import { buildRangeStrip } from "./strip.js";
 import { format } from "./text.js";
 import { formatInZone } from "../timezone.js";
 import { drawProjection, PROJECTION_WIDTH } from "./projection.js";
-
-// The lines and sample marks are clipped to the plot area; each drawing takes the next id of the page.
-let clipCount = 0;
-const CLIP_PAD = 3;
 
 // More samples than this in view are not marked one by one.
 export const MARKER_LIMIT = 200;
@@ -48,11 +46,19 @@ const MARK_CAP = 1500;
  * projection true draws a histogram of the samples in view for each line at the right of the plot, on the value axis of
  * its unit, with a line at its mean, and puts a table of basic statistics under the chart, or in each element of
  * statisticsHost (an element of the page or a list of them) when the page gives one.
+ * statistics true emits the table even without projection. ranges (Map by unit) and hidden (Set by name) can be
+ * supplied by the caller; onRangesChange and onVisibilityChange report pointer, keyboard and reset changes.
+ * fitWidth scales a multi-axis drawing to the host width instead of widening the page.
  * legend true gives each line a color and a dash and puts a legend under the chart in place of the labels at the
  * end of the lines; a click on a legend item hides that line until it is clicked again.
- * Replaces the content of host and returns nothing.
+ * Replaces the content of host and returns its canvas, or undefined when no series is visible.
+ * overlay(canvas) can append clipped data layers. keyboardX and wheel enable optional X navigation.
  */
 export function drawTimeSeries(host, input) {
+    return preserveViewport(() => drawSeries(host, input));
+}
+
+function drawSeries(host, input) {
     host.textContent = "";
     // The table of statistics goes into each element of input.statisticsHost (one element or a list); under the chart
     // when the page gives none.
@@ -69,18 +75,21 @@ export function drawTimeSeries(host, input) {
         host.textContent = "No samples in this time range.";
         return;
     }
-    let hidden = HIDDEN.get(host);
+    let hidden = input.hidden || HIDDEN.get(host);
     if (!hidden) {
         hidden = new Set();
         HIDDEN.set(host, hidden);
     }
-    for (const name of [...hidden]) {
+    for (const name of input.hidden ? [] : [...hidden]) {
         if (!all.some((s) => s.name === name)) {
             hidden.delete(name);
         }
     }
     const drawn = legend ? all.filter((s) => !hidden.has(s.name)) : all;
-    const legendBox = legend ? buildLegend(host, all, hidden, () => drawTimeSeries(host, input)) : null;
+    const legendBox = legend ? buildLegend(host, all, hidden, () => {
+        drawTimeSeries(host, input);
+        if (typeof input.onVisibilityChange === "function") input.onVisibilityChange([...hidden]);
+    }) : null;
     if (!drawn.length) {
         const note = document.createElement("p");
         note.textContent = "All lines are hidden. Click a legend item to show it.";
@@ -103,12 +112,12 @@ export function drawTimeSeries(host, input) {
     const multi = units.length > 1;
     const onLeft = Math.ceil(units.length / 2);
     const onRight = units.length - onLeft;
-    let ranges = RANGES.get(host);
+    let ranges = input.ranges || RANGES.get(host);
     if (!ranges) {
         ranges = new Map();
         RANGES.set(host, ranges);
     }
-    for (const unit of [...ranges.keys()]) {
+    for (const unit of input.ranges ? [] : [...ranges.keys()]) {
         if (!units.includes(unit)) {
             ranges.delete(unit);
         }
@@ -144,58 +153,15 @@ export function drawTimeSeries(host, input) {
     const widened = width > hostWidth;
     const x = d3.scaleTime().domain([from, to]).range([margin.left, width - margin.right]);
 
-    const svg = d3
-        .create("svg")
-        .attr("viewBox", `0 0 ${width} ${height}`)
-        .attr("width", widened ? width : "100%")
-        .attr("height", height)
-        .attr("role", "img")
-        .attr("aria-label", `Time series of ${drawn.length} PV${drawn.length > 1 ? "s" : ""}`);
-
-    const egu = drawn[0].egu;
-    // The side and the x position of the line of the axis of the unit at position index.
-    const axisAt = (index) => {
-        const rightSide = index >= onLeft;
-        const step = rightSide ? index - onLeft : index;
-        return { rightSide, x: rightSide ? width - margin.right + axisWidth * step : margin.left - axisWidth * step };
-    };
-    units.forEach((unit, index) => {
-        const scale = scales.get(unit);
-        const { rightSide, x: axisX } = axisAt(index);
-        for (const tick of scale.ticks(tickCount)) {
-            if (index === 0) {
-                svg.append("line").attr("class", "grid").attr("x1", margin.left).attr("x2", width - margin.right).attr("y1", scale(tick)).attr("y2", scale(tick));
-            }
-            svg.append("text")
-                .attr("class", "axis")
-                .attr("x", rightSide ? axisX + 6 : axisX - 6)
-                .attr("y", scale(tick) + 4)
-                .attr("text-anchor", rightSide ? "start" : "end")
-                .text(d3.format(".4~g")(tick));
-        }
-        if (multi) {
-            svg.append("line").attr("class", "axis-line").attr("x1", axisX).attr("x2", axisX).attr("y1", margin.top).attr("y2", height - margin.bottom);
-            svg.append("text")
-                .attr("class", "axis unit")
-                .attr("x", axisX)
-                .attr("y", margin.top - 14)
-                .attr("text-anchor", rightSide ? "start" : "end")
-                .text(unit || "no unit");
-        }
-    });
     const spanHours = (to - from) / 3600000;
-    // A window of ten minutes or less is labelled to the second, so that its four labels differ.
-    // The labels are written in the chosen zone at each instant, so a change of daylight saving time falls at its true place.
     const timeFormat = (when) => formatInZone(when, spanHours > 36 ? "%m-%d %H:%M" : spanHours > 1 / 6 ? "%H:%M" : "%H:%M:%S", input.timeZone);
-    [0, 1 / 3, 2 / 3, 1].forEach((fraction, index, all) => {
-        const when = new Date(from.getTime() + fraction * (to - from));
-        svg.append("text")
-            .attr("class", "axis")
-            .attr("x", x(when))
-            .attr("y", height - 8)
-            .attr("text-anchor", index === 0 ? "start" : index === all.length - 1 ? "end" : "middle")
-            .text(timeFormat(when));
-    });
+    const canvas = createPlotCanvas({ width, height, margin, x, scales, units, axisWidth, onLeft, tickCount,
+        displayWidth: widened && !input.fitWidth ? width : "100%", unitLabels: multi,
+        label: `Time series of ${drawn.length} PV${drawn.length > 1 ? "s" : ""}`,
+        xTicks: [0, 1 / 3, 2 / 3, 1].map(fraction => new Date(from.getTime() + fraction * (to - from))),
+        xFormat: timeFormat });
+    const { svg, marks: plotArea } = canvas;
+    const egu = drawn[0].egu;
 
     // Alarm lane: the only mark besides a line that uses the alert color.
     const laneY = height - margin.bottom + 8;
@@ -207,15 +173,6 @@ export function drawTimeSeries(host, input) {
         }
     }
 
-    const clipId = `aa-chart-clip-${(clipCount += 1)}`;
-    svg.append("clipPath")
-        .attr("id", clipId)
-        .append("rect")
-        .attr("x", margin.left - CLIP_PAD)
-        .attr("y", margin.top - CLIP_PAD)
-        .attr("width", width - margin.right - margin.left + 2 * CLIP_PAD)
-        .attr("height", height - margin.bottom - margin.top + 2 * CLIP_PAD);
-    const plotArea = svg.append("g").attr("clip-path", `url(#${clipId})`);
     const curve = { step: d3.curveStepAfter, line: d3.curveLinear, smooth: d3.curveMonotoneX }[options.shape] || d3.curveStepAfter;
     const lineOf = (s) => d3.line().x((p) => x(p.t)).y((p) => yOf(s)(p.v)).curve(curve);
     const ordered = drawn.slice().sort((a, b) => Number(a.focus) - Number(b.focus));
@@ -318,6 +275,8 @@ export function drawTimeSeries(host, input) {
         }
     }
 
+    if (typeof input.overlay === "function") input.overlay(canvas);
+
     const cross = svg.append("line").attr("class", "cross").attr("y1", margin.top).attr("y2", height - margin.bottom).attr("visibility", "hidden");
     const tip = document.createElement("div");
     tip.className = "tip";
@@ -361,10 +320,14 @@ export function drawTimeSeries(host, input) {
         tip.hidden = true;
     });
 
-    attachGestures({ svg, host, input, redraw: () => drawTimeSeries(host, input), x, scales, units, ranges, width, height, margin, plotTop, axisWidth, onLeft, onRight, axisAt });
+    const rangeChanged = () => {
+        drawTimeSeries(host, input);
+        if (typeof input.onRangesChange === "function") input.onRangesChange([...ranges]);
+    };
+    canvas.bindInteractions(host, { ...input, ranges }, rangeChanged);
 
     if (input.strip !== false) {
-        host.append(buildRangeStrip(input, ranges, units, () => drawTimeSeries(host, input)));
+        host.append(buildRangeStrip(input, ranges, units, rangeChanged));
     }
     host.append(svg.node(), tip);
     if (legendBox) {
@@ -377,10 +340,11 @@ export function drawTimeSeries(host, input) {
         note.textContent = scaleNotes.join(" ");
         host.append(note);
     }
-    if (input.projection === true) {
+    if (input.projection === true || input.statistics === true) {
         for (const element of statisticsHosts.length ? statisticsHosts : [host]) {
             element.append(buildStatistics(statistics, typeof input.info === "function" ? input.info("statistics") : null));
         }
     }
     host.dataset.egu = egu;
+    return canvas;
 }

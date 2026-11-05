@@ -24,7 +24,7 @@ bar, named by task; the entry of the page in view is marked:
 | Browse PVs | the Browse PVs page | find PVs, list them with their value and last event, plot them, act on them; the reports are the **Show** list of the Find panel |
 | System | System: Overview | status monitoring: the verdict on the appliance, then Operations and Retrieval performance |
 | Help | the help page | how to use each page, the management API reference ([Scripting](scripting.md)) and a link to this manual, which needs access to the internet |
-| Analyzer | the data viewer | the data viewer of the retrieval web application ([Retrieving data](retrieval.md#the-data-viewer)) |
+| Analyzer | archived signal trends | the Analyzer of the retrieval web application ([Retrieving data](retrieval.md#the-data-viewer)) |
 
 On a screen 720 px wide or narrower the entries fold behind a **Menu**
 button and open as one column. The **External servers** tab of System
@@ -46,10 +46,12 @@ value range of each unit, the Options panel, Enlarge chart) are listed in
 [Chart controls](interface.md#chart-controls), the columns of the table and
 the **Refresh** control in [The table of PVs](interface.md#the-table-of-pvs)
 and [Refreshing the page](interface.md#refreshing-the-page). The link **Open
-in the analyzer** above the chart opens the plotted PVs in the data viewer,
-which shows PVs as charts per unit, over the window of the chart
-([Retrieving data](retrieval.md#the-data-viewer)); **Open all selected in the
-analyzer** under the table opens every PV of the table.
+in the analyzer** above the chart opens the plotted PVs in Trend, with
+one value axis per unit and the chart's time window and settings
+([Retrieving data](retrieval.md#the-data-viewer)). **Open all selected in the
+analyzer** under the table opens every PV of the table with those settings.
+The enlarged chart offers the same link. All these links carry the selected
+time zone and display profile, including Browser and Default.
 
 ## Adding PVs
 

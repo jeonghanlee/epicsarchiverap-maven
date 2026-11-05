@@ -1,4 +1,17 @@
-/* Time series and sparklines, shared by the management Browse PVs page and the data viewer. */
+/* Plot surfaces, time series and sparklines shared by the management page and data viewer. */
+
+.canvas-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 8px 0;
+}
+
+.canvas-controls button {
+    font-size: 11px;
+    padding: 5px 8px;
+    min-height: 30px;
+}
 
 svg .spark {
     fill: none;
@@ -131,6 +144,18 @@ svg .spark-end.alarm {
 
 .tip .alarm-text {
     color: var(--alarm);
+}
+
+.tip.canvas-tip {
+    box-sizing: border-box;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.chart svg .hover-point {
+    fill: var(--bg);
+    stroke: var(--accent);
+    stroke-width: 2;
 }
 
 

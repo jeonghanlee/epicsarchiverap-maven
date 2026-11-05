@@ -1,18 +1,18 @@
 # Analyzer interface design
 
 Date: 2026-11-04
-Status: proposal for owner review
+Status: M1 foundation composition accepted; M2-M5 capabilities remain planned
 Architecture: [Analyzer design](design-analyzer.md)
 Plan and acceptance: [M1](milestone-bfb0dc71.md#m1---analyzer-phase-a-page-header-and-address)
 Interactive proposal: [Open mockup](../work/analyzer-mockup/index.html)
 
 ## Scope
 
-This proposal specifies the complete analyzer interface: the shared signal and time selection, eight analysis tabs, their inputs and results, configuration and export, and behavior when data or a tool is unavailable. It uses analysis tabs as requested in the design discussion. The layout and behavior described here remain a proposal until reviewed.
+This proposal specifies the complete analyzer interface: the shared signal and time selection, eight analysis tabs, their inputs and results, configuration and export, and behavior when data or a tool is unavailable. It uses analysis tabs as requested in the design discussion. The M1 foundation composition is accepted on 2026-11-04; detailed M2-M5 behavior remains subject to each phase's plan acceptance.
 
 M1 includes deciding this composition and implementing its foundation. Designing the complete interface here does not move the computations or advanced controls of M2-M5 into M1. The canonical milestone document owns implementation scope, acceptance, authorization and verification.
 
-**Out of scope:** changes to archiving, storage or retrieval algorithms; implementing production analysis routines; selecting an unresolved production numerical method; accepting the M1 implementation plan. The mockup uses reference-based synthetic data and local demonstration calculations. It does not contact an appliance or validate the production analyzer.
+**Out of scope:** changes to archiving, storage or retrieval algorithms; implementing production analysis routines; selecting an unresolved production numerical method; accepting M2-M5 implementation plans. The mockup uses reference-based synthetic data and local demonstration calculations. It does not contact an appliance or validate the production analyzer.
 
 ## User workflow
 
@@ -30,6 +30,8 @@ The page has five levels, in this order:
 4. The active analysis: its input selectors, main plot and result table.
 5. A page footer with request state, data origin and active range.
 
+Decision 2026-11-04: the time-range controls appear once with the common PV/time selection above the analysis tabs. They control the common range used by every chart and are not repeated per chart. Axes contains the unit-specific Y-range settings. The complete M1 foundation plan was subsequently accepted and authorized on 2026-11-04.
+
 A right-hand panel contains Signals, Axes, Options, Data and Export. It belongs to the active analysis but retains common signal settings. It can be hidden to enlarge the plot. Results stay below the main plot, so opening a configuration panel does not hide them. Data is an inspection view, not a ninth analysis tab.
 
 At wide widths, the main plot fills the available space beside a 320 px panel. Below 1100 px, the panel moves beneath the plot and results. Below 600 px, forms stack and comparisons become vertically stacked. Only the tab row and large data tables may scroll horizontally; the page itself must fit at 320 px. The site navigation uses the existing compact-menu behavior.
@@ -42,6 +44,7 @@ At wide widths, the main plot fills the available space beside a 320 px panel. B
 | Selected PV chips | Show identity and unit; remove a PV from the analysis | M1 |
 | From, To and Show | Edit a range as a draft, validate, then apply it once | M1 |
 | Range shortcuts | Resolve against the current endpoint; Show applies the displayed absolute endpoints | M1 |
+| Shared time-range controls | One group above the analysis tabs controls the common range of every chart | M1 |
 | Time zone | Change display and time entry without changing the selected instants | M1 |
 | Display profile | Retain Default, Red-green and Monochrome and their distinct line styles | M1 |
 | Copy link | Copy the effective, validated view state with absolute time endpoints | M1 |
@@ -211,10 +214,18 @@ The mockup's full mode shows the eventual composition. Its M1 mode exposes only 
 
 Open `work/analyzer-mockup/index.html` in a browser from this checkout. It loads the checkout's bundled D3 and site images with relative paths and uses no remote assets. Classic scripts also permit direct local-file opening.
 
+The mockup builds its chart bundle from the production modules. Trend uses `drawTimeSeries`; histograms, scatter plots and other numeric plots use its independent `createPlotCanvas` surface. Each plot owns its X/Y display ranges and uses the same drag, keyboard, pan/zoom and reset controls. Display changes preserve the selected observations and fitted parameters; only explicit analysis-input changes invalidate a fit. `work/analyzer-mockup/canvas-demo.html` demonstrates independent time and numeric instances. This reuse does not make the prototype's analysis tools available in the deployed Analyzer.
+
+The original Summary or Results keeps the selected-data values. A separate Visible range section recalculates graph-specific statistics from original points inside the displayed axes: signal statistics for Trend, raw values for histograms, pairs and Pearson r for Correlation, visible frequency bins and peaks for Spectrum, and independent ranges or profiles for Compare, Waveform and Image. Histogram Y frequency zoom does not select samples; its X value range does. Empty ranges show zero observations and unavailable estimates. Calculation details and plot instructions use the existing console information-card `(i)` control, while values, units, ranges and status remain visible.
+
+Hover exposes values in every analysis view: histogram boundaries and sample count, paired X/Y values and acquisition time, matrix coefficients and pair counts, spectrum frequency and amplitude, comparison timestamps and values, captured waveform/profile coordinates and values, and image pixel coordinates and ADU. Completed fits add fitted values and residuals at the corresponding observations; residual plots expose their own observed/fitted values. Numeric views use the reusable canvas tooltip, and matrix/image views use its shared text renderer. Picking uses actual samples or computed bins, not interpolated measurements; missing and empty inputs have no sample tooltip. Axis drag, keyboard zoom and redraw retain the page's preceding scroll position and keyboard focus.
+
+Distribution Options retains the bin-count presets (5, 12, 20, 40, 80) and adds a Custom count input with Apply for integers from 1 to 1000. Explicit minimum/maximum boundaries have separate Apply and Auto controls, with effective bin width and included/excluded sample counts. Bin settings are distinct from the display viewport and the fit range. Changing bin settings invalidates the old fit and resets Distribution zoom; copied links retain the settings, including custom counts. Visible range statistics use the intersection of the bin range and displayed X range, while Summary retains the source selection. The last bin includes the maximum; invalid counts or indistinguishable boundaries retain the previous result.
+
 The review-only strip selects one of eight physical signal families: stored beam current, BPM position, magnet current, RF cavity envelope, vacuum pressure, temperature, photon counts, and camera images. It also selects full or M1 scope and ready/loading/no-data/error/partial states. It is visibly outside the proposed product UI. The question card describes the selected measurement and offers named intervals or captures. All observations are synthetic; source references and chosen model parameters are recorded in `work/analyzer-signal-examples/README.md`. Dataset identifiers are not installed facility PV names.
 
 The mockup exercises tab selection, shared range application, per-view input selection, configuration panels, profile and zone display, show/hide settings, availability messages, selected frame, copying the mockup address, and exporting the active result. Histograms and summaries use finite selected observations; scatter plots and Pearson matrices use exact timestamp pairs. Distribution and Correlation calculate fits from these observations, with model selection, ranges, initial values, fixed parameters, bounds, termination status, curves, residuals, and JSON/CSV export. Changes to fitting inputs clear the prior result; fit settings and results remain local to the open page. Parameter standard errors and approximate 95% normal intervals use local residual-scaled covariance for least squares and expected Fisher information for the Poisson objective. Fixed, bound-limited, and non-estimable cases show their status and reason. JSON includes covariance and parameter order; parameter CSV includes errors, intervals, units, and assumptions. Curve confidence bands remain unavailable. Amplitude spectra use complete uniform samples, mean removal, a symmetric Hann window, and zero padding, with the input interval and resolution shown. Missing or irregular samples are not silently resampled. RF arrays use time within a pulse; camera profiles use position and histograms use intensity. Image pixels, irregular frame times, and statistics come from the saved camera example. Image fitting, PCA, significance tests, and region editing remain explicitly marked previews or unavailable.
 
 The local bundle includes all example frames so the mockup opens without a server. This packaging does not change the production requirement to retrieve individual image frames. The mockup's interval convention is From-inclusive and To-exclusive; its exact-pair and numerical demonstration rules do not approve the unresolved production methods. Detailed offline behavior and data flow are recorded in `work/analyzer-mockup/README.md`.
 
-The numerical-method choices already open in the architecture remain open. The composition, unavailable-tool presentation, comparison default and precise panel placement are reviewable proposals here, not recorded owner decisions.
+The M1 composition, unavailable-tool presentation and panel placement are accepted on 2026-11-04. Numerical-method choices and the comparison default remain for the later phases; M1 acceptance does not settle them.

@@ -26,6 +26,8 @@ public class SiteOverlayTest {
     private static final Path TEMPLATE = Path.of("src/sitespecific/tests/template_changes.html");
     private static final String COMMON_STATIC = "org/epics/archiverappliance/staticcontent";
     private static final String MGMT_STATIC = "org/epics/archiverappliance/mgmt/staticcontent";
+    private static final String RETRIEVAL_STATIC = "org/epics/archiverappliance/retrieval/staticcontent";
+    private static final String ANALYZER = RETRIEVAL_STATIC + "/viewer/archViewer.html";
     private static final String VERSION = "2099-1";
     @TempDir
     Path temp;
@@ -38,6 +40,7 @@ public class SiteOverlayTest {
         stage = temp.resolve("stage");
         copyTree(MAIN.resolve("staticcontent"), stage.resolve(COMMON_STATIC));
         copyTree(MAIN.resolve("mgmt/staticcontent"), stage.resolve(MGMT_STATIC));
+        copyTree(MAIN.resolve("retrieval/staticcontent"), stage.resolve(RETRIEVAL_STATIC));
         site = temp.resolve("site");
         Files.createDirectories(site.resolve("classpathfiles"));
     }
@@ -96,7 +99,7 @@ public class SiteOverlayTest {
     }
 
     @Test
-    public void theTemplateIsMergedIntoTheStagedManagementPages() throws Exception {
+    public void theTemplateIsMergedIntoTheStagedManagementAndAnalyzerPages() throws Exception {
         Files.copy(TEMPLATE, site.resolve("template_changes.html"));
         Path expected = temp.resolve("expected");
         copyTree(MAIN.resolve("mgmt/staticcontent"), expected);
@@ -116,6 +119,58 @@ public class SiteOverlayTest {
             Assertions.assertFalse(header.contains("comm/img/sitelogo.svg"), page + ": the default site logo is replaced");
             Assertions.assertFalse(header.contains("comm/img/archiverheader.svg"), page + ": the default header logo is replaced");
         }
+        String analyzer = Files.readString(stage.resolve(ANALYZER));
+        String header = headerOf(stage.resolve(ANALYZER));
+        Assertions.assertEquals(2, header.split("src=\"../comm/img/archiverheadertest.svg\"", -1).length - 1);
+        Assertions.assertFalse(header.contains("src=\"comm/"), "shared assets resolve from the viewer directory");
+        Assertions.assertTrue(header.contains("href=\"https://github.com/archiver-appliance/\""));
+        assertSingleBlocks(analyzer);
+    }
+
+    @Test
+    public void defaultHeaderSynchronizationPreservesTheAnalyzerAndItsRelativeAssets() throws Exception {
+        Path analyzer = stage.resolve(ANALYZER);
+        String before = Files.readString(analyzer);
+        SyncStaticContentHeadersFooters.main(new String[] {
+            MAIN.resolve("mgmt/staticcontent/index.html").toString(), analyzer.toString()
+        });
+        String after = Files.readString(analyzer);
+        Assertions.assertEquals(before, after, "the shipped analyzer contains the synchronized default blocks");
+        Assertions.assertTrue(after.contains("srcset=\"../comm/img/wordmark.svg\""));
+        Assertions.assertTrue(after.contains("src=\"../comm/img/archiverheader.svg\""));
+        Assertions.assertTrue(after.contains("src=\"../comm/img/sitelogo.svg\""));
+        assertSingleBlocks(after);
+    }
+
+    @Test
+    public void siteAssetRebasingPreservesExternalUrlContents() throws Exception {
+        String template = Files.readString(TEMPLATE);
+        for (String external : java.util.List.of("https://example.org/?next=comm/img/site.svg",
+                "https://example.org/#comm/site", "//example.org/?next=comm/site",
+                "https://example.org/?next=a,comm/site")) {
+            String candidates = "comm/img/archiverheadertest.svg 1x,\n " + external
+                    + " 2x,comm/img/site.svg 3x";
+            writeSite("template_changes.html", template
+                    .replace("https://github.com/archiver-appliance/", external)
+                    .replace("alt=\"Test header\"", "alt=\"Test header\" srcset=\"" + candidates + "\""));
+            SiteOverlay.apply(site, stage, VERSION);
+            String analyzer = headerOf(stage.resolve(ANALYZER));
+            Assertions.assertTrue(analyzer.contains("href=\"" + external + "\""), external);
+            Assertions.assertTrue(analyzer.contains("srcset=\"../comm/img/archiverheadertest.svg 1x,\n "
+                    + external + " 2x,../comm/img/site.svg 3x\""), external);
+            String management = headerOf(stage.resolve(MGMT_STATIC + "/index.html"));
+            Assertions.assertTrue(management.contains("srcset=\"" + candidates + "\""));
+            Assertions.assertTrue(management.contains("href=\"" + external + "\""));
+        }
+    }
+
+    private static void assertSingleBlocks(String page) {
+        for (String block : java.util.List.of("site_header", "site_logo", "site_navbar", "site_footer")) {
+            for (String marker : java.util.List.of("@begin(" + block + ")", "@end(" + block + ")")) {
+                Assertions.assertTrue(page.contains(marker), marker + " is present");
+                Assertions.assertEquals(page.indexOf(marker), page.lastIndexOf(marker), marker + " appears once");
+            }
+        }
     }
 
     @Test
@@ -134,6 +189,11 @@ public class SiteOverlayTest {
             Assertions.assertTrue(left >= 0 && right > left, page + ": the site logo follows the header logo in the header");
             Assertions.assertFalse(header.contains("comm/img/sitelogo.svg"), page + ": the default site logo is replaced");
         }
+        String analyzer = headerOf(stage.resolve(ANALYZER));
+        Assertions.assertTrue(analyzer.contains("srcset=\"../comm/img/wordmark.svg\""));
+        Assertions.assertTrue(analyzer.contains("src=\"../comm/img/archiverheader.svg\""));
+        Assertions.assertTrue(analyzer.contains("src=\"../comm/img/site.png\""));
+        Assertions.assertFalse(analyzer.contains("src=\"comm/"));
     }
 
     /** The pages that carry the page header. */

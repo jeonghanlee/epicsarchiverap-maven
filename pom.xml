@@ -593,6 +593,7 @@
               <arguments>
                 <argument>${src.main.dir}/org/epics/archiverappliance/mgmt/staticcontent/index.html</argument>
                 <argument>${src.main.dir}/org/epics/archiverappliance/mgmt/staticcontent/</argument>
+                <argument>${src.main.dir}/org/epics/archiverappliance/retrieval/staticcontent/viewer/archViewer.html</argument>
               </arguments>
               <classpathScope>compile</classpathScope>
             </configuration>
@@ -857,6 +858,13 @@
                 <resource>
                   <directory>${stage.dir}/org/epics/archiverappliance/retrieval/staticcontent</directory>
                   <targetPath>ui</targetPath>
+                </resource>
+                <resource>
+                  <directory>${stage.dir}/org/epics/archiverappliance/mgmt/staticcontent/js</directory>
+                  <targetPath>ui/js</targetPath>
+                  <includes>
+                    <include>menu.js</include>
+                  </includes>
                 </resource>
                 <resource>
                   <directory>${stage.dir}/org/epics/archiverappliance/staticcontent</directory>

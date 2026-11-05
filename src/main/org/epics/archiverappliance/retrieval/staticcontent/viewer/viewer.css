@@ -1,190 +1,77 @@
-/* The archived data viewer. Tokens come from the shared main.css; chart rules from chart.css. */
-
-.viewer-page {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--sans);
+/* Analyzer layout; the site header and chart appearance use the shared stylesheets. */
+.viewer-page { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); }
+.viewer { max-width: 1600px; margin: 0 auto; padding: 16px 24px; min-width: 0; }
+.viewer h1 { margin: 0 0 12px; font-size: 1.4rem; }
+.viewer h2 { font-size: 1rem; margin: 0; }
+.selection { padding: 12px 0; border-block: 1px solid var(--rule); }
+.viewer form, .ranges { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; margin: 0; }
+.viewer input, .viewer select, .viewer button { font: inherit; max-width: 100%; }
+.viewer input { min-width: 0; padding: 6px; border: 1px solid var(--rule); border-radius: 4px; color: var(--ink); background: var(--c-surface); }
+.viewer button { cursor: pointer; padding: 6px 12px; border: 1px solid var(--rule); border-radius: 4px; color: var(--ink); background: var(--c-surface); }
+.viewer button:hover { background: var(--focus-bg); }
+.viewer button:focus-visible, .viewer input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.viewer .plain { color: var(--accent); background: transparent; }
+.viewer button.info { padding: 0; min-height: 0; }
+.add input { flex: 1; max-width: 540px; }
+.span label { display: flex; flex-direction: column; gap: 4px; }
+.chips-list, .signal-list { list-style: none; margin: 12px 0; padding: 0; }
+.chips-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips-list li { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--rule); border-radius: 4px; padding: 4px 8px; }
+.pv { font-family: var(--mono); font-size: .875rem; overflow-wrap: anywhere; }
+.unit-label, .note { color: var(--ink-2); font-size: .875rem; }
+.signal-list li { padding: 8px 0; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; }
+.signal-list label { display: flex; align-items: start; gap: 8px; }
+.analysis-tabs, .settings-tabs { display: flex; overflow-x: auto; gap: 4px; padding: 8px 0; }
+.analysis-tabs button, .settings-tabs button { flex-shrink: 0; white-space: nowrap; border: 0; border-radius: 0; border-bottom: 2px solid transparent; }
+.viewer [role="tab"][aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.viewer [aria-disabled="true"] { color: var(--ink-2); }
+.unavailable { padding: 12px; background: var(--focus-bg); border-left: 3px solid var(--accent); }
+.view-heading { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+.workspace.settings-hidden { grid-template-columns: minmax(0, 1fr); }
+.results, .settings, .chart-area, .chart { min-width: 0; }
+.settings { border: 1px solid var(--rule); border-radius: 4px; padding: 12px; }
+.settings p { font-size: .875rem; }
+.settings [role="tabpanel"] { padding-top: 8px; }
+.settings .opt-row { flex-direction: column; align-items: stretch; gap: 12px; }
+.settings .opt-row label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.settings .opt-row label:has(input) { justify-content: start; }
+.settings .opt-row .opt-info { align-self: end; }
+.settings .check { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+.axis-form { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.axis-form h3, .axis-form .error { grid-column: 1 / -1; margin: 0; font-size: .875rem; }
+.axis-form label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.axis-form button { padding-inline: 8px; }
+.viewer .error, .warn { color: var(--alarm); font-size: .875rem; }
+.viewer .error:empty, #headerMessage:empty { display: none; }
+.viewer-status { border-top: 1px solid var(--rule); margin-top: 16px; padding-top: 8px; overflow-wrap: anywhere; }
+.message { min-height: 1.4em; margin: 6px 0; color: var(--ink-2); }
+#timeControls .range-strip { margin-top: 8px; }
+#timeControls .strip-group { flex-wrap: wrap; }
+#timeControls .strip-window { white-space: normal; overflow-wrap: anywhere; }
+#statistics, #dataStatistics { overflow-x: auto; }
+#charts .chart-area { padding: 0; }
+[hidden] { display: none !important; }
+@media (max-width: 1099px) {
+    .workspace { grid-template-columns: minmax(0, 1fr); }
 }
-
-.viewer-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 24px;
-    padding: 10px 16px;
-    background: var(--c-brand);
-    color: var(--accent-ink);
+@media (max-width: 720px) {
+    .viewer-page .nav { flex-wrap: wrap; gap: 8px 12px; padding: 0 12px 8px; }
+    .viewer-page .menu-button { padding-left: 0; }
+    .viewer-page ul.mainmenu { order: 3; flex-basis: 100%; }
 }
-
-.viewer-bar h1 {
-    margin: 0;
-    font-size: 1.0625rem;
-    font-weight: 600;
-}
-
-.viewer-bar label {
-    font-size: 0.875rem;
-    color: var(--c-border);
-}
-
-.viewer-bar input[type="search"],
-.viewer-bar input[type="datetime-local"] {
-    min-width: 0;
-    padding: 5px 8px;
-    font: inherit;
-    font-size: 0.9375rem;
-    color: #ffffff;
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid var(--c-border-strong);
-    border-radius: 0;
-    color-scheme: dark;
-}
-
-.viewer-bar input:focus {
-    outline: none;
-    border-bottom-color: #ffffff;
-}
-
-.viewer-bar button {
-    padding: 4px 10px;
-    font: inherit;
-    font-size: 0.9375rem;
-    color: var(--accent-ink);
-    background: none;
-    border: 1px solid var(--c-border-strong);
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.viewer-bar .ranges button {
-    border-color: transparent;
-    font-family: var(--mono);
-}
-
-.viewer-bar .ranges button[aria-pressed="true"] {
-    border-bottom-color: #ffffff;
-    border-radius: 0;
-}
-
-.viewer-bar .add,
-.viewer-bar .span,
-.viewer-bar .ranges {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px 10px;
-    margin: 0;
-}
-
-.viewer {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 16px;
-}
-
-.chips-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 20px;
-    margin: 0 0 8px;
-    padding: 0;
-    list-style: none;
-}
-
-.chips-list .pv {
-    font-family: var(--mono);
-    font-size: 0.875rem;
-}
-
-.chips-list .warn {
-    color: var(--warn);
-    font-size: 0.875rem;
-}
-
-button.plain {
-    margin-left: 6px;
-    padding: 0;
-    font: inherit;
-    font-size: 0.875rem;
-    color: var(--accent);
-    background: none;
-    border: 0;
-    border-bottom: 1px solid transparent;
-    cursor: pointer;
-}
-
-button.plain:hover {
-    border-bottom-color: var(--accent);
-}
-
-.message {
-    min-height: 1.4em;
-    margin: 0 0 8px;
-    color: var(--ink-2);
-    font-size: 0.9375rem;
-}
-
-.unit {
-    margin-bottom: 24px;
-    padding-top: 12px;
-    border-top: 1px solid var(--rule);
-}
-
-/* The unit is data: it is shown exactly as the archive holds it. mA is not MA. */
-.unit h2 {
-    margin: 0 0 4px;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    text-transform: none;
-    color: var(--ink-2);
-}
-
-.unit .sub {
-    margin: 0 0 6px;
-    font-size: 0.875rem;
-    color: var(--ink-2);
-}
-
-.tools {
-    margin: 8px 0 0;
-}
-
-.tools button.plain {
-    margin: 0 16px 0 0;
-}
-
-@media (max-width: 600px) {
-    .viewer-bar {
-        padding: 8px 12px;
+@media (max-width: 599px) {
+    .viewer-page .pageheader { flex-wrap: wrap; }
+    .viewer-page .nav label.chart-profile, .viewer-page .nav label.timezone {
+        display: flex; justify-content: space-between; align-items: center; flex: 1 1 100%; margin-left: 0;
     }
-
-    .viewer {
-        padding: 12px;
-    }
-
-    .viewer-bar button,
-    .viewer-bar input,
-    .viewer-bar select,
-    button.plain {
-        min-height: 44px;
-    }
-}
-
-/* The display profile of the charts, at the end of the bar of the viewer. */
-.viewer-bar label.chart-profile {
-    margin-left: auto;
-    white-space: nowrap;
-}
-
-.viewer-bar select.chart-profile {
-    margin-left: 0.4rem;
-    min-height: 2rem;
-    padding: 0.2rem 0.4rem;
-    font: inherit;
-    color: var(--c-brand);
-    background: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-radius: 4px;
+    .viewer { padding: 12px; }
+    .viewer .span, .viewer .add { align-items: stretch; }
+    .span label, .add input { flex-basis: 100%; width: 100%; }
+    .viewer button, .viewer input, .viewer select { min-height: 44px; }
+    .viewer input[type="checkbox"] { min-height: 20px; flex-shrink: 0; }
+    .viewer .ranges { gap: 4px; }
+    .viewer .ranges button { padding-inline: 10px; }
+    .settings { padding: 10px; }
+    .view-heading { gap: 8px; }
 }

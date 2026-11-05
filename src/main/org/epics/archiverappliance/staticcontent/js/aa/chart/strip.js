@@ -108,6 +108,9 @@ export function buildRangeStrip(input, ranges, units, redraw) {
     zone.title = "The time zone of the charts and the times; chosen in the menu bar";
     time.append(zone);
     strip.append(time);
+    if (input.values === false) {
+        return strip;
+    }
     const values = document.createElement("span");
     values.className = "strip-group";
     for (const unit of units) {
@@ -138,10 +141,9 @@ export function buildRangeStrip(input, ranges, units, redraw) {
     strip.append(
         stripControl("back", "Reset all: the time window and every value range", "All", anything, () => {
             ranges.clear();
+            redraw();
             if (chosen && typeof input.onReset === "function") {
                 input.onReset();
-            } else {
-                redraw();
             }
         })
     );

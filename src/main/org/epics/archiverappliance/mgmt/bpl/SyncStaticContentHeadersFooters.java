@@ -16,6 +16,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Small utility to sync the headers and footers from index.html to the other html files.
@@ -26,6 +28,55 @@ import java.util.LinkedList;
  *
  */
 public class SyncStaticContentHeadersFooters {
+    private static final Pattern COMMON_PREFIX = Pattern.compile("data-common-prefix=[\"']((?:\\.\\./)*)[\"']");
+    private static final Pattern ASSET_ATTRIBUTE = Pattern.compile(
+            "(\\b(?:src|href|srcset)\\s*=\\s*)([\"'])(.*?)\\2", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+    /** Adapts shared asset references in a template block to the destination page's directory depth. */
+    private static String rebaseAssets(String chunk, String prefix) {
+        if (prefix.isEmpty()) return chunk;
+        Matcher matcher = ASSET_ATTRIBUTE.matcher(chunk);
+        StringBuilder output = new StringBuilder();
+        while (matcher.find()) {
+            String value = matcher.group(3);
+            if (matcher.group(1).trim().toLowerCase(java.util.Locale.ROOT).startsWith("srcset")) {
+                value = rebaseSrcset(value, prefix);
+            } else {
+                value = value.replaceFirst("^(\\s*)comm/", "$1" + Matcher.quoteReplacement(prefix + "comm/"));
+            }
+            matcher.appendReplacement(output, Matcher.quoteReplacement(
+                    matcher.group(1) + matcher.group(2) + value + matcher.group(2)));
+        }
+        matcher.appendTail(output);
+        return output.toString();
+    }
+
+    /** Walks candidate URLs separately from descriptors; commas inside a URL remain part of that URL. */
+    private static String rebaseSrcset(String value, String prefix) {
+        StringBuilder output = new StringBuilder();
+        int cursor = 0;
+        while (cursor < value.length()) {
+            int start = cursor;
+            while (cursor < value.length() && (Character.isWhitespace(value.charAt(cursor)) || value.charAt(cursor) == ',')) cursor++;
+            output.append(value, start, cursor);
+            start = cursor;
+            while (cursor < value.length() && !Character.isWhitespace(value.charAt(cursor))) cursor++;
+            String url = value.substring(start, cursor);
+            if (url.startsWith("comm/")) output.append(prefix);
+            output.append(url);
+            if (url.endsWith(",")) continue;
+            start = cursor;
+            int parentheses = 0;
+            while (cursor < value.length()) {
+                char character = value.charAt(cursor++);
+                if (character == '(') parentheses++;
+                else if (character == ')' && parentheses > 0) parentheses--;
+                else if (character == ',' && parentheses == 0) break;
+            }
+            output.append(value, start, cursor);
+        }
+        return output.toString();
+    }
 
     public static void main(String[] args) throws IOException {
         if (args.length < 2) {
@@ -46,6 +97,8 @@ public class SyncStaticContentHeadersFooters {
         }
 
         for (File fileToModify : filesToModify) {
+            Matcher prefixMarker = COMMON_PREFIX.matcher(Files.readString(fileToModify.toPath()));
+            String prefix = prefixMarker.find() ? prefixMarker.group(1) : "";
             System.out.println("Changing headers and footers for " + fileToModify.getAbsolutePath());
             File outputFile = new File(fileToModify.getAbsolutePath().concat("_generated"));
             try (PrintWriter out = new PrintWriter(new FileOutputStream(outputFile))) {
@@ -58,7 +111,7 @@ public class SyncStaticContentHeadersFooters {
                         if (srcChunk == null) {
                             out.print(destTextChunk.textChunk);
                         } else {
-                            out.print(srcChunk);
+                            out.print(rebaseAssets(srcChunk, prefix));
                         }
                     }
                 }

@@ -5,8 +5,10 @@ import { infoButton } from "../card.js";
 import { node } from "../dom.js";
 import { MARKER_LIMIT, drawTimeSeries } from "./draw.js";
 import { currentZone, onZoneChange } from "../timezone.js";
-import { onProfileChange, withProfile } from "./profile.js";
-import { buildChartOptions, CHART_OPTIONS } from "./options.js";
+import { onProfileChange } from "./profile.js";
+import { buildChartOptions, CHART_OPTIONS, normalizeOptions } from "./options.js";
+import { validRanges, withChartState } from "./state.js";
+import { buildRangeStrip } from "./strip.js";
 
 // The options, the open tab and the state of the panel of each chart, by the id the page gives it. A page that builds its
 // host again at each refresh builds the widget again and finds the choice of the person here.
@@ -75,7 +77,7 @@ function cardsOf(helpHref, timed) {
 }
 
 /**
- * Builds the chart in host and returns {draw(data), message(text), options}.
+ * Builds the chart in host and returns {draw(data), message(text), getState(), setState(patch), options}.
  * config, given once: id (the key of the choices the widget keeps), idPrefix (puts a prefix before the id of each control, for a
  * page with more than one chart; without it the ids are options, enlarge, chart and so on), title and dialogTitle (the headings of
  * the row and of the large window; both optional), help ([title, rows, action, helpHref] of the card of how to read this chart,
@@ -85,9 +87,23 @@ function cardsOf(helpHref, timed) {
  * drag over the plot and no Earlier, Later or Back to the selected range.
  * draw(data), at each refresh: series, from, to, gapMs, windowChosen, canPanLater and analyzerHref (a string, or null for no link).
  * message(text) shows a text in place of the chart. options is the object of the options the person chose.
+ * initialState initializes {options, projection, ranges: [[unit, [low, high]]], hidden: [name]}.
+ * getState() returns a copy; setState(patch) validates, redraws and reports through onStateChange(state).
+ * controlsHost places the option controls outside the widget and leaves its ordinary toolbar out. statisticsHost
+ * places statistics independently of projection; rangeHost places a time-only strip outside the drawing.
+ * fitWidth scales a drawing with many axes to its host instead of scrolling it horizontally.
  */
 export function createChart(host, config) {
     const memory = MEMORY.get(config.id) || { options: { ...CHART_OPTIONS }, optionsOpen: false, optionsTab: "projection" };
+    memory.ranges ||= new Map();
+    memory.hidden ||= new Set();
+    memory.projection ??= null;
+    if (config.initialState) {
+        memory.options = normalizeOptions(config.initialState.options);
+        memory.projection = config.initialState.projection === true;
+        memory.ranges = new Map(validRanges(config.initialState.ranges));
+        memory.hidden = new Set(config.initialState.hidden || []);
+    }
     MEMORY.set(config.id, memory);
     const idOf = (role) => (config.idPrefix ? `${config.idPrefix}-${role}` : role);
     const helpHref = config.helpHref || "help.html";
@@ -136,9 +152,9 @@ export function createChart(host, config) {
         panelChart,
     );
     const chartHost = node("div", { id: idOf("chart"), class: "chart" });
-    const area = node("div", { id: idOf("plotArea"), class: "chart-area" }, panel, chartHost);
+    const area = node("div", { id: idOf("plotArea"), class: "chart-area" }, config.controlsHost ? null : panel, chartHost);
     host.textContent = "";
-    host.append(head, area);
+    host.append(...(config.controlsHost ? [area] : [head, area]));
 
     // A change of the zone of the application redraws the last data in the new zone.
     onZoneChange(() => redraw());
@@ -146,7 +162,52 @@ export function createChart(host, config) {
     onProfileChange(() => redraw());
 
     /** The projection is on while the panel is open on its Projection tab. */
-    const projectionOn = () => memory.optionsOpen && memory.optionsTab === "projection";
+    const projectionOn = () => memory.projection === null ? memory.optionsOpen && memory.optionsTab === "projection" : memory.projection;
+
+    function getState() {
+        return { options: { ...memory.options }, projection: projectionOn(),
+            ranges: validRanges([...memory.ranges]), hidden: [...memory.hidden] };
+    }
+
+    function updateLinks() {
+        for (const anchor of links) {
+            anchor.hidden = !last?.analyzerHref;
+            anchor.setAttribute("href", last?.analyzerHref ? withChartState(last.analyzerHref, getState()) : "#");
+        }
+    }
+
+    function rangeControls() {
+        if (config.rangeHost && last) {
+            config.rangeHost.replaceChildren(buildRangeStrip({ ...last, timeZone: config.timeZone || currentZone(),
+                onPan: config.onPan, onReset: config.onReset, values: false }, memory.ranges, [], redraw));
+        }
+    }
+
+    function changed() {
+        updateLinks();
+        rangeControls();
+        if (typeof config.onStateChange === "function") {
+            config.onStateChange(getState());
+        }
+    }
+
+    function setState(patch) {
+        if (patch.options) {
+            memory.options = normalizeOptions({ ...memory.options, ...patch.options });
+            optionControls();
+        }
+        if (typeof patch.projection === "boolean") {
+            memory.projection = patch.projection;
+        }
+        if (patch.ranges) {
+            memory.ranges = new Map(validRanges(patch.ranges));
+        }
+        if (patch.hidden) {
+            memory.hidden = new Set(patch.hidden);
+        }
+        redraw();
+        changed();
+    }
 
     function redraw() {
         if (last) {
@@ -156,10 +217,6 @@ export function createChart(host, config) {
 
     function draw(data) {
         last = data;
-        for (const anchor of links) {
-            anchor.hidden = !data.analyzerHref;
-            anchor.setAttribute("href", data.analyzerHref ? withProfile(data.analyzerHref) : "#");
-        }
         drawTimeSeries(chartHost, {
             series: data.series,
             from: data.from,
@@ -167,11 +224,17 @@ export function createChart(host, config) {
             gapMs: data.gapMs,
             legend: config.legend,
             labelNames: config.labelNames,
-            strip: config.strip,
+            strip: config.rangeHost ? false : config.strip,
+            fitWidth: config.fitWidth,
             timeZone: config.timeZone || currentZone(),
             projection: projectionOn(),
             // The table of the Y projection is in the Projection tab above the chart, on the page and in the large window alike.
-            statisticsHost: projectionStats,
+            statisticsHost: config.statisticsHost || projectionStats,
+            statistics: Boolean(config.statisticsHost),
+            ranges: memory.ranges,
+            hidden: memory.hidden,
+            onRangesChange: changed,
+            onVisibilityChange: changed,
             info: (topic) => (topic === "statistics" ? infoButton(...cards.statistics) : topic === "range" ? infoButton(...cards.range) : null),
             windowChosen: data.windowChosen,
             canPanLater: data.canPanLater,
@@ -181,11 +244,16 @@ export function createChart(host, config) {
             onZoom: config.onZoom,
             onReset: config.onReset,
         });
+        updateLinks();
+        rangeControls();
     }
 
     function message(text) {
         last = null;
         chartHost.textContent = text;
+        for (const element of [].concat(config.statisticsHost || projectionStats)) {
+            element.textContent = "";
+        }
         for (const anchor of links) {
             anchor.hidden = true;
             anchor.setAttribute("href", "#");
@@ -211,6 +279,7 @@ export function createChart(host, config) {
     function openOptions() {
         memory.optionsOpen = !memory.optionsOpen;
         showOptions();
+        changed();
     }
 
     toggles[0].addEventListener("click", openOptions);
@@ -218,18 +287,20 @@ export function createChart(host, config) {
         tab.addEventListener("click", () => {
             memory.optionsTab = name;
             showOptions();
+            changed();
             tab.focus();
         });
         tab.addEventListener("keydown", (event) => {
             if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
                 memory.optionsTab = memory.optionsTab === "projection" ? "chart" : "projection";
                 showOptions();
+                changed();
                 (memory.optionsTab === "projection" ? tabProjection : tabChart).focus();
             }
         });
     }
-    panelChart.append(
-        buildChartOptions(
+    function optionControls() {
+        (config.controlsHost || panelChart).replaceChildren(buildChartOptions(
             memory.options,
             (next) => {
                 memory.options = next;
@@ -237,10 +308,12 @@ export function createChart(host, config) {
                     config.onOptionsChange(next);
                 }
                 redraw();
+                changed();
             },
             infoButton(...cards.options),
-        ),
-    );
+        ));
+    }
+    optionControls();
 
     /** Builds the large window the first time it is wanted; a window left by an earlier widget of the same id is replaced. */
     function buildDialog() {
@@ -254,7 +327,7 @@ export function createChart(host, config) {
         const bigLink = trackLink(analyzerLink("openAnalyzerBig"));
         bigLink.hidden = !(last && last.analyzerHref);
         if (last && last.analyzerHref) {
-            bigLink.setAttribute("href", withProfile(last.analyzerHref));
+            bigLink.setAttribute("href", withChartState(last.analyzerHref, getState()));
         }
         const bigInfo = node("span", { id: idOf("chartDialogInfo") });
         if (config.help) {
@@ -318,6 +391,8 @@ export function createChart(host, config) {
     return {
         draw,
         message,
+        getState,
+        setState,
         get options() {
             return memory.options;
         },

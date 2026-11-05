@@ -1,5 +1,7 @@
 // The pointer and keyboard gestures of a chart: a drag across the plot, a drag or the keys along an axis, and a double-click.
 
+const d3 = globalThis.d3;
+
 // The value ranges a viewer chose by a drag along an axis, by unit, kept per chart host across redraws.
 export const RANGES = new WeakMap();
 
@@ -13,10 +15,7 @@ export function attachGestures({ svg, host, input, redraw, x, scales, units, ran
     const plotBottom = height - margin.bottom;
     const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
     const band = svg.append("rect").attr("class", "brush").attr("visibility", "hidden");
-    const pointAt = (event) => {
-        const box = svg.node().getBoundingClientRect();
-        return [((event.clientX - box.left) / box.width) * width, ((event.clientY - box.top) / box.height) * height];
-    };
+    const pointAt = (event) => d3.pointer(event, svg.node());
     // The index of the unit whose axis column holds the point, or -1.
     const axisIndexAt = (px, py) => {
         if (py < plotTop || py > plotBottom) {
@@ -150,7 +149,7 @@ export function attachGestures({ svg, host, input, redraw, x, scales, units, ran
                     redraw();
                     for (const element of host.querySelectorAll(".axis-key")) {
                         if (element.dataset.unit === unit) {
-                            element.focus();
+                            element.focus({ preventScroll: true });
                         }
                     }
                 }

@@ -8,7 +8,8 @@
         return;
     }
     // An entry covers the page its href names and the pages its data-pages attribute lists (the System tabs).
-    const page = window.location.pathname.split("/").pop() || "index.html";
+    const external = document.body.dataset.consoleNavigation === "external";
+    const page = document.body.dataset.menuPage || window.location.pathname.split("/").pop() || "index.html";
     const pagesOf = (link) => [(link.getAttribute("href") || "").split(/[?#]/)[0]]
         .concat((link.dataset.pages || "").split(/\s+/).filter(Boolean));
     const current = Array.from(menu.querySelectorAll("a")).find((link) => pagesOf(link).includes(page));
@@ -29,7 +30,7 @@
     };
     const entryHref = new Map(Array.from(menu.querySelectorAll("a")).map((link) => [link, link.getAttribute("href") || ""]));
     const record = () => {
-        if (!current) {
+        if (!current || external) {
             return;
         }
         const key = entryHref.get(current);
@@ -40,26 +41,31 @@
             storage.remove(key);
         }
     };
-    // The Analyzer entry carries the display profile of the charts in its address, which analyzer-forward.js passes on to the
-    // viewer. The profile is kept by aa/chart/profile.js under this key; a module cannot be imported here, so the key and the
-    // event of that module are read directly. Default is not written, as the browser time zone is not.
-    const PROFILE_KEY = "aa.chartProfile";
-    const chosenProfile = () => {
+    // The classic menu script follows the preference modules through their shared storage and change events.
+    // Effective defaults are explicit so another origin cannot replace the source page's choices with its own store.
+    const preference = (parameter, key, choices, fallback) => {
+        const fromAddress = new URLSearchParams(window.location.hash.slice(1)).get(parameter)
+            || new URLSearchParams(window.location.search).get(parameter);
+        let stored = null;
         try {
-            const id = window.localStorage.getItem(PROFILE_KEY);
-            return id && id !== "default" && /^[a-z]+$/.test(id) ? id : "";
+            stored = window.localStorage.getItem(key);
         } catch (e) {
-            return "";
+            // The current page's choices remain available through the change events.
         }
+        const value = fromAddress || stored;
+        return choices.includes(value) ? value : fallback;
     };
+    let profile = preference("profile", "aa.chartProfile", ["default", "redgreen", "mono"], "default");
+    let zone = preference("tz", "aa.timeZone",
+        ["browser", "UTC", "America/Los_Angeles", "America/Chicago", "America/New_York", "Asia/Seoul", "Europe/Berlin"], "browser");
     const restore = () => {
+        if (external) return;
         entryHref.forEach((plain, link) => {
             if (link === current || /[?#]/.test(plain)) {
                 return;
             }
             if (plain === "analyzer.html") {
-                const id = chosenProfile();
-                link.setAttribute("href", id ? `${plain}?profile=${encodeURIComponent(id)}` : plain);
+                link.setAttribute("href", `${plain}?${new URLSearchParams({ tz: zone, profile })}`);
                 return;
             }
             const saved = storage.get(plain);
@@ -72,7 +78,8 @@
     };
     restore();
     window.addEventListener("hashchange", record);
-    document.addEventListener("aa-chart-profile", restore);
+    document.addEventListener("aa-chart-profile", (event) => { profile = event.detail.profile; restore(); });
+    document.addEventListener("aa-timezone", (event) => { zone = event.detail.zone; restore(); });
     window.addEventListener("pagehide", record);
     window.addEventListener("pageshow", (event) => {
         if (event.persisted) {

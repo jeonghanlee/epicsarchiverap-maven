@@ -325,32 +325,71 @@ service limits its concurrent calls with its own permits, set by
 
 ## The data viewer
 
-The retrieval web application serves a data viewer at
+The retrieval web application serves the Analyzer at
 `http://archiver.example.org:17668/retrieval/ui/viewer/archViewer.html`.
-It reads the data of its own appliance through the `getData.json` URL
-and draws one chart per unit, with at most eight PVs in a chart:
+Trend draws numeric scalar signals together, with one value axis per unit.
+It retrieves data from its own appliance through `getData.json`.
+Its header has the console menu, time zone, and display profile.
+The other menu entries navigate to the management address returned by
+its own `getApplianceInfo` action.
 
-```
-http://archiver.example.org:17668/retrieval/ui/viewer/archViewer.html?pv=TEST:PV:1&pv=TEST:PV:2&from=2026-09-24T00:00:00.000Z&to=2026-09-24T01:00:00.000Z
-```
+![The Analyzer with three signals, common time controls, and Trend settings](images/viewer.png)
 
-![The data viewer with four PVs in two charts](images/viewer.png)
+The tabs are Trend, Distribution, Correlation, Dependency, Spectrum,
+Compare, Waveform, and Image. Trend is available. Selecting another tab
+explains its status and keeps Trend visible. An address naming an
+unavailable view offers **Return to Trend** without displaying an analysis result.
 
-| Part | Use |
+| Control | Effect |
 | --- | --- |
-| `pv` (repeatable) | the PVs to show; the **Add a PV** box suggests archived names |
-| `from`, `to` | the window, ISO 8601; without them the viewer shows the last hour |
-| The range buttons and the **From** and **To** fields | change the window |
-| **Copy link** | copies an address that reproduces the view |
-| **Download CSV** | the values as drawn, with the column `interval_seconds` |
+| **Archived PV**, **Plot** | Suggest archived names and add a signal; **Remove** beside its name removes it |
+| **From**, **To**, range shortcuts, **Show** | Set the common time window in the selected zone; shortcuts prepare the fields and Show applies them |
+| Earlier, Later, Back to the selected range | Move the common window by half its span or return to the last range applied with Show |
+| **Signals** | Show or hide lines and inspect the returned sample count, unit, or retrieval error |
+| **Axes** | Apply a finite minimum and maximum for one unit; Auto removes that unit's range |
+| **Options** | Choose line shape, Y scale, sample marks, running average, standard deviation band, averaging window, and Y projection |
+| **Data** | Inspect statistics for visible samples inside the time and Y ranges; the same table appears below the plot, with projection on or off |
+| **Export** | Copy the current address or download the retrieved numeric samples as CSV, including hidden lines |
 
-A window of up to 11 minutes shows the stored samples. A longer window
-shows means over equal intervals, requested as `meanSample_N`, and the
-chart says so. An interval without a sample has no value and the line
-stops there, so a lost connection is never drawn as a held value. The
-Browse PVs page of the web interface opens the plotted PVs, or all the PVs of its
-table, in the viewer through the Analyzer entry
-([Operating](operating.md#the-web-interface)).
+The settings panel sits beside the plot at widths of 1100 pixels and
+above, and below it on narrower screens. **Hide settings** gives the
+plot the full available width. Dragging across the plot changes the common
+time window; dragging along an axis changes only that unit's Y range.
+A focused value axis accepts the arrow keys, plus, minus, and Home.
+A double-click resets the time and all value ranges.
+
+The address uses one named parameter for each setting:
+
+| Parameter | Values and fallback |
+| --- | --- |
+| `pv` (repeatable) | Ordered PV names, with duplicates removed |
+| `from`, `to` | Absolute ISO 8601 times; without them the last hour |
+| `tz` | `browser`, `UTC`, `America/Los_Angeles`, `America/Chicago`, `America/New_York`, `Asia/Seoul`, or `Europe/Berlin`; missing or invalid uses Browser |
+| `profile` | `default`, `redgreen`, or `mono`; missing or invalid uses the retrieval origin's valid stored profile, or Default |
+| `view` | `trend` or another tab name in lowercase; unknown values use Trend |
+| `shape` | `step` (default), `line`, `smooth`, `points` |
+| `yscale` | `linear` (default), `symlog`, `log`, `sqrt` |
+| `marks` | `auto` (default), `on`, `off` |
+| `avg`, `band`, `yproj` | `1` enables the running average, standard deviation band, or Y projection; otherwise off |
+| `window` | `10`, `30` (default), or `60` samples for the average and band |
+| `yrange` (repeatable) | `unit:minimum:maximum`, for example `mm:-2:2`; `none` names signals without a unit |
+
+Valid explicit preferences win independently. Links from the console and
+**Copy link** include both `tz` and `profile`, even for Browser and Default.
+Range changes preserve them. Unknown parameters and unreadable option
+values are ignored. The address restores settings; it does not freeze
+archived data. Hidden-line choices are local to the open page.
+
+A window of up to 700 seconds shows stored samples. Longer windows use
+`meanSample_N`, where N is the span in seconds divided by 700, rounded up.
+The source note identifies the interval. Empty intervals have no value;
+recorded connection losses interrupt the line. CSV uses the columns
+`pv`, `time`, `value`, `severity`, and `interval_seconds`.
+The interval is 1 for stored samples and N for means over N seconds.
+Non-numeric samples are not included in Trend or this CSV.
+
+The Browse PVs page opens the plotted PVs, or all selected PVs, with the
+current chart settings ([Operating](operating.md#the-web-interface)).
 
 ## Phoebus Data Browser
 

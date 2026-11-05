@@ -1,9 +1,9 @@
 # Analyzer design
 
 Date: 2026-11-04
-Status: draft 2; four items are open (see Decisions)
+Status: draft 2; M1 composition accepted; three M2 items are open (see Decisions)
 Register: `docs/milestone-bfb0dc71.md` M1 (phase A: page, header and address), M2 (phase B: interaction, options and export), M3 (phase C: tools for one signal), M4 (phase D: tools for two and several signals), M5 (phase E: waveforms and images); the chart component is row M59 (previous document, commit bfb0dc71), complete; issue #39
-Register decisions of `docs/milestone-bfb0dc71.md`: register D1 (console pages), register D2 (the analyzer as a self-contained analysis tool built with the bundled D3) and register D5 (the five phases); D1 to D6 under Decisions are the decisions of this note
+Register decisions of `docs/milestone-bfb0dc71.md`: register D1 (console pages), register D2 (the analyzer as a self-contained analysis tool built with the bundled D3) and register D5 (the five phases); D1 to D10 under Decisions are the decisions of this note
 
 ## Scope
 
@@ -15,7 +15,7 @@ This document gathers the design of the analyzer: what it is, how it relates to 
 
 - **Analyzer:** the page of the retrieval web application that draws and analyzes archived data (`ui/viewer/archViewer.html`, `viewer.js`, `viewer.css`). It replaces the data viewer.
 - **Console:** the management interface, served by the management web application; its menu has the entries Archive PVs, Browse PVs, System, Help and Analyzer (register decision D1).
-- **Chart component:** the shared drawing code under `staticcontent/js/aa/chart/`, served to both web applications as `ui/comm/js/aa/`; `createChart` builds a chart with its options, legend, projection, statistics and range strip; `drawTimeSeries` draws one chart.
+- **Chart component:** the shared drawing code under `staticcontent/js/aa/chart/`, served to both web applications as `ui/comm/js/aa/`; `createPlotCanvas` supplies independent axes, clipping and interactions for numeric or time scales; `drawTimeSeries` composes its sample layers; `createChart` builds a chart with its options, legend, projection, statistics and range strip. The [canvas API](design-chart-canvas.md) defines ownership and lifecycle.
 - **Simple form:** the chart component as the console pages use it: one axis per unit, a legend, a tooltip, ranges chosen with the pointer, the Y projection with its statistics, the Chart options and an enlarged window (M59 (previous document, commit bfb0dc71)).
 - **Signal:** one PV as a time series. Type information identifies its data form, such as numeric scalar, enum/string or numeric array; it does not establish a physical source or probability distribution. Image interpretation requires declared dimensions compatible with the selected array, and a physical array axis requires metadata or user input.
 - **Tool:** one analysis the analyzer offers for a kind of signal (a summary, a distribution, a fit, a scatter plot, a spectrum).
@@ -23,14 +23,14 @@ This document gathers the design of the analyzer: what it is, how it relates to 
 
 ## Current structure
 
-- The analyzer is the data viewer: a bar with the title, a PV input named Add, the range buttons and the From/To form, then one chart for each unit drawn through `drawTimeSeries` with `strip: false`, then Copy link and Download CSV. It reads `pv` (repeated), `from` and `to` from its address and writes them back. It carries no site header, logo or menu. Its content security policy allows connections to its own origin only.
-- The menu entry Analyzer of the console is `analyzer.html`, which asks the management for the appliance information and forwards to the viewer at `dataRetrievalURL`, carrying the query string along (`js/analyzer-forward.js`).
-- The Browse PVs page builds the address of the analyzer from the plotted PVs, the time window and, when the viewer chose one, the zone (`tz`); the options chosen on the page are not passed.
-- The chart component has the options Line (step, straight, smooth, points), Y scale (linear, symmetric log, log, square root), Marks (auto, on, off), Window (10, 30, 60 samples), Running average and Standard deviation band, which share the one window (`options.js`); a time range chosen by a drag over the plot and a value range by a drag along an axis, the arrow and plus and minus keys on a focused axis, and a double-click back (`gestures.js`); a legend that hides and shows a line; the Y projection with a table of statistics; the range strip (`strip.js`); the time axis on `d3.scaleTime` with four labels, at the start, one third, two thirds and the end of the span, written in the chosen zone (`draw.js`). The wheel does nothing; a touch gesture scrolls the page vertically and selects horizontally.
-- The Browse PVs page shows, under its chart, a Distribution panel, a scatter plot of two PVs and a Summary of the chart (`plots.js`, `browse.js`). The scatter plot takes a second PV of the same unit as the first, pairs only samples at exactly equal times, and draws the second PV's values on a linear Y scale in a chart of fixed height, with the X range alone written under it.
-- The bundled D3 7.9.0 (`staticcontent/js/vendor/d3.min.js`) carries `d3-zoom`, `d3-brush`, `d3-drag`, `contourDensity`, `Delaunay`, `quadtree` and `d3-dsv`; the pages use none of these.
-- The retrieval web application serves the BPL calls of its `BPLServlet` (metrics, PV details, searches, metadata) and none that answers the appliance information; the management serves `getApplianceInfo` with `mgmtURL` and `dataRetrievalURL`.
-- The static check (`scripts/ui-static-checks.bash`) verifies the four marker blocks of the site header (`site_header`, `site_logo`, `site_navbar`, `site_footer`) on the console pages only.
+- The Analyzer uses `createChart` for Trend, with one axis per unit, a common PV selection and time window above eight analysis tabs. Trend is available; the other seven tabs explain their status without presenting a result. Settings are beside the plot at wide widths and below it at compact widths.
+- Signals controls visibility and reports retrieval status. Axes owns ranges by unit. Options holds the shared drawing controls and Y projection. Data shows the existing statistics independently of projection. Export offers the viewer CSV and Copy link; the full M2 Data and Export tools remain planned.
+- Both console and Analyzer use the site header and menu. The default synchronizer and `SiteOverlay` apply the four blocks to management and retrieval, rebasing shared assets for the viewer directory. The retrieval WAR packages the console menu script.
+- The Analyzer calls its own `getApplianceInfo` action and uses `mgmtURL` for console navigation. Data and metadata requests stay on its origin, as required by its content security policy. The console's `analyzer.html` forwards its query string to `dataRetrievalURL` through `js/analyzer-forward.js`.
+- The menu, plotted-PV link, enlarged-chart link and Open all selected explicitly carry `tz` and `profile`. The chart links also carry options, projection and ranges by unit. The shared `chart/state.js` reads and writes the M1 query contract. Missing or invalid `tz` uses Browser; missing or invalid `profile` uses the retrieval origin's valid stored profile or Default.
+- The chart widget exposes initial state, copied state access, state updates and change notifications. It accepts external controls, statistics and a time-only range strip while preserving console placement. Pointer, keyboard and reset actions report ranges to the caller.
+- The shared options are Line, Y scale, Marks, Window, Running average and Standard deviation band. The time axis keeps four labels in the selected zone. The wheel has no zoom action; advanced gestures are M2 work.
+- Browse PVs retains its Distribution, scatter and Summary panels. The bundled D3 remains the only chart library. The static check covers the four site marker blocks on both console pages and the Analyzer.
 
 ## Reference tools
 
@@ -59,7 +59,7 @@ Read on 2026-10-19: the Phoebus Data Browser (EPICS), SLAC Trace (PyDM; the repl
 
 ### What the analyzer takes from them
 
-- The structure: the selection and the range at the top; tabs by kind of analysis in the middle with a comparison as a split view; a drawer with the tabs Signals, Axes, Options, Data and Export; the drag tool chosen on the range strip with the wheel and the hover always on. This structure is a proposal: the page composition and the assignment of the drag are open (Decisions).
+- The structure: selection and range at the top, analysis tabs, and a panel with Signals, Axes, Options, Data and Export. The M1 foundation composition is accepted. Split comparison, advanced controls and the drag assignment belong to the later phases; the drag assignment remains open (Decisions).
 - The options: line width and style, a gap threshold that disconnects the line, a fill between two signals, soft and fixed axis ranges, grid lines, centered zero, SI prefixes, an axis label, a legend in table mode with computed values, a tooltip in single or all mode with a sort order, thresholds as lines with the time beyond them, decimals and a display name per signal, a filter by value, a group by time interval with a reduce, undo and redo of the range, and the full export of the Export tab (below).
 
 ## Analysis scenarios
@@ -104,7 +104,9 @@ The current proposal uses eight analysis tabs: Trend, Distribution, Correlation,
 
 [Analyzer interface design](design-analyzer-ui.md) specifies the complete page, each view, shared and local state, unavailable tools, data handling, compact layouts and the M1-M5 boundaries. The [clickable mockup](../work/analyzer-mockup/index.html) demonstrates the full composition and a separate M1 foundation mode using explicitly synthetic examples.
 
-The owner reviews the composition, range-strip placement, configuration panels and unavailable-tool presentation from this proposal before M1 is accepted. The request to design the complete interface does not accept the layout or authorize product implementation. The existing open gesture and numerical-method choices remain open.
+Decision 2026-11-04 (D9): place one shared time-range control group with the common PV and time selection above the analysis tabs. Every chart uses that common range; do not repeat the time controls for each chart. Axes contains the unit-specific Y-range settings. Existing console chart placement remains unchanged.
+
+Decision 2026-11-04 (D10): the M1 foundation composition, configuration panels and unavailable-tool presentation are accepted, and the current M1 implementation plan is authorized. The right-hand settings panel moves below the plot at compact widths; statistics remain below the plot; unavailable tabs explain their status without activating a calculation. The existing open gesture and numerical-method choices remain for their later phases.
 
 ### Input suitability checks
 
@@ -219,7 +221,7 @@ Every check runs on a local appliance with the shipped soft IOC fixture (`src/re
 
 ## Decisions
 
-D1 to D8 are the decisions of this note. register D1, D2 and D5 are decisions of the register. The four Open rows are undecided; the owner decides each, as the row states.
+D1 to D10 are the decisions of this note. Register D1, D2 and D5 are decisions of the register. The three Open rows are undecided; the owner decides each before M2 is accepted.
 
 | ID | Decision | Date |
 | --- | --- | --- |
@@ -231,7 +233,8 @@ D1 to D8 are the decisions of this note. register D1, D2 and D5 are decisions of
 | D6 | The analyzer carries the same menu as the console pages; an entry pressed on either side navigates to the page on the other side | 2026-10-19 |
 | D7 | Record per-tool input suitability checks in the plans; implement and verify them with each analysis tab or tool in M3-M5, without adding a prerequisite or completion criterion to M1 | 2026-11-04 |
 | D8 | Preserve legacy preference fallback: missing `tz` uses Browser; missing `profile` uses the retrieval origin's valid stored profile or Default. Valid explicit values win independently; new source-page and copied links always specify both preferences, including Browser and Default | 2026-11-04 |
-| Open | The eight-analysis-tab proposal in `design-analyzer-ui.md`: common controls, range strip, configuration panels and unavailable-tool presentation, from `work/analyzer-mockup/index.html`; the owner decides before M1 is accepted | |
+| D9 | Use one shared time-range control group above the analysis tabs, with the common PV/time selection; configure each unit's Y range in Axes. Do not repeat the time controls for each chart | 2026-11-04 |
+| D10 | Accept the M1 foundation composition, configuration panels and unavailable-tool presentation in `design-analyzer-ui.md`, demonstrated by the mockup's M1 mode; authorize the current M1 plan after D8 and D9. M2-M5 capabilities remain outside this authorization | 2026-11-04 |
 | Open | The assignment of the drag on the plot: select (as in the simple form) with Shift to pan, or pan with Shift to select, or a mode control on the range strip; the reference tools (Bokeh, Plotly) use the mode control with one drag tool active at a time and the wheel and hover always on; the owner decides before the plan of M2 is accepted | |
 | Open | Whether a line carries a label at its end besides its entry in the legend, which names every line in the simple form (register M58 (previous document, commit bfb0dc71), decision of 2026-10-14); the owner decides before the plan of M2 is accepted | |
 | Open | The window of the running average and the band: one shared window (`window`, as the component and the address have it) or two; the owner decides before the plan of M2 is accepted | |

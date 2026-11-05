@@ -1,0 +1,136 @@
+// Reusable SVG plot surface. Callers supply scales and data layers; the surface owns axes, clipping and input geometry.
+import { attachGestures } from "./gestures.js";
+import { bindPlotHover } from "./hover.js";
+
+const d3 = globalThis.d3;
+const CLIP_PAD = 3;
+let nextClip = 0;
+
+/**
+ * Builds a detached surface with no PV, retrieval, application-state or storage dependency.
+ * x is a D3 continuous scale; scales is a Map of axis IDs to value scales. Units gives their order.
+ * The caller owns domains, ranges, dimensions and redraw. Marks belong in the returned clipped marks group.
+ * xTicks/xFormat support numeric or time axes without interpreting numbers as timestamps.
+ * bindInteractions(host, input, redraw) uses the same gestures as the time-series widget. Input contains
+ * ranges (Map), onZoom(low, high), onReset(), and optional keyboardX/wheel booleans. Redraw must rebuild
+ * the drawing from the updated ranges. No document/window listeners or observers are installed.
+ */
+export function createPlotCanvas(config) {
+    const { width, height, margin, x, scales, units, axisWidth, onLeft, tickCount = 5 } = config;
+    const onRight = units.length - onLeft;
+    const plotTop = margin.top;
+    const svg = d3.create("svg").attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("width", config.displayWidth || "100%").attr("height", height)
+        .attr("role", "img").attr("aria-label", config.label || "Chart")
+        .attr("data-chart-canvas", "shared");
+    const axisAt = (index) => {
+        const rightSide = index >= onLeft;
+        const step = rightSide ? index - onLeft : index;
+        return { rightSide, x: rightSide ? width - margin.right + axisWidth * step : margin.left - axisWidth * step };
+    };
+    units.forEach((unit, index) => {
+        const scale = scales.get(unit);
+        const { rightSide, x: axisX } = axisAt(index);
+        for (const tick of scale.ticks(tickCount)) {
+            if (index === 0) {
+                svg.append("line").attr("class", "grid").attr("x1", margin.left).attr("x2", width - margin.right)
+                    .attr("y1", scale(tick)).attr("y2", scale(tick));
+            }
+            svg.append("text").attr("class", "axis").attr("x", rightSide ? axisX + 6 : axisX - 6)
+                .attr("y", scale(tick) + 4).attr("text-anchor", rightSide ? "start" : "end")
+                .text(d3.format(".4~g")(tick));
+        }
+        if (config.unitLabels) {
+            svg.append("line").attr("class", "axis-line").attr("x1", axisX).attr("x2", axisX)
+                .attr("y1", plotTop).attr("y2", height - margin.bottom);
+            svg.append("text").attr("class", "axis unit").attr("x", axisX).attr("y", plotTop - 14)
+                .attr("text-anchor", config.axisLabelAnchor || (rightSide ? "start" : "end"))
+                .text(config.axisLabels?.get(unit) || unit || "no unit");
+        }
+    });
+    const ticks = config.xTicks || x.ticks(5);
+    const format = config.xFormat || d3.format(".4~g");
+    ticks.forEach((value, index) => {
+        svg.append("text").attr("class", "axis").attr("x", x(value))
+            .attr("y", config.xTickY ?? height - 8)
+            .attr("text-anchor", index === 0 ? "start" : index === ticks.length - 1 ? "end" : "middle")
+            .text(format(value));
+    });
+    if (config.xLabel) {
+        svg.append("text").attr("class", "axis").attr("x", (margin.left + width - margin.right) / 2)
+            .attr("y", height - 7).attr("text-anchor", "middle").text(config.xLabel);
+    }
+    const clipId = `aa-chart-clip-${++nextClip}`;
+    svg.append("clipPath").attr("id", clipId).append("rect")
+        .attr("x", margin.left - CLIP_PAD).attr("y", plotTop - CLIP_PAD)
+        .attr("width", width - margin.right - margin.left + 2 * CLIP_PAD)
+        .attr("height", height - margin.bottom - plotTop + 2 * CLIP_PAD);
+    const marks = svg.append("g").attr("class", "plot-marks").attr("clip-path", `url(#${clipId})`);
+
+    function bindInteractions(host, input, redraw) {
+        attachGestures({ svg, host, input, redraw, x, scales, units, ranges: input.ranges,
+            width, height, margin, plotTop, axisWidth, onLeft, onRight, axisAt });
+        if (typeof input.onZoom !== "function") return;
+        const choose = (low, high) => {
+            if (Number.isFinite(+low) && Number.isFinite(+high) && +low < +high) input.onZoom(low, high);
+        };
+        if (input.keyboardX) {
+            svg.append("rect").attr("class", "axis-key axis-key-x").attr("tabindex", 0).attr("role", "group")
+                .attr("aria-label", "X range: left and right move, plus and minus zoom, Home resets")
+                .attr("pointer-events", "none").attr("x", margin.left).attr("y", height - margin.bottom)
+                .attr("width", width - margin.left - margin.right).attr("height", margin.bottom)
+                .on("keydown", (event) => {
+                    const [left, right] = x.range();
+                    const span = right - left, middle = (left + right) / 2;
+                    const pairs = { ArrowLeft: [left - span / 4, right - span / 4], ArrowRight: [left + span / 4, right + span / 4],
+                        "+": [middle - span / 4, middle + span / 4], "=": [middle - span / 4, middle + span / 4],
+                        "-": [middle - span, middle + span] };
+                    if (!pairs[event.key] && event.key !== "Home") return;
+                    event.preventDefault();
+                    if (event.key === "Home") input.onReset?.();
+                    else choose(...pairs[event.key].map(x.invert));
+                    host.querySelector(".axis-key-x")?.focus({ preventScroll: true });
+                });
+        }
+        if (input.wheel) {
+            svg.on("wheel.canvas", (event) => {
+                if (!event.ctrlKey) return;
+                const [px, py] = d3.pointer(event, svg.node());
+                if (px < margin.left || px > width - margin.right || py < plotTop || py > height - margin.bottom) return;
+                event.preventDefault();
+                const factor = Math.exp(Math.max(-0.5, Math.min(0.5, event.deltaY * 0.002)));
+                choose(...x.range().map(value => x.invert(px + (value - px) * factor)));
+            }, { passive: false });
+        }
+    }
+
+    let hover;
+    const surface = { svg, marks, x, scales, units, width, height, margin, axisAt, bindInteractions,
+        bindHover(host, pick) { hover?.destroy(); hover = bindPlotHover(surface, host, pick); return hover; },
+        destroy() { hover?.destroy(); svg.remove(); } };
+    return surface;
+}
+
+/** Optional navigation controls. Domain values stay in the scale's native numeric or Date form. */
+export function buildCanvasControls(x, onZoom, onReset) {
+    const controls = document.createElement("div");
+    controls.className = "canvas-controls";
+    controls.setAttribute("role", "group");
+    controls.setAttribute("aria-label", "Plot navigation");
+    const [left, right] = x.range(), span = right - left, middle = (left + right) / 2;
+    const actions = [
+        ["Pan left", () => onZoom(x.invert(left - span / 4), x.invert(right - span / 4))],
+        ["Zoom in", () => onZoom(x.invert(middle - span / 4), x.invert(middle + span / 4))],
+        ["Zoom out", () => onZoom(x.invert(middle - span), x.invert(middle + span))],
+        ["Pan right", () => onZoom(x.invert(left + span / 4), x.invert(right + span / 4))],
+        ["Reset axes", onReset],
+    ];
+    for (const [label, action] of actions) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.addEventListener("click", action);
+        controls.append(button);
+    }
+    return controls;
+}

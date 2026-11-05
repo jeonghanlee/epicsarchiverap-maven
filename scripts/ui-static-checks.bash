@@ -121,7 +121,7 @@ while IFS= read -r page; do
     esac
 
     case "${name}" in
-        mgmt/staticcontent/*)
+        mgmt/staticcontent/*|retrieval/staticcontent/viewer/archViewer.html)
             for block in site_header site_logo site_navbar site_footer; do
                 begins=$(grep -c -F "@begin(${block})" "${page}" || true)
                 ends=$(grep -c -F "@end(${block})" "${page}" || true)
@@ -250,6 +250,7 @@ while IFS= read -r page; do
         case "${reference}" in
             comm/*) shared="staticcontent/${reference#comm/}" ;;
             ../comm/*) shared="staticcontent/${reference#../comm/}" ;;
+            ../js/menu.js) shared="mgmt/staticcontent/js/menu.js" ;;
         esac
         if [[ -f "${UI}/${resolved}" || -f "${UI}/${shared}" ]]; then
             _record_pass "${name} finds ${reference}"
@@ -457,6 +458,8 @@ A="main/org/epics/archiverappliance"
 if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
     expect_rejected "a page without its navigation block" "marker block site_navbar" \
         "${A}/mgmt/staticcontent/system.html" "sed -i '/@begin(site_navbar)/d' \"\$F\""
+    expect_rejected "an analyzer without its header block" "marker block site_header" \
+        "${A}/retrieval/staticcontent/viewer/archViewer.html" "sed -i '/@begin(site_header)/d' \"\$F\""
     expect_rejected "a main menu without its navigation name" "names its main menu navigation" \
         "${A}/mgmt/staticcontent/system.html" "sed -i 's| aria-label=\"Main menu\"||' \"\$F\""
     expect_rejected "a dialog without its name" "names every dialog by a heading" \

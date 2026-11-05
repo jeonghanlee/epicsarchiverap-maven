@@ -15,7 +15,7 @@ carries a content security policy, and the charts are drawn with D3.
 The addresses of the pages are relative to the base address of the
 management web application, for example
 `http://archiver.example.org:17665/mgmt/ui/index.html`
-([Installation layout and settings](installing.md)). The data viewer is served by the retrieval
+([Installation layout and settings](installing.md)). The Analyzer is served by the retrieval
 web application, at `http://archiver.example.org:17668/retrieval/ui/viewer/archViewer.html`.
 
 | Page | Address | For | Content |
@@ -26,9 +26,9 @@ web application, at `http://archiver.example.org:17668/retrieval/ui/viewer/archV
 | System: Operations | `operations.html` | The person who looks after the appliance | Samples, dropped samples, write path, stores and ETL, processes, configuration |
 | System: Retrieval performance | `retrieval.html` | A person whose data requests are slow | What the server reports and a request measured in the browser |
 | System: External servers | `external.html` | Administrators | The other EPICS Archiver Appliance installations whose data this appliance serves: add or remove one |
-| Analyzer | `analyzer.html` | Everyone | The Analyzer menu entry; forwards to the data viewer of the retrieval web application |
+| Analyzer | `analyzer.html` | Everyone | Forwards to the Analyzer of the retrieval web application |
 | Help | `help.html` | Everyone | How to use each page (moving around, Archive PVs, Browse PVs, System, Analyzer), a link to the management API reference of the appliance and a link to this manual, which needs access to the internet |
-| Data viewer | `/retrieval/ui/viewer/archViewer.html` | Everyone | Charts per unit for the PVs of the address |
+| Analyzer workspace | `/retrieval/ui/viewer/archViewer.html` | Everyone | Trend with one axis per unit, common time controls, settings, statistics, CSV, and Copy link |
 
 The right end of the menu bar of every page holds the time zone of the
 console: Browser (the default), UTC, Berkeley, Chicago, NYC, Seoul or
@@ -45,7 +45,10 @@ every line has its own combination of color, dash pattern and marker, and
 the legend shows the same combination as the line. The choice is kept in
 the browser, as the time zone is, and the Analyzer entry of the menu and
 the links of Browse that open the analyzer pass it to the data viewer in
-the address as `profile`.
+the address as `profile`. These links include both preferences even for
+Browser and Default. An explicit valid parameter wins in the Analyzer.
+Without `tz`, it uses Browser; without `profile`, it uses its origin's
+stored profile, or Default. The two fallbacks apply independently.
 
 The addresses `metrics.html`, `storage.html`, `appliance.html`,
 `reports.html`, `pvdetails.html`, `integration.html` and `cacompare.html`
@@ -130,11 +133,11 @@ through a time without samples, so a PV that changes rarely is drawn as
 one line. It stops at the last sample and starts again at the next one
 only where the archiver recorded a lost connection or an engine start, so
 a lost connection is never drawn as a held value. A range of up to 10
-minutes on the Browse PVs page (11 minutes in the viewer) shows the stored
+minutes on the Browse PVs page (700 seconds in the Analyzer) shows the stored
 samples; a longer one shows means over equal intervals (`meanSample_N`),
 and the chart says so. An interval of such a range in which the archiver
 has no sample has no value, and the line is not extended through it. The
-viewer's CSV download holds the values as drawn, with the column
+Analyzer's CSV download holds the retrieved numeric values, including hidden lines, with the column
 `interval_seconds` (1 for a stored sample, N for a mean over N seconds).
 
 The state of a PV and the actions in its row:
@@ -397,7 +400,8 @@ build copies each `staticcontent` folder whole into its WAR:
 | Folder | Served as | Content |
 | :--- | :--- | :--- |
 | `mgmt/staticcontent/` | `/mgmt/ui/` | The pages, `css/` and `js/` of the management interface |
-| `retrieval/staticcontent/viewer/` | `/retrieval/ui/viewer/` | The data viewer |
+| `retrieval/staticcontent/viewer/` | `/retrieval/ui/viewer/` | The Analyzer |
+| `mgmt/staticcontent/js/menu.js` | `/retrieval/ui/js/menu.js` | The same menu behavior used by the console |
 | `staticcontent/` | `ui/comm/` of every WAR | `css/main.css` (the site skin), `css/chart.css`, `img/` (the header and site logos), `js/aa/` (the shared chart code) and `js/vendor/` (D3) |
 
 The chart library is D3 7.9.0 (ISC): `js/vendor/d3.min.js` is
@@ -433,10 +437,12 @@ requires at least 4.5 to 1. A site file keeps the same contrast; the
 check does not read it.
 
 The build replaces the marker blocks `site_header`, `site_logo`,
-`site_navbar` and `site_footer` of every management page that carries
-them with those of `index.html`; the forwarding pages carry none. A
-site's `template_changes.html` replaces them in turn, so every other
-management page keeps the four blocks.
+`site_navbar` and `site_footer` of the management pages and the Analyzer
+with those of `index.html`; the forwarding pages carry none. A site's
+`template_changes.html` replaces those blocks in the staged files.
+For the Analyzer, the synchronizer changes `comm/` asset references to
+`../comm/` to match its directory. The Analyzer obtains console navigation
+from its own `getApplianceInfo` action and the returned `mgmtURL`.
 
 ## Checks
 
@@ -454,6 +460,6 @@ Three checks guard the interface files:
   exists in its page, that `d3.min.js` is the file whose SHA-256
   `d3.SOURCE.txt` records, the PV name pattern, the contrast of the text
   colors, and the form of the [information cards](#information-cards);
-  twenty-three broken copies of the tree must each be refused for their
+  twenty-five broken copies of the tree must each be refused for their
   own reason. Run it locally with `bash scripts/ui-static-checks.bash`; it
   needs `python3` and `sha256sum`.

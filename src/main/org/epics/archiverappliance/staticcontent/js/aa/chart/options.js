@@ -3,6 +3,29 @@
 /** The options a viewer can change on a chart, with the value each has until it is changed (see buildChartOptions). */
 export const CHART_OPTIONS = { shape: "step", yscale: "linear", marks: "auto", average: false, band: false, window: 30 };
 
+const CHOICES = {
+    shape: [["step", "Step"], ["line", "Straight"], ["smooth", "Smooth"], ["points", "Points"]],
+    yscale: [["linear", "Linear"], ["symlog", "Symmetric log"], ["log", "Log"], ["sqrt", "Square root"]],
+    marks: [["auto", "Auto"], ["on", "On"], ["off", "Off"]],
+    window: [[10, "10 samples"], [30, "30 samples"], [60, "60 samples"]],
+};
+
+/** Returns supported options only; unreadable fields use the ordinary chart defaults. */
+export function normalizeOptions(input = {}) {
+    const options = { ...CHART_OPTIONS };
+    for (const [name, choices] of Object.entries(CHOICES)) {
+        if (choices.some(([value]) => value === input[name])) {
+            options[name] = input[name];
+        }
+    }
+    for (const name of ["average", "band"]) {
+        if (typeof input[name] === "boolean") {
+            options[name] = input[name];
+        }
+    }
+    return options;
+}
+
 /**
  * The controls of the options of a chart: line shape, value scale, sample marks, running average, standard deviation
  * band and their window in samples. options is the object the page holds; onChange(next) is called with a new object
@@ -10,7 +33,7 @@ export const CHART_OPTIONS = { shape: "step", yscale: "linear", marks: "auto", a
  * info is an element, an information control of the page, put at the end of the first row.
  */
 export function buildChartOptions(options, onChange, info) {
-    const current = { ...CHART_OPTIONS, ...options };
+    const current = normalizeOptions(options);
     const body = document.createElement("div");
     body.className = "opt-controls";
     const row = () => {
@@ -48,10 +71,10 @@ export function buildChartOptions(options, onChange, info) {
         return wrap;
     };
     row().append(
-        select("Line", "shape", [["step", "Step"], ["line", "Straight"], ["smooth", "Smooth"], ["points", "Points"]]),
-        select("Y scale", "yscale", [["linear", "Linear"], ["symlog", "Symmetric log"], ["log", "Log"], ["sqrt", "Square root"]]),
-        select("Marks", "marks", [["auto", "Auto"], ["on", "On"], ["off", "Off"]]),
-        select("Window", "window", [[10, "10 samples"], [30, "30 samples"], [60, "60 samples"]], Number)
+        select("Line", "shape", CHOICES.shape),
+        select("Y scale", "yscale", CHOICES.yscale),
+        select("Marks", "marks", CHOICES.marks),
+        select("Window", "window", CHOICES.window, Number)
     );
     if (info) {
         info.classList.add("opt-info");
