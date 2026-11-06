@@ -13,6 +13,7 @@ import { axisWidthOf, makeValueScale, PLOT_LEAST } from "./scales.js";
 import { DASHES, finiteSeries, lineLook, markerPath, movingStats, splitOnGaps } from "./series.js";
 import { buildStatistics } from "./statistics.js";
 import { buildRangeStrip } from "./strip.js";
+import { buildCursorTable } from "./cursors.js";
 import { format } from "./text.js";
 import { formatInZone } from "../timezone.js";
 import { drawProjection, PROJECTION_WIDTH } from "./projection.js";
@@ -53,6 +54,10 @@ const MARK_CAP = 1500;
  * end of the lines; a click on a legend item hides that line until it is clicked again.
  * Replaces the content of host and returns its canvas, or undefined when no series is visible.
  * overlay(canvas) can append clipped data layers. keyboardX and wheel enable optional X navigation.
+ * tool, nav, navUnit and selection, with onSelect and onNavigate, are the navigation inputs of the canvas (see
+ * gestures.js); hover false leaves the tooltip out. pins ([{name, t, v}]) are drawn on the lines they belong to and
+ * onPin(observation) receives the sample nearest to a Shift+click; cursors ([time or null, time or null]) and
+ * onCursorChange(index, time) place the two reference cursors, whose readings are tabled under the chart.
  */
 export function drawTimeSeries(host, input) {
     return preserveViewport(() => drawSeries(host, input));
@@ -283,10 +288,11 @@ function drawSeries(host, input) {
     tip.hidden = true;
     const bisect = d3.bisector((p) => p.t).center;
 
-    svg.on("pointermove", (event) => {
+    if (input.hover !== false) svg.on("pointermove", (event) => {
         const box = svg.node().getBoundingClientRect();
         const px = ((event.clientX - box.left) / box.width) * width;
-        if (px < margin.left || px > width - margin.right) {
+        // A pressed button means a drag: the tooltip stays out of its way.
+        if (event.buttons || px < margin.left || px > width - margin.right) {
             cross.attr("visibility", "hidden");
             tip.hidden = true;
             return;
@@ -324,7 +330,27 @@ function drawSeries(host, input) {
         drawTimeSeries(host, input);
         if (typeof input.onRangesChange === "function") input.onRangesChange([...ranges]);
     };
-    canvas.bindInteractions(host, { ...input, ranges }, rangeChanged);
+    const preview = () => drawTimeSeries(host, input);
+    // While a navigation gesture runs, the samples at hand are drawn at the window the pointer asks for; nothing is retrieved.
+    const onNavigate = typeof input.onNavigate === "function" ? input.onNavigate
+        : (low, high) => drawTimeSeries(host, { ...input, from: low, to: high, windowChosen: true });
+    // The pins of the page, placed on the lines they belong to; a pin of a hidden line waits in the page's state.
+    const pins = (Array.isArray(input.pins) ? input.pins : []).flatMap((pin) => {
+        const s = drawn.find((series) => series.name === pin.name);
+        return s ? [{ x: new Date(pin.t), y: pin.v, unit: s.egu || "", text: format(pin.v, s.egu) }] : [];
+    });
+    // A Shift+click picks the drawn sample nearest to the pointer, for the page to pin.
+    const onPoint = typeof input.onPin !== "function" ? undefined : ({ px, py }) => {
+        let best = null;
+        for (const s of drawn) {
+            const point = s.points[bisect(s.points, x.invert(px).getTime())];
+            if (!point) continue;
+            const distance = Math.hypot(x(point.t) - px, yOf(s)(point.v) - py);
+            if (!best || distance < best.distance) best = { distance, series: s, point };
+        }
+        if (best) input.onPin({ name: best.series.name, egu: best.series.egu || "", t: best.point.t, v: best.point.v, s: best.point.s });
+    };
+    canvas.bindInteractions(host, { ...input, ranges, pins, onPoint, onNavigate }, rangeChanged, preview);
 
     if (input.strip !== false) {
         host.append(buildRangeStrip(input, ranges, units, rangeChanged));
@@ -332,6 +358,10 @@ function drawSeries(host, input) {
     host.append(svg.node(), tip);
     if (legendBox) {
         host.append(legendBox);
+    }
+    const cursors = Array.isArray(input.cursors) ? input.cursors : [];
+    if (cursors.some((time) => time !== null && time !== undefined)) {
+        host.append(buildCursorTable(drawn, names, cursors, gapMs, input.timeZone));
     }
     if (scaleNotes.length) {
         const note = document.createElement("p");

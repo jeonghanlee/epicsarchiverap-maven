@@ -1,6 +1,7 @@
 // Reusable SVG plot surface. Callers supply scales and data layers; the surface owns axes, clipping and input geometry.
 import { attachGestures } from "./gestures.js";
 import { bindPlotHover } from "./hover.js";
+import { drawReferences } from "./references.js";
 
 const d3 = globalThis.d3;
 const CLIP_PAD = 3;
@@ -11,9 +12,12 @@ let nextClip = 0;
  * x is a D3 continuous scale; scales is a Map of axis IDs to value scales. Units gives their order.
  * The caller owns domains, ranges, dimensions and redraw. Marks belong in the returned clipped marks group.
  * xTicks/xFormat support numeric or time axes without interpreting numbers as timestamps.
- * bindInteractions(host, input, redraw) uses the same gestures as the time-series widget. Input contains
- * ranges (Map), onZoom(low, high), onReset(), and optional keyboardX/wheel booleans. Redraw must rebuild
- * the drawing from the updated ranges. No document/window listeners or observers are installed.
+ * bindInteractions(host, input, redraw, preview) uses the same gestures as the time-series widget. Input contains
+ * ranges (Map), onZoom(low, high), onReset(), optional keyboardX/wheel booleans and the navigation and reference
+ * inputs of gestures.js and references.js (tool, nav, navUnit, selection, onSelect, onNavigate, onPoint, cursors,
+ * onCursorChange, pins). Redraw must rebuild the drawing from the updated ranges and report the change; preview,
+ * optional, rebuilds it without reporting, for the frames of a running gesture. The surface installs no document,
+ * window or observer listeners of its own; d3.zoom holds window listeners only while a gesture runs.
  */
 export function createPlotCanvas(config) {
     const { width, height, margin, x, scales, units, axisWidth, onLeft, tickCount = 5 } = config;
@@ -67,9 +71,10 @@ export function createPlotCanvas(config) {
         .attr("height", height - margin.bottom - plotTop + 2 * CLIP_PAD);
     const marks = svg.append("g").attr("class", "plot-marks").attr("clip-path", `url(#${clipId})`);
 
-    function bindInteractions(host, input, redraw) {
-        attachGestures({ svg, host, input, redraw, x, scales, units, ranges: input.ranges,
+    function bindInteractions(host, input, redraw, preview) {
+        attachGestures({ svg, host, input, redraw, preview, x, scales, units, ranges: input.ranges,
             width, height, margin, plotTop, axisWidth, onLeft, onRight, axisAt });
+        drawReferences(surface, host, input);
         if (typeof input.onZoom !== "function") return;
         const choose = (low, high) => {
             if (Number.isFinite(+low) && Number.isFinite(+high) && +low < +high) input.onZoom(low, high);
@@ -92,20 +97,10 @@ export function createPlotCanvas(config) {
                     host.querySelector(".axis-key-x")?.focus({ preventScroll: true });
                 });
         }
-        if (input.wheel) {
-            svg.on("wheel.canvas", (event) => {
-                if (!event.ctrlKey) return;
-                const [px, py] = d3.pointer(event, svg.node());
-                if (px < margin.left || px > width - margin.right || py < plotTop || py > height - margin.bottom) return;
-                event.preventDefault();
-                const factor = Math.exp(Math.max(-0.5, Math.min(0.5, event.deltaY * 0.002)));
-                choose(...x.range().map(value => x.invert(px + (value - px) * factor)));
-            }, { passive: false });
-        }
     }
 
     let hover;
-    const surface = { svg, marks, x, scales, units, width, height, margin, axisAt, bindInteractions,
+    const surface = { svg, marks, x, scales, units, width, height, margin, axisAt, bindInteractions, xFormat: format,
         bindHover(host, pick) { hover?.destroy(); hover = bindPlotHover(surface, host, pick); return hover; },
         destroy() { hover?.destroy(); svg.remove(); } };
     return surface;

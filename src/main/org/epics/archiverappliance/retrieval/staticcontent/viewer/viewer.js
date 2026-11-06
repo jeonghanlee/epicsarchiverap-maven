@@ -161,7 +161,9 @@ async function load() {
 function timeData() {
     return { from: state.from, to: state.to,
         windowChosen: +state.from !== +state.selected.from || +state.to !== +state.selected.to,
-        canPanLater: state.to.getTime() < Date.now() };
+        canPanLater: state.to.getTime() < Date.now(),
+        // The selected dataset: the PVs and the selected range. A change of it starts the chart's history and references anew.
+        datasetKey: `${state.pvs.join("\n")}|${+state.selected.from}|${+state.selected.to}` };
 }
 
 function renderInputs(force = false) {
@@ -432,9 +434,10 @@ readAddress();
 chart = createChart($("charts"), {
     id: "analyzer-trend", idPrefix: "trend", legend: true, initialState: state.chart,
     controlsHost: $("chartOptions"), statisticsHost: [$("statistics"), $("dataStatistics")],
-    rangeHost: $("timeControls"), fitWidth: true,
+    rangeHost: $("timeControls"), fitWidth: true, tools: true, toolbarHost: $("trendTools"),
     helpHref: () => document.querySelector("ul.mainmenu").dataset.ready === "true" ? $("help").href : null,
     onZoom: (from, to) => applyRange(from, to), onPan: panBy, onReset: resetTime,
+    onApply: (from, to) => applyRange(from, to, true),
     onStateChange: (next) => {
         state.chart = next;
         $("projection").checked = next.projection;

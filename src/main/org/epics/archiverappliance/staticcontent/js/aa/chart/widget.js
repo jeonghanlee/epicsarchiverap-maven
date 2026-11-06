@@ -4,11 +4,45 @@
 import { infoButton } from "../card.js";
 import { node } from "../dom.js";
 import { MARKER_LIMIT, drawTimeSeries } from "./draw.js";
-import { currentZone, onZoneChange } from "../timezone.js";
+import { currentZone, formatInZone, onZoneChange } from "../timezone.js";
 import { onProfileChange } from "./profile.js";
+import { NAVIGATION_TARGETS, TOOLS } from "./gestures.js";
 import { buildChartOptions, CHART_OPTIONS, normalizeOptions } from "./options.js";
 import { validRanges, withChartState } from "./state.js";
 import { buildRangeStrip } from "./strip.js";
+import { heldObservation } from "./cursors.js";
+import { format } from "./text.js";
+
+// The time of a pin or a cursor reading in the toolbar.
+const TOOL_TIME_FORMAT = "%Y-%m-%d %H:%M:%S";
+
+/** The navigation, reference and history state of a chart with the tools, validated; fields absent or unreadable are left alone. */
+function applyToolState(memory, state) {
+    if (TOOLS.includes(state.tool)) {
+        memory.tool = state.tool;
+    }
+    for (const name of ["wheel", "hover"]) {
+        if (typeof state[name] === "boolean") {
+            memory[name] = state[name];
+        }
+    }
+    if (NAVIGATION_TARGETS.includes(state.nav)) {
+        memory.nav = state.nav;
+        memory.navUnit = state.nav === "x" ? null : typeof state.navUnit === "string" ? state.navUnit : null;
+    }
+    if (Array.isArray(state.cursors)) {
+        memory.cursors = [0, 1].map((index) => {
+            const time = state.cursors[index];
+            const date = time === null || time === undefined ? null : new Date(time);
+            return date && Number.isFinite(date.getTime()) ? date : null;
+        });
+    }
+    if (Array.isArray(state.pins)) {
+        memory.pins = state.pins
+            .filter((pin) => pin && typeof pin.name === "string" && Number.isFinite(pin.t) && Number.isFinite(pin.v))
+            .map((pin) => ({ name: pin.name, egu: typeof pin.egu === "string" ? pin.egu : "", t: pin.t, v: pin.v, s: Number(pin.s) || 0 }));
+    }
+}
 
 // The options, the open tab and the state of the panel of each chart, by the id the page gives it. A page that builds its
 // host again at each refresh builds the widget again and finds the choice of the person here.
@@ -92,17 +126,33 @@ function cardsOf(helpHref, timed) {
  * controlsHost places the option controls outside the widget and leaves its ordinary toolbar out. statisticsHost
  * places statistics independently of projection; rangeHost places a time-only strip outside the drawing.
  * fitWidth scales a drawing with many axes to its host instead of scrolling it horizontally.
+ * tools true adds the toolbar of the analyzer: the drag tool (Select, Pan, Box zoom), Ctrl+wheel zoom, hover, the axes
+ * navigation moves, Undo, Redo and Reset of the window and the ranges, the two cursors and the pinned samples. It goes
+ * into toolbarHost, or above the chart. onApply(from, to) receives the candidate selection when Apply is pressed. The
+ * history, the pins and the selection belong to one dataset: a draw whose data carries a new datasetKey starts them anew.
+ * initialState and setState also take tool, wheel, hover, nav, navUnit, cursors and pins; getState returns them.
  */
 export function createChart(host, config) {
     const memory = MEMORY.get(config.id) || { options: { ...CHART_OPTIONS }, optionsOpen: false, optionsTab: "projection" };
     memory.ranges ||= new Map();
     memory.hidden ||= new Set();
     memory.projection ??= null;
+    memory.tool ||= "select";
+    memory.wheel ??= false;
+    memory.hover ??= true;
+    memory.nav ||= "x";
+    memory.navUnit ??= null;
+    memory.selection ??= null;
+    memory.cursors ||= [null, null];
+    memory.pins ||= [];
+    memory.history ||= { undo: [], redo: [] };
+    memory.recorded ??= null;
     if (config.initialState) {
         memory.options = normalizeOptions(config.initialState.options);
         memory.projection = config.initialState.projection === true;
         memory.ranges = new Map(validRanges(config.initialState.ranges));
         memory.hidden = new Set(config.initialState.hidden || []);
+        applyToolState(memory, config.initialState);
     }
     MEMORY.set(config.id, memory);
     const idOf = (role) => (config.idPrefix ? `${config.idPrefix}-${role}` : role);
@@ -152,9 +202,12 @@ export function createChart(host, config) {
         panelChart,
     );
     const chartHost = node("div", { id: idOf("chart"), class: "chart" });
-    const area = node("div", { id: idOf("plotArea"), class: "chart-area" }, config.controlsHost ? null : panel, chartHost);
+    const toolbarHost = config.tools === true ? config.toolbarHost || node("div", { id: idOf("tools") }) : null;
+    const area = node("div", { id: idOf("plotArea"), class: "chart-area" }, config.controlsHost ? null : panel,
+        toolbarHost && !config.toolbarHost ? toolbarHost : null, chartHost);
     host.textContent = "";
     host.append(...(config.controlsHost ? [area] : [head, area]));
+    let restoring = false;
 
     // A change of the zone of the application redraws the last data in the new zone.
     onZoneChange(() => redraw());
@@ -166,7 +219,246 @@ export function createChart(host, config) {
 
     function getState() {
         return { options: { ...memory.options }, projection: projectionOn(),
-            ranges: validRanges([...memory.ranges]), hidden: [...memory.hidden] };
+            ranges: validRanges([...memory.ranges]), hidden: [...memory.hidden],
+            tool: memory.tool, wheel: memory.wheel, hover: memory.hover, nav: memory.nav, navUnit: memory.navUnit,
+            cursors: memory.cursors.map((time) => (time ? new Date(time) : null)), pins: memory.pins.map((pin) => ({ ...pin })) };
+    }
+
+    /** The window and the ranges as drawn, the unit of the history; null before the first drawing. */
+    function snapshot() {
+        if (!last) {
+            return null;
+        }
+        const ranges = validRanges([...memory.ranges]).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+        return { from: last.from, to: last.to, ranges };
+    }
+
+    function sameSnapshot(a, b) {
+        return Boolean(a && b) && +a.from === +b.from && +a.to === +b.to && a.ranges.length === b.ranges.length
+            && a.ranges.every(([unit, range], index) => b.ranges[index][0] === unit
+                && b.ranges[index][1][0] === range[0] && b.ranges[index][1][1] === range[1]);
+    }
+
+    /** Records the state as drawn: a change since the last record is one step of the history, and clears Redo. */
+    function remember() {
+        const now = snapshot();
+        if (!now) {
+            return;
+        }
+        if (!restoring && memory.recorded && !sameSnapshot(now, memory.recorded)) {
+            memory.history.undo.push(memory.recorded);
+            memory.history.redo.length = 0;
+        }
+        memory.recorded = now;
+    }
+
+    /** Returns to a recorded window and ranges: through the page when the window differs, which retrieves it again. */
+    function restoreSnapshot(target) {
+        restoring = true;
+        memory.ranges = new Map(validRanges(target.ranges));
+        const moved = last && (+last.from !== +target.from || +last.to !== +target.to);
+        if (moved && typeof config.onZoom === "function") {
+            config.onZoom(target.from, target.to);
+        } else {
+            redraw();
+        }
+        memory.recorded = target;
+        restoring = false;
+        changed();
+    }
+
+    function undo() {
+        const target = memory.history.undo.pop();
+        if (!target) {
+            return;
+        }
+        const now = snapshot();
+        if (now) {
+            memory.history.redo.push(now);
+        }
+        restoreSnapshot(target);
+    }
+
+    function redo() {
+        const target = memory.history.redo.pop();
+        if (!target) {
+            return;
+        }
+        const now = snapshot();
+        if (now) {
+            memory.history.undo.push(now);
+        }
+        restoreSnapshot(target);
+    }
+
+    /** Back to the selected range and the automatic ranges, as the All control of the strip; one step of the history. */
+    function resetAll() {
+        memory.ranges.clear();
+        if (last && last.windowChosen && typeof config.onReset === "function") {
+            config.onReset();
+        } else {
+            redraw();
+        }
+        changed();
+    }
+
+    function onSelect(range) {
+        memory.selection = range;
+        toolbarControls();
+    }
+
+    function onPin(observation) {
+        if (memory.pins.some((pin) => pin.name === observation.name && pin.t === observation.t)) {
+            return;
+        }
+        memory.pins.push({ ...observation });
+        redraw();
+        changed();
+    }
+
+    function onCursorChange(index, time) {
+        memory.cursors[index] = time;
+        redraw();
+        changed();
+    }
+
+    /** Pins, for every drawn line, the observation the cursor reads: the keyboard's way to a pin. */
+    function pinAtCursor(index) {
+        const time = memory.cursors[index];
+        if (!last || !time) {
+            return;
+        }
+        const hidden = memory.hidden;
+        let added = false;
+        for (const series of last.series) {
+            if (hidden.has(series.name)) {
+                continue;
+            }
+            const observation = heldObservation(series.points.filter((p) => Number.isFinite(p.v)), last.gapMs, +time);
+            if (observation && !memory.pins.some((pin) => pin.name === series.name && pin.t === observation.t)) {
+                memory.pins.push({ name: series.name, egu: series.egu || "", t: observation.t, v: observation.v, s: observation.s });
+                added = true;
+            }
+        }
+        if (added) {
+            redraw();
+            changed();
+        }
+    }
+
+    /** The toolbar of the analyzer plot, built again after each change; the control that had the focus keeps it. */
+    function toolbarControls() {
+        if (!toolbarHost) {
+            return;
+        }
+        const focused = toolbarHost.contains(document.activeElement) ? document.activeElement.dataset.role : null;
+        toolbarHost.replaceChildren(buildToolbar());
+        if (focused) {
+            const control = toolbarHost.querySelector(`[data-role="${focused}"]`);
+            if (control) {
+                control.focus({ preventScroll: true });
+            }
+        }
+    }
+
+    function buildToolbar() {
+        const zone = config.timeZone || currentZone();
+        const button = (label, role, active, action) => {
+            const element = node("button", { type: "button", class: "tool", "data-role": role, disabled: active ? null : "" }, label);
+            element.addEventListener("click", action);
+            return element;
+        };
+        const toggle = (label, name) => {
+            const box = node("input", { type: "checkbox", "data-role": name });
+            box.checked = memory[name] === true;
+            box.addEventListener("change", () => {
+                memory[name] = box.checked;
+                redraw();
+                changed();
+            });
+            return node("label", { class: "tool-toggle" }, box, ` ${label}`);
+        };
+        const tools = node("span", { class: "tool-group", role: "radiogroup", "aria-label": "Drag tool" });
+        for (const [value, label] of [["select", "Select"], ["pan", "Pan"], ["box", "Box zoom"]]) {
+            const active = memory.tool === value;
+            const element = node("button", { type: "button", role: "radio", "aria-checked": String(active),
+                class: active ? "tool active" : "tool", "data-role": `tool-${value}` }, label);
+            element.addEventListener("click", () => {
+                if (!active) {
+                    memory.tool = value;
+                    memory.selection = null;
+                    redraw();
+                    changed();
+                }
+            });
+            tools.append(element);
+        }
+        const apply = button("Apply selection", "apply", Boolean(memory.selection), () => {
+            const range = memory.selection;
+            if (range && typeof config.onApply === "function") {
+                memory.selection = null;
+                config.onApply(range[0], range[1]);
+            }
+        });
+        const clear = button("Clear selection", "clear", Boolean(memory.selection), () => {
+            memory.selection = null;
+            redraw();
+            changed();
+        });
+        const navSelect = node("select", { "aria-label": "Axes that Pan, Box zoom and the wheel move", "data-role": "nav" });
+        const units = last ? [...new Set(last.series.map((s) => s.egu || ""))] : [];
+        const choices = [["x", "", "Time axis"]];
+        for (const unit of units) {
+            choices.push(["y", unit, `Value axis: ${unit || "no unit"}`], ["xy", unit, `Both axes: ${unit || "no unit"}`]);
+        }
+        for (const [nav, unit, label] of choices) {
+            const option = node("option", { value: `${nav}\n${unit}` }, label);
+            option.selected = memory.nav === nav && (nav === "x" || memory.navUnit === unit);
+            navSelect.append(option);
+        }
+        navSelect.addEventListener("change", () => {
+            const [nav, unit] = navSelect.value.split("\n");
+            memory.nav = nav;
+            memory.navUnit = nav === "x" ? null : unit;
+            redraw();
+            changed();
+        });
+        const history = node("span", { class: "tool-group" },
+            button("Undo", "undo", memory.history.undo.length > 0, undo),
+            button("Redo", "redo", memory.history.redo.length > 0, redo),
+            button("Reset", "reset", Boolean(last), resetAll));
+        const cursors = node("span", { class: "tool-group" });
+        [0, 1].forEach((index) => {
+            const box = node("input", { type: "checkbox", "data-role": `cursor-${index}` });
+            box.checked = memory.cursors[index] !== null;
+            box.addEventListener("change", () => {
+                if (box.checked && last) {
+                    memory.cursors[index] = new Date(last.from.getTime() + ((last.to - last.from) * (index + 1)) / 3);
+                } else {
+                    memory.cursors[index] = null;
+                }
+                redraw();
+                changed();
+            });
+            const time = memory.cursors[index] ? ` ${formatInZone(memory.cursors[index], TOOL_TIME_FORMAT, zone)}` : "";
+            cursors.append(node("label", { class: "tool-toggle" }, box, ` Cursor ${index + 1}${time}`));
+            if (memory.cursors[index]) {
+                cursors.append(button(`Pin at cursor ${index + 1}`, `pin-cursor-${index}`, true, () => pinAtCursor(index)));
+            }
+        });
+        const pins = memory.pins.length === 0 ? null : node("ul", { class: "tool-pins", "aria-label": "Pinned samples" },
+            ...memory.pins.map((pin, index) => {
+                const remove = node("button", { type: "button", class: "plain", "aria-label": `Unpin ${pin.name}` }, "Unpin");
+                remove.addEventListener("click", () => {
+                    memory.pins.splice(index, 1);
+                    redraw();
+                    changed();
+                });
+                return node("li", null, `${pin.name} ${format(pin.v, pin.egu)} at ${formatInZone(new Date(pin.t), TOOL_TIME_FORMAT, zone)} `, remove);
+            }));
+        return node("div", { class: "chart-toolbar", role: "toolbar", "aria-label": "Plot tools" },
+            tools, apply, clear, toggle("Ctrl+wheel zoom", "wheel"), toggle("Hover", "hover"),
+            node("label", { class: "tool-toggle" }, "Navigate ", navSelect), history, cursors, pins);
     }
 
     function updateLinks() {
@@ -176,16 +468,19 @@ export function createChart(host, config) {
         }
     }
 
-    function rangeControls() {
+    /** The time-only strip of the page's rangeHost; window names a window other than the drawn one while a gesture runs. */
+    function rangeControls(window) {
         if (config.rangeHost && last) {
-            config.rangeHost.replaceChildren(buildRangeStrip({ ...last, timeZone: config.timeZone || currentZone(),
+            config.rangeHost.replaceChildren(buildRangeStrip({ ...last, ...(window || {}), timeZone: config.timeZone || currentZone(),
                 onPan: config.onPan, onReset: config.onReset, values: false }, memory.ranges, [], redraw));
         }
     }
 
     function changed() {
+        remember();
         updateLinks();
         rangeControls();
+        toolbarControls();
         if (typeof config.onStateChange === "function") {
             config.onStateChange(getState());
         }
@@ -205,6 +500,7 @@ export function createChart(host, config) {
         if (patch.hidden) {
             memory.hidden = new Set(patch.hidden);
         }
+        applyToolState(memory, patch);
         redraw();
         changed();
     }
@@ -217,7 +513,29 @@ export function createChart(host, config) {
 
     function draw(data) {
         last = data;
-        drawTimeSeries(chartHost, {
+        // A new dataset (other PVs or another selected range) starts the history, the pins and the selection anew.
+        if (data.datasetKey !== undefined && data.datasetKey !== memory.datasetKey) {
+            const first = memory.datasetKey === undefined;
+            memory.datasetKey = data.datasetKey;
+            if (!first) {
+                memory.history = { undo: [], redo: [] };
+                memory.recorded = null;
+                memory.pins = [];
+                memory.selection = null;
+            }
+        }
+        const input = {
+            tool: config.tools === true ? memory.tool : undefined,
+            wheel: config.tools === true ? memory.wheel : undefined,
+            hover: memory.hover,
+            nav: memory.nav,
+            navUnit: memory.navUnit,
+            selection: memory.selection,
+            cursors: memory.cursors,
+            pins: memory.pins,
+            onSelect,
+            onPin,
+            onCursorChange,
             series: data.series,
             from: data.from,
             to: data.to,
@@ -243,9 +561,18 @@ export function createChart(host, config) {
             options: memory.options,
             onZoom: config.onZoom,
             onReset: config.onReset,
-        });
+        };
+        // While a navigation gesture runs, the chart and the strip of the page follow the pointer with the data at hand.
+        input.onNavigate = (low, high) => {
+            const window = { from: low, to: high, windowChosen: true };
+            drawTimeSeries(chartHost, { ...input, ...window });
+            rangeControls(window);
+        };
+        drawTimeSeries(chartHost, input);
+        remember();
         updateLinks();
         rangeControls();
+        toolbarControls();
     }
 
     function message(text) {
@@ -386,6 +713,16 @@ export function createChart(host, config) {
     }
 
     enlargeButton.addEventListener("click", enlarge);
+    if (toolbarHost) {
+        // Escape clears the candidate selection wherever the keyboard is on the page.
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && memory.selection) {
+                memory.selection = null;
+                redraw();
+                changed();
+            }
+        });
+    }
     showOptions();
 
     return {

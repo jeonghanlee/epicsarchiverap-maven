@@ -851,3 +851,107 @@ dialog.chart-dialog {
 .chart-area > .chart {
     margin-top: 4px;
 }
+
+/* The drag over the plot: the candidate selection of the Select tool and the box of Box zoom, drawn by d3.brush. */
+.chart svg .brush-layer .selection {
+    fill: var(--accent);
+    fill-opacity: 0.15;
+    stroke: var(--accent);
+    stroke-width: 1;
+}
+
+.chart svg .brush-layer.tool-select .selection {
+    fill-opacity: 0.2;
+    stroke-dasharray: 4 3;
+}
+
+/* The reference cursors across the plot, their handles at its top, and the pinned samples. */
+.chart svg .cursor line {
+    stroke: var(--ink-2);
+    stroke-width: 1;
+    stroke-dasharray: 6 3;
+}
+
+.chart svg .cursor-2 line {
+    stroke-dasharray: 2 3;
+}
+
+.chart svg .cursor-handle {
+    fill: var(--bg);
+    stroke: var(--ink-2);
+    stroke-width: 1.2;
+    cursor: ew-resize;
+    outline: none;
+}
+
+.chart svg .cursor-handle:focus-visible {
+    stroke: var(--accent);
+    stroke-width: 2;
+}
+
+.chart svg .pin circle {
+    fill: var(--bg);
+    stroke: var(--accent);
+    stroke-width: 2;
+}
+
+.chart svg .pin text {
+    fill: var(--accent);
+    font-size: 0.75rem;
+}
+
+.chart .chart-cursors {
+    margin-top: 0.5rem;
+}
+
+/* The toolbar of the analyzer plot: the drag tool, the toggles, the navigation target, the history and the references. */
+.chart-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+}
+
+.chart-toolbar .tool-group {
+    display: inline-flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.chart-toolbar .tool {
+    font: inherit;
+    padding: 0.2rem 0.6rem;
+    background: var(--bg);
+    color: var(--ink-2);
+    border: 1px solid var(--ink-3);
+    cursor: pointer;
+}
+
+.chart-toolbar .tool.active {
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
+}
+
+.chart-toolbar .tool:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.chart-toolbar .tool-toggle {
+    display: inline-flex;
+    gap: 0.3rem;
+    align-items: center;
+}
+
+.chart-toolbar .tool-pins {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    font-family: var(--mono);
+}
