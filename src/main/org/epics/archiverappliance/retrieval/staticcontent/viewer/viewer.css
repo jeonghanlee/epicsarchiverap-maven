@@ -75,3 +75,9 @@
     .settings { padding: 10px; }
     .view-heading { gap: 8px; }
 }
+.signal-form { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; margin-top: 8px; }
+.signal-form label { display: flex; flex-direction: column; gap: 2px; font-size: .875rem; min-width: 0; }
+.signal-form button, .signal-form .error { grid-column: 1 / -1; justify-self: start; }
+.axis-form .check-inline { flex-direction: row; align-items: center; gap: 6px; }
+.legend-statistics { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .875rem; }
+.check-inline { display: inline-flex; align-items: center; gap: 6px; }

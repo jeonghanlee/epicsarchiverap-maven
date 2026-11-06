@@ -66,9 +66,9 @@ export function axisRoom(host, input) {
     const units = [...new Set(drawn.map((s) => s.egu || ""))];
     const ranges = RANGES.get(host) || new Map();
     const top = units.length > 1 ? 30 : 8;
-    const scales = units.map((unit) => {
+    const scales = new Map(units.map((unit) => {
         const values = drawn.filter((s) => (s.egu || "") === unit).flatMap((s) => s.points.map((p) => p.v));
-        return makeValueScale(options.yscale, values, ranges.get(unit), [height - 34, top], unit, tickCount).scale;
-    });
+        return [unit, makeValueScale(options.yscale, values, ranges.get(unit), [height - 34, top], unit, tickCount).scale];
+    }));
     return axisWidthOf(scales, tickCount);
 }

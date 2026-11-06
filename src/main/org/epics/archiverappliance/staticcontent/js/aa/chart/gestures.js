@@ -41,12 +41,19 @@ function insidePlot(context, event) {
  * through those scales, so a redraw in the middle of it changes nothing it depends on. Each drawing refreshes the context
  * the filter reads (tool, wheel, targets, plot area).
  */
+// The window a navigation gesture on the time axis can reach: at least one second, the least retrieval interval, and at
+// most ten years. A range typed on the page is not bound by this.
+const SPAN_LEAST_MS = 1000;
+const SPAN_MOST_MS = 10 * 365.25 * 24 * 3600 * 1000;
+
 function navigationOf(host) {
     let entry = NAVIGATION.get(host);
     if (entry) {
         return entry;
     }
-    entry = { context: null, gesture: null, brushing: false, touchNavigated: false, brushCut: false, frame: 0 };
+    // touchNodes holds the drawings that touch gestures began on: the browser delivers the rest of each gesture to
+    // the element it began on, so a drawing a redraw replaced stays in the host, hidden, until its gesture ends.
+    entry = { context: null, gesture: null, brushing: false, touchNavigated: false, brushCut: false, frame: 0, touchNodes: new Set() };
     const filter = (event) => {
         const context = entry.context;
         if (!context) {
@@ -77,14 +84,24 @@ function navigationOf(host) {
         const y = yScale ? yScale.copy().range(yScale.range().map((v) => oy + v * f)) : null;
         return { x, y };
     };
-    const keepTouchNode = (gesture) => {
-        const node = gesture.touchNode;
-        if (node && !node.isConnected) {
-            node.style.display = "none";
-            node.setAttribute("aria-hidden", "true");
-            host.append(node);
+    const keepTouchNodes = () => {
+        for (const node of entry.touchNodes) {
+            if (!node.isConnected) {
+                node.style.display = "none";
+                node.setAttribute("aria-hidden", "true");
+                host.append(node);
+            }
         }
     };
+    const releaseTouchNodes = () => {
+        for (const node of entry.touchNodes) {
+            node.remove();
+        }
+        entry.touchNodes.clear();
+    };
+    // Any redraw of the host, from a gesture frame or from the page, keeps the drawings the touch gestures began on.
+    entry.keep = keepTouchNodes;
+    entry.release = releaseTouchNodes;
     const domainsOf = (gesture, transform) => {
         const relative = relativeTransform(transform, gesture.start);
         const result = {};
@@ -102,11 +119,15 @@ function navigationOf(host) {
         .on("start", (event) => {
             const context = entry.context;
             const scales = hostScales(context);
-            const byTouch = Boolean(event.sourceEvent && event.sourceEvent.type === "touchstart");
-            // The browser delivers the rest of a touch gesture to the element it began on. A redraw replaces that
-            // drawing, so the old one stays in the host, hidden, until the gesture ends; its events then still reach
-            // the host. A mouse gesture needs none of this: d3.zoom follows it on the window.
-            entry.gesture = { context, start: event.transform, x: scales.x, y: scales.y, touchNode: byTouch ? context.svg : null };
+            // A mouse gesture is followed by d3.zoom on the window; a touch gesture stays with its drawing (see touchNodes).
+            if (event.sourceEvent && event.sourceEvent.type === "touchstart") {
+                entry.touchNodes.add(context.svg);
+            }
+            entry.gesture = { context, start: event.transform, x: scales.x, y: scales.y };
+            // The scale extent of this gesture keeps the window between SPAN_LEAST_MS and SPAN_MOST_MS; d3 applies it
+            // before it anchors the zoom, so the point under the pointer stays in place at the limit.
+            const span = context.navX && scales.x ? +scales.x.domain()[1] - +scales.x.domain()[0] : 0;
+            behavior.scaleExtent(span > 0 ? [(event.transform.k * span) / SPAN_MOST_MS, (event.transform.k * span) / SPAN_LEAST_MS] : [0, Infinity]);
             // A second finger while a brush is pending takes the gesture over; that brush commits nothing when it ends.
             if (entry.brushing && event.sourceEvent && event.sourceEvent.type === "touchstart") {
                 entry.touchNavigated = true;
@@ -137,7 +158,7 @@ function navigationOf(host) {
                     } else if (domains.y) {
                         context.preview();
                     }
-                    keepTouchNode(live);
+                    keepTouchNodes();
                 });
             }
         })
@@ -161,9 +182,7 @@ function navigationOf(host) {
             }
             const cut = entry.brushCut === true;
             entry.brushCut = false;
-            if (gesture.touchNode) {
-                gesture.touchNode.remove();
-            }
+            releaseTouchNodes();
             if (movedX) {
                 context.input.onZoom(domains.x[0], domains.x[1]);
             } else if (domains.y) {
@@ -186,7 +205,9 @@ function navigationOf(host) {
         if (typeof listener !== "function") {
             return;
         }
-        context.brushLayer.on(".brush", null);
+        // Every brush in the host loses its listeners: the one of the current drawing and those of the drawings kept
+        // for the first finger, which would otherwise swallow that finger's remaining events.
+        d3.select(host).selectAll(".brush-layer").on(".brush", null);
         context.brushLayer.call(context.brush.move, null);
         entry.brushing = false;
         entry.touchNavigated = false;
@@ -232,6 +253,12 @@ export function attachGestures({ svg, host, input, redraw, preview, x, scales, u
         plot: { left: plotLeft, right: plotRight, top: plotTop, bottom: plotBottom },
         brushLayer: null, brush: null,
     };
+    // A drawing kept for a touch gesture that is over by now is dropped; one of a running gesture stays.
+    if (navigation.gesture || navigation.brushing) {
+        navigation.keep();
+    } else {
+        navigation.release();
+    }
     // The index of the unit whose axis column holds the point, or -1.
     const axisIndexAt = (px, py) => {
         if (py < plotTop || py > plotBottom) {
@@ -262,6 +289,9 @@ export function attachGestures({ svg, host, input, redraw, preview, x, scales, u
             .on("start", (event) => {
                 if (event.sourceEvent) {
                     navigation.brushing = true;
+                    if (event.sourceEvent.type === "touchstart") {
+                        navigation.touchNodes.add(svg.node());
+                    }
                 }
             })
             .on("end", (event) => {
@@ -270,6 +300,9 @@ export function attachGestures({ svg, host, input, redraw, preview, x, scales, u
                     return;
                 }
                 navigation.brushing = false;
+                if (!navigation.gesture) {
+                    navigation.release();
+                }
                 const selection = event.selection;
                 if (navigation.touchNavigated) {
                     // A second finger took the gesture over to navigation; the pending brush commits nothing.

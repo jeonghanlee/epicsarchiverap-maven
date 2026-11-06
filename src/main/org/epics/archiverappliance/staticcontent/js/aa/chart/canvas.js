@@ -5,13 +5,17 @@ import { drawReferences } from "./references.js";
 
 const d3 = globalThis.d3;
 const CLIP_PAD = 3;
+// The width one character of an axis label needs, at the font of the axes, to judge whether a label fits before its axis.
+const LABEL_CHAR = 8.6;
 let nextClip = 0;
 
 /**
  * Builds a detached surface with no PV, retrieval, application-state or storage dependency.
  * x is a D3 continuous scale; scales is a Map of axis IDs to value scales. Units gives their order.
  * The caller owns domains, ranges, dimensions and redraw. Marks belong in the returned clipped marks group.
- * xTicks/xFormat support numeric or time axes without interpreting numbers as timestamps.
+ * xTicks/xFormat support numeric or time axes without interpreting numbers as timestamps. grid (off, x, y or
+ * both) names the lines behind the data, tickFormats maps an axis ID to the formatter of its tick labels, and
+ * xTickLabels false draws the X ticks without their labels, for a plot stacked above the one that carries them.
  * bindInteractions(host, input, redraw, preview) uses the same gestures as the time-series widget. Input contains
  * ranges (Map), onZoom(low, high), onReset(), optional keyboardX/wheel booleans and the navigation and reference
  * inputs of gestures.js and references.js (tool, nav, navUnit, selection, onSelect, onNavigate, onPoint, cursors,
@@ -32,29 +36,43 @@ export function createPlotCanvas(config) {
         const step = rightSide ? index - onLeft : index;
         return { rightSide, x: rightSide ? width - margin.right + axisWidth * step : margin.left - axisWidth * step };
     };
+    // grid names the lines behind the data: y (the default) across the plot at the ticks of the first axis, x down
+    // the plot at the X ticks, both, or off. tickFormats maps an axis ID to the formatter of its tick labels.
+    const grid = ["off", "x", "y", "both"].includes(config.grid) ? config.grid : "y";
+    const tickFormats = config.tickFormats || new Map();
     units.forEach((unit, index) => {
         const scale = scales.get(unit);
         const { rightSide, x: axisX } = axisAt(index);
+        const tickFormat = tickFormats.get(unit) || d3.format(".4~g");
         for (const tick of scale.ticks(tickCount)) {
-            if (index === 0) {
+            if (index === 0 && (grid === "y" || grid === "both")) {
                 svg.append("line").attr("class", "grid").attr("x1", margin.left).attr("x2", width - margin.right)
                     .attr("y1", scale(tick)).attr("y2", scale(tick));
             }
             svg.append("text").attr("class", "axis").attr("x", rightSide ? axisX + 6 : axisX - 6)
                 .attr("y", scale(tick) + 4).attr("text-anchor", rightSide ? "start" : "end")
-                .text(d3.format(".4~g")(tick));
+                .text(tickFormat(tick));
         }
         if (config.unitLabels) {
             svg.append("line").attr("class", "axis-line").attr("x1", axisX).attr("x2", axisX)
                 .attr("y1", plotTop).attr("y2", height - margin.bottom);
-            svg.append("text").attr("class", "axis unit").attr("x", axisX).attr("y", plotTop - 14)
-                .attr("text-anchor", config.axisLabelAnchor || (rightSide ? "start" : "end"))
-                .text(config.axisLabels?.get(unit) || unit || "no unit");
+            // A label of a left axis ends at its axis line unless it would run off the drawing; it then starts at the
+            // left edge of its column instead, so that a long label stays readable.
+            const labelText = config.axisLabels?.get(unit) || unit || "no unit";
+            const fits = rightSide || axisX - labelText.length * LABEL_CHAR >= 0;
+            svg.append("text").attr("class", "axis unit").attr("x", fits ? axisX : Math.max(2, axisX - axisWidth)).attr("y", plotTop - 14)
+                .attr("text-anchor", config.axisLabelAnchor || (rightSide || !fits ? "start" : "end"))
+                .text(labelText);
         }
     });
     const ticks = config.xTicks || x.ticks(5);
     const format = config.xFormat || d3.format(".4~g");
     ticks.forEach((value, index) => {
+        if (grid === "x" || grid === "both") {
+            svg.append("line").attr("class", "grid").attr("x1", x(value)).attr("x2", x(value))
+                .attr("y1", plotTop).attr("y2", height - margin.bottom);
+        }
+        if (config.xTickLabels === false) return;
         svg.append("text").attr("class", "axis").attr("x", x(value))
             .attr("y", config.xTickY ?? height - 8)
             .attr("text-anchor", index === 0 ? "start" : index === ticks.length - 1 ? "end" : "middle")

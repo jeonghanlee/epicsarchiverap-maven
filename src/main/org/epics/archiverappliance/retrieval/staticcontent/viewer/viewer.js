@@ -4,6 +4,8 @@ import { node } from "../comm/js/aa/dom.js";
 import { PROFILES, setProfile, onProfileChange } from "../comm/js/aa/chart/profile.js";
 import { currentZone, ZONES, setZone, onZoneChange, formatInZone, partsInZone, zoneName } from "../comm/js/aa/timezone.js";
 import { readChartState, writeChartParameters } from "../comm/js/aa/chart/state.js";
+import { lineLook } from "../comm/js/aa/chart/series.js";
+import { buildStatistics } from "../comm/js/aa/chart/statistics.js";
 import { buildRangeStrip } from "../comm/js/aa/chart/strip.js";
 
 const DATA = "../../data/getData.json";
@@ -11,12 +13,22 @@ const MATCHING = "../../bpl/getMatchingPVs";
 const APPLIANCE = "../../bpl/getApplianceInfo";
 const CONCURRENT_REQUESTS = 6;
 const TARGET_SAMPLES = 700;
+// The retrieval accepts an averaging interval of whole seconds up to the largest signed 32-bit value.
+const INTERVAL_MOST = 2147483647;
+// Datasets retrieved in this page session, by PV, operator and range; a repeated request is answered from here.
+const CACHE_LIMIT = 48;
 const HOUR = 3600000;
 const INPUT_FORMAT = "%Y-%m-%dT%H:%M:%S";
 const VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare", "waveform", "image"];
 const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
-const state = { pvs: [], from: null, to: null, selected: null, view: "trend",
-    chart: null, data: new Map(), failures: new Map() };
+// The page holds two datasets per PV. The selected dataset (summary) is the records of the selected range at the
+// resolution sample, resolved once from the interval option when the selection is made; the Summary statistics come
+// from it. The display dataset (data) is the records of the displayed range at the display resolution; the chart,
+// the Visible range statistics and the min and max bands come from it. When both are the same request they share.
+const state = { pvs: [], from: null, to: null, selected: null, view: "trend", chart: null,
+    sample: null, interval: "auto", minmax: false, displaySeconds: null,
+    summary: new Map(), summaryFailures: new Map(), data: new Map(), failures: new Map(), bands: new Map() };
+const cache = new Map();
 const $ = (id) => document.getElementById(id);
 let chart;
 let controller = null;
@@ -110,47 +122,118 @@ async function setupHeader() {
     }
 }
 
-async function fetchSeries(name, from, to, bin, signal) {
-    // meanSample leaves an interval without samples empty instead of holding a disconnected value.
-    const operator = bin > 1 ? `meanSample_${bin}(${name})` : name;
-    const query = new URLSearchParams({ pv: operator, from: from.toISOString(), to: to.toISOString() });
+/** The averaging interval in seconds that draws about TARGET_SAMPLES means over the span, at least one second. */
+function autoSeconds(from, to) {
+    return Math.max(1, Math.ceil((to - from) / 1000 / TARGET_SAMPLES));
+}
+
+/** The resolution of a range under the interval option: raw records, or the whole seconds of the means. */
+function resolutionOf(from, to) {
+    return state.interval === "raw" ? "raw" : state.interval === "auto" ? autoSeconds(from, to) : state.interval;
+}
+
+/** The text of a resolution: raw samples or means over N seconds. */
+function sourceText(seconds) {
+    return seconds === "raw" ? "raw samples" : `means over ${seconds} s`;
+}
+
+/**
+ * One dataset of a PV: its records over a range, raw or through the no-fill operator kind (mean, min or max) at a
+ * resolution of whole seconds, which leaves an interval without samples empty. Each record keeps the source seconds
+ * and nanoseconds, the value, the severity and the status; points carries what the chart draws. A dataset once
+ * retrieved in this page session is answered from the cache.
+ */
+async function fetchSeries(name, kind, seconds, from, to, signal) {
+    const pv = seconds === "raw" ? name
+        : kind === "min" ? `minSample_${seconds}(${name})`
+        : kind === "max" ? `maxSample_${seconds}(${name})`
+        : `meanSample_${seconds}(${name})`;
+    const key = `${pv}|${from.toISOString()}|${to.toISOString()}`;
+    if (cache.has(key)) return cache.get(key);
+    const query = new URLSearchParams({ pv, from: from.toISOString(), to: to.toISOString() });
     const response = await fetch(`${DATA}?${query}`, { signal });
     if (!response.ok) throw new Error(`${response.statusText || "Retrieval failed"} (HTTP ${response.status})`);
     const body = await response.json();
     const first = body[0];
-    if (!first) return { name, egu: "", points: [], form: "No samples" };
     const points = [];
-    for (const sample of first.data) {
+    const records = [];
+    for (const sample of first ? first.data : []) {
         if (typeof sample.val === "number" && Number.isFinite(sample.val)) {
             const fields = sample.fields;
             const lost = Boolean(fields && (Number(fields.cnxlostepsecs) > 0 || fields.startup === "true" || fields.connectionChange === "true"));
-            points.push({ t: sample.secs * 1000 + Math.floor((sample.nanos || 0) / 1e6), v: sample.val, s: sample.severity || 0, g: lost });
+            const secs = Number(sample.secs);
+            const nanos = Number(sample.nanos || 0);
+            const point = { t: secs * 1000 + Math.floor(nanos / 1e6), v: sample.val, s: sample.severity || 0, g: lost };
+            points.push(point);
+            records.push({ secs, nanos, t: point.t, v: sample.val, severity: point.s, status: Number(sample.status) || 0, lost });
         }
     }
-    const form = points.length ? "Numeric samples" : first.data.length ? "No supported scalar samples" : "No samples";
-    return { name, egu: first.meta?.EGU ?? "", points, form };
+    const form = !first ? "No samples" : points.length ? "Numeric samples" : first.data.length ? "No supported scalar samples" : "No samples";
+    const dataset = { name, egu: first?.meta?.EGU ?? "", points, records, form, kind, seconds, from, to };
+    if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value);
+    cache.set(key, dataset);
+    return dataset;
 }
 
+/**
+ * Retrieves the selected dataset and the display dataset of every PV, and the min and max of the display when the
+ * band is asked for, in one batch of at most CONCURRENT_REQUESTS requests at a time. A request that an earlier batch
+ * already answered is served from the cache; a batch started later abandons this one.
+ */
 async function load() {
     controller?.abort();
     const request = new AbortController();
     controller = request;
     const { signal } = request;
-    const { from, to } = state;
     const pvs = [...state.pvs];
-    const bin = Math.max(1, Math.ceil((to - from) / 1000 / TARGET_SAMPLES));
+    const selected = state.selected;
+    const display = { from: state.from, to: state.to };
+    if (state.sample === null) state.sample = resolutionOf(selected.from, selected.to);
+    const displaySeconds = resolutionOf(display.from, display.to);
+    const shared = displaySeconds === state.sample && +display.from === +selected.from && +display.to === +selected.to;
+    state.displaySeconds = displaySeconds;
     state.data = new Map();
     state.failures = new Map();
+    state.summary = new Map();
+    state.summaryFailures = new Map();
+    state.bands = new Map();
     render();
+    const tasks = [];
+    for (const name of pvs) {
+        tasks.push({ name, role: "summary", kind: "mean", seconds: state.sample, ...selected });
+        if (!shared) tasks.push({ name, role: "display", kind: "mean", seconds: displaySeconds, ...display });
+        if (state.minmax && displaySeconds !== "raw") {
+            for (const kind of ["min", "max"]) tasks.push({ name, role: kind, kind, seconds: displaySeconds, ...display });
+        }
+    }
     let next = 0;
     const pump = async () => {
-        while (next < pvs.length && !signal.aborted) {
-            const name = pvs[next++];
+        while (next < tasks.length && !signal.aborted) {
+            const task = tasks[next++];
             try {
-                const series = await fetchSeries(name, from, to, bin, signal);
-                if (!signal.aborted && request === controller && state.pvs.includes(name)) state.data.set(name, { ...series, bin });
+                const dataset = await fetchSeries(task.name, task.kind, task.seconds, task.from, task.to, signal);
+                if (signal.aborted || request !== controller || !state.pvs.includes(task.name)) continue;
+                if (task.role === "summary") {
+                    state.summary.set(task.name, dataset);
+                    if (shared) state.data.set(task.name, dataset);
+                } else if (task.role === "display") {
+                    state.data.set(task.name, dataset);
+                } else {
+                    const band = state.bands.get(task.name) || {};
+                    band[task.role] = dataset;
+                    state.bands.set(task.name, band);
+                }
             } catch (error) {
-                if (!signal.aborted && request === controller && state.pvs.includes(name)) state.failures.set(name, String(error.message || error));
+                if (signal.aborted || request !== controller || !state.pvs.includes(task.name)) continue;
+                const text = String(error.message || error);
+                if (task.role === "summary") {
+                    state.summaryFailures.set(task.name, text);
+                    if (shared) state.failures.set(task.name, text);
+                } else if (task.role === "display") {
+                    state.failures.set(task.name, text);
+                } else {
+                    state.failures.set(task.name, `${task.role}: ${text}`);
+                }
             }
             if (!signal.aborted && request === controller) render();
         }
@@ -158,12 +241,19 @@ async function load() {
     await Promise.all(Array.from({ length: CONCURRENT_REQUESTS }, pump));
 }
 
+/** The min and max datasets of the display of a PV, when both are there. */
+function bandOf(name) {
+    const band = state.bands.get(name);
+    return band && band.min && band.max ? { min: band.min.points, max: band.max.points } : null;
+}
+
 function timeData() {
     return { from: state.from, to: state.to,
         windowChosen: +state.from !== +state.selected.from || +state.to !== +state.selected.to,
         canPanLater: state.to.getTime() < Date.now(),
-        // The selected dataset: the PVs and the selected range. A change of it starts the chart's history and references anew.
-        datasetKey: `${state.pvs.join("\n")}|${+state.selected.from}|${+state.selected.to}` };
+        // The selected dataset: the PVs, the selected range and its resolution. A change of it starts the chart's
+        // history and references anew.
+        datasetKey: `${state.pvs.join("\n")}|${+state.selected.from}|${+state.selected.to}|${state.sample}` };
 }
 
 function renderInputs(force = false) {
@@ -187,9 +277,73 @@ function removePV(name) {
     $("pvName").focus();
 }
 
+// The choices of the per-signal and per-unit settings and of the display settings, as the chart defines them.
+const DASH_CHOICES = [["auto", "Profile"], ["solid", "Solid"], ["dash", "Dash"], ["dot", "Dot"], ["dashdot", "Dash dot"]];
+const SCALE_CHOICES = [["", "Y scale option"], ["linear", "Linear"], ["symlog", "Symmetric log"], ["log", "Log"], ["sqrt", "Square root"]];
+const LEGEND_CHOICES = [["list", "List"], ["table", "Table with values"], ["off", "Off"]];
+const LEGEND_STATISTIC_CHOICES = [["min", "Min"], ["max", "Max"], ["mean", "Mean"], ["median", "Median"], ["std", "Std dev"], ["last", "Last"], ["count", "Samples"]];
+const TOOLTIP_CHOICES = [["all", "All lines"], ["single", "Nearest line"]];
+const TIPSORT_CHOICES = [["series", "Line order"], ["asc", "Value ascending"], ["desc", "Value descending"]];
+const GRID_CHOICES = [["y", "Horizontal"], ["x", "Vertical"], ["both", "Both"], ["off", "Off"]];
+
+/** A select of choices ([value, text]) with the current value, or the first when none matches. */
+function choiceSelect(label, choices, current, attributes = {}) {
+    const select = node("select", { "aria-label": label, ...attributes });
+    for (const [value, text] of choices) {
+        const option = node("option", { value }, text);
+        option.selected = value === String(current ?? choices[0][0]);
+        select.append(option);
+    }
+    return select;
+}
+
+/** A number typed in a form: null for blank, NaN for unreadable, else the number. */
+function typedNumber(text) {
+    const trimmed = text.trim();
+    return trimmed === "" ? null : Number(trimmed);
+}
+
+/** The value of a form field as text, for comparison with the value it was built with. */
+function fieldText(field) {
+    return field.type === "checkbox" ? String(field.checked) : field.value;
+}
+
+/** Marks the fields of a form with the values they were built with, so that a changed field can be told apart. */
+function markBuilt(form) {
+    for (const field of form.querySelectorAll("input[aria-label], select[aria-label]")) {
+        field.dataset.built = fieldText(field);
+    }
+}
+
+/**
+ * The values changed in the forms of a panel but not applied yet, by the label of each field, so that a panel built
+ * again after a change elsewhere on the page shows them still; restoreTyped puts them back into the new fields. A
+ * field that still shows the value it was built with is left to the new form, which shows the current state.
+ */
+function captureTyped(host) {
+    const typed = new Map();
+    for (const field of host.querySelectorAll("input[aria-label], select[aria-label]")) {
+        if (field.dataset.built !== undefined && fieldText(field) !== field.dataset.built) {
+            typed.set(field.getAttribute("aria-label"), field.type === "checkbox" ? field.checked : field.value);
+        }
+    }
+    return typed;
+}
+
+function restoreTyped(host, typed) {
+    for (const field of host.querySelectorAll("input[aria-label], select[aria-label]")) {
+        const label = field.getAttribute("aria-label");
+        if (!typed.has(label)) continue;
+        if (field.type === "checkbox") field.checked = typed.get(label); else field.value = typed.get(label);
+    }
+}
+
 function renderSignals() {
     const focusedLabel = $("signals").contains(document.activeElement) ? document.activeElement.getAttribute("aria-label") : null;
-    const hidden = new Set(chart.getState().hidden);
+    const typed = captureTyped($("signals"));
+    const chartState = chart.getState();
+    const hidden = new Set(chartState.hidden);
+    const signalSettings = new Map(chartState.signals);
     $("chips").replaceChildren();
     $("signals").replaceChildren();
     for (const name of state.pvs) {
@@ -205,45 +359,166 @@ function renderSignals() {
             if (visible.checked) hidden.delete(name); else hidden.add(name);
             chart.setState({ hidden: [...hidden] });
         });
+        // The drawing settings of the signal: display name, width, dash, gap, fill partner and decimals.
+        const current = signalSettings.get(name) || {};
+        const field = (label, attributes, value) => {
+            const input = node("input", { "aria-label": `${label} of ${name}`, ...attributes });
+            input.value = value === undefined || value === null ? "" : String(value);
+            return [node("label", null, label, input), input];
+        };
+        const [nameLabel, nameInput] = field("Display name", { type: "text", maxlength: "128", placeholder: name }, current.name);
+        const [widthLabel, widthInput] = field("Width", { type: "number", step: "0.5", min: "0.5", max: "10", placeholder: "Profile" }, current.width);
+        const dashSelect = choiceSelect(`Dash of ${name}`, DASH_CHOICES, current.dash || "auto");
+        const [gapLabel, gapInput] = field("Gap (s)", { type: "number", step: "any", min: "0", placeholder: "None" }, current.gap);
+        const partners = state.pvs.filter((other) => other !== name && state.data.get(other) && (state.data.get(other).egu || "") === (series?.egu || ""));
+        const fillSelect = choiceSelect(`Fill of ${name}`, [["", "None"], ...partners.map((other) => [other, other])], current.fill || "");
+        const [decimalsLabel, decimalsInput] = field("Decimals", { type: "number", step: "1", min: "0", max: "15", placeholder: "Auto" }, current.decimals);
+        const error = node("p", { class: "error", role: "alert" });
+        // The page checks the fields itself and explains an error beside the form, so the browser's own check is off.
+        const form = node("form", { class: "signal-form", "data-pv": name, novalidate: "" },
+            nameLabel, widthLabel, node("label", null, "Dash", dashSelect), gapLabel,
+            node("label", null, "Fill with", fillSelect), decimalsLabel,
+            node("button", { type: "submit" }, "Apply"), error);
+        markBuilt(form);
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const next = {};
+            const width = typedNumber(widthInput.value);
+            const gap = typedNumber(gapInput.value);
+            const decimals = typedNumber(decimalsInput.value);
+            if (width !== null && !(width >= 0.5 && width <= 10)) { error.textContent = "Width is from 0.5 to 10 pixels, or blank for the profile."; return; }
+            if (gap !== null && !(gap > 0)) { error.textContent = "The gap is a positive number of seconds, or blank for none."; return; }
+            if (decimals !== null && !(Number.isInteger(decimals) && decimals >= 0 && decimals <= 15)) { error.textContent = "Decimals are a whole number from 0 to 15, or blank for automatic."; return; }
+            if (nameInput.value.trim() && [...nameInput.value].length > 128) { error.textContent = "A display name has at most 128 characters."; return; }
+            if (nameInput.value.trim()) next.name = nameInput.value.trim();
+            if (width !== null) next.width = width;
+            if (dashSelect.value !== "auto") next.dash = dashSelect.value;
+            if (gap !== null) next.gap = gap;
+            if (fillSelect.value) next.fill = fillSelect.value;
+            if (decimals !== null) next.decimals = decimals;
+            error.textContent = "";
+            const updated = new Map(signalSettings);
+            if (Object.keys(next).length) updated.set(name, next); else updated.delete(name);
+            chart.setState({ signals: [...updated] });
+        });
         $("signals").append(node("li", null, node("label", null, visible, node("span", { class: "pv" }, name)),
             node("p", { class: failure ? "warn" : "note" },
-                failure ? `Retrieval failed: ${failure}` : series ? `${series.form}; ${series.egu || "no unit"}; ${series.points.length} returned.` : "Loading")));
+                failure ? `Retrieval failed: ${failure}` : series ? `${series.form}; ${series.egu || "no unit"}; ${series.points.length} returned.` : "Loading"),
+            form));
     }
+    restoreTyped($("signals"), typed);
     if (focusedLabel) {
-        [...$("signals").querySelectorAll("input")].find((input) => input.getAttribute("aria-label") === focusedLabel)?.focus();
+        [...$("signals").querySelectorAll("input, select")].find((input) => input.getAttribute("aria-label") === focusedLabel)?.focus();
     }
 }
 
+/** The display settings of the Options tab: split, legend, its values, tooltip, its order, grid and line-end names. */
+function renderDisplayOptions() {
+    const host = $("displayOptions");
+    const display = chart.getState().display;
+    const apply = (patch) => chart.setState({ display: { ...display, ...patch } });
+    const split = node("input", { type: "checkbox" });
+    split.checked = display.split === "unit";
+    split.addEventListener("change", () => apply({ split: split.checked ? "unit" : "none" }));
+    const endlabels = node("input", { type: "checkbox" });
+    endlabels.checked = display.endlabels === true;
+    endlabels.addEventListener("change", () => apply({ endlabels: endlabels.checked }));
+    const legend = choiceSelect("Legend", LEGEND_CHOICES, display.legend);
+    legend.addEventListener("change", () => apply({ legend: legend.value }));
+    const statistics = node("span", { class: "legend-statistics" });
+    for (const [value, text] of LEGEND_STATISTIC_CHOICES) {
+        const box = node("input", { type: "checkbox", value });
+        box.checked = display.legendstat.includes(value);
+        box.addEventListener("change", () => {
+            const chosen = [...statistics.querySelectorAll("input:checked")].map((input) => input.value);
+            if (chosen.length) apply({ legendstat: chosen }); else box.checked = true;
+        });
+        statistics.append(node("label", { class: "check-inline" }, box, ` ${text}`));
+    }
+    const tooltip = choiceSelect("Tooltip", TOOLTIP_CHOICES, display.tooltip);
+    tooltip.addEventListener("change", () => apply({ tooltip: tooltip.value }));
+    const tipsort = choiceSelect("Tooltip order", TIPSORT_CHOICES, display.tipsort);
+    tipsort.addEventListener("change", () => apply({ tipsort: tipsort.value }));
+    const grid = choiceSelect("Grid", GRID_CHOICES, display.grid);
+    grid.addEventListener("change", () => apply({ grid: grid.value }));
+    host.replaceChildren(
+        node("div", { class: "opt-row" },
+            node("label", null, "Legend ", legend), node("label", null, "Tooltip ", tooltip), node("label", null, "Tooltip order ", tipsort), node("label", null, "Grid ", grid)),
+        node("p", { class: "note" }, "Legend values"), statistics,
+        node("label", { class: "check" }, split, " Split by unit"),
+        node("label", { class: "check" }, endlabels, " Names at the line ends"));
+}
+
 function renderAxes() {
-    const ranges = new Map(chart.getState().ranges);
-    const units = [...new Set([...state.data.values()].map((series) => series.egu || "").concat([...ranges.keys()]))];
+    const typed = captureTyped($("axes"));
+    const chartState = chart.getState();
+    const ranges = new Map(chartState.ranges);
+    const axesSettings = new Map(chartState.axes);
+    const units = [...new Set([...state.data.values()].map((series) => series.egu || "").concat([...ranges.keys()], [...axesSettings.keys()]))];
     $("axes").replaceChildren();
     if (!units.length) $("axes").append(node("p", null, "Plot a numeric signal to configure its unit."));
     units.forEach((unit, index) => {
+        const name = unit || "no unit";
         const range = ranges.get(unit);
-        const form = node("form", { class: "axis-form", "data-unit": unit });
-        const low = node("input", { type: "number", step: "any", id: `axis-${index}-low`, "aria-label": `Minimum ${unit || "no unit"}`, placeholder: "Auto" });
-        const high = node("input", { type: "number", step: "any", id: `axis-${index}-high`, "aria-label": `Maximum ${unit || "no unit"}`, placeholder: "Auto" });
-        if (range) { low.value = range[0]; high.value = range[1]; }
+        const current = axesSettings.get(unit) || {};
+        const form = node("form", { class: "axis-form", "data-unit": unit, novalidate: "" });
+        const number = (label, id, placeholder, value) => {
+            const input = node("input", { type: "number", step: "any", id, "aria-label": `${label} ${name}`, placeholder });
+            if (value !== undefined && value !== null) input.value = String(value);
+            return input;
+        };
+        const low = number("Minimum", `axis-${index}-low`, "Auto", range ? range[0] : null);
+        const high = number("Maximum", `axis-${index}-high`, "Auto", range ? range[1] : null);
+        const softLow = number("Soft minimum", `axis-${index}-softlow`, "None", current.softmin);
+        const softHigh = number("Soft maximum", `axis-${index}-softhigh`, "None", current.softmax);
+        const scale = choiceSelect(`Scale ${name}`, SCALE_CHOICES, current.scale || "");
+        const symlog = number("Symmetric log constant", `axis-${index}-symlog`, "Auto", current.symlog);
+        const zero = node("input", { type: "checkbox", "aria-label": `Zero centered ${name}` });
+        zero.checked = current.zero === true;
+        const prefix = node("input", { type: "checkbox", "aria-label": `SI prefix ${name}` });
+        prefix.checked = current.prefix === "si";
+        const label = node("input", { type: "text", maxlength: "128", "aria-label": `Label ${name}`, placeholder: name });
+        label.value = current.label || "";
         const error = node("p", { class: "error", role: "alert" });
         const automatic = node("button", { type: "button" }, "Auto");
         form.append(node("h3", null, unit || "No unit"),
             node("label", null, "Minimum", low), node("label", null, "Maximum", high),
+            node("label", null, "Soft minimum", softLow), node("label", null, "Soft maximum", softHigh),
+            node("label", null, "Scale", scale), node("label", null, "Symmetric log constant", symlog),
+            node("label", { class: "check-inline" }, zero, " Zero centered"), node("label", { class: "check-inline" }, prefix, " SI prefix"),
+            node("label", null, "Label", label),
             node("button", { type: "submit" }, "Apply"), automatic, error);
+        markBuilt(form);
         form.addEventListener("submit", (event) => {
             event.preventDefault();
-            const minimum = Number(low.value), maximum = Number(high.value);
-            if (!low.value.trim() || !high.value.trim() || !Number.isFinite(minimum) || !Number.isFinite(maximum) || minimum >= maximum) {
-                error.textContent = "Enter a finite minimum below the maximum.";
-                return;
-            }
-            const next = new Map(chart.getState().ranges);
-            next.set(unit, [minimum, maximum]);
-            chart.setState({ ranges: [...next] });
+            const minimum = typedNumber(low.value), maximum = typedNumber(high.value);
+            const softMinimum = typedNumber(softLow.value), softMaximum = typedNumber(softHigh.value);
+            const constant = typedNumber(symlog.value);
+            if ((minimum === null) !== (maximum === null)) { error.textContent = "Enter both a minimum and a maximum for a fixed range, or neither for the automatic range."; return; }
+            if (minimum !== null && !(Number.isFinite(minimum) && Number.isFinite(maximum) && minimum < maximum)) { error.textContent = "Enter a finite minimum below the maximum."; return; }
+            if ((softMinimum !== null && !Number.isFinite(softMinimum)) || (softMaximum !== null && !Number.isFinite(softMaximum))
+                || (softMinimum !== null && softMaximum !== null && softMinimum >= softMaximum)) { error.textContent = "Soft bounds are finite numbers, the minimum below the maximum; either may be blank."; return; }
+            if (constant !== null && !(constant > 0)) { error.textContent = "The symmetric log constant is a positive number, or blank for automatic."; return; }
+            if (label.value.trim() && [...label.value].length > 128) { error.textContent = "A label has at most 128 characters."; return; }
+            error.textContent = "";
+            const next = {};
+            if (scale.value) next.scale = scale.value;
+            if (constant !== null) next.symlog = constant;
+            if (softMinimum !== null) next.softmin = softMinimum;
+            if (softMaximum !== null) next.softmax = softMaximum;
+            if (zero.checked) next.zero = true;
+            if (prefix.checked) next.prefix = "si";
+            if (label.value.trim()) next.label = label.value.trim();
+            const nextAxes = new Map(axesSettings);
+            if (Object.keys(next).length) nextAxes.set(unit, next); else nextAxes.delete(unit);
+            const nextRanges = new Map(chart.getState().ranges);
+            if (minimum !== null) nextRanges.set(unit, [minimum, maximum]); else nextRanges.delete(unit);
+            chart.setState({ ranges: [...nextRanges], axes: [...nextAxes] });
         });
-        automatic.addEventListener("click", () => chart.setState({ ranges: chart.getState().ranges.filter(([name]) => name !== unit) }));
+        automatic.addEventListener("click", () => chart.setState({ ranges: chart.getState().ranges.filter(([other]) => other !== unit) }));
         $("axes").append(form);
     });
+    restoreTyped($("axes"), typed);
 }
 
 function render() {
@@ -257,29 +532,106 @@ function render() {
         : waiting ? `Loading ${waiting} of ${state.pvs.length} signals...`
         : failed ? `${failed} of ${state.pvs.length} signals could not be read. See Signals for details.`
         : `${loaded.length} signals retrieved.`;
-    const bin = loaded[0]?.bin || Math.max(1, Math.ceil((state.to - state.from) / 1000 / TARGET_SAMPLES));
-    const source = bin > 1 ? `Means over ${bin} s. Intervals without samples remain empty.` : "Stored numeric samples.";
-    const note = `${source} Statistics count the visible samples within the time and Y ranges. ${failed ? "Some signals are missing." : ""}`;
+    const displaySeconds = state.displaySeconds ?? resolutionOf(state.from, state.to);
+    const band = state.minmax && displaySeconds !== "raw" ? " with the min-max band" : "";
+    // The band is the min and the max of each averaging interval; raw samples have no interval, so it is left out and said so.
+    const bandNote = state.minmax && displaySeconds === "raw" ? "The min-max band is not available for raw samples. " : "";
+    const note = `Display: ${sourceText(displaySeconds)}${band}; intervals without samples stay empty. ${bandNote}`
+        + `Summary: ${sourceText(state.sample ?? resolutionOf(state.selected.from, state.selected.to))} over the selected range. `
+        + `Visible range counts the displayed samples inside the time and Y ranges.${failed ? " Some signals are missing." : ""}`;
     $("sourceNote").textContent = note;
     $("dataNote").textContent = note;
+    renderSummary();
     if (state.view !== "trend") {
         chart.message("This analysis has not run.");
     } else if (loaded.some((series) => series.points.length)) {
-        chart.draw({ series: loaded.map((series, index) => ({ ...series, focus: index === 0 })),
+        chart.draw({ series: loaded.map((series, index) => ({ ...series, focus: index === 0, minmax: bandOf(series.name) })),
             ...timeData(), gapMs: Infinity });
     } else {
-        chart.message(waiting ? "Loading samples..." : state.pvs.length ? "No supported numeric samples in this range." : "Select archived signals to draw their trend.");
+        chart.message(waiting ? "Loading samples..." : state.pvs.length ? "No supported numeric samples in this range." : "Select archived signals to draw their trend.",
+            state.pvs.length ? timeData() : undefined);
     }
 }
 
 function applyRange(from, to, selected = false) {
     state.from = from;
     state.to = to;
-    if (selected) state.selected = { from, to };
+    if (selected) {
+        // A new selected range is a new selected dataset: its resolution is resolved again from the interval option.
+        state.selected = { from, to };
+        state.sample = null;
+    }
     $("rangeError").textContent = "";
     writeAddress();
     renderInputs(true);
     load();
+}
+
+/**
+ * The Summary tables: the statistics of the selected dataset of each PV, in the results and in the Data tab. The
+ * retrieval also returns the last record before the selected range, which the line holds from the start; the
+ * statistics count the records inside the range only, both ends included.
+ */
+function renderSummary() {
+    const { from, to } = state.selected;
+    const rows = state.pvs.flatMap((name, index) => {
+        const dataset = state.summary.get(name);
+        if (!dataset) return [];
+        const values = dataset.records.filter((record) => record.t >= from.getTime() && record.t <= to.getTime()).map((record) => record.v);
+        return [{ name, egu: dataset.egu, color: lineLook(dataset, index).color, values }];
+    });
+    for (const host of [$("summary"), $("dataSummary")]) {
+        host.replaceChildren();
+        if (rows.length) host.append(buildStatistics(rows, null, "Summary"));
+    }
+}
+
+/** The retrieval options of the Options tab: the interval of the display and the selected dataset, and the min-max band. */
+function renderRetrievalOptions() {
+    const host = $("retrievalOptions");
+    const choice = node("select", { "aria-label": "Interval" });
+    for (const [value, text] of [["auto", "Automatic"], ["raw", "Raw samples"], ["seconds", "Seconds"]]) {
+        const option = node("option", { value }, text);
+        option.selected = value === (typeof state.interval === "number" ? "seconds" : state.interval);
+        choice.append(option);
+    }
+    const seconds = node("input", { type: "number", min: "1", max: String(INTERVAL_MOST), step: "1", "aria-label": "Interval in seconds" });
+    seconds.value = typeof state.interval === "number" ? String(state.interval) : "";
+    seconds.hidden = choice.value !== "seconds";
+    const apply = node("button", { type: "button" }, "Apply");
+    apply.hidden = seconds.hidden;
+    const error = node("p", { class: "error", role: "alert" });
+    const change = (interval) => {
+        state.interval = interval;
+        state.sample = null;
+        error.textContent = "";
+        writeAddress();
+        load();
+    };
+    choice.addEventListener("change", () => {
+        seconds.hidden = choice.value !== "seconds";
+        apply.hidden = seconds.hidden;
+        if (choice.value !== "seconds") change(choice.value);
+    });
+    apply.addEventListener("click", () => {
+        const value = Number(seconds.value);
+        if (!/^\d+$/.test(seconds.value.trim()) || value < 1 || value > INTERVAL_MOST) {
+            error.textContent = `Enter whole seconds from 1 to ${INTERVAL_MOST}.`;
+            return;
+        }
+        change(value);
+    });
+    const minmax = node("input", { type: "checkbox" });
+    minmax.checked = state.minmax;
+    minmax.addEventListener("change", () => {
+        state.minmax = minmax.checked;
+        writeAddress();
+        load();
+    });
+    host.replaceChildren(
+        node("div", { class: "opt-row" }, node("label", null, "Interval ", choice), node("label", null, "Seconds ", seconds), apply),
+        node("label", { class: "check" }, minmax, " Min-max band of the display means"),
+        error);
 }
 
 function panBy(direction) {
@@ -330,7 +682,7 @@ function csv() {
     for (const name of state.pvs) {
         const series = state.data.get(name);
         for (const point of series ? series.points : []) {
-            rows.push(`${JSON.stringify(name)},${new Date(point.t).toISOString()},${point.v},${point.s},${series.bin}`);
+            rows.push(`${JSON.stringify(name)},${new Date(point.t).toISOString()},${point.v},${point.s},${series.seconds === "raw" ? 1 : series.seconds}`);
         }
     }
     return rows.join("\n");
@@ -386,6 +738,8 @@ function wire() {
     });
     $("projection").checked = state.chart.projection;
     $("projection").addEventListener("change", () => chart.setState({ projection: $("projection").checked }));
+    renderRetrievalOptions();
+    renderDisplayOptions();
     wireTabs($("analysisTabs"), (tab) => tab.dataset.view === "trend" ? showTrend() : explainView(tab.dataset.view, state.view !== "trend"));
     wireTabs($("settingsTabs"), (tab) => {
         for (const item of $("settingsTabs").querySelectorAll('[role="tab"]')) {
@@ -433,7 +787,7 @@ function wire() {
 readAddress();
 chart = createChart($("charts"), {
     id: "analyzer-trend", idPrefix: "trend", legend: true, initialState: state.chart,
-    controlsHost: $("chartOptions"), statisticsHost: [$("statistics"), $("dataStatistics")],
+    controlsHost: $("chartOptions"), statisticsHost: [$("statistics"), $("dataStatistics")], statisticsTitle: "Visible range",
     rangeHost: $("timeControls"), fitWidth: true, tools: true, toolbarHost: $("trendTools"),
     helpHref: () => document.querySelector("ul.mainmenu").dataset.ready === "true" ? $("help").href : null,
     onZoom: (from, to) => applyRange(from, to), onPan: panBy, onReset: resetTime,
@@ -444,6 +798,7 @@ chart = createChart($("charts"), {
         writeAddress();
         renderSignals();
         renderAxes();
+        renderDisplayOptions();
     },
 });
 wire();

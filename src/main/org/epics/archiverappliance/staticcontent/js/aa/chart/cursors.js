@@ -45,9 +45,11 @@ export function heldObservation(points, gapMs, t) {
 
 /**
  * The table of the cursors: one row per drawn series with the reading of each cursor (value and the time of the
- * observation), and the differences of time and value between the two readings when both exist.
+ * observation), and the differences of time and value between the two readings when both exist. gapMs is the gap
+ * threshold in milliseconds, or a function of the series that gives it, for a chart whose signals have their own.
  */
-export function buildCursorTable(drawn, names, cursors, gapMs, timeZone) {
+export function buildCursorTable(drawn, names, cursors, gapMs, timeZone, valueOf = (series, v) => format(v, series.egu)) {
+    const gapOf = typeof gapMs === "function" ? gapMs : () => gapMs;
     const wrap = document.createElement("div");
     wrap.className = "chart-cursors";
     const title = document.createElement("h3");
@@ -67,10 +69,10 @@ export function buildCursorTable(drawn, names, cursors, gapMs, timeZone) {
     thead.append(head);
     const body = document.createElement("tbody");
     const readingText = (series, observation) => observation
-        ? `${format(observation.v, series.egu)} at ${formatInZone(new Date(observation.t), TIME_FORMAT, timeZone)}`
+        ? `${valueOf(series, observation.v)} at ${formatInZone(new Date(observation.t), TIME_FORMAT, timeZone)}`
         : "unavailable";
     drawn.forEach((series, index) => {
-        const readings = cursors.map((time) => (time === null || time === undefined ? undefined : heldObservation(series.points, gapMs, +time)));
+        const readings = cursors.map((time) => (time === null || time === undefined ? undefined : heldObservation(series.points, gapOf(series), +time)));
         const row = document.createElement("tr");
         const name = document.createElement("td");
         name.textContent = names[index];
@@ -82,7 +84,7 @@ export function buildCursorTable(drawn, names, cursors, gapMs, timeZone) {
         }
         const [first, second] = readings;
         const both = first && second;
-        for (const text of [both ? `${format((second.t - first.t) / 1000, "s")}` : "-", both ? format(second.v - first.v, series.egu) : "-"]) {
+        for (const text of [both ? `${format((second.t - first.t) / 1000, "s")}` : "-", both ? valueOf(series, second.v - first.v) : "-"]) {
             const cell = document.createElement("td");
             cell.className = "num";
             cell.textContent = text;

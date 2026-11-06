@@ -3,10 +3,12 @@
 // information cards, and it keeps the options between draws. A page gives the series and the window at each refresh.
 import { infoButton } from "../card.js";
 import { node } from "../dom.js";
-import { MARKER_LIMIT, drawTimeSeries } from "./draw.js";
+import { DISPLAY_DEFAULTS, MARKER_LIMIT, drawTimeSeries } from "./draw.js";
 import { currentZone, formatInZone, onZoneChange } from "../timezone.js";
 import { onProfileChange } from "./profile.js";
 import { NAVIGATION_TARGETS, TOOLS } from "./gestures.js";
+import { LEGEND_STATISTICS } from "./legend.js";
+import { SCALE_KINDS } from "./scales.js";
 import { buildChartOptions, CHART_OPTIONS, normalizeOptions } from "./options.js";
 import { validRanges, withChartState } from "./state.js";
 import { buildRangeStrip } from "./strip.js";
@@ -15,6 +17,98 @@ import { format } from "./text.js";
 
 // The time of a pin or a cursor reading in the toolbar.
 const TOOL_TIME_FORMAT = "%Y-%m-%d %H:%M:%S";
+
+// The choices of the display settings, the settings of a signal and the settings of a unit, for validation.
+const DISPLAY_CHOICES = {
+    split: ["none", "unit"], legend: ["list", "table", "off"], tooltip: ["single", "all"], tipsort: ["series", "asc", "desc"], grid: ["off", "x", "y", "both"],
+};
+const DASH_CHOICES = ["auto", "solid", "dash", "dot", "dashdot"];
+const PREFIX_CHOICES = ["none", "si"];
+const NAME_MOST = 128;
+
+/** A display name or an axis label: nonempty plain text of at most NAME_MOST code points without control characters, else null. */
+function plainName(value) {
+    if (typeof value !== "string" || !value.trim() || [...value].length > NAME_MOST) {
+        return null;
+    }
+    for (const character of value) {
+        const code = character.codePointAt(0);
+        if (code < 32 || (code >= 127 && code < 160)) {
+            return null;
+        }
+    }
+    return value;
+}
+
+/** The settings of one signal, validated: width, dash, gap, fill, decimals and name; a field unreadable is left out. */
+function signalSettings(input) {
+    const out = {};
+    if (!input || typeof input !== "object") {
+        return out;
+    }
+    if (Number.isFinite(input.width) && input.width >= 0.5 && input.width <= 10) out.width = input.width;
+    if (DASH_CHOICES.includes(input.dash) && input.dash !== "auto") out.dash = input.dash;
+    if (Number.isFinite(input.gap) && input.gap > 0) out.gap = input.gap;
+    if (typeof input.fill === "string" && input.fill) out.fill = input.fill;
+    if (Number.isInteger(input.decimals) && input.decimals >= 0 && input.decimals <= 15) out.decimals = input.decimals;
+    if (plainName(input.name)) out.name = input.name;
+    return out;
+}
+
+/** The settings of one unit, validated: scale, symlog constant, soft bounds, zero, prefix and label. */
+function axisSettings(input) {
+    const out = {};
+    if (!input || typeof input !== "object") {
+        return out;
+    }
+    if (SCALE_KINDS.includes(input.scale)) out.scale = input.scale;
+    if (Number.isFinite(input.symlog) && input.symlog > 0) out.symlog = input.symlog;
+    const softmin = Number.isFinite(input.softmin) ? input.softmin : null;
+    const softmax = Number.isFinite(input.softmax) ? input.softmax : null;
+    if (softmin !== null && softmax !== null && softmin >= softmax) {
+        // An inverted pair of soft bounds is left out as a whole.
+    } else {
+        if (softmin !== null) out.softmin = softmin;
+        if (softmax !== null) out.softmax = softmax;
+    }
+    if (input.zero === true) out.zero = true;
+    if (PREFIX_CHOICES.includes(input.prefix) && input.prefix !== "none") out.prefix = input.prefix;
+    if (plainName(input.label)) out.label = input.label;
+    return out;
+}
+
+/** The display settings, validated against DISPLAY_DEFAULTS and the choices; an unreadable field keeps its value. */
+function displaySettings(current, input) {
+    const out = { ...current };
+    if (!input || typeof input !== "object") {
+        return out;
+    }
+    for (const [name, choices] of Object.entries(DISPLAY_CHOICES)) {
+        if (choices.includes(input[name])) out[name] = input[name];
+    }
+    if (Array.isArray(input.legendstat)) {
+        const valid = [...new Set(input.legendstat.filter((name) => LEGEND_STATISTICS.includes(name)))];
+        if (valid.length) out.legendstat = valid;
+    }
+    if (typeof input.endlabels === "boolean") out.endlabels = input.endlabels;
+    return out;
+}
+
+/** A Map of settings from a Map or an array of [key, settings] pairs, each validated by settingsOf. */
+function settingsMap(input, settingsOf) {
+    const entries = input instanceof Map ? [...input] : Array.isArray(input) ? input : null;
+    if (!entries) {
+        return null;
+    }
+    const out = new Map();
+    for (const entry of entries) {
+        if (Array.isArray(entry) && typeof entry[0] === "string") {
+            const settings = settingsOf(entry[1]);
+            if (Object.keys(settings).length) out.set(entry[0], settings);
+        }
+    }
+    return out;
+}
 
 /** The navigation, reference and history state of a chart with the tools, validated; fields absent or unreadable are left alone. */
 function applyToolState(memory, state) {
@@ -41,6 +135,17 @@ function applyToolState(memory, state) {
         memory.pins = state.pins
             .filter((pin) => pin && typeof pin.name === "string" && Number.isFinite(pin.t) && Number.isFinite(pin.v))
             .map((pin) => ({ name: pin.name, egu: typeof pin.egu === "string" ? pin.egu : "", t: pin.t, v: pin.v, s: Number(pin.s) || 0 }));
+    }
+    if (state.display) {
+        memory.display = displaySettings(memory.display, state.display);
+    }
+    const signals = settingsMap(state.signals, signalSettings);
+    if (signals) {
+        memory.signals = signals;
+    }
+    const axes = settingsMap(state.axes, axisSettings);
+    if (axes) {
+        memory.axes = axes;
     }
 }
 
@@ -120,7 +225,8 @@ function cardsOf(helpHref, timed) {
  * onZoom(from, to), onPan(direction), onReset() and onOptionsChange(options). A chart with none of the three time callbacks has no
  * drag over the plot and no Earlier, Later or Back to the selected range.
  * draw(data), at each refresh: series, from, to, gapMs, windowChosen, canPanLater and analyzerHref (a string, or null for no link).
- * message(text) shows a text in place of the chart. options is the object of the options the person chose.
+ * message(text, data) shows a text in place of the chart; with the window data of draw (from, to, windowChosen,
+ * datasetKey) the history and Reset stay available on a window without samples. options is the object of the options the person chose.
  * initialState initializes {options, projection, ranges: [[unit, [low, high]]], hidden: [name]}.
  * getState() returns a copy; setState(patch) validates, redraws and reports through onStateChange(state).
  * controlsHost places the option controls outside the widget and leaves its ordinary toolbar out. statisticsHost
@@ -147,6 +253,9 @@ export function createChart(host, config) {
     memory.pins ||= [];
     memory.history ||= { undo: [], redo: [] };
     memory.recorded ??= null;
+    memory.display ||= { ...DISPLAY_DEFAULTS };
+    memory.signals ||= new Map();
+    memory.axes ||= new Map();
     if (config.initialState) {
         memory.options = normalizeOptions(config.initialState.options);
         memory.projection = config.initialState.projection === true;
@@ -221,20 +330,28 @@ export function createChart(host, config) {
         return { options: { ...memory.options }, projection: projectionOn(),
             ranges: validRanges([...memory.ranges]), hidden: [...memory.hidden],
             tool: memory.tool, wheel: memory.wheel, hover: memory.hover, nav: memory.nav, navUnit: memory.navUnit,
-            cursors: memory.cursors.map((time) => (time ? new Date(time) : null)), pins: memory.pins.map((pin) => ({ ...pin })) };
+            cursors: memory.cursors.map((time) => (time ? new Date(time) : null)), pins: memory.pins.map((pin) => ({ ...pin })),
+            display: { ...memory.display, legendstat: [...memory.display.legendstat] },
+            signals: [...memory.signals].map(([name, settings]) => [name, { ...settings }]),
+            axes: [...memory.axes].map(([unit, settings]) => [unit, { ...settings }]) };
     }
 
-    /** The window and the ranges as drawn, the unit of the history; null before the first drawing. */
+    /** The settings of the units in a stable order, as text, for the history and its comparison. */
+    function axesText() {
+        return JSON.stringify([...memory.axes].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)));
+    }
+
+    /** The window, the ranges and the axis settings as drawn, the unit of the history; null before the first drawing. */
     function snapshot() {
         if (!last) {
             return null;
         }
         const ranges = validRanges([...memory.ranges]).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
-        return { from: last.from, to: last.to, ranges };
+        return { from: last.from, to: last.to, ranges, axes: axesText() };
     }
 
     function sameSnapshot(a, b) {
-        return Boolean(a && b) && +a.from === +b.from && +a.to === +b.to && a.ranges.length === b.ranges.length
+        return Boolean(a && b) && +a.from === +b.from && +a.to === +b.to && a.ranges.length === b.ranges.length && a.axes === b.axes
             && a.ranges.every(([unit, range], index) => b.ranges[index][0] === unit
                 && b.ranges[index][1][0] === range[0] && b.ranges[index][1][1] === range[1]);
     }
@@ -256,6 +373,7 @@ export function createChart(host, config) {
     function restoreSnapshot(target) {
         restoring = true;
         memory.ranges = new Map(validRanges(target.ranges));
+        memory.axes = new Map(JSON.parse(target.axes));
         const moved = last && (+last.from !== +target.from || +last.to !== +target.to);
         if (moved && typeof config.onZoom === "function") {
             config.onZoom(target.from, target.to);
@@ -302,8 +420,19 @@ export function createChart(host, config) {
         changed();
     }
 
+    /**
+     * The candidate selection. A redraw in the middle of the gesture (a resize, a late response) replaces the drawing
+     * the brush was made on, and the new drawing shows no selection; it is drawn again then, and only then, so that a
+     * click that clears the selection still counts towards a double-click on the same drawing.
+     */
     function onSelect(range) {
         memory.selection = range;
+        if (range) {
+            const shown = chartHost.querySelector(".brush-layer .selection");
+            if (!shown || getComputedStyle(shown).display === "none") {
+                redraw();
+            }
+        }
         toolbarControls();
     }
 
@@ -527,6 +656,9 @@ export function createChart(host, config) {
         const input = {
             tool: config.tools === true ? memory.tool : undefined,
             wheel: config.tools === true ? memory.wheel : undefined,
+            display: config.tools === true ? memory.display : undefined,
+            signals: config.tools === true ? memory.signals : undefined,
+            axes: config.tools === true ? memory.axes : undefined,
             hover: memory.hover,
             nav: memory.nav,
             navUnit: memory.navUnit,
@@ -549,6 +681,7 @@ export function createChart(host, config) {
             // The table of the Y projection is in the Projection tab above the chart, on the page and in the large window alike.
             statisticsHost: config.statisticsHost || projectionStats,
             statistics: Boolean(config.statisticsHost),
+            statisticsTitle: config.statisticsTitle,
             ranges: memory.ranges,
             hidden: memory.hidden,
             onRangesChange: changed,
@@ -575,8 +708,18 @@ export function createChart(host, config) {
         toolbarControls();
     }
 
-    function message(text) {
-        last = null;
+    function message(text, data) {
+        // With the window of the page (from, to, windowChosen and datasetKey, as draw receives them) the toolbar keeps
+        // Reset and the history on a window without samples; without it the chart has nothing to return to.
+        last = data && data.from && data.to ? { ...data, series: [] } : null;
+        if (last && last.datasetKey !== undefined && last.datasetKey !== memory.datasetKey) {
+            memory.datasetKey = last.datasetKey;
+            memory.history = { undo: [], redo: [] };
+            memory.recorded = null;
+            memory.pins = [];
+            memory.selection = null;
+        }
+        toolbarControls();
         chartHost.textContent = text;
         for (const element of [].concat(config.statisticsHost || projectionStats)) {
             element.textContent = "";
