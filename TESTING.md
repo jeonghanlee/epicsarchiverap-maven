@@ -465,13 +465,15 @@ cleanup. The intended fault must end with launcher exit 1, the engine-exit
 diagnostic, `status=stopped`, and all children reaped. Another exit 1,
 forced shutdown, incomplete cleanup, or unverified restoration fails.
 
-Build the book with the pinned tools from `docs/book/Dockerfile`
+Build the book with the shared `jeonghanlee/mdbook` image
 ([Developer guide](docs/book/src/developer.md#documentation)), then compare
-the sample copies in the book output with their sources; no output means
-they agree:
+the sample copies in that output with their sources. Run from the repository
+root; no output from `diff` means the copies agree:
 
 ```bash
-diff -r -x __pycache__ docs/book/src/samples docs/book/book/samples
+book_output=$(mktemp -d /tmp/aa-book-check.XXXXXX)
+sh scripts/build-book.sh -o "$book_output"
+diff -r -x __pycache__ docs/book/src/samples "$book_output/samples"
 ```
 
 HTTP-boundary tests and formatter captures are separate from actual

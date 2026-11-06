@@ -277,15 +277,22 @@ test sources and are not packed into the WARs.
 ## Documentation
 
 ```bash
-docker build -t aa-mdbook docs/book
-```
-```bash
-docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs/book:/book" aa-mdbook build
+sh scripts/build-book.sh
 ```
 
-The image pins mdBook 0.4.52 and mdbook-admonish 1.20.0. The output is
-`docs/book/book/`. A push to `master` that changes `docs/book/`
-publishes the book on GitHub Pages.
+Run this command from the repository root with Docker available. The script
+uses the same `jeonghanlee/mdbook` image digest as the Pages workflow,
+reports mdBook 0.5.4, builds into a fresh temporary directory, and checks
+every local link and fragment. Its output prints the generated directory;
+`-o OUTPUT_DIR` selects an empty destination, and `-r` pulls the published
+image again. The [shared image definition](https://github.com/jeonghanlee/Dockerfiles/blob/master/mdbook/Dockerfile)
+supplies the build tools; `docs/book/Dockerfile` is not the active build source.
+
+The book uses no additional preprocessor. Missing chapters fail the build
+without creating source files. The Pages workflow also checks that the build
+left `docs/book/src/` unchanged before uploading `docs/book/book/`.
+A push to `master` that changes the book source, configuration, link checker
+or Pages workflow publishes the site; manual workflow dispatch is also available.
 
 ## PB files
 

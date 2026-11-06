@@ -1,15 +1,15 @@
 name: Deploy docs to GitHub Pages
 
-# Builds the mdBook documentation with the repository's pinned Dockerfile
-# (docs/book/Dockerfile) and publishes it to GitHub Pages. The Pages source
-# must be set to "GitHub Actions" (build_type=workflow) or a branch-source
-# Jekyll build will shadow this output.
+# Builds with the shared mdBook image and publishes the generated site.
+# GitHub Pages must use GitHub Actions as its build and deployment source.
 
 on:
   push:
     branches: [master]
     paths:
-      - docs/book/**
+      - docs/book/src/**
+      - docs/book/book.toml
+      - scripts/check-book-links.pl
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -24,24 +24,42 @@ concurrency:
 
 jobs:
   build:
+    name: Build the mdBook site
     runs-on: ubuntu-latest
+    container:
+      # mdBook 0.5.4; shared with scripts/build-book.sh.
+      image: jeonghanlee/mdbook@sha256:421d21518a898a5f021d8c480c10cc9d31f520bcd78705f7abd9c4ea0f4d778d
     steps:
-      - uses: actions/checkout@v4
-      - name: Build the documentation image
-        run: docker build -t aa-mdbook docs/book
+      - name: Checkout Code
+        uses: actions/checkout@v7
+      - name: Show mdBook version
+        run: mdbook --version
       - name: Build the book
-        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs/book:/book" aa-mdbook build
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+        run: mdbook build docs/book
+      - name: Check book links
+        run: |
+          site_url="$(sed -n 's/^site-url *= *"\(.*\)"/\1/p' docs/book/book.toml)"
+          perl scripts/check-book-links.pl docs/book/book "$site_url"
+      - name: Guard against build side effects
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          docs_status="$(git status --porcelain -- docs/book/src)"
+          test -z "$docs_status"
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs/book/book
 
   deploy:
+    name: Deploy to GitHub Pages
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
