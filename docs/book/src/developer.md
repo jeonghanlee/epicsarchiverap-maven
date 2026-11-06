@@ -286,7 +286,7 @@ reports mdBook 0.5.4, builds into a fresh temporary directory, and checks
 every local link and fragment. Its output prints the generated directory;
 `-o OUTPUT_DIR` selects an empty destination, and `-r` pulls the published
 image again. The [shared image definition](https://github.com/jeonghanlee/Dockerfiles/blob/master/mdbook/Dockerfile)
-supplies the build tools; `docs/book/Dockerfile` is not the active build source.
+supplies the build tools.
 
 The book uses no additional preprocessor. Missing chapters fail the build
 without creating source files. The Pages workflow also checks that the build
