@@ -1,9 +1,9 @@
 # Analyzer design
 
-Date: 2026-11-04
-Status: draft 2; M1 composition accepted; three M2 items are open (see Decisions)
+Date: 2026-11-05
+Status: draft 2; M1 composition accepted; M2 interaction and display defaults decided (D12-D14)
 Register: `docs/milestone-bfb0dc71.md` M1 (phase A: page, header and address), M2 (phase B: interaction, options and export), M3 (phase C: tools for one signal), M4 (phase D: tools for two and several signals), M5 (phase E: waveforms and images); the chart component is row M59 (previous document, commit bfb0dc71), complete; issue #39
-Register decisions of `docs/milestone-bfb0dc71.md`: register D1 (console pages), register D2 (the analyzer as a self-contained analysis tool built with the bundled D3) and register D5 (the five phases); D1 to D10 under Decisions are the decisions of this note
+Register decisions of `docs/milestone-bfb0dc71.md`: register D1 (console pages), register D2 (the analyzer as a self-contained analysis tool built with the bundled D3) and register D5 (the five phases); D1 to D14 under Decisions are the decisions of this note
 
 ## Scope
 
@@ -59,7 +59,8 @@ Read on 2026-10-19: the Phoebus Data Browser (EPICS), SLAC Trace (PyDM; the repl
 
 ### What the analyzer takes from them
 
-- The structure: selection and range at the top, analysis tabs, and a panel with Signals, Axes, Options, Data and Export. The M1 foundation composition is accepted. Split comparison, advanced controls and the drag assignment belong to the later phases; the drag assignment remains open (Decisions).
+- Decision 2026-11-05 (D11): reuse the applicable behaviors and utilities already implemented by the bundled D3; implement the application connections using established reference-tool behavior. The [M2 draft](milestone-bfb0dc71.md#m2---analyzer-phase-b-interaction-options-and-export) maps D3 APIs, reference behavior, application responsibilities and real-path checks. Bokeh defines the interaction reference, Grafana the display-option reference, and Phoebus the export reference. This direction prepares M2; it does not accept or authorize the complete implementation plan.
+- The structure: selection and range at the top, analysis tabs, and a panel with Signals, Axes, Options, Data and Export. The M1 foundation composition is accepted. M2 starts with Select as the active drag tool; Pan and Box zoom are alternatives on the toolbar (D12).
 - The options: line width and style, a gap threshold that disconnects the line, a fill between two signals, soft and fixed axis ranges, grid lines, centered zero, SI prefixes, an axis label, a legend in table mode with computed values, a tooltip in single or all mode with a sort order, thresholds as lines with the time beyond them, decimals and a display name per signal, a filter by value, a group by time interval with a reduce, undo and redo of the range, and the full export of the Export tab (below).
 
 ## Analysis scenarios
@@ -106,7 +107,7 @@ The current proposal uses eight analysis tabs: Trend, Distribution, Correlation,
 
 Decision 2026-11-04 (D9): place one shared time-range control group with the common PV and time selection above the analysis tabs. Every chart uses that common range; do not repeat the time controls for each chart. Axes contains the unit-specific Y-range settings. Existing console chart placement remains unchanged.
 
-Decision 2026-11-04 (D10): the M1 foundation composition, configuration panels and unavailable-tool presentation are accepted, and the current M1 implementation plan is authorized. The right-hand settings panel moves below the plot at compact widths; statistics remain below the plot; unavailable tabs explain their status without activating a calculation. The existing open gesture and numerical-method choices remain for their later phases.
+Decision 2026-11-04 (D10): the M1 foundation composition, configuration panels and unavailable-tool presentation are accepted, and the current M1 implementation plan is authorized. The right-hand settings panel moves below the plot at compact widths; statistics remain below the plot; unavailable tabs explain their status without activating a calculation. Detailed M2 interactions and later numerical methods follow their phase contracts; the M2 interaction defaults are recorded in D12-D14.
 
 ### Input suitability checks
 
@@ -119,12 +120,17 @@ When a PV is selected, available metadata establishes possible data forms and mi
 In addition to the simple form, the analyzer offers:
 
 - Options beside the plot: sample marks on, off or automatic; line as step, straight, smooth or points; Y axis linear, symmetric log, log or square root, each unit automatic or fixed to a typed range; the averaging interval chosen in seconds, or raw samples forced; the running average and the standard deviation band with their one window in samples; a min-max band around the line when the data is averaged, read through the retrieval `min` and `max` post-processors with the mean; a split by unit that draws one plot per unit under another, sharing the time axis, the crosshair and the time range; the Y projection and the Distribution panel as options of their own.
-- Gestures: a drag over the plot selects a time range and a drag along an axis a value range, as in the simple form; the wheel and the trackpad pinch zoom the time axis around the pointer (`d3-zoom`) within limits on the factor and the pannable range; Shift and a drag pans; a double-click returns to the original range and a step back returns to the previous one; on a touch screen one finger selects and two fingers pan and zoom; a click on a legend item hides its line, a click on a series brings it to the front, and a click on a sample pins its values; two reference cursors show the difference of time and value between them (`d3-drag`); the nearest sample to the pointer is found with `d3-delaunay` or `d3-quadtree` on plots with many points; a change of range reads the data again once after the gesture ends, because the averaging interval follows the span. The assignment of the drag is open: the owner decides it before the plan of M2 is accepted (Decisions).
+- Gestures: use `d3-zoom` for pan, wheel and pinch; `d3-brush`, `brushX` and `brushY` for rectangular and axis selections; `d3-drag` for reference cursors; and `d3.bisector`, `d3-delaunay` or `d3-quadtree` for sample lookup. The M2 draft specifies a Bokeh-style active-tool toolbar, selection versus box zoom, history, reset, touch routing and request completion. Select is initially active; Pan and Box zoom are mutually exclusive alternatives, while wheel and hover remain independent (D12). Legend visibility, series ordering, pinned values and two-cursor differences remain application connections. Keyboard access, the existing double-click reset and the simple console form are preserved explicitly; their behavior is not assumed to be a D3 default.
+- Line-end names are optional and off by default. When enabled, they identify visible series at their last visible finite observation and do not replace the legend (D13). The running average and standard deviation band keep one shared sample window, with choices 10, 30 and 60 and default 30 (D14). This sample window is independent of the retrieval averaging interval and its min-max band.
 - Transitions on zoom and range changes (`d3-transition`); CSV export through `d3-dsv` in place of the viewer's own code; values in SI prefixes with matched significant digits (`d3-format`).
 
 ### Address
 
-The names: `pv` (repeated), `from`, `to`, `tz` (a supported zone or `browser`), `profile` (`default`, `redgreen` or `mono`), `view` (the tab), `shape` (`step` by default, `line`, `smooth`, `points`), `yscale` (`linear` by default, `symlog`, `log`, `sqrt`), `marks` (`auto` by default, `on`, `off`), `avg` (`1` when the running average is on), `band` (`1` when the standard deviation band is on), `window` (the window in samples of both, 30 by default; a second name follows if the Open row on the window decides two), `yproj` (`1`), `yrange` (repeated, `unit:low:high`, `none` for a PV with no unit), `interval` (`raw` or the averaging interval in seconds, automatic when absent), `split` (`none` by default, `unit`). M2 adds the names of its options, and the tools of M3, M4 and M5 add their own names when they are designed. The control of the Browse PVs page adds the options chosen on the page to the address it opens.
+M1 retains `pv` (repeated), `from`, `to`, `tz`, `profile`, `view`, `shape`, `yscale`, `marks`, `avg`, `band`, `window`, `yproj` and repeated `yrange`. Its chart defaults remain step, linear, automatic marks, average/band/projection off and one shared 30-sample window with choices 10, 30 and 60. The control of the Browse PVs page carries its chosen settings into the Analyzer.
+
+The [M2 Address Contract](milestone-bfb0dc71.md#m2-address-contract) specifies all added names, defaults, validation and writing rules. `from`/`to` remain the displayed range; `selectedfrom`/`selectedto` and resolved `sample` retain the original selected query independently of display `interval`. Repeated `pv` determines series order; per-PV and per-unit keys use exact identities, not list positions. Axis policies retain absent soft bounds and remain distinct from displayed domains. Select is the initial drag tool, line-end names are off, wheel zoom is opt-in, and hover remains on. Export form settings and exact cursor/pin references are persistent; hover coordinates, pending gestures and Undo stacks are transient.
+
+The contract includes legacy precedence, special-character encoding, source normalization, unsupported export combinations and real reader/writer checks. URL restoration never initiates an export. The remaining M3-M5 analysis names belong to their own plans; this contract does not make those tools available.
 
 Decision 2026-11-04 (D8): valid explicit `tz` and `profile` take precedence independently. For direct legacy links, missing `tz` uses Browser regardless of a stored zone; missing `profile` uses the retrieval origin's valid stored profile, or Default if none. Unreadable values are ignored and follow the corresponding missing-value rule. New source-page links, including the menu, and Copy link always include both effective preferences, including `tz=browser` and `profile=default`; changing the range retains them. This preserves the selected legacy fallback while keeping new links independent of destination preferences.
 
@@ -184,14 +190,16 @@ Every written routine is checked on signals of known parameters made with the `r
 The Export tab of the drawer, after the Phoebus Export panel and the Grafana inspector:
 
 - Range: the window shown, or a typed range.
-- Source: the samples shown; the raw archived samples; optimized data of N bins with the minimum, mean and maximum of each; a linear interpolation at a fixed interval.
+- Source: the samples shown; the raw archived samples; optimized data requesting N bins with the minimum, mean and maximum of each; a linear interpolation at a fixed interval. The M2 draft reports the effective interval and actual returned bin count because retrieval operators use integer-second, epoch-aligned bins.
 - Format: CSV with one column per signal aligned on time (a sample at or before each time), or one long table (time, signal, value); severity and status included or not; the digits (as stored, fixed decimals, exponential); time as ISO 8601 in the chosen zone or as UNIX milliseconds; the unit in the header.
 - Products: the data as CSV; the statistics table of the view as CSV; a fit result (model, parameters with errors, chi-square per degree of freedom, R²) as CSV or JSON; a derived signal as CSV; the plot as PNG or SVG; the address of the page with every option, copied to the clipboard.
 - Large ranges: the page hands the retrieval's own `getData.csv` and `getData.mat` addresses with the operator and the range, so the server streams the file and the browser holds no copy; the Matlab file comes from the retrieval as it is. The retrieval's CSV holds one PV and has no header line; its columns are `secs,value,severity,status,nanos`. The aligned columns, the ISO 8601 time and the unit in the header of Format belong to the page's own CSV.
 
+M2's Interpolated Export Contract defines the timestamp grid, missing-data boundaries, derived quality fields and numerical comparison. Interpolation uses raw observations, does not extrapolate or cross recorded gaps, and remains distinct from the server's `linear_N` bin calculation. Server links identify their actual product rather than promise the page's interpolation or formatting. M2's History Restoration Contract similarly preserves auto/soft/fixed axis policy together with the displayed bounds.
+
 ### Data access
 
-The analyzer reads data from its own web application: `data/getData.json` with an operator (`meanSample_N`, `min_N`, `max_N`, raw) chosen from the span and the `interval` option; the type information of a PV from `bpl/getMetadata` or the management; the appliance information from the retrieval's `getApplianceInfo`. A range change issues one batch of requests, one per drawn PV, after the gesture ends.
+The analyzer reads data from its own web application: `data/getData.json` with an operator (`meanSample_N`, `minSample_N`, `maxSample_N`, raw; the no-fill variants, so an interval without samples stays empty) chosen from the span and the `interval` option; the type information of a PV from `bpl/getMetadata` or the management; the appliance information from the retrieval's `getApplianceInfo`. A completed X-range gesture starts at most one request batch for the final range and required operators; a batch may contain mean, min and max requests for each drawn PV, and cache hits need no HTTP request. Y-only changes, hover, selection alone and programmatic synchronization do not start another batch. Selected-data Summary remains independent of replacement display data.
 
 ## Interfaces that change
 
@@ -217,11 +225,11 @@ Per-tool input suitability checks follow their tool: M3 covers Distribution, Spe
 
 ## Testing
 
-Every check runs on a local appliance with the shipped soft IOC fixture (`src/resources/test/ConsoleChartPVs.db`) and real pointer and touch actions in the browser; the computations of M3 and M5 are checked on signals of known parameters. The static check and `MgmtPageLinksTest` cover the page, the entry and the forward; the default suite and the two workflows gate each row.
+Each phase follows its canonical Test Plan. Browser integration checks use a local appliance, the shipped soft IOC fixture (`src/resources/test/ConsoleChartPVs.db`) and real pointer and touch actions; separately identified HTTP-boundary cases exercise invalid input without replacing page internals. The computations of M3 and M5 are checked on signals of known parameters. The static check and `MgmtPageLinksTest` cover the page, the entry and the forward. M2 requires the default suite, Maven CI, and book build and link checks using the standard `jeonghanlee/mdbook` image (mdBook 0.5.4). The local script and Pages workflow use the same image digest, and the book requires no additional preprocessor. M2 verification uses that build path rather than the host mdBook or the old `aa-mdbook` image. Published Pages verification belongs to M21 / Release Verification 7 after the release merge into master.
 
 ## Decisions
 
-D1 to D10 are the decisions of this note. Register D1, D2 and D5 are decisions of the register. The three Open rows are undecided; the owner decides each before M2 is accepted.
+D1 to D14 are the decisions of this note. Register D1, D2 and D5 are decisions of the register. D11 supplies the M2 preparation direction; D12-D14 settle its interaction and display defaults. The canonical M2 detail owns complete-plan acceptance and implementation authorization.
 
 | ID | Decision | Date |
 | --- | --- | --- |
@@ -235,6 +243,7 @@ D1 to D10 are the decisions of this note. Register D1, D2 and D5 are decisions o
 | D8 | Preserve legacy preference fallback: missing `tz` uses Browser; missing `profile` uses the retrieval origin's valid stored profile or Default. Valid explicit values win independently; new source-page and copied links always specify both preferences, including Browser and Default | 2026-11-04 |
 | D9 | Use one shared time-range control group above the analysis tabs, with the common PV/time selection; configure each unit's Y range in Axes. Do not repeat the time controls for each chart | 2026-11-04 |
 | D10 | Accept the M1 foundation composition, configuration panels and unavailable-tool presentation in `design-analyzer-ui.md`, demonstrated by the mockup's M1 mode; authorize the current M1 plan after D8 and D9. M2-M5 capabilities remain outside this authorization | 2026-11-04 |
-| Open | The assignment of the drag on the plot: select (as in the simple form) with Shift to pan, or pan with Shift to select, or a mode control on the range strip; the reference tools (Bokeh, Plotly) use the mode control with one drag tool active at a time and the wheel and hover always on; the owner decides before the plan of M2 is accepted | |
-| Open | Whether a line carries a label at its end besides its entry in the legend, which names every line in the simple form (register M58 (previous document, commit bfb0dc71), decision of 2026-10-14); the owner decides before the plan of M2 is accepted | |
-| Open | The window of the running average and the band: one shared window (`window`, as the component and the address have it) or two; the owner decides before the plan of M2 is accepted | |
+| D11 | Prepare the Analyzer using the applicable functions already implemented in bundled D3 and established reference-tool behavior for the application connections; keep M2 acceptance and implementation authorization separate | 2026-11-05 |
+| D12 | Use Select as the initial M2 drag tool, with Pan and Box zoom as mutually exclusive alternatives and independent wheel and hover controls; selection does not change displayed axes until Apply; preserve existing console behavior | 2026-11-05 |
+| D13 | Offer line-end names as an optional display control, off by default; keep the legend independent of this option | 2026-11-05 |
+| D14 | Keep one shared `window` for the running average and standard deviation band, measured in samples, with choices 10, 30 and 60 and default 30; do not add separate window parameters | 2026-11-05 |
