@@ -7,7 +7,9 @@ import { readChartState, writeChartParameters } from "../comm/js/aa/chart/state.
 import { lineLook } from "../comm/js/aa/chart/series.js";
 import { buildStatistics } from "../comm/js/aa/chart/statistics.js";
 import { buildRangeStrip } from "../comm/js/aa/chart/strip.js";
+import { csvText, gridOf, interpolateRows, intervalForBins, isoText, longTable, nanosOf, nanosOfDate, observationsOf, parseDuration, timeText, valueText, wideTable } from "./export.js";
 
+const d3 = globalThis.d3;
 const DATA = "../../data/getData.json";
 const MATCHING = "../../bpl/getMatchingPVs";
 const APPLIANCE = "../../bpl/getApplianceInfo";
@@ -27,8 +29,19 @@ const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 // the Visible range statistics and the min and max bands come from it. When both are the same request they share.
 const state = { pvs: [], from: null, to: null, selected: null, view: "trend", chart: null,
     sample: null, interval: "auto", minmax: false, displaySeconds: null,
-    summary: new Map(), summaryFailures: new Map(), data: new Map(), failures: new Map(), bands: new Map() };
+    summary: new Map(), summaryFailures: new Map(), data: new Map(), failures: new Map(), bands: new Map(),
+    // The choices of the Export tab; a product runs only from its button.
+    export: { product: "data", range: "view", from: "", to: "", source: "raw", bins: "700", step: "1", gap: "", layout: "long",
+        alarms: true, format: "source", precision: "6", time: "iso", units: false, statsrange: "visible" } };
 const cache = new Map();
+// The endpoint that gives the last observation at or before a time, and the search period sent with it.
+const DATA_AT_TIME = "../../data/getDataAtTime";
+const SEARCH_PERIOD = "P1D";
+// The most rows a page-built CSV holds; a larger export needs a smaller range or the server product.
+const EXPORT_ROWS_MOST = 500000;
+// The most samples the Data tab lists per PV.
+const DATA_ROWS_MOST = 500;
+const SEVERITY_NAMES = ["NONE", "MINOR", "MAJOR", "INVALID"];
 const $ = (id) => document.getElementById(id);
 let chart;
 let controller = null;
@@ -157,16 +170,19 @@ async function fetchSeries(name, kind, seconds, from, to, signal) {
     const first = body[0];
     const points = [];
     const records = [];
+    // Every record is kept with its source seconds and nanoseconds; a value that is not a finite number stays in the
+    // records as an invalid observation (v null) and is not drawn.
     for (const sample of first ? first.data : []) {
-        if (typeof sample.val === "number" && Number.isFinite(sample.val)) {
-            const fields = sample.fields;
-            const lost = Boolean(fields && (Number(fields.cnxlostepsecs) > 0 || fields.startup === "true" || fields.connectionChange === "true"));
-            const secs = Number(sample.secs);
-            const nanos = Number(sample.nanos || 0);
-            const point = { t: secs * 1000 + Math.floor(nanos / 1e6), v: sample.val, s: sample.severity || 0, g: lost };
-            points.push(point);
-            records.push({ secs, nanos, t: point.t, v: sample.val, severity: point.s, status: Number(sample.status) || 0, lost });
-        }
+        const finite = typeof sample.val === "number" && Number.isFinite(sample.val);
+        const fields = sample.fields;
+        const lost = Boolean(fields && (Number(fields.cnxlostepsecs) > 0 || fields.startup === "true" || fields.connectionChange === "true"));
+        const secs = Number(sample.secs);
+        const nanos = Number(sample.nanos || 0);
+        const t = secs * 1000 + Math.floor(nanos / 1e6);
+        const severity = Number(sample.severity) || 0;
+        if (finite) points.push({ t, v: sample.val, s: severity, g: lost });
+        records.push({ secs, nanos, t, v: finite ? sample.val : null, text: finite ? null : JSON.stringify(sample.val ?? null),
+            severity, status: Number(sample.status) || 0, lost });
     }
     const form = !first ? "No samples" : points.length ? "Numeric samples" : first.data.length ? "No supported scalar samples" : "No samples";
     const dataset = { name, egu: first?.meta?.EGU ?? "", points, records, form, kind, seconds, from, to };
@@ -542,6 +558,7 @@ function render() {
     $("sourceNote").textContent = note;
     $("dataNote").textContent = note;
     renderSummary();
+    renderDataTable();
     if (state.view !== "trend") {
         chart.message("This analysis has not run.");
     } else if (loaded.some((series) => series.points.length)) {
@@ -577,7 +594,7 @@ function renderSummary() {
     const rows = state.pvs.flatMap((name, index) => {
         const dataset = state.summary.get(name);
         if (!dataset) return [];
-        const values = dataset.records.filter((record) => record.t >= from.getTime() && record.t <= to.getTime()).map((record) => record.v);
+        const values = dataset.records.filter((record) => record.t >= from.getTime() && record.t <= to.getTime() && Number.isFinite(record.v)).map((record) => record.v);
         return [{ name, egu: dataset.egu, color: lineLook(dataset, index).color, values }];
     });
     for (const host of [$("summary"), $("dataSummary")]) {
@@ -677,15 +694,396 @@ function wireTabs(host, activate) {
     });
 }
 
-function csv() {
-    const rows = ["pv,time,value,severity,interval_seconds"];
+/** The Data tab: the samples of the display dataset inside the displayed window, with their source fields. */
+function renderDataTable() {
+    const host = $("dataSamples");
+    host.replaceChildren();
+    if (!state.selected || !state.pvs.length) return;
+    const zone = currentZone();
+    const from = state.from.getTime(), to = state.to.getTime();
+    const table = node("table", { class: "chart-stats data-samples", "aria-label": "Samples in view" });
+    table.append(node("thead", null, node("tr", null, ...["PV", "Time", "Value", "Severity", "Status", "Source"].map((text) => node("th", { scope: "col" }, text)))));
+    const body = node("tbody", null);
+    let shown = 0, total = 0;
     for (const name of state.pvs) {
-        const series = state.data.get(name);
-        for (const point of series ? series.points : []) {
-            rows.push(`${JSON.stringify(name)},${new Date(point.t).toISOString()},${point.v},${point.s},${series.seconds === "raw" ? 1 : series.seconds}`);
+        const dataset = state.data.get(name);
+        if (!dataset) continue;
+        const inView = dataset.records.filter((record) => record.t >= from && record.t <= to);
+        total += inView.length;
+        const source = `${sourceText(dataset.seconds)}${dataset.egu ? `; ${dataset.egu}` : ""}`;
+        for (const record of inView.slice(0, DATA_ROWS_MOST)) {
+            body.append(node("tr", null, node("td", null, name), node("td", { class: "num" }, isoText(nanosOf(record), zone)),
+                node("td", { class: "num" }, record.v === null ? record.text : String(record.v)),
+                node("td", null, SEVERITY_NAMES[record.severity] || String(record.severity)), node("td", { class: "num" }, String(record.status)), node("td", null, source)));
+            shown += 1;
         }
     }
-    return rows.join("\n");
+    table.append(body);
+    host.append(node("p", { class: "note" }, total ? `${shown} of ${total} samples in view${shown < total ? `; the first ${DATA_ROWS_MOST} of each PV are listed` : ""}.` : "No samples in view."));
+    if (total) host.append(table);
+}
+
+// The choices of the Export tab, as the page names them.
+const EXPORT_PRODUCTS = [["data", "Data as CSV"], ["statistics", "Statistics as CSV"], ["png", "Plot as PNG"], ["svg", "Plot as SVG"],
+    ["link", "Address of this view"], ["servercsv", "Server CSV (getData.csv)"], ["servermat", "Server MAT (getData.mat)"]];
+const EXPORT_SOURCES = [["plot", "Samples shown"], ["raw", "Raw samples"], ["optimized", "Optimized bins (min, mean, max)"], ["interpolated", "Linear interpolation"]];
+const EXPORT_RANGES = [["view", "Range shown"], ["custom", "Typed range"]];
+const EXPORT_LAYOUTS = [["long", "Long (time, pv, value)"], ["wide", "Wide (one column per PV)"]];
+const EXPORT_FORMATS = [["source", "As stored"], ["fixed", "Fixed decimals"], ["exponential", "Exponential"]];
+const EXPORT_TIMES = [["iso", "ISO 8601 in the zone"], ["unixms", "UNIX milliseconds"]];
+const EXPORT_STATS = [["visible", "Visible range"], ["selected", "Summary (selected dataset)"]];
+const BINS_MOST = 1000000;
+
+/** Why a server product cannot serve the current choices, or null when it can. */
+function serverLimit(choice) {
+    if (choice.source === "plot" || choice.source === "interpolated") return "The server streams raw samples and the mean, min and max operators; it does not produce the samples shown or an interpolation.";
+    if (choice.layout === "wide") return "The server writes one PV per file, not a wide table.";
+    if (choice.time === "unixms" || choice.format !== "source") return "The server writes its own columns (secs, value, severity, status, nanos) and does not format times or values.";
+    return null;
+}
+
+/** The Export tab: the product and the choices it takes, with the action that runs it. */
+function renderExport() {
+    const host = $("exportForm");
+    const choice = state.export;
+    const focusedLabel = host.contains(document.activeElement) ? document.activeElement.getAttribute("aria-label") : null;
+    // A changed choice clears the links and the explanation of the last run; they belonged to the choices before it.
+    const set = (key) => (event) => {
+        choice[key] = event.target.type === "checkbox" ? event.target.checked : event.target.value;
+        $("exportLinks").replaceChildren();
+        $("exportError").textContent = "";
+        renderExport();
+    };
+    const select = (label, key, choices) => {
+        const control = choiceSelect(label, choices, choice[key]);
+        control.addEventListener("change", set(key));
+        return node("label", null, `${label} `, control);
+    };
+    const text = (label, key, attributes) => {
+        const control = node("input", { "aria-label": label, ...attributes });
+        control.value = choice[key];
+        control.addEventListener("change", set(key));
+        return node("label", null, `${label} `, control);
+    };
+    const box = (label, key) => {
+        const control = node("input", { type: "checkbox", "aria-label": label });
+        control.checked = choice[key] === true;
+        control.addEventListener("change", set(key));
+        return node("label", { class: "check-inline" }, control, ` ${label}`);
+    };
+    const product = choice.product;
+    const data = product === "data";
+    const server = product === "servercsv" || product === "servermat";
+    const rows = [select("Product", "product", EXPORT_PRODUCTS)];
+    if (data || server) {
+        rows.push(select("Range", "range", EXPORT_RANGES));
+        if (choice.range === "custom") {
+            rows.push(text("Export from", "from", { type: "datetime-local", step: "0.001" }), text("Export to", "to", { type: "datetime-local", step: "0.001" }));
+        }
+        rows.push(select("Source", "source", EXPORT_SOURCES));
+        if (choice.source === "optimized") rows.push(text("Bins", "bins", { type: "number", min: "1", max: String(BINS_MOST), step: "1" }));
+        if (choice.source === "interpolated") {
+            rows.push(text("Step (s)", "step", { type: "text", inputmode: "decimal" }), text("Gap (s)", "gap", { type: "text", inputmode: "decimal", placeholder: "None" }));
+        }
+    }
+    if (data) {
+        rows.push(select("Layout", "layout", EXPORT_LAYOUTS), box("Severity and status", "alarms"), select("Values", "format", EXPORT_FORMATS));
+        if (choice.format !== "source") rows.push(text("Decimal places", "precision", { type: "number", min: "0", max: "15", step: "1" }));
+        rows.push(select("Time", "time", EXPORT_TIMES), box("Unit in the header", "units"));
+    }
+    if (product === "statistics") rows.push(select("Statistics of", "statsrange", EXPORT_STATS));
+    const limit = server ? serverLimit(choice) : null;
+    const run = $("runExport");
+    run.textContent = product === "link" ? "Copy link" : server ? "Show links" : "Download";
+    run.disabled = Boolean(limit);
+    host.replaceChildren(node("div", { class: "opt-row export-form" }, ...rows));
+    $("exportNote").textContent = limit || {
+        data: "A CSV of the chosen source over the chosen range, with metadata lines first.",
+        statistics: "The statistics table as CSV, naming its dataset, source and interval.",
+        png: "The plot as it is drawn, with its axes and the visible lines.",
+        svg: "The plot as it is drawn, as a scalable image.",
+        link: "The address of this view with every option; archived data can change after it is copied.",
+        servercsv: "The retrieval's own CSV, one file per PV with the columns secs, value, severity, status and nanos; the browser holds no copy.",
+        servermat: "The retrieval's own MATLAB file, one per PV, as the server produces it.",
+    }[product];
+    if (focusedLabel) {
+        [...host.querySelectorAll("input, select")].find((control) => control.getAttribute("aria-label") === focusedLabel)?.focus();
+    }
+}
+
+/** Saves text or binary content as a file through a temporary link. */
+function saveFile(content, type, filename) {
+    const address = URL.createObjectURL(content instanceof Blob ? content : new Blob([content], { type }));
+    const link = node("a", { href: address, download: filename });
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(address), 1000);
+}
+
+/** The export range: the shown range, or the typed range when it is valid; an invalid typed range falls back with a note. */
+function exportRange() {
+    const choice = state.export;
+    if (choice.range === "custom") {
+        const from = readTime(choice.from, state.from), to = readTime(choice.to, state.to);
+        if (from && to && from < to) return { from, to, custom: true };
+        $("exportError").textContent = "The typed range is not valid (From must be before To); the shown range was used.";
+    }
+    return { from: state.from, to: state.to, custom: false };
+}
+
+/** The last observation at or before a time for each PV, from the retrieval, keyed by PV; a PV without one is absent. */
+async function dataAtTime(names, at) {
+    const query = new URLSearchParams({ at: at.toISOString(), searchPeriod: SEARCH_PERIOD });
+    const response = await fetch(`${DATA_AT_TIME}?${query}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(names) });
+    if (!response.ok) throw new Error(`The retrieval could not give the observation before the range (HTTP ${response.status}).`);
+    const body = await response.json();
+    const out = new Map();
+    for (const name of names) {
+        const event = body && typeof body === "object" ? body[name] : null;
+        if (!event || event.secs === undefined) continue;
+        const finite = typeof event.val === "number" && Number.isFinite(event.val);
+        out.set(name, { secs: Number(event.secs), nanos: Number(event.nanos || 0), v: finite ? event.val : null, text: finite ? null : JSON.stringify(event.val ?? null),
+            severity: Number(event.severity) || 0, status: Number(event.status) || 0, lost: false });
+    }
+    return out;
+}
+
+/** The rows of a dataset inside a range, as the CSV tables take them. */
+function recordRows(dataset, fromNs, toNs) {
+    return dataset.records.map((record) => ({ ...record, t: nanosOf(record), value: record.v === null ? record.text : record.v }))
+        .filter((row) => row.t >= fromNs && row.t <= toNs);
+}
+
+/** Runs the chosen product of the Export tab. */
+async function runExport() {
+    const choice = state.export;
+    const error = $("exportError");
+    error.textContent = "";
+    $("exportLinks").replaceChildren();
+    const run = $("runExport");
+    run.disabled = true;
+    try {
+        if (choice.product === "link") {
+            await copyAddress();
+        } else if (choice.product === "png" || choice.product === "svg") {
+            await savePlot(choice.product);
+        } else if (choice.product === "statistics") {
+            saveStatistics();
+        } else {
+            const range = exportRange();
+            if (choice.product === "servercsv" || choice.product === "servermat") {
+                showServerLinks(range);
+            } else {
+                await saveData(range);
+            }
+        }
+    } catch (failure) {
+        error.textContent = String(failure.message || failure);
+    } finally {
+        run.disabled = Boolean(choice.product.startsWith("server") && serverLimit(choice));
+    }
+}
+
+async function copyAddress() {
+    writeAddress();
+    try {
+        await navigator.clipboard.writeText(window.location.href);
+        $("message").textContent = "Link copied.";
+    } catch (failure) {
+        $("message").textContent = "Copy the current address from the address bar; clipboard access is unavailable.";
+    }
+}
+
+/** The data CSV: the chosen source over the range, in the chosen layout and formats, with metadata lines first. */
+async function saveData(range) {
+    const choice = state.export;
+    const zone = currentZone();
+    const fromNs = nanosOfDate(range.from), toNs = nanosOfDate(range.to);
+    const precision = /^\d+$/.test(String(choice.precision).trim()) ? Number(String(choice.precision).trim()) : NaN;
+    if (choice.format !== "source" && !(precision >= 0 && precision <= 15)) throw new Error("Decimal places are a whole number from 0 to 15.");
+    const metadata = [`product: data`, `source: ${choice.source}`, `range: ${range.from.toISOString()} to ${range.to.toISOString()} (${range.custom ? "typed" : "shown"})`,
+        `time: ${choice.time === "unixms" ? "UNIX milliseconds" : `ISO 8601 in ${zoneName(zone, range.from)}`}`, `values: ${choice.format}${choice.format === "source" ? "" : ` with ${precision} decimal places`}`];
+    const series = [];
+    let step = null, gap = null, preceding = new Map();
+    if (choice.source === "interpolated") {
+        step = parseDuration(choice.step);
+        if (step === null) throw new Error("The interpolation step is positive decimal seconds with at most nine fractional digits.");
+        if (choice.gap.trim() !== "") {
+            gap = parseDuration(choice.gap);
+            if (gap === null) throw new Error("The interpolation gap is positive decimal seconds with at most nine fractional digits, or blank for none.");
+        }
+        metadata.push(`step: ${choice.step.trim()} s`, `gap: ${gap === null ? "none" : `${choice.gap.trim()} s`}`, `preceding observation: data/getDataAtTime at ${range.from.toISOString()} with searchPeriod ${SEARCH_PERIOD}`);
+        preceding = await dataAtTime(state.pvs, range.from);
+    }
+    let bins = null, interval = null;
+    if (choice.source === "optimized") {
+        bins = Number(choice.bins);
+        if (!(/^\d+$/.test(choice.bins.trim()) && bins >= 1 && bins <= BINS_MOST)) throw new Error(`Bins is a whole number from 1 to ${BINS_MOST}.`);
+        interval = intervalForBins(range.from.getTime(), range.to.getTime(), bins);
+        if (interval > INTERVAL_MOST) throw new Error("The range is too long for one retrieval interval; choose a shorter range or more bins.");
+        metadata.push(`requested bins: ${bins}`, `interval: ${interval} s`);
+    }
+    for (const name of state.pvs) {
+        if (choice.source === "plot") {
+            const dataset = state.data.get(name);
+            if (!dataset) continue;
+            if (range.custom && (range.from < dataset.from || range.to > dataset.to)) {
+                throw new Error("Samples shown cover the displayed range only; the typed range lies outside them. Choose Raw samples or the shown range.");
+            }
+            metadata.push(`${name}: ${sourceText(dataset.seconds)}`);
+            series.push({ name, unit: dataset.egu, rows: recordRows(dataset, fromNs, toNs) });
+        } else if (choice.source === "raw") {
+            const dataset = await fetchSeries(name, "mean", "raw", range.from, range.to);
+            series.push({ name, unit: dataset.egu, rows: recordRows(dataset, fromNs, toNs) });
+        } else if (choice.source === "optimized") {
+            const [mean, min, max] = await Promise.all(["mean", "min", "max"].map((kind) => fetchSeries(name, kind, interval, range.from, range.to)));
+            const minAt = new Map(min.records.map((record) => [String(nanosOf(record)), record]));
+            const maxAt = new Map(max.records.map((record) => [String(nanosOf(record)), record]));
+            const rows = recordRows(mean, fromNs, toNs).map((row) => {
+                const key = String(row.t);
+                return { ...row, min: minAt.get(key)?.v ?? null, max: maxAt.get(key)?.v ?? null };
+            });
+            metadata.push(`${name}: ${rows.length} bins returned`);
+            series.push({ name, unit: mean.egu, rows });
+        } else {
+            const dataset = await fetchSeries(name, "mean", "raw", range.from, range.to);
+            const observations = observationsOf(preceding.get(name) || null, dataset.records, fromNs);
+            const rows = interpolateRows(observations, gridOf(fromNs, toNs, step), gap);
+            metadata.push(`${name}: ${preceding.has(name) ? "preceding observation found" : "no preceding observation within the search period"}`);
+            series.push({ name, unit: dataset.egu, rows });
+        }
+    }
+    const total = series.reduce((sum, s) => sum + s.rows.length, 0);
+    if (total > EXPORT_ROWS_MOST) throw new Error(`This export has ${total} rows; choose a shorter range, fewer bins or the server product.`);
+    const options = { alarms: choice.alarms === true, units: choice.units === true, bins: choice.source === "optimized", quality: choice.source === "interpolated" };
+    const cell = { time: (t) => timeText(t, choice.time, zone), value: (value) => valueText(value, choice.format, precision),
+        plain: (value) => (value === null || value === undefined ? "" : String(value)) };
+    const table = choice.layout === "wide" ? wideTable(series, options, cell) : longTable(series, options, cell);
+    saveFile(csvText(metadata, table.header, table.rows), "text/csv", `analyzer-${choice.source}.csv`);
+    $("message").textContent = `Exported ${total} rows of ${choice.source} data.`;
+}
+
+/** The statistics CSV: the Visible range rows or the Summary rows, with the dataset they come from. */
+function saveStatistics() {
+    const choice = state.export;
+    const selected = choice.statsrange === "selected";
+    const ranges = new Map(chart.getState().ranges);
+    const rows = [];
+    for (const name of state.pvs) {
+        const dataset = selected ? state.summary.get(name) : state.data.get(name);
+        if (!dataset) continue;
+        const { from, to } = selected ? state.selected : { from: state.from, to: state.to };
+        const range = selected ? null : ranges.get(dataset.egu || "");
+        const values = dataset.records.filter((record) => record.t >= from.getTime() && record.t <= to.getTime() && Number.isFinite(record.v)
+            && (!range || (record.v >= range[0] && record.v <= range[1]))).map((record) => record.v);
+        const statistic = (fn) => (values.length ? String(fn(values)) : "");
+        rows.push([name, dataset.egu || "", String(values.length), statistic(d3.min), statistic(d3.mean), statistic(d3.median), statistic(d3.max),
+            values.length > 1 ? String(d3.deviation(values)) : "", sourceText(dataset.seconds), from.toISOString(), to.toISOString()]);
+    }
+    const metadata = [`product: statistics`, `dataset: ${selected ? "Summary (selected dataset)" : "Visible range (displayed samples inside the time and Y ranges)"}`];
+    saveFile(csvText(metadata, ["pv", "unit", "samples", "min", "mean", "median", "max", "std", "source", "from", "to"], rows), "text/csv", `analyzer-statistics-${choice.statsrange}.csv`);
+    $("message").textContent = `Exported the ${selected ? "Summary" : "Visible range"} statistics.`;
+}
+
+// The style properties an SVG element keeps, as presentation attributes, when the plot leaves the page and its
+// stylesheet; the page's content security policy allows no inline style attribute, so attributes carry them.
+const PLOT_STYLES = ["fill", "fill-opacity", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "opacity", "font-family", "font-size", "font-weight", "visibility", "text-anchor"];
+
+/** The drawn plot as one standalone SVG document: the panels under one another, with the page styles written on the elements. */
+function plotDocument() {
+    const sources = [...$("charts").querySelectorAll("svg[data-chart-canvas]")].filter((svg) => getComputedStyle(svg).display !== "none");
+    if (!sources.length) throw new Error("There is no plot to export.");
+    const svgNs = "http://www.w3.org/2000/svg";
+    const output = document.createElementNS(svgNs, "svg");
+    let width = 0, height = 0;
+    for (const source of sources) {
+        const [, , w, h] = (source.getAttribute("viewBox") || "0 0 640 250").split(/\s+/).map(Number);
+        const clone = source.cloneNode(true);
+        const originals = [source, ...source.querySelectorAll("*")];
+        const copies = [clone, ...clone.querySelectorAll("*")];
+        const hidden = [];
+        copies.forEach((copy, index) => {
+            const computed = getComputedStyle(originals[index]);
+            if (index > 0 && computed.getPropertyValue("display") === "none") {
+                hidden.push(copy);
+                return;
+            }
+            copy.removeAttribute("style");
+            for (const property of PLOT_STYLES) {
+                copy.setAttribute(property, computed.getPropertyValue(property));
+            }
+        });
+        for (const element of hidden) element.remove();
+        clone.removeAttribute("width");
+        clone.removeAttribute("height");
+        clone.setAttribute("width", String(w));
+        clone.setAttribute("height", String(h));
+        clone.setAttribute("y", String(height));
+        output.append(clone);
+        width = Math.max(width, w);
+        height += h;
+    }
+    const background = document.createElementNS(svgNs, "rect");
+    background.setAttribute("width", String(width));
+    background.setAttribute("height", String(height));
+    background.setAttribute("fill", "#ffffff");
+    output.prepend(background);
+    output.setAttribute("xmlns", svgNs);
+    output.setAttribute("width", String(width));
+    output.setAttribute("height", String(height));
+    output.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    return { text: new XMLSerializer().serializeToString(output), width, height };
+}
+
+/** Saves the plot as SVG, or as PNG drawn from that SVG at twice the size. */
+async function savePlot(kind) {
+    const plot = plotDocument();
+    if (kind === "svg") {
+        saveFile(plot.text, "image/svg+xml", "analyzer-plot.svg");
+        $("message").textContent = "Exported the plot as SVG.";
+        return;
+    }
+    // The SVG is read back as a data URL, the one image source besides the page's own that its content security policy allows.
+    const scale = 2;
+    const image = new Image();
+    await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = () => reject(new Error("The plot could not be drawn as an image."));
+        image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(plot.text)}`;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(plot.width * scale);
+    canvas.height = Math.round(plot.height * scale);
+    const context = canvas.getContext("2d");
+    context.scale(scale, scale);
+    context.drawImage(image, 0, 0);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("The plot could not be encoded as PNG.");
+    saveFile(blob, "image/png", "analyzer-plot.png");
+    $("message").textContent = "Exported the plot as PNG.";
+}
+
+/** The server products: one link per PV to the retrieval's own CSV or MAT of the chosen source over the range. */
+function showServerLinks(range) {
+    const choice = state.export;
+    const extension = choice.product === "servercsv" ? "csv" : "mat";
+    const list = node("ul", { class: "export-links" });
+    const operators = choice.source === "raw" ? [["", "raw samples"]]
+        : (() => {
+            const bins = Number(choice.bins);
+            if (!(/^\d+$/.test(choice.bins.trim()) && bins >= 1 && bins <= BINS_MOST)) throw new Error(`Bins is a whole number from 1 to ${BINS_MOST}.`);
+            const interval = intervalForBins(range.from.getTime(), range.to.getTime(), bins);
+            if (interval > INTERVAL_MOST) throw new Error("The range is too long for one retrieval interval; choose a shorter range or more bins.");
+            return [[`meanSample_${interval}`, `means over ${interval} s`], [`minSample_${interval}`, `minima over ${interval} s`], [`maxSample_${interval}`, `maxima over ${interval} s`]];
+        })();
+    for (const name of state.pvs) {
+        for (const [operator, text] of operators) {
+            const query = new URLSearchParams({ pv: operator ? `${operator}(${name})` : name, from: range.from.toISOString(), to: range.to.toISOString() });
+            list.append(node("li", null, node("a", { href: `../../data/getData.${extension}?${query}`, target: "_blank", rel: "noopener" }, `${name}: ${text} (${extension.toUpperCase()})`)));
+        }
+    }
+    $("exportLinks").replaceChildren(node("p", { class: "note" }, `${operators.length * state.pvs.length} server products over ${range.from.toISOString()} to ${range.to.toISOString()}.`), list);
 }
 
 let suggestionGeneration = 0;
@@ -758,24 +1156,9 @@ function wire() {
         $("toggleSettings").setAttribute("aria-expanded", String(!hidden));
         render();
     });
-    $("copyLink").addEventListener("click", async () => {
-        writeAddress();
-        try {
-            await navigator.clipboard.writeText(window.location.href);
-            $("message").textContent = "Link copied.";
-        } catch (error) {
-            $("message").textContent = "Copy the current address from the address bar; clipboard access is unavailable.";
-        }
-    });
-    $("downloadCsv").addEventListener("click", () => {
-        const address = URL.createObjectURL(new Blob([csv()], { type: "text/csv" }));
-        const link = node("a", { href: address, download: "archived-data.csv" });
-        document.body.append(link);
-        link.click();
-        link.remove();
-        window.setTimeout(() => URL.revokeObjectURL(address), 1000);
-    });
-    onZoneChange(() => { writeAddress(); renderInputs(true); });
+    renderExport();
+    $("runExport").addEventListener("click", runExport);
+    onZoneChange(() => { writeAddress(); renderInputs(true); render(); });
     onProfileChange(writeAddress);
     let resize = 0;
     window.addEventListener("resize", () => {

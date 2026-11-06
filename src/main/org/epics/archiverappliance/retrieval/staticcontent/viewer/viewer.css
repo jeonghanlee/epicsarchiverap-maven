@@ -81,3 +81,7 @@
 .axis-form .check-inline { flex-direction: row; align-items: center; gap: 6px; }
 .legend-statistics { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .875rem; }
 .check-inline { display: inline-flex; align-items: center; gap: 6px; }
+.data-samples td, .data-samples th { white-space: nowrap; }
+.export-form label { font-size: .875rem; }
+.export-form input[type="text"], .export-form input[type="number"] { width: 9em; }
+.export-links { padding-left: 1.2em; font-size: .875rem; }

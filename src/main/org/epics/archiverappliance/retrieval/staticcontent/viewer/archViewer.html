@@ -111,12 +111,14 @@
               <p id="dataNote" class="note"></p>
               <div id="dataSummary"></div>
               <div id="dataStatistics"></div>
+              <div id="dataSamples"></div>
             </div>
             <div id="exportPanel" role="tabpanel" aria-labelledby="exportTab" hidden>
-              <p>The CSV contains the retrieved numeric samples used by this view, including hidden lines. The interval column identifies stored samples or means.</p>
-              <button type="button" id="downloadCsv">Download CSV</button>
-              <p>A link restores the view settings; archived data can change after it is copied.</p>
-              <button type="button" id="copyLink">Copy link</button>
+              <div id="exportForm"></div>
+              <button type="button" id="runExport">Download</button>
+              <p id="exportNote" class="note"></p>
+              <p id="exportError" class="error" role="alert"></p>
+              <div id="exportLinks"></div>
             </div>
           </aside>
         </div>
