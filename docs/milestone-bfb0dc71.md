@@ -1047,10 +1047,10 @@ Each step is committed on its own with the T1-T6 cases it actually ran, recorded
 Title: Analyzer for archived data
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN (2026-11-04)
+Observed State: OPEN (2026-11-07)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-11-04 23:18 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/39` read #39 OPEN, title Analyzer for archived data, label enhancement, assignee jeonghanlee and milestone none; remote updated_at 2026-11-04T22:34:06Z. The published body matches the prepared text and records the eight analysis tabs, fitting and parameter uncertainty, per-tool input checks, preference rules and acceptance criteria. A box per phase is added when the phase plans are accepted (D5).
+Last Compared: 2026-11-07 09:14 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/39` read #39 OPEN after the body edit of that minute under Issue authority: title Analyzer for archived data, label enhancement, assignee jeonghanlee and milestone none; remote updated_at 2026-11-07T09:14:36Z. The body's Verification section records the landing and the checks of the interaction, options and export phase, its two boxes of that phase are checked with their results, the export and book boxes carry the part this phase verified, and the boxes of the analysis phases stay open (D5). A box per phase is added when the phase plans are accepted (D5).
 
 #### M3 - Analyzer phase C: tools for one signal
 
