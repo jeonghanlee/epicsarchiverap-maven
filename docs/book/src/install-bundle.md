@@ -88,13 +88,15 @@ SQLite as the configuration database. The steps need no root privileges; install
    i=0
    for c in mgmt engine etl retrieval; do
        sed -i "s/<Server port=\"8005\"/<Server port=\"$((17675 + i))\"/" "${DEPLOY_DIR}/${c}/conf/server.xml"
-       sed -i "s/<Connector port=\"8080\"/<Connector port=\"$((17665 + i))\"/" "${DEPLOY_DIR}/${c}/conf/server.xml"
+       sed -i "s/<Connector port=\"8080\"/<Connector port=\"$((17665 + i))\" relaxedQueryChars=\"[]\"/" "${DEPLOY_DIR}/${c}/conf/server.xml"
        i=$((i + 1))
    done
    ```
 
    The HTTP ports are 17665 for mgmt, 17666 for engine, 17667 for etl and 17668 for retrieval. The `server.xml` of
-   Tomcat 9.0.122 has the AJP connector commented out, so nothing else needs removing.
+   Tomcat 9.0.122 has the AJP connector commented out, so nothing else needs removing. `relaxedQueryChars="[]"` lets
+   the connector accept a query with a raw bracket, which a link to the Analyzer built with `encodeURI` carries for a
+   PV name such as `SR:BPM[1]:X` or for a per-target parameter such as `width[PV]`; without it Tomcat answers 400.
 
 10. Write `appliances.xml`, which describes the appliance and the URLs of its web applications
     ([Installation layout and settings](installing.md#appliancesxml)):

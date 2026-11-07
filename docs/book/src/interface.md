@@ -28,7 +28,7 @@ web application, at `http://archiver.example.org:17668/retrieval/ui/viewer/archV
 | System: External servers | `external.html` | Administrators | The other EPICS Archiver Appliance installations whose data this appliance serves: add or remove one |
 | Analyzer | `analyzer.html` | Everyone | Forwards to the Analyzer of the retrieval web application |
 | Help | `help.html` | Everyone | How to use each page (moving around, Archive PVs, Browse PVs, System, Analyzer), a link to the management API reference of the appliance and a link to this manual, which needs access to the internet |
-| Analyzer workspace | `/retrieval/ui/viewer/archViewer.html` | Everyone | Trend with one axis per unit, common time controls, settings, statistics, CSV, and Copy link |
+| Analyzer workspace | `/retrieval/ui/viewer/archViewer.html` | Everyone | Trend with one axis per unit, common time controls, the Signals, Axes, Options, Data and Export tabs, and an address that restores every setting |
 
 The right end of the menu bar of every page holds the time zone of the
 console: Browser (the default), UTC, Berkeley, Chicago, NYC, Seoul or
