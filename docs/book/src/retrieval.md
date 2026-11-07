@@ -328,12 +328,14 @@ service limits its concurrent calls with its own permits, set by
 The retrieval web application serves the Analyzer at
 `http://archiver.example.org:17668/retrieval/ui/viewer/archViewer.html`.
 Trend draws numeric scalar signals together, with one value axis per unit.
-It retrieves data from its own appliance through `getData.json`.
+It retrieves data from its own appliance through `getData.json`, asks
+`getDataAtTime` for the sample before a range when it interpolates, and
+links to `getData.csv` and `getData.mat` for the server products.
 Its header has the console menu, time zone, and display profile.
 The other menu entries navigate to the management address returned by
 its own `getApplianceInfo` action.
 
-![The Analyzer with three signals, common time controls, and Trend settings](images/viewer.png)
+![The Analyzer with two signals, the plot tools, the Summary and Visible range tables, and the Signals tab](images/viewer.png)
 
 The tabs are Trend, Distribution, Correlation, Dependency, Spectrum,
 Compare, Waveform, and Image. Trend is available. Selecting another tab
@@ -344,49 +346,89 @@ unavailable view offers **Return to Trend** without displaying an analysis resul
 | --- | --- |
 | **Archived PV**, **Plot** | Suggest archived names and add a signal; **Remove** beside its name removes it |
 | **From**, **To**, range shortcuts, **Show** | Set the common time window in the selected zone; shortcuts prepare the fields and Show applies them |
-| Earlier, Later, Back to the selected range | Move the common window by half its span or return to the last range applied with Show |
-| **Signals** | Show or hide lines and inspect the returned sample count, unit, or retrieval error |
-| **Axes** | Apply a finite minimum and maximum for one unit; Auto removes that unit's range |
-| **Options** | Choose line shape, Y scale, sample marks, running average, standard deviation band, averaging window, and Y projection |
-| **Data** | Inspect statistics for visible samples inside the time and Y ranges; the same table appears below the plot, with projection on or off |
-| **Export** | Copy the current address or download the retrieved numeric samples as CSV, including hidden lines |
+| Earlier, Later, Back to the selected range | Move the common window by half its span or return to the selected range |
+| Plot tools | **Select** marks a candidate time range and **Apply selection** makes it the selected range; **Pan** moves the window; **Box zoom** zooms to the drawn box; **Ctrl+wheel zoom** and **Hover** are toggles of their own, independent of the drag tool; **Navigate** names the axes Pan, Box zoom and the wheel move (the time axis, one value axis or both); **Undo**, **Redo** and **Reset**; **Cursor 1** and **Cursor 2**, read in the Cursors table under the plot, each with **Pin at cursor**; Shift+click pins the nearest sample; pinned samples are listed with **Unpin** |
+| **Signals** | Show or hide a line, read its sample count, unit or retrieval error, and set its display name, width, dash, gap in seconds, the signal to fill to and the decimals |
+| **Axes** | Per unit: a fixed Minimum and Maximum, a Soft minimum and Soft maximum, the Scale, the Symmetric log constant, Zero centered, SI prefix and a Label; Auto drops the fixed range |
+| **Options** | The retrieval Interval (Automatic, Raw samples or Seconds) and the Min-max band; Line, Y scale, Marks, Window, running average and band; Legend, Tooltip, Tooltip order, Grid, Legend values, Split by unit and Names at the line ends; Y projection |
+| **Data** | The Summary of the selected range, the Visible range statistics, and the samples in view (PV, Time, Value, Severity, Status, Source; the first 500 of each PV) |
+| **Export** | Data as CSV, Statistics as CSV, Plot as PNG, Plot as SVG, Address of this view, Server CSV or Server MAT; the range shown or a typed one; the source Samples shown, Raw samples, Optimized bins or Linear interpolation; long or wide layout, severity and status, the value format and decimals, ISO 8601 in the zone or UNIX milliseconds, the unit in the header |
 
 The settings panel sits beside the plot at widths of 1100 pixels and
 above, and below it on narrower screens. **Hide settings** gives the
-plot the full available width. Dragging across the plot changes the common
-time window; dragging along an axis changes only that unit's Y range.
-A focused value axis accepts the arrow keys, plus, minus, and Home.
-A double-click resets the time and all value ranges.
+plot the full available width. A drag over the plot follows the active
+tool; a drag along an axis changes only that unit's value range. A focused
+value axis accepts the arrow keys, plus, minus, and Home. A wheel or pinch
+gesture keeps the window between one second and ten years. A double-click
+drops the value ranges and returns to the selected range. An **i** button
+beside Summary, Visible range, Interval, the chart options and the Export
+form opens a card that states the calculation behind it.
 
-The address uses one named parameter for each setting:
+The selected range is the one chosen with Show, a shortcut or Apply
+selection. Its resolution is resolved once: the stored samples for a
+range of up to 700 seconds, otherwise means over whole seconds, about 700
+of them (`meanSample_N`, N the span in seconds divided by 700, rounded
+up). The Summary counts that dataset and keeps it while you pan or zoom.
+Pan, Box zoom and the wheel change the displayed window only; it is
+retrieved at the resolution of the window shown, and Visible range counts
+the displayed samples inside the time and value ranges. The note above
+the plot names both resolutions. Interval forces the stored samples or
+means over the typed seconds; the Min-max band draws `minSample_N` and
+`maxSample_N` under the mean. An interval without a sample has no value
+and the line is not drawn through it; recorded connection losses
+interrupt the line. Non-numeric samples are not drawn.
 
-| Parameter | Values and fallback |
+Data as CSV begins with metadata lines (product, source, range, time
+format, values), then the columns `time`, `pv`, `value` (`mean`, `min`
+and `max` for bins), `severity` and `status`, and `quality` and `reason`
+for an interpolation; the wide layout has one column per PV. Optimized
+bins ask the retrieval for `meanSample_N`, `minSample_N` and
+`maxSample_N`, N being the span divided by the bins, rounded up to whole
+seconds. Linear interpolation is a calculation of the page over the raw
+samples, one row at every step from the start of the range; the sample
+before the range comes from `getDataAtTime`, and no value is made before
+the first or after the last sample, across a recorded gap or beyond the
+typed gap. Statistics as CSV writes the Visible range or the Summary
+table. Server CSV and Server MAT list one retrieval address per PV for the
+raw samples or the three operators; the browser holds no copy. Opening an
+address exports nothing.
+
+The address is the calling interface of the Analyzer. Its parameters are
+declared in `docs/analyzer-address.openapi.json` of the repository
+(OpenAPI 3.0.3). A caller needs `pv` alone (repeatable) and may add
+`from` and `to` as RFC 3339 times in UTC; the page writes every other
+parameter back, `pv` first and the rest in the code-point order of their
+names, so that one view has one address. A list is a repeated parameter
+(`pv`, `hide`, `pin`) or a comma-separated value (`legendStats`); a
+setting of one signal or one unit is a key such as `width[PV]` or
+`axisMin[UNIT]`; a duration is ISO 8601 (`sample=PT5S`); a boolean is
+`true` or `false`.
+
+| Group | Parameters |
 | --- | --- |
-| `pv` (repeatable) | Ordered PV names, with duplicates removed |
-| `from`, `to` | Absolute ISO 8601 times; without them the last hour |
-| `tz` | `browser`, `UTC`, `America/Los_Angeles`, `America/Chicago`, `America/New_York`, `Asia/Seoul`, or `Europe/Berlin`; missing or invalid uses Browser |
-| `profile` | `default`, `redgreen`, or `mono`; missing or invalid uses the retrieval origin's valid stored profile, or Default |
-| `view` | `trend` or another tab name in lowercase; unknown values use Trend |
-| `shape` | `step` (default), `line`, `smooth`, `points` |
-| `yscale` | `linear` (default), `symlog`, `log`, `sqrt` |
-| `marks` | `auto` (default), `on`, `off` |
-| `avg`, `band`, `yproj` | `1` enables the running average, standard deviation band, or Y projection; otherwise off |
-| `window` | `10`, `30` (default), or `60` samples for the average and band |
-| `yrange` (repeatable) | `unit:minimum:maximum`, for example `mm:-2:2`; `none` names signals without a unit |
+| Selection | `pv`, `from`, `to`, `selectedFrom`, `selectedTo`, `sample`, `interval`, `minMax`, `view`, `tz`, `profile` |
+| Chart options | `shape`, `yscale`, `marks`, `avg`, `band`, `window`, `yproj`; `yrange` of earlier links is read and not written |
+| Tools and references | `drag`, `wheel`, `hover`, `nav`, `navUnit`, `cursor1`, `cursor2`, `pin` (`PV@time`) |
+| Display | `split`, `legend`, `legendStats`, `tooltip`, `tooltipSort`, `grid`, `endLabels`, `hide` |
+| Per signal | `width[PV]`, `dash[PV]`, `gap[PV]`, `fill[PV]`, `decimals[PV]`, `name[PV]` |
+| Per unit | `axisScale[UNIT]`, `axisSymlog[UNIT]`, `axisMin[UNIT]`, `axisMax[UNIT]`, `axisSoftMin[UNIT]`, `axisSoftMax[UNIT]`, `axisZero[UNIT]`, `axisPrefix[UNIT]`, `axisLabel[UNIT]` |
+| Export | `export[product]`, `export[range]`, `export[from]`, `export[to]`, `export[source]`, `export[bins]`, `export[step]`, `export[gap]`, `export[layout]`, `export[alarms]`, `export[values]`, `export[decimals]`, `export[time]`, `export[units]`, `export[stats]` |
 
-Valid explicit preferences win independently. Links from the console and
-**Copy link** include both `tz` and `profile`, even for Browser and Default.
-Range changes preserve them. Unknown parameters and unreadable option
-values are ignored. The address restores settings; it does not freeze
-archived data. Hidden-line choices are local to the open page.
-
-A window of up to 700 seconds shows stored samples. Longer windows use
-`meanSample_N`, where N is the span in seconds divided by 700, rounded up.
-The source note identifies the interval. Empty intervals have no value;
-recorded connection losses interrupt the line. CSV uses the columns
-`pv`, `time`, `value`, `severity`, and `interval_seconds`.
-The interval is 1 for stored samples and N for means over N seconds.
-Non-numeric samples are not included in Trend or this CSV.
+A parameter takes its first occurrence; an invalid value falls back to
+its default, a pair (`from` and `to`, a fixed range, a typed export
+range) applies whole or not at all, and an unknown parameter is ignored
+and not written back. A fixed range makes an axis fixed, a soft bound
+makes it soft, and the page writes the bounds of the policy in force; the
+`yrange` of earlier links is read, not written. A pin names a sample as
+`PV@time` with its nanoseconds and is restored from the display data, or
+listed as unavailable; a cursor keeps the digits it was given until it
+moves. Valid explicit preferences win independently: a missing `tz` uses
+Browser, a missing `profile` the retrieval origin's valid stored profile,
+or Default. Links from the console and **Copy link** include both, even
+for Browser and Default. The address restores settings; it does not
+freeze archived data. A link that carries a raw bracket, as `encodeURI`
+writes one, needs the connector setting of the
+[installation steps](install-bundle.md).
 
 The Browse PVs page opens the plotted PVs, or all selected PVs, with the
 current chart settings ([Operating](operating.md#the-web-interface)).

@@ -137,8 +137,8 @@ minutes on the Browse PVs page (700 seconds in the Analyzer) shows the stored
 samples; a longer one shows means over equal intervals (`meanSample_N`),
 and the chart says so. An interval of such a range in which the archiver
 has no sample has no value, and the line is not extended through it. The
-Analyzer's CSV download holds the retrieved numeric values, including hidden lines, with the column
-`interval_seconds` (1 for a stored sample, N for a mean over N seconds).
+Export tab of the Analyzer writes the samples of a chosen source as CSV
+([Retrieving data](retrieval.md#the-data-viewer)).
 
 The state of a PV and the actions in its row:
 
