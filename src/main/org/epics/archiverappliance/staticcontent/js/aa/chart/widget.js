@@ -132,9 +132,14 @@ function applyToolState(memory, state) {
         });
     }
     if (Array.isArray(state.pins)) {
+        // A pin without a value (v null) is one restored from an address whose observation the data did not hold; it is
+        // listed as unavailable and not drawn.
+        // time, when the page gives it, is the exact time text of the observation; two pins of one PV within one
+        // millisecond are told apart by it.
         memory.pins = state.pins
-            .filter((pin) => pin && typeof pin.name === "string" && Number.isFinite(pin.t) && Number.isFinite(pin.v))
-            .map((pin) => ({ name: pin.name, egu: typeof pin.egu === "string" ? pin.egu : "", t: pin.t, v: pin.v, s: Number(pin.s) || 0 }));
+            .filter((pin) => pin && typeof pin.name === "string" && Number.isFinite(pin.t) && (Number.isFinite(pin.v) || pin.v === null))
+            .map((pin) => ({ name: pin.name, egu: typeof pin.egu === "string" ? pin.egu : "", t: pin.t, v: Number.isFinite(pin.v) ? pin.v : null, s: Number(pin.s) || 0,
+                ...(typeof pin.time === "string" ? { time: pin.time } : {}) }));
     }
     if (state.display) {
         memory.display = displaySettings(memory.display, state.display);
@@ -583,7 +588,8 @@ export function createChart(host, config) {
                     redraw();
                     changed();
                 });
-                return node("li", null, `${pin.name} ${format(pin.v, pin.egu)} at ${formatInZone(new Date(pin.t), TOOL_TIME_FORMAT, zone)} `, remove);
+                const reading = pin.v === null ? "unavailable" : format(pin.v, pin.egu);
+                return node("li", null, `${pin.name} ${reading} at ${formatInZone(new Date(pin.t), TOOL_TIME_FORMAT, zone)} `, remove);
             }));
         return node("div", { class: "chart-toolbar", role: "toolbar", "aria-label": "Plot tools" },
             tools, apply, clear, toggle("Ctrl+wheel zoom", "wheel"), toggle("Hover", "hover"),

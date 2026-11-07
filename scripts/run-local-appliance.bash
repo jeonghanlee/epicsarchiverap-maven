@@ -350,8 +350,10 @@ for offset, name in enumerate(components):
     )
     server = ET.Element("Server", port="-1")
     service = ET.SubElement(server, "Service", name="Catalina")
+    # relaxedQueryChars lets a query carry a raw bracket, as a link to the Analyzer built with encodeURI does for a
+    # PV name such as SR:BPM[1]:X and for a per-target parameter such as width[PV].
     ET.SubElement(service, "Connector", port=str(first + offset), address="127.0.0.1",
-                  protocol="HTTP/1.1", connectionTimeout="20000", maxThreads="40")
+                  protocol="HTTP/1.1", connectionTimeout="20000", maxThreads="40", relaxedQueryChars="[]")
     engine = ET.SubElement(service, "Engine", name="Catalina", defaultHost="localhost")
     ET.SubElement(engine, "Host", name="localhost", appBase="webapps", unpackWARs="true", autoDeploy="false")
     write_xml(base / "conf/server.xml", server)

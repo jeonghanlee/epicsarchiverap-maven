@@ -1,9 +1,9 @@
 // The analyzer owns validated selection state and retrieves data from its own appliance.
 import { createChart } from "../comm/js/aa/chart.js";
 import { node } from "../comm/js/aa/dom.js";
-import { PROFILES, setProfile, onProfileChange } from "../comm/js/aa/chart/profile.js";
+import { PROFILES, currentProfile, setProfile, onProfileChange } from "../comm/js/aa/chart/profile.js";
 import { currentZone, ZONES, setZone, onZoneChange, formatInZone, partsInZone, zoneName } from "../comm/js/aa/timezone.js";
-import { readChartState, writeChartParameters } from "../comm/js/aa/chart/state.js";
+import { booleanOf, integerIn, isoDuration, orderedParameters, parseIsoDuration, readChartState, timeOf, wholeSecondsOf, writeChartParameters } from "../comm/js/aa/chart/state.js";
 import { lineLook } from "../comm/js/aa/chart/series.js";
 import { buildStatistics } from "../comm/js/aa/chart/statistics.js";
 import { buildRangeStrip } from "../comm/js/aa/chart/strip.js";
@@ -30,9 +30,16 @@ const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 const state = { pvs: [], from: null, to: null, selected: null, view: "trend", chart: null,
     sample: null, interval: "auto", minmax: false, displaySeconds: null,
     summary: new Map(), summaryFailures: new Map(), data: new Map(), failures: new Map(), bands: new Map(),
-    // The choices of the Export tab; a product runs only from its button.
+    // The choices of the Export tab, named as the address names them; a product runs only from its button.
     export: { product: "data", range: "view", from: "", to: "", source: "raw", bins: "700", step: "1", gap: "", layout: "long",
-        alarms: true, format: "source", precision: "6", time: "iso", units: false, statsrange: "visible" } };
+        alarms: true, values: "source", decimals: "6", time: "iso", units: false, stats: "visible" },
+    // The texts the cursors were read from (written back while a cursor has not moved) and the pin references of the
+    // address still to be resolved against the display data.
+    cursorTexts: [null, null], pinRefs: [] };
+// The defaults of the export choices, for the address.
+const EXPORT_DEFAULTS = { product: "data", range: "view", source: "raw", bins: "700", step: "1", gap: "", layout: "long", alarms: true, values: "source", decimals: "6", time: "iso", units: false, stats: "visible" };
+const EXPORT_CHOICES = { product: ["data", "statistics", "png", "svg", "link", "serverCsv", "serverMat"], range: ["view", "custom"], source: ["plot", "raw", "optimized", "interpolated"],
+    layout: ["long", "wide"], values: ["source", "fixed", "exponential"], time: ["iso", "unixms"], stats: ["visible", "selected"] };
 const cache = new Map();
 // The endpoint that gives the last observation at or before a time, and the search period sent with it.
 const DATA_AT_TIME = "../../data/getDataAtTime";
@@ -46,12 +53,6 @@ const $ = (id) => document.getElementById(id);
 let chart;
 let controller = null;
 let inputKey = "";
-
-function parseDate(text) {
-    if (!text) return null;
-    const date = new Date(text);
-    return Number.isFinite(date.getTime()) ? date : null;
-}
 
 function inputTime(date) {
     return formatInZone(date, INPUT_FORMAT, currentZone()) + "." + String(date.getMilliseconds()).padStart(3, "0");
@@ -81,14 +82,38 @@ function readTime(text, original) {
     return candidates.size === 1 ? new Date([...candidates][0]) : null;
 }
 
+/** The first value of each field of the deepObject parameter name (name[field]=value), or an empty Map. */
+function deepFields(parameters, name) {
+    const fields = new Map();
+    for (const [key, value] of parameters) {
+        const match = /^([A-Za-z]+)\[(.*)\]$/.exec(key);
+        if (match && match[1] === name && !fields.has(match[2])) fields.set(match[2], value);
+    }
+    return fields;
+}
+
+/** A resolution of the address: raw, or whole seconds as an ISO 8601 duration; null for anything else. */
+function resolutionOfText(text) {
+    if (text === "raw") return "raw";
+    return wholeSecondsOf(text);
+}
+
+/**
+ * Reads the address as docs/analyzer-address.openapi.json declares it: the PVs, the displayed and the selected range,
+ * the resolutions, the band, the export choices, the zone, the profile and the view, and the chart state through
+ * state.js. An invalid value falls back to its default; a pair is applied whole or not at all.
+ */
 function readAddress() {
     const parameters = new URLSearchParams(window.location.search);
     state.pvs = [...new Set(parameters.getAll("pv").map((name) => name.trim()).filter((name) => PV_NAME.test(name)))];
-    state.to = parseDate(parameters.get("to")) || new Date();
-    state.from = parseDate(parameters.get("from")) || new Date(state.to.getTime() - HOUR);
-    if (state.from >= state.to) state.from = new Date(state.to.getTime() - HOUR);
-    state.selected = { from: state.from, to: state.to };
-    state.chart = readChartState(parameters);
+    const from = timeOf(parameters.get("from")), to = timeOf(parameters.get("to"));
+    state.to = to || new Date();
+    state.from = from && from < state.to ? from : new Date(state.to.getTime() - HOUR);
+    const selectedFrom = timeOf(parameters.get("selectedFrom")), selectedTo = timeOf(parameters.get("selectedTo"));
+    state.selected = selectedFrom && selectedTo && selectedFrom < selectedTo ? { from: selectedFrom, to: selectedTo } : { from: state.from, to: state.to };
+    state.sample = resolutionOfText(parameters.get("sample"));
+    state.interval = resolutionOfText(parameters.get("interval")) ?? "auto";
+    state.minmax = booleanOf(parameters.get("minMax")) ?? false;
     state.view = VIEWS.includes(parameters.get("view")) ? parameters.get("view") : "trend";
     const zone = parameters.get("tz");
     setZone(ZONES.some((item) => item.id === zone) ? zone : "browser");
@@ -97,18 +122,120 @@ function readAddress() {
         try { profile = window.localStorage.getItem("aa.chartProfile"); } catch (error) { profile = null; }
     }
     setProfile(PROFILES.some((item) => item.id === profile) ? profile : "default");
+    // The export choices restore the form only; an invalid field keeps its default and the others stay.
+    const fields = deepFields(parameters, "export");
+    const choice = { ...EXPORT_DEFAULTS, from: "", to: "" };
+    for (const [name, choices] of Object.entries(EXPORT_CHOICES)) {
+        if (choices.includes(fields.get(name))) choice[name] = fields.get(name);
+    }
+    const exportFrom = timeOf(fields.get("from")), exportTo = timeOf(fields.get("to"));
+    if (exportFrom && exportTo && exportFrom < exportTo) {
+        choice.from = inputTime(exportFrom);
+        choice.to = inputTime(exportTo);
+    } else if (choice.range === "custom") {
+        choice.range = "view";
+    }
+    if (integerIn(fields.get("bins"), 1, BINS_MOST) !== null) choice.bins = fields.get("bins").trim();
+    const step = parseIsoDuration(fields.get("step"));
+    if (step !== null) choice.step = String(step);
+    const gap = parseIsoDuration(fields.get("gap"));
+    if (gap !== null) choice.gap = String(gap);
+    if (booleanOf(fields.get("alarms")) !== null) choice.alarms = booleanOf(fields.get("alarms"));
+    if (integerIn(fields.get("decimals"), 0, 15) !== null) choice.decimals = fields.get("decimals").trim();
+    if (booleanOf(fields.get("units")) !== null) choice.units = booleanOf(fields.get("units"));
+    state.export = choice;
+    state.chart = readChartState(parameters, state.pvs);
+    state.cursorTexts = state.chart.cursorTexts;
+    state.pinRefs = state.chart.pinRefs;
 }
 
+/** The RFC 3339 text of an observation's seconds and nanoseconds, with the fraction the nanoseconds need. */
+function timeTextOf(secs, nanos) {
+    const fraction = nanos ? `.${String(nanos).padStart(9, "0").replace(/0+$/, "")}` : "";
+    return `${new Date(secs * 1000).toISOString().slice(0, 19)}${fraction}Z`;
+}
+
+/** The PV@time of each pin of the chart: the exact time text it carries, else the observation's own time from the display data. */
+function pinTextsOf(chartState) {
+    return (chartState.pins || []).map((pin) => {
+        if (pin.time) return `${pin.name}@${pin.time}`;
+        const record = (state.data.get(pin.name)?.records || []).find((item) => item.t === pin.t);
+        return `${pin.name}@${record ? timeTextOf(record.secs, record.nanos) : new Date(pin.t).toISOString()}`;
+    });
+}
+
+/** The export choices that differ from their defaults, as export[field] parameters. */
+function writeExportParameters(parameters) {
+    const choice = state.export;
+    for (const name of ["product", "range", "source", "layout", "values", "time", "stats"]) {
+        if (choice[name] !== EXPORT_DEFAULTS[name]) parameters.set(`export[${name}]`, choice[name]);
+    }
+    if (choice.range === "custom") {
+        const from = readTime(choice.from, state.from), to = readTime(choice.to, state.to);
+        if (from && to && from < to) {
+            parameters.set("export[from]", from.toISOString());
+            parameters.set("export[to]", to.toISOString());
+        }
+    }
+    if (choice.bins !== EXPORT_DEFAULTS.bins && integerIn(choice.bins, 1, BINS_MOST) !== null) parameters.set("export[bins]", choice.bins.trim());
+    const step = Number(choice.step);
+    if (Number.isFinite(step) && step > 0 && step !== Number(EXPORT_DEFAULTS.step)) parameters.set("export[step]", isoDuration(step));
+    const gap = Number(choice.gap);
+    if (choice.gap.trim() !== "" && Number.isFinite(gap) && gap > 0) parameters.set("export[gap]", isoDuration(gap));
+    if (choice.alarms === false) parameters.set("export[alarms]", "false");
+    if (choice.decimals !== EXPORT_DEFAULTS.decimals && integerIn(choice.decimals, 0, 15) !== null) parameters.set("export[decimals]", choice.decimals.trim());
+    if (choice.units === true) parameters.set("export[units]", "true");
+}
+
+/** Writes the address: pv first in series order, then every other parameter in code-point order, defaults left out. */
 function writeAddress() {
     const parameters = new URLSearchParams();
     for (const name of state.pvs) parameters.append("pv", name);
     parameters.set("from", state.from.toISOString());
     parameters.set("to", state.to.toISOString());
+    if (state.selected && (+state.selected.from !== +state.from || +state.selected.to !== +state.to)) {
+        parameters.set("selectedFrom", state.selected.from.toISOString());
+        parameters.set("selectedTo", state.selected.to.toISOString());
+    }
+    if (state.sample !== null) parameters.set("sample", state.sample === "raw" ? "raw" : isoDuration(state.sample));
+    if (state.interval !== "auto") parameters.set("interval", state.interval === "raw" ? "raw" : isoDuration(state.interval));
+    if (state.minmax === true) parameters.set("minMax", "true");
     parameters.set("view", state.view);
-    writeChartParameters(parameters, chart ? chart.getState() : state.chart);
-    window.history.replaceState(null, "", `${window.location.pathname}?${parameters}`);
+    writeExportParameters(parameters);
+    const chartState = chart ? chart.getState() : state.chart;
+    writeChartParameters(parameters, { ...chartState, cursorTexts: state.cursorTexts, pinTexts: pinTextsOf(chartState) }, currentZone(), currentProfile(), state.pvs);
+    window.history.replaceState(null, "", `${window.location.pathname}?${orderedParameters(parameters)}`);
     const active = document.querySelector("ul.mainmenu a[aria-current='page']");
     if (active) active.href = window.location.href;
+}
+
+/**
+ * Resolves the pin references of the address against the display data: a reference whose PV has its display dataset
+ * becomes a pin with the value of the observation at exactly its time, or an unavailable pin without one; the
+ * references of PVs still loading wait.
+ */
+function resolvePins() {
+    if (!state.pinRefs.length || !chart) return;
+    const pins = chart.getState().pins;
+    const waiting = [];
+    let added = false;
+    for (const ref of state.pinRefs) {
+        const dataset = state.data.get(ref.name);
+        if (!dataset && !state.failures.has(ref.name)) {
+            waiting.push(ref);
+            continue;
+        }
+        // A PV whose retrieval failed keeps its pin as unavailable, so that the reference stays in the address.
+        const record = dataset ? dataset.records.find((item) => BigInt(item.secs) * 1000000000n + BigInt(item.nanos || 0) === ref.nanos) : null;
+        const t = record ? record.t : Number(ref.nanos / 1000000n);
+        // A pin carries its exact time text, so two observations of one PV within a millisecond stay two pins.
+        if (!pins.some((pin) => pin.name === ref.name && (pin.time ? pin.time === ref.time : pin.t === t))) {
+            pins.push({ name: ref.name, egu: dataset ? dataset.egu || "" : "", t, v: record ? record.v : null, s: record ? record.severity : 0, time: ref.time });
+            added = true;
+        }
+    }
+    state.pinRefs = waiting;
+    if (added) chart.setState({ pins });
 }
 
 async function setupHeader() {
@@ -204,7 +331,11 @@ async function load() {
     const pvs = [...state.pvs];
     const selected = state.selected;
     const display = { from: state.from, to: state.to };
-    if (state.sample === null) state.sample = resolutionOf(selected.from, selected.to);
+    if (state.sample === null) {
+        // The resolution of the selected dataset is resolved once and written to the address with it.
+        state.sample = resolutionOf(selected.from, selected.to);
+        writeAddress();
+    }
     const displaySeconds = resolutionOf(display.from, display.to);
     const shared = displaySeconds === state.sample && +display.from === +selected.from && +display.to === +selected.to;
     state.displaySeconds = displaySeconds;
@@ -559,6 +690,7 @@ function render() {
     $("dataNote").textContent = note;
     renderSummary();
     renderDataTable();
+    resolvePins();
     if (state.view !== "trend") {
         chart.message("This analysis has not run.");
     } else if (loaded.some((series) => series.points.length)) {
@@ -567,6 +699,12 @@ function render() {
     } else {
         chart.message(waiting ? "Loading samples..." : state.pvs.length ? "No supported numeric samples in this range." : "Select archived signals to draw their trend.",
             state.pvs.length ? timeData() : undefined);
+    }
+    // A navigation unit that none of the loaded PVs has falls back to the time axis once every PV has answered, which
+    // writes the address again without it; while one is still loading the unit is kept, since its data may still arrive.
+    const navigation = chart.getState();
+    if (navigation.nav !== "x" && !waiting && !loaded.some((series) => (series.egu || "") === navigation.navUnit)) {
+        chart.setState({ nav: "x", navUnit: null });
     }
 }
 
@@ -725,7 +863,7 @@ function renderDataTable() {
 
 // The choices of the Export tab, as the page names them.
 const EXPORT_PRODUCTS = [["data", "Data as CSV"], ["statistics", "Statistics as CSV"], ["png", "Plot as PNG"], ["svg", "Plot as SVG"],
-    ["link", "Address of this view"], ["servercsv", "Server CSV (getData.csv)"], ["servermat", "Server MAT (getData.mat)"]];
+    ["link", "Address of this view"], ["serverCsv", "Server CSV (getData.csv)"], ["serverMat", "Server MAT (getData.mat)"]];
 const EXPORT_SOURCES = [["plot", "Samples shown"], ["raw", "Raw samples"], ["optimized", "Optimized bins (min, mean, max)"], ["interpolated", "Linear interpolation"]];
 const EXPORT_RANGES = [["view", "Range shown"], ["custom", "Typed range"]];
 const EXPORT_LAYOUTS = [["long", "Long (time, pv, value)"], ["wide", "Wide (one column per PV)"]];
@@ -738,7 +876,7 @@ const BINS_MOST = 1000000;
 function serverLimit(choice) {
     if (choice.source === "plot" || choice.source === "interpolated") return "The server streams raw samples and the mean, min and max operators; it does not produce the samples shown or an interpolation.";
     if (choice.layout === "wide") return "The server writes one PV per file, not a wide table.";
-    if (choice.time === "unixms" || choice.format !== "source") return "The server writes its own columns (secs, value, severity, status, nanos) and does not format times or values.";
+    if (choice.time === "unixms" || choice.values !== "source") return "The server writes its own columns (secs, value, severity, status, nanos) and does not format times or values.";
     return null;
 }
 
@@ -773,7 +911,7 @@ function renderExport() {
     };
     const product = choice.product;
     const data = product === "data";
-    const server = product === "servercsv" || product === "servermat";
+    const server = product === "serverCsv" || product === "serverMat";
     const rows = [select("Product", "product", EXPORT_PRODUCTS)];
     if (data || server) {
         rows.push(select("Range", "range", EXPORT_RANGES));
@@ -787,11 +925,11 @@ function renderExport() {
         }
     }
     if (data) {
-        rows.push(select("Layout", "layout", EXPORT_LAYOUTS), box("Severity and status", "alarms"), select("Values", "format", EXPORT_FORMATS));
-        if (choice.format !== "source") rows.push(text("Decimal places", "precision", { type: "number", min: "0", max: "15", step: "1" }));
+        rows.push(select("Layout", "layout", EXPORT_LAYOUTS), box("Severity and status", "alarms"), select("Values", "values", EXPORT_FORMATS));
+        if (choice.values !== "source") rows.push(text("Decimal places", "decimals", { type: "number", min: "0", max: "15", step: "1" }));
         rows.push(select("Time", "time", EXPORT_TIMES), box("Unit in the header", "units"));
     }
-    if (product === "statistics") rows.push(select("Statistics of", "statsrange", EXPORT_STATS));
+    if (product === "statistics") rows.push(select("Statistics of", "stats", EXPORT_STATS));
     const limit = server ? serverLimit(choice) : null;
     const run = $("runExport");
     run.textContent = product === "link" ? "Copy link" : server ? "Show links" : "Download";
@@ -803,8 +941,8 @@ function renderExport() {
         png: "The plot as it is drawn, with its axes and the visible lines.",
         svg: "The plot as it is drawn, as a scalable image.",
         link: "The address of this view with every option; archived data can change after it is copied.",
-        servercsv: "The retrieval's own CSV, one file per PV with the columns secs, value, severity, status and nanos; the browser holds no copy.",
-        servermat: "The retrieval's own MATLAB file, one per PV, as the server produces it.",
+        serverCsv: "The retrieval's own CSV, one file per PV with the columns secs, value, severity, status and nanos; the browser holds no copy.",
+        serverMat: "The retrieval's own MATLAB file, one per PV, as the server produces it.",
     }[product];
     if (focusedLabel) {
         [...host.querySelectorAll("input, select")].find((control) => control.getAttribute("aria-label") === focusedLabel)?.focus();
@@ -872,7 +1010,7 @@ async function runExport() {
             saveStatistics();
         } else {
             const range = exportRange();
-            if (choice.product === "servercsv" || choice.product === "servermat") {
+            if (choice.product === "serverCsv" || choice.product === "serverMat") {
                 showServerLinks(range);
             } else {
                 await saveData(range);
@@ -900,10 +1038,10 @@ async function saveData(range) {
     const choice = state.export;
     const zone = currentZone();
     const fromNs = nanosOfDate(range.from), toNs = nanosOfDate(range.to);
-    const precision = /^\d+$/.test(String(choice.precision).trim()) ? Number(String(choice.precision).trim()) : NaN;
-    if (choice.format !== "source" && !(precision >= 0 && precision <= 15)) throw new Error("Decimal places are a whole number from 0 to 15.");
+    const precision = /^\d+$/.test(String(choice.decimals).trim()) ? Number(String(choice.decimals).trim()) : NaN;
+    if (choice.values !== "source" && !(precision >= 0 && precision <= 15)) throw new Error("Decimal places are a whole number from 0 to 15.");
     const metadata = [`product: data`, `source: ${choice.source}`, `range: ${range.from.toISOString()} to ${range.to.toISOString()} (${range.custom ? "typed" : "shown"})`,
-        `time: ${choice.time === "unixms" ? "UNIX milliseconds" : `ISO 8601 in ${zoneName(zone, range.from)}`}`, `values: ${choice.format}${choice.format === "source" ? "" : ` with ${precision} decimal places`}`];
+        `time: ${choice.time === "unixms" ? "UNIX milliseconds" : `ISO 8601 in ${zoneName(zone, range.from)}`}`, `values: ${choice.values}${choice.values === "source" ? "" : ` with ${precision} decimal places`}`];
     const series = [];
     let step = null, gap = null, preceding = new Map();
     if (choice.source === "interpolated") {
@@ -957,7 +1095,7 @@ async function saveData(range) {
     const total = series.reduce((sum, s) => sum + s.rows.length, 0);
     if (total > EXPORT_ROWS_MOST) throw new Error(`This export has ${total} rows; choose a shorter range, fewer bins or the server product.`);
     const options = { alarms: choice.alarms === true, units: choice.units === true, bins: choice.source === "optimized", quality: choice.source === "interpolated" };
-    const cell = { time: (t) => timeText(t, choice.time, zone), value: (value) => valueText(value, choice.format, precision),
+    const cell = { time: (t) => timeText(t, choice.time, zone), value: (value) => valueText(value, choice.values, precision),
         plain: (value) => (value === null || value === undefined ? "" : String(value)) };
     const table = choice.layout === "wide" ? wideTable(series, options, cell) : longTable(series, options, cell);
     saveFile(csvText(metadata, table.header, table.rows), "text/csv", `analyzer-${choice.source}.csv`);
@@ -967,7 +1105,7 @@ async function saveData(range) {
 /** The statistics CSV: the Visible range rows or the Summary rows, with the dataset they come from. */
 function saveStatistics() {
     const choice = state.export;
-    const selected = choice.statsrange === "selected";
+    const selected = choice.stats === "selected";
     const ranges = new Map(chart.getState().ranges);
     const rows = [];
     for (const name of state.pvs) {
@@ -982,7 +1120,7 @@ function saveStatistics() {
             values.length > 1 ? String(d3.deviation(values)) : "", sourceText(dataset.seconds), from.toISOString(), to.toISOString()]);
     }
     const metadata = [`product: statistics`, `dataset: ${selected ? "Summary (selected dataset)" : "Visible range (displayed samples inside the time and Y ranges)"}`];
-    saveFile(csvText(metadata, ["pv", "unit", "samples", "min", "mean", "median", "max", "std", "source", "from", "to"], rows), "text/csv", `analyzer-statistics-${choice.statsrange}.csv`);
+    saveFile(csvText(metadata, ["pv", "unit", "samples", "min", "mean", "median", "max", "std", "source", "from", "to"], rows), "text/csv", `analyzer-statistics-${choice.stats}.csv`);
     $("message").textContent = `Exported the ${selected ? "Summary" : "Visible range"} statistics.`;
 }
 
@@ -1067,7 +1205,7 @@ async function savePlot(kind) {
 /** The server products: one link per PV to the retrieval's own CSV or MAT of the chosen source over the range. */
 function showServerLinks(range) {
     const choice = state.export;
-    const extension = choice.product === "servercsv" ? "csv" : "mat";
+    const extension = choice.product === "serverCsv" ? "csv" : "mat";
     const list = node("ul", { class: "export-links" });
     const operators = choice.source === "raw" ? [["", "raw samples"]]
         : (() => {

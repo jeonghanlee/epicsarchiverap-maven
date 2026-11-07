@@ -457,10 +457,11 @@ function drawSeries(host, input) {
 
         if (panelIndex === 0 && typeof input.overlay === "function") input.overlay(canvas);
 
-        // The pins of the page on the lines of this panel; a pin of a hidden line waits in the page's state.
+        // The pins of the page on the lines of this panel; a pin of a hidden line waits in the page's state, and a pin
+        // without a value (unavailable) is listed by the page but not drawn.
         const pins = (Array.isArray(input.pins) ? input.pins : []).flatMap((pin) => {
             const s = panelSeries.find((series) => series.name === pin.name);
-            return s ? [{ x: new Date(pin.t), y: pin.v, unit: s.egu || "", text: valueText(s, pin.v, false) }] : [];
+            return s && Number.isFinite(pin.v) ? [{ x: new Date(pin.t), y: pin.v, unit: s.egu || "", text: valueText(s, pin.v, false) }] : [];
         });
         canvas.bindInteractions(panelHost, { ...input, ranges, pins, onPoint, onNavigate }, rangeChanged, preview);
         if (input.hover !== false) {
