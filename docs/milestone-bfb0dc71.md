@@ -52,7 +52,7 @@ The four Complete rows come first. The rows below them are listed in the work or
 | Verification | M19 | Verify signal storage and important-signal delivery under client overload | Milestone | Deferred | No |  | Long-term plan, deferred on 2026-10-22: verify signal storage first, important-signal storage and delivery second, and client request handling last; issue #55; [detail](#m19---verify-signal-storage-and-important-signal-delivery-under-client-overload) |
 | Configuration | M30 | Review the sampling policies against measured event rates and decide the optimized values | Milestone | Not started | Yes | D13 | The shipped policies set the MONITOR period from the measured event rate so that the buffer holds a write interval and its margin, a decision records the measured table and the values, and a PV at its expected rate loses no sample to a full buffer on the real path; issue #76; [detail](#m30---review-the-sampling-policies-against-measured-event-rates-and-decide-the-optimized-values) |
 | Scripts and checks | M31 | Move the reusable verification scripts into the owner's script tool | Milestone | Complete | No |  | Retired on 2026-11-02: the four scripts are already under `scripts/` of this repository, which the owner accepts as the place for them, so there is nothing to move; [detail](#m31---move-the-reusable-verification-scripts-into-the-owners-script-tool) |
-| Appliance defects | M34 | Make the retrieval metrics map safe for concurrent requests | Milestone | Not started | Yes |  | A retrieval request never fails because another request for a PV is updating the retrieval metrics at the same time; concurrent `getData.json` requests for several PVs all succeed in a test through the real servlet; [detail](#m34---make-the-retrieval-metrics-map-safe-for-concurrent-requests) |
+| Appliance defects | M34 | Make the retrieval metrics map safe for concurrent requests | Milestone | In progress | No |  | A retrieval request never fails because another request for a PV is updating the retrieval metrics at the same time; concurrent `getData.json` requests for several PVs all succeed in a test through the real servlet; [detail](#m34---make-the-retrieval-metrics-map-safe-for-concurrent-requests) |
 | Release Ahsoka | M21 | Release Ahsoka | Milestone | Not started | No | M12, M14, M7, M13, M33, M24, M29, M22, M27, M23, M10, M8, M11, M1, M2, M3, M4, M5, M30, D12, D13, D15, D16, D17 | Release Ahsoka is built, tagged and installed from its bundle with every Release Verification of the detail Pass and the issues of the nineteen named rows closed; [detail](#m21---release-ahsoka) |
 | Release Ghost | M32 | Release Ghost | Milestone | Not started | No | M9, M15, M16, M17, M18, M19, M20, M28, G1, D16 | Release Ghost is the long-term release: the rows that leave release Ahsoka or stay outside it are Complete, and the owner has set its version, branch and tests; [detail](#m32---release-ghost) |
 
@@ -3143,53 +3143,59 @@ Last Compared: 2026-11-03 13:34 PST; issue #77 read back as closed, title The re
 
 Origin: bfb0dc71 / M34
 Identity History: none
-GitHub Issue: none
-Status: Not started
+GitHub Issue: #78 (https://github.com/jeonghanlee/epicsarchiverap-maven/issues/78)
+Status: In progress
 
 ##### Summary
 
-`RetrievalState.updateRetrievalMetrics` records the time and the caller of each retrieval in `retrievalMetricsMap`, a plain `HashMap`, with `putIfAbsent` followed by `get`. Two requests that arrive together, as the Analyzer sends one per PV, can race in that map, and `get` then returns null: the request fails with HTTP 500 (`DataRetrievalServlet - Retrieval request failed`, `NullPointerException` in `RetrievalState.updateRetrievalMetrics`) although the data is there. Observed once on 2026-11-06 during the preparation of the M2 step 2 checks (`work/analyzer-m2-verification/step2/`), on the appliance built from aa-20261105-30c9aebc.
+`RetrievalState.updateRetrievalMetrics` records the time and the caller of each retrieval in `retrievalMetricsMap`, a plain `HashMap`, with `putIfAbsent` followed by `get`, from the request threads of the servlet. Two requests that arrive together, as the Analyzer sends one per PV and several per PV for the summary, the display and the min-max band, can race in that map, and `get` then returns null: the request fails with HTTP 500 (`DataRetrievalServlet - Retrieval request failed`, `NullPointerException` in `RetrievalState.updateRetrievalMetrics`) although the data is there. `RetrievalMetrics.updateMetrics` then writes the request count, the last request time and the `HashSet` of users of one PV without synchronization, and `calculateSummedMetrics` streams the map while requests update it. Observed on 2026-11-06 during the preparation of the M2 step 2 checks and on 2026-11-07 in the M2 step 5 run (`work/m34-verification/race-run50-retrieval-console-excerpt.log`: the trace from `DataRetrievalServlet.doGetSinglePV`, line 430, on the appliance built from aa-20261105-30c9aebc). The code came with upstream commit 6ca47b51 (2024-03-19) and is unchanged in archiver-appliance/epicsarchiverap, which has no issue or pull request for it (searched on 2026-11-07).
 
 ##### Scope
 
-- Replace the map with one that is safe for concurrent use and update the entry of a PV in one step, so that a request never observes a missing entry it created.
+- Replace the map with one that is safe for concurrent use and update the entry of a PV in one atomic operation, so that a request never observes a missing entry it created.
+- Synchronize the writes and the reads of one `RetrievalMetrics` (the count, the last request time, the users), so that two requests for one PV both count and the sums of the reports read consistent values.
 - Keep `getRetrievalMetrics` and `getPVRetrievalMetrics` and the reports that read them unchanged in content.
 
 Out of scope: the Analyzer's request concurrency, the retrieval memory protection and any other retrieval metric.
 
 ##### Completion Criteria
 
-- A test through the real `DataRetrievalServlet` sends concurrent `getData.json` requests for several PVs repeatedly and every request succeeds; the same test fails on the code before the change.
-- The retrieval metrics report still lists each PV with its last retrieval time and caller.
+- A test in the default suite drives the real `DataRetrievalServlet` with concurrent `getData.json` requests for several archived PVs many times, and every request answers 200.
+- A test updates the metrics of a few PVs from several threads at once and finds the request count of each PV equal to the number of calls; the same test fails on the code before the change.
+- The retrieval metrics report still lists each PV with its request count, last retrieval time and number of users.
 - The default suite passes.
 
 ##### Dependencies And Decisions
 
 - Decision Date 2026-11-06: the owner directed that this defect, found while verifying M2 step 2, is worked as its own row.
+- Decision Date 2026-11-07: the plan review confirmed the race in the map and the unsynchronized updates of one `RetrievalMetrics` (the same defect class) and the owner filed issue #78 with both in scope; the servlet test runs in the default suite without Tomcat, in the manner of `RetrievalProtectedRequestTest` (a `DataRetrievalServlet` with `ConfigServiceForTests` and proxied requests), and the deterministic regression is the count contract of the concurrent-update test, because a servlet race shows itself only by chance.
 
 ##### Implementation Plan
 
-Plan Status: draft
-Plan Acceptance: none
-Implementation Authorization: none
+Plan Status: accepted
+Plan Acceptance: 2026-11-07; the owner accepted the reviewed plan (two review passes after the plan review, Open 0)
+Implementation Authorization: 2026-11-07; explicit instruction to implement the accepted plan
 Superseded Plan Artifacts: none
 
-1. In `src/main/org/epics/archiverappliance/retrieval/RetrievalState.java`, make `retrievalMetricsMap` a concurrent map and update the entry of a PV through one atomic operation. Check: T1, T2.
-2. Add the concurrent-request test. Check: T1.
+1. In `src/main/org/epics/archiverappliance/retrieval/RetrievalState.java`, make `retrievalMetricsMap` a `ConcurrentHashMap` and update the entry of a PV through one atomic operation (`compute`, or `computeIfAbsent` followed by the synchronized update). In `RetrievalMetrics.java`, synchronize `updateMetrics` and the reads of an entry (its count, its last request time and its users, as one snapshot taken under the entry's lock) on that entry; `sumMetrics` and `calculateSummedMetrics` add the snapshots of the entries into the fresh accumulator of the stream, which needs no lock, and `getMetrics` and `details` read the snapshot. A count is then never lost and a report reads a consistent entry. Check: T1, T2, T3.
+2. Add `RetrievalMetricsConcurrencyTest` to the default suite: several threads update the metrics of a few PVs through `updateRetrievalMetrics` many times at once, and the request count of each PV must equal its number of calls, the user set must hold every caller and the summed metrics must add up; run it once on the code before step 1 to show the failure. Check: T2.
+3. Add `RetrievalConcurrentRequestTest` to the default suite, a class of its own in the manner of `RetrievalProtectedRequestTest` but without its memory protection settings, whose one percent budget would refuse concurrent requests: a `DataRetrievalServlet` with `ConfigServiceForTests`, generated samples of several PVs, and many rounds of concurrent `getData.json` requests through `doGet`; every response 200 with its samples, and after the rounds `getPVRetrievalMetrics(pv)` counts exactly the requests of each PV. Check: T1.
 
 ##### Test Plan
 
 | Label | Layer | Method | Environment | Expected Result |
 | --- | --- | --- | --- | --- |
-| T1 | Integration | A test in the manner of the existing retrieval servlet tests sends, many times, concurrent `getData.json` requests for several archived PVs through the real servlet and counts the responses | JDK 21, the test appliance of the default suite | With the change every request answers 200; the same test run on the code before the change fails at least once |
-| T2 | Suite | `./mvnw -B -ntp clean verify` | JDK 21 | The default suite passes |
+| T1 | Servlet in the default suite | `RetrievalConcurrentRequestTest` drives the real `DataRetrievalServlet.doGet` with proxied requests, as `RetrievalProtectedRequestTest` does but without its memory protection settings, for several archived PVs in many rounds of concurrent requests, counts the responses and reads the metrics of each PV afterwards | JDK 21, `ConfigServiceForTests`, generated PlainPB samples; no Tomcat | Every request answers 200 with its samples, and the request count of each PV equals the requests the test sent for it |
+| T2 | Unit, concurrency | `RetrievalMetricsConcurrencyTest` updates the metrics of a few PVs from several threads at once, many times, then reads the count, the users and the summed metrics | JDK 21 | With the change every count equals its number of calls, the user sets are complete and the sum adds up; the same test on the code before the change fails (a lost count, a missing entry or an exception), recorded once |
+| T3 | Suite and report | `./mvnw -B -ntp clean verify` and the Maven workflow on the commit; on an appliance started from the built WARs (`scripts/ui-appliance.sh` or the local launcher) with a few PVs retrieved, read the retrieval metrics of one PV through the management `getPVDetails` (the rows Number of Retrieval Requests, Time of last Retrieval Request and Number of unique users) and the summed metrics through `getApplianceMetrics` | JDK 21; GitHub Actions; one local appliance | The default suite passes and the workflow succeeds; the three rows of a retrieved PV carry its count, its last time and its user count, and the summed metrics add the PVs up |
 
 ##### Verification Results
 
 | Label | Observed At | Environment | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| T1 | Not run | JDK 21 | Pending | none |
-| T2 | Not run | JDK 21 | Pending | none |
+| T1 | 2026-11-07 09:36 UTC, and again in the suite run of 09:36-09:52 UTC | JDK 21, the offline Maven wrapper, `ConfigServiceForTests(-1)`, PlainPB samples generated for three PVs over one hour; no Tomcat, no memory protection | Pass: `RetrievalConcurrentRequestTest` sent 40 rounds of 6 concurrent `getData.json` requests (three PVs, raw and `mean_60`) through `DataRetrievalServlet.doGet`; every one of the 240 responses was 200 with samples, and afterwards `getPVRetrievalMetrics` counted 80 requests for each PV; passed again at 17:11 UTC on the reviewed code | `work/m34-verification/t1-after-change.log`, `t1-t2-after-review.log`; `suite/verify.log` |
+| T2 | 2026-11-07 09:34 UTC (before the change) and 09:35 UTC (after it) | JDK 21, the offline Maven wrapper, `ConfigServiceForTests(-1)` | Pass after the change, failure before it: `RetrievalMetricsConcurrencyTest` runs 8 threads that each record 20,000 retrievals spread over four PVs and five users through `updateRetrievalMetrics`. On the code before step 1 the count of the first PV was 36,552 instead of 40,000 (updates lost in the plain map and entry). On the changed code every PV counts 40,000 with 5 users, and the summed metrics count 160,000 with 5 users; passed again at 17:11 UTC on the reviewed code | `work/m34-verification/t2-before-change.log`, `t2-after-change.log`, `t1-t2-after-review.log` |
+| T3 | 2026-11-07 09:36-09:52 UTC (suite) and 09:56-09:59 UTC (report) | JDK 21, the offline Maven wrapper and Tomcat 9.0.122 in a private network namespace (`suite/t6-command.sh`); then one appliance in a private namespace from the WARs `aa-20261107-51771f91-*.war` with a soft IOC of 10 PVs (`scripts/ui-appliance.sh`, `report/report-command.sh`) | Pass locally: `bash scripts/ui-static-checks.bash` 478 checks, `./mvnw -o -B -ntp clean verify` 1,250 tests with the two new ones, `MgmtPageLinksTest` 3 cases. On the appliance, 10 rounds of 6 concurrent requests (three PVs, raw and `mean_5`) all answered 200; `getPVDetails` of the first PV listed Number of Retrieval Requests 20, Time of last Retrieval Request 01:59:30 PST and Number of unique users 1; `getApplianceMetrics` summed 60 requests and 1 user; the retrieval log held no failed request. The suite and the report ran before the review changed one line of `RetrievalMetrics.snapshot()` (the copy of the user set), which the two tests re-ran at 17:11 UTC cover; the Maven workflow on the commit runs the whole suite on the final code and is recorded in Closure Evidence after the push | `work/m34-verification/suite/` (`static.log`, `verify.log`, `integration.log`, `suite-output.log`), `work/m34-verification/report/` (`report-run3-output.log`, `report-status.txt`, `report-command.sh`) |
 
 ##### Closure Evidence
 
@@ -3197,13 +3203,13 @@ Superseded Plan Artifacts: none
 
 ##### GitHub Projection
 
-Title: none
-Labels: none
+Title: Retrieval metrics map races between concurrent requests
+Labels: bug
 GitHub Milestone: none
-Observed State: none
-Observed Labels: none
+Observed State: OPEN (2026-11-07)
+Observed Labels: bug
 Observed Milestone: none
-Last Compared: never; no issue has been filed for this row
+Last Compared: 2026-11-07 09:22 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/78` read #78 OPEN, title Retrieval metrics map races between concurrent requests, label bug, assignee jeonghanlee and milestone none; remote updated_at 2026-11-07T09:21:49Z. The body records the symptom, the observation, the root cause in both classes, the proposed change and the acceptance criteria of this detail.
 
 ## Backlog
 
