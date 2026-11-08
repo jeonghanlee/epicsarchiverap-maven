@@ -62,7 +62,7 @@ const DASH_PATTERNS = { solid: "", dash: "8 4", dot: "2 3", dashdot: "9 3 2 3" }
  * legend true gives each line a color and a dash and puts a legend under the chart in place of the labels at the
  * end of the lines; a click on a legend item hides that line until it is clicked again.
  * Replaces the content of host and returns its canvas (the first panel's, when split), or undefined when no series is visible.
- * overlay(canvas) can append clipped data layers. keyboardX and wheel enable optional X navigation.
+ * overlay(canvas) can append clipped data layers; it is called for each panel with the canvas of the panel. keyboardX and wheel enable optional X navigation.
  * tool, nav, navUnit and selection, with onSelect and onNavigate, are the navigation inputs of the canvas (see
  * gestures.js); hover false leaves the tooltip out. pins ([{name, t, v}]) are drawn on the lines they belong to and
  * onPin(observation) receives the sample nearest to a Shift+click; cursors ([time or null, time or null]) and
@@ -455,7 +455,7 @@ function drawSeries(host, input) {
             }
         }
 
-        if (panelIndex === 0 && typeof input.overlay === "function") input.overlay(canvas);
+        if (typeof input.overlay === "function") input.overlay(canvas);
 
         // The pins of the page on the lines of this panel; a pin of a hidden line waits in the page's state, and a pin
         // without a value (unavailable) is listed by the page but not drawn.

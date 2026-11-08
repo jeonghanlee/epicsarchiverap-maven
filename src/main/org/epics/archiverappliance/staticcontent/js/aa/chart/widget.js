@@ -229,7 +229,8 @@ function cardsOf(helpHref, timed) {
  * in; without it the choice of the application, which the widget follows when it changes), and the optional callbacks
  * onZoom(from, to), onPan(direction), onReset() and onOptionsChange(options). A chart with none of the three time callbacks has no
  * drag over the plot and no Earlier, Later or Back to the selected range.
- * draw(data), at each refresh: series, from, to, gapMs, windowChosen, canPanLater and analyzerHref (a string, or null for no link).
+ * draw(data), at each refresh: series, from, to, gapMs, windowChosen, canPanLater, analyzerHref (a string, or null for no link) and overlay(canvas)
+ * (a function that appends clipped marks to the canvas of each panel, see drawTimeSeries).
  * message(text, data) shows a text in place of the chart; with the window data of draw (from, to, windowChosen,
  * datasetKey) the history and Reset stay available on a window without samples. options is the object of the options the person chose.
  * initialState initializes {options, projection, ranges: [[unit, [low, high]]], hidden: [name]}.
@@ -700,6 +701,7 @@ export function createChart(host, config) {
             options: memory.options,
             onZoom: config.onZoom,
             onReset: config.onReset,
+            overlay: data.overlay,
         };
         // While a navigation gesture runs, the chart and the strip of the page follow the pointer with the data at hand.
         input.onNavigate = (low, high) => {

@@ -51,6 +51,42 @@
 #timeControls .strip-window { white-space: normal; overflow-wrap: anywhere; }
 #statistics, #dataStatistics { overflow-x: auto; }
 #charts .chart-area { padding: 0; }
+/* The Distribution tab. */
+.dist-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; padding: 8px 0; }
+.dist-controls label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.dist-controls label.check-inline { flex-direction: row; align-items: center; }
+.dist-controls input[type="number"] { width: 6rem; }
+.dist-plot { margin-top: 8px; }
+.dist-legend { margin: 4px 0 0; }
+.dist-bar { fill-opacity: .8; }
+.dist-mean, .dist-median, .dist-kde, .dist-whisker, .dist-box { stroke: var(--ink); stroke-width: 1.5; }
+.dist-median { stroke-dasharray: 6 4; }
+.dist-kde, .dist-pattern { fill: none; }
+.dist-box { fill-opacity: .35; }
+.dist-mean-mark { fill: var(--ink); }
+.dist-outlier { fill: none; stroke: var(--ink); }
+.dist-bar-sd { stroke-width: 2; stroke-opacity: .6; }
+.dist-pattern { stroke-width: 2; }
+.dist-table { width: auto; min-width: 280px; }
+.dist-table th[scope="row"] { text-align: left; font-weight: normal; padding-right: 16px; }
+.dist-summary, .dist-beyond { overflow-x: auto; margin-top: 12px; }
+.trend-tools { margin-top: 12px; }
+.trend-tools-title { margin: 0 0 4px; font-size: 1rem; }
+.trend-tools-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; padding: 8px 0; }
+.trend-tools-controls label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.trend-tools-controls label.check-inline { flex-direction: row; align-items: center; }
+.trend-tools-controls input[type="text"] { width: 6rem; }
+.trend-numbers { overflow-x: auto; }
+.trend-table th[scope="row"] { text-align: left; font-weight: normal; padding-right: 16px; }
+.trend-level { stroke-width: 1.5; fill: none; }
+.trend-alarm { stroke: var(--alarm); stroke-dasharray: 6 3; }
+.trend-warning { stroke: var(--warn); stroke-dasharray: 2 4; }
+.trend-display { stroke: var(--ink); stroke-opacity: .5; stroke-dasharray: 8 4; }
+.trend-threshold { stroke: var(--ink); stroke-dasharray: 10 3 2 3; }
+.trend-level-label { fill: var(--ink); font-size: 11px; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
+.trend-fit { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 1 0; }
+.trend-rate { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.trend-zero { stroke: var(--ink); stroke-opacity: .4; }
 [hidden] { display: none !important; }
 @media (max-width: 1099px) {
     .workspace { grid-template-columns: minmax(0, 1fr); }

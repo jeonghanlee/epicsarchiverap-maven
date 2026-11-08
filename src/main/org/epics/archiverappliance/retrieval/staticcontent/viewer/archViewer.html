@@ -65,7 +65,7 @@
       </section>
       <div class="analysis-tabs" id="analysisTabs" role="tablist" aria-label="Analysis">
         <button type="button" role="tab" id="trendTab" aria-controls="trendPanel" aria-selected="true" data-view="trend">Trend</button>
-        <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="distribution">Distribution</button>
+        <button type="button" role="tab" id="distributionTab" aria-controls="distributionPanel" aria-selected="false" tabindex="-1" data-view="distribution">Distribution</button>
         <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="correlation">Correlation</button>
         <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="dependency">Dependency</button>
         <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="spectrum">Spectrum</button>
@@ -87,6 +87,7 @@
             <p id="sourceNote" class="note"></p>
             <div id="trendTools"></div>
             <div id="charts"></div>
+            <div id="trendTools2" class="trend-tools"></div>
             <div id="summary"></div>
             <div id="statistics"></div>
           </div>
@@ -122,6 +123,10 @@
             </div>
           </aside>
         </div>
+      </section>
+      <section id="distributionPanel" role="tabpanel" aria-labelledby="distributionTab" hidden>
+        <div class="view-heading"><h2>Distribution</h2></div>
+        <div id="distributionHost" class="dist"></div>
       </section>
       <footer class="viewer-status"><p id="message" class="message" role="status"></p><p id="activeRange" class="note"></p></footer>
     </main>

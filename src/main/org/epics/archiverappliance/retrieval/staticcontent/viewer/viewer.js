@@ -8,6 +8,8 @@ import { booleanOf, integerIn, isoDuration, orderedParameters, parseIsoDuration,
 import { lineLook } from "../comm/js/aa/chart/series.js";
 import { buildStatistics } from "../comm/js/aa/chart/statistics.js";
 import { buildRangeStrip } from "../comm/js/aa/chart/strip.js";
+import { createDistribution } from "./distribution.js";
+import { createTrendTools } from "./trend-tools.js";
 import { csvText, gridOf, interpolateRows, intervalForBins, isoText, longTable, nanosOf, nanosOfDate, observationsOf, parseDuration, timeText, valueText, wideTable } from "./export.js";
 
 const d3 = globalThis.d3;
@@ -23,6 +25,8 @@ const CACHE_LIMIT = 48;
 const HOUR = 3600000;
 const INPUT_FORMAT = "%Y-%m-%dT%H:%M:%S";
 const VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare", "waveform", "image"];
+// The views that have their tool in this version; the others explain that they are not available.
+const AVAILABLE_VIEWS = ["trend", "distribution"];
 const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 // The page holds two datasets per PV. The selected dataset (summary) is the records of the selected range at the
 // resolution sample, resolved once from the interval option when the selection is made; the Summary statistics come
@@ -692,19 +696,23 @@ function render() {
     renderSummary();
     renderDataTable();
     resolvePins();
-    if (state.view !== "trend") {
+    if (state.view === "distribution") {
+        distribution.render();
+    } else if (state.view !== "trend") {
         chart.message("This analysis has not run.");
     } else if (loaded.some((series) => series.points.length)) {
+        trendTools.render();
         chart.draw({ series: loaded.map((series, index) => ({ ...series, focus: index === 0, minmax: bandOf(series.name) })),
-            ...timeData(), gapMs: Infinity });
+            ...timeData(), gapMs: Infinity, overlay: trendTools.overlay });
     } else {
         chart.message(waiting ? "Loading samples..." : state.pvs.length ? "No supported numeric samples in this range." : "Select archived signals to draw their trend.",
             state.pvs.length ? timeData() : undefined);
+        trendTools.render();
     }
     // A navigation unit that none of the loaded PVs has falls back to the time axis once every PV has answered, which
     // writes the address again without it; while one is still loading the unit is kept, since its data may still arrive.
     const navigation = chart.getState();
-    if (navigation.nav !== "x" && !waiting && !loaded.some((series) => (series.egu || "") === navigation.navUnit)) {
+    if (state.view === "trend" && navigation.nav !== "x" && !waiting && !loaded.some((series) => (series.egu || "") === navigation.navUnit)) {
         chart.setState({ nav: "x", navUnit: null });
     }
 }
@@ -849,21 +857,40 @@ function resetTime() {
     applyRange(state.selected.from, state.selected.to);
 }
 
+/**
+ * Says that a view has no tool in this version. The view of the page in view stays, unless the page was opened on the
+ * unavailable view itself (restored), when no view is shown and Return to Trend is offered.
+ */
 function explainView(view, restored = false) {
     const label = view[0].toUpperCase() + view.slice(1);
     $("unavailableView").hidden = false;
     $("unavailableReason").textContent = `${label} is not available in this version. No ${view} analysis has run.`;
     $("returnTrend").hidden = !restored;
-    $("trendPanel").hidden = restored;
+    $("trendPanel").hidden = restored || state.view !== "trend";
+    $("distributionPanel").hidden = restored || state.view !== "distribution";
+}
+
+/** Shows the panel of an available view and marks its tab, without writing the address or drawing. */
+function activateView(view) {
+    state.view = view;
+    $("trendPanel").hidden = view !== "trend";
+    $("distributionPanel").hidden = view !== "distribution";
+    $("unavailableView").hidden = true;
+    for (const tab of $("analysisTabs").querySelectorAll('[role="tab"]')) {
+        const active = tab.dataset.view === view;
+        tab.setAttribute("aria-selected", String(active));
+        tab.tabIndex = active ? 0 : -1;
+    }
+}
+
+function showView(view) {
+    activateView(view);
+    writeAddress();
+    render();
 }
 
 function showTrend() {
-    state.view = "trend";
-    $("trendPanel").hidden = false;
-    $("unavailableView").hidden = true;
-    $("trendTab").setAttribute("aria-selected", "true");
-    writeAddress();
-    render();
+    showView("trend");
 }
 
 function wireTabs(host, activate) {
@@ -1328,7 +1355,7 @@ function wire() {
     $("projection").addEventListener("change", () => chart.setState({ projection: $("projection").checked }));
     renderRetrievalOptions();
     renderDisplayOptions();
-    wireTabs($("analysisTabs"), (tab) => tab.dataset.view === "trend" ? showTrend() : explainView(tab.dataset.view, state.view !== "trend"));
+    wireTabs($("analysisTabs"), (tab) => AVAILABLE_VIEWS.includes(tab.dataset.view) ? showView(tab.dataset.view) : explainView(tab.dataset.view, !AVAILABLE_VIEWS.includes(state.view)));
     wireTabs($("settingsTabs"), (tab) => {
         for (const item of $("settingsTabs").querySelectorAll('[role="tab"]')) {
             const active = item === tab;
@@ -1358,6 +1385,9 @@ function wire() {
 }
 
 readAddress();
+// The trend tools are made after the chart, which may report a state change first; the report waits until they exist.
+let trendTools = null;
+let hiddenKey = "";
 chart = createChart($("charts"), {
     id: "analyzer-trend", idPrefix: "trend", legend: true, initialState: state.chart,
     controlsHost: $("chartOptions"), statisticsHost: [$("statistics"), $("dataStatistics")], statisticsTitle: "Visible range",
@@ -1372,11 +1402,36 @@ chart = createChart($("charts"), {
         renderSignals();
         renderAxes();
         renderDisplayOptions();
+        // A signal hidden or shown changes what the trend tools may draw over the chart, which is drawn again with them.
+        const hiddenNow = next.hidden.join("\n");
+        if (trendTools && hiddenNow !== hiddenKey) {
+            hiddenKey = hiddenNow;
+            render();
+        }
     },
 });
+/** The signals of the selection with the selected dataset each has, for the Distribution tab. */
+function distributionSignals() {
+    return state.pvs.map((name, index) => {
+        const dataset = state.summary.get(name);
+        return { name, egu: dataset ? dataset.egu : "", dataset, failure: state.summaryFailures.get(name), color: lineLook(dataset || {}, index).color };
+    });
+}
+/** The signals of the selection with the display dataset each has, for the trend tools. */
+function trendSignals() {
+    return state.pvs.map((name) => {
+        const dataset = state.data.get(name);
+        return { name, egu: dataset ? dataset.egu : "", dataset, failure: state.failures.get(name), hidden: chart.getState().hidden.includes(name) };
+    });
+}
+trendTools = createTrendTools($("trendTools2"), { signals: trendSignals, window: () => ({ from: state.from, to: state.to }), zone: currentZone, onChange: render, helpHref: helpPage,
+    sourceText, isHidden: (name) => chart.getState().hidden.includes(name) });
+const distribution = createDistribution($("distributionHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage });
 wire();
 writeAddress();
-if (state.view !== "trend") {
+if (AVAILABLE_VIEWS.includes(state.view)) {
+    activateView(state.view);
+} else {
     $("trendTab").setAttribute("aria-selected", "false");
     explainView(state.view, true);
 }
