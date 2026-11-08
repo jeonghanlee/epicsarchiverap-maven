@@ -1,0 +1,48 @@
+# Soft IOC database for the checks of the Analyzer tools of one signal: three records whose history is generated.
+# The live value of each record is a constant, so that the appliance can archive the name and read its unit, precision and limits;
+# the history that the checks use is written into the store of the appliance by AnalyzerFixtureData of src/test (a normal sample,
+# a sine of a known period and a pattern over days) and is not what these records produce.
+#   SR:GEN:NORMAL   V   normal sample of mean 10 and standard deviation 2; limits at 2 and 3 standard deviations
+#   SR:GEN:SINE     V   1.5 times the sine of a period of 600 s; limits at 1.0 and 1.4
+#   SR:GEN:PATTERN  kW  20 plus a daily cosine that peaks at 14:00 UTC, minus 4 on Saturday and Sunday, with noise of 0.2
+# Load it beside ConsoleChartPVs.db (its st.cmd loads that file); the checks of the Analyzer start one IOC with both.
+
+record(calc, "SR:GEN:NORMAL") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(LOPR, "0")
+    field(HOPR, "20")
+    field(LOLO, "4")
+    field(LLSV, "MAJOR")
+    field(LOW, "6")
+    field(LSV, "MINOR")
+    field(HIGH, "14")
+    field(HSV, "MINOR")
+    field(HIHI, "16")
+    field(HHSV, "MAJOR")
+    field(DESC, "normal sample, mean 10, sd 2")
+}
+record(calc, "SR:GEN:SINE") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(LOPR, "-2")
+    field(HOPR, "2")
+    field(LOW, "-1")
+    field(LSV, "MINOR")
+    field(HIGH, "1")
+    field(HSV, "MINOR")
+    field(DESC, "sine, period 600 s, amplitude 1.5")
+}
+record(calc, "SR:GEN:PATTERN") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "kW")
+    field(PREC, "3")
+    field(LOPR, "10")
+    field(HOPR, "30")
+    field(DESC, "daily and weekly pattern")
+}

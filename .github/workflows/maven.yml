@@ -47,6 +47,9 @@ jobs:
       - name: Check the interface files
         run: bash scripts/ui-static-checks.bash
 
+      - name: Check the routines of the Analyzer pages
+        run: bash scripts/ui-routine-checks.bash
+
       - name: Build, test, and check dependencies
         run: ./mvnw -B -ntp clean verify
 
@@ -99,6 +102,9 @@ jobs:
 
       - name: Check the interface files
         run: bash scripts/ui-static-checks.bash
+
+      - name: Check the routines of the Analyzer pages when the container has a suitable Node
+        run: bash scripts/ui-routine-checks.bash --optional
 
       - name: Trust the checkout for git
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
