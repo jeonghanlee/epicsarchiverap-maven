@@ -69,7 +69,7 @@
         <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="correlation">Correlation</button>
         <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="dependency">Dependency</button>
         <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="spectrum">Spectrum</button>
-        <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="compare">Compare</button>
+        <button type="button" role="tab" id="compareTab" aria-controls="comparePanel" aria-selected="false" tabindex="-1" data-view="compare">Compare</button>
         <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="waveform">Waveform</button>
         <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="image">Image</button>
       </div>
@@ -127,6 +127,10 @@
       <section id="distributionPanel" role="tabpanel" aria-labelledby="distributionTab" hidden>
         <div class="view-heading"><h2>Distribution</h2></div>
         <div id="distributionHost" class="dist"></div>
+      </section>
+      <section id="comparePanel" role="tabpanel" aria-labelledby="compareTab" hidden>
+        <div class="view-heading"><h2>Compare</h2></div>
+        <div id="compareHost" class="cmp"></div>
       </section>
       <footer class="viewer-status"><p id="message" class="message" role="status"></p><p id="activeRange" class="note"></p></footer>
     </main>

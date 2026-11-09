@@ -10,6 +10,7 @@ import { buildStatistics } from "../comm/js/aa/chart/statistics.js";
 import { buildRangeStrip } from "../comm/js/aa/chart/strip.js";
 import { createDistribution } from "./distribution.js";
 import { createTrendTools } from "./trend-tools.js";
+import { createCompare } from "./compare.js";
 import { csvText, gridOf, interpolateRows, intervalForBins, isoText, longTable, nanosOf, nanosOfDate, observationsOf, parseDuration, timeText, valueText, wideTable } from "./export.js";
 
 const d3 = globalThis.d3;
@@ -26,7 +27,7 @@ const HOUR = 3600000;
 const INPUT_FORMAT = "%Y-%m-%dT%H:%M:%S";
 const VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare", "waveform", "image"];
 // The views that have their tool in this version; the others explain that they are not available.
-const AVAILABLE_VIEWS = ["trend", "distribution"];
+const AVAILABLE_VIEWS = ["trend", "distribution", "compare"];
 const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 // The page holds two datasets per PV. The selected dataset (summary) is the records of the selected range at the
 // resolution sample, resolved once from the interval option when the selection is made; the Summary statistics come
@@ -698,6 +699,8 @@ function render() {
     resolvePins();
     if (state.view === "distribution") {
         distribution.render();
+    } else if (state.view === "compare") {
+        compare.render();
     } else if (state.view !== "trend") {
         chart.message("This analysis has not run.");
     } else if (loaded.some((series) => series.points.length)) {
@@ -868,6 +871,7 @@ function explainView(view, restored = false) {
     $("returnTrend").hidden = !restored;
     $("trendPanel").hidden = restored || state.view !== "trend";
     $("distributionPanel").hidden = restored || state.view !== "distribution";
+    $("comparePanel").hidden = restored || state.view !== "compare";
 }
 
 /** Shows the panel of an available view and marks its tab, without writing the address or drawing. */
@@ -875,6 +879,7 @@ function activateView(view) {
     state.view = view;
     $("trendPanel").hidden = view !== "trend";
     $("distributionPanel").hidden = view !== "distribution";
+    $("comparePanel").hidden = view !== "compare";
     $("unavailableView").hidden = true;
     for (const tab of $("analysisTabs").querySelectorAll('[role="tab"]')) {
         const active = tab.dataset.view === view;
@@ -1426,6 +1431,8 @@ function trendSignals() {
 }
 trendTools = createTrendTools($("trendTools2"), { signals: trendSignals, window: () => ({ from: state.from, to: state.to }), zone: currentZone, onChange: render, helpHref: helpPage,
     sourceText, isHidden: (name) => chart.getState().hidden.includes(name) });
+const compare = createCompare($("compareHost"), { signals: distributionSignals, range: () => state.selected, resolution: () => state.sample ?? resolutionOf(state.selected.from, state.selected.to),
+    fetch: (name, seconds, from, to) => fetchSeries(name, "mean", seconds, from, to), parseTime: readTime, formatTime: inputTime, zone: currentZone, sourceText, helpHref: helpPage });
 const distribution = createDistribution($("distributionHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage });
 wire();
 writeAddress();

@@ -26,6 +26,8 @@ const BEYOND_LISTED = 20;
 const KDE_SAMPLES_MOST = 100000;
 const HEIGHT = 320;
 const WIDTH_LEAST = 320;
+// A plot narrower than this has about three value labels on its horizontal axis instead of five, so that the labels do not touch.
+const NARROW_PLOT = 480;
 const MARGIN = { left: 72, right: 24, top: 36, bottom: 56 };
 const TIME_FORMAT = "%Y-%m-%d %H:%M:%S";
 
@@ -67,6 +69,14 @@ function patternKey(timeMs, view, zone) {
 }
 
 /**
+ * The finite samples of a dataset inside its range, both ends included, which is what the Summary of the page counts: the retrieval
+ * also returns the last record before the range, which the line holds from the start and which is not a sample of the range.
+ */
+export function pointsInside(dataset) {
+    return dataset.points.filter((p) => p.t >= +dataset.from && p.t <= +dataset.to);
+}
+
+/**
  * Whether the dataset of the signal can show the view: its samples, their count and spread, and for a pattern or the map the
  * coverage the view needs. The answer holds the reason in words when it cannot, and the finite samples when it can.
  */
@@ -75,7 +85,7 @@ export function checkInput(entry, view, zone) {
     if (!dataset) {
         return entry.failure ? { ok: false, reason: `The samples of this signal could not be read: ${entry.failure}` } : { ok: false, loading: true, reason: "Loading samples..." };
     }
-    const points = dataset.points;
+    const points = pointsInside(dataset);
     if (!points.length) {
         return { ok: false, reason: dataset.form === "No samples" ? "The selected range holds no samples of this signal." : "This signal has no numeric scalar samples in the selected range; the Distribution tab reads numeric scalars only." };
     }
@@ -101,8 +111,8 @@ function canvasIn(host, input) {
     const unit = input.unit ?? "";
     const surface = createPlotCanvas({
         width, height: HEIGHT, margin: MARGIN, x, scales: new Map([[unit, y]]), units: [unit], axisWidth: MARGIN.left, onLeft: 1,
-        unitLabels: true, axisLabels: new Map([[unit, input.yLabel]]), axisLabelAnchor: "start", xLabel: input.xLabel, label: input.label,
-        xFormat: input.xFormat, xTicks: input.xTicks, tickFormats: input.tickFormats, grid: input.grid, tickCount: 5,
+        unitLabels: true, axisLabels: new Map([[unit, input.yLabel]]), axisLabelAnchor: "start", xLabel: input.xLabel, xTickY: HEIGHT - 30, label: input.label,
+        xFormat: input.xFormat, xTicks: input.xTicks || x.ticks(width < NARROW_PLOT ? 3 : 5), tickFormats: input.tickFormats, grid: input.grid, tickCount: 5,
     });
     host.append(surface.svg.node());
     return { surface, x, y, width };

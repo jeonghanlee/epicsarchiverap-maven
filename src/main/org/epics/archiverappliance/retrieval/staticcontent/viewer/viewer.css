@@ -70,6 +70,26 @@
 .dist-table { width: auto; min-width: 280px; }
 .dist-table th[scope="row"] { text-align: left; font-weight: normal; padding-right: 16px; }
 .dist-summary, .dist-beyond { overflow-x: auto; margin-top: 12px; }
+.cmp-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; padding: 8px 0; }
+.cmp-controls label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cmp-range, .cmp-signals { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; }
+.cmp-labels { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 8px 0; }
+.cmp-label { display: flex; flex-direction: column; min-width: 0; }
+.cmp-plots { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.cmp-plot { flex: 1 1 300px; min-width: 0; }
+.cmp-trend { fill: none; stroke-width: 1.2; }
+.cmp-trend-a { stroke: var(--accent); }
+.cmp-trend-b { stroke: var(--ink); stroke-dasharray: 5 3; }
+.cmp-bar-a { fill: var(--accent); fill-opacity: .55; }
+.cmp-bar-b { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.cmp-table-box, .cmp-test-host { overflow-x: auto; }
+.cmp-table th[scope="row"] { text-align: left; font-weight: normal; padding-right: 16px; }
+.cmp-table th[scope="col"] { text-align: right; }
+@media (max-width: 480px) {
+    .cmp-table th, .cmp-table td { padding: 2px 4px; font-size: 12px; }
+    .cmp-table th[scope="row"] { padding-right: 6px; }
+    .cmp-table td.num { white-space: normal; text-align: right; }
+}
 .trend-tools { margin-top: 12px; }
 .trend-tools-title { margin: 0 0 4px; font-size: 1rem; }
 .trend-tools-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; padding: 8px 0; }
