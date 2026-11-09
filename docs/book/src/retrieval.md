@@ -338,9 +338,25 @@ its own `getApplianceInfo` action.
 ![The Analyzer with two signals, the plot tools, the Summary and Visible range tables, and the Signals tab](images/viewer.png)
 
 The tabs are Trend, Distribution, Correlation, Dependency, Spectrum,
-Compare, Waveform, and Image. Trend is available. Selecting another tab
-explains its status and keeps Trend visible. An address naming an
-unavailable view offers **Return to Trend** without displaying an analysis result.
+Compare, Waveform, and Image. Trend, Distribution, Spectrum and Compare
+are available. Selecting one of the other tabs explains its status and
+keeps Trend visible. An address naming an unavailable view offers
+**Return to Trend** without displaying an analysis result.
+
+The analysis tabs read the selected range, so their numbers do not change
+when you pan or zoom the Trend; they read numeric scalar samples only and
+refuse an input they cannot use with the reason, leaving no result of an
+earlier input on the page.
+
+| Tab or tool | What it shows |
+| --- | --- |
+| **Trend tools** (under the Trend plot) | For one signal: the **Rate of change** (the value change per second between successive samples, drawn in its own plot), the **Slow trend** (a straight line fitted against time, with its slope and r squared), the **Limits** of the PV (`LOPR`, `HOPR`, `LOW`, `HIGH`, `LOLO`, `HIHI` from `getMetadata`, drawn as reference lines with the time outside them) and a typed **Threshold** with the side that counts as beyond and the time beyond it |
+| **Distribution** | For one signal: the summary (samples, minimum, maximum, mean, median, standard deviation, skewness, kurtosis, the errors of the mean and of the standard deviation, quantiles), the **Histogram** with a bin rule (Sturges, Scott, Freedman-Diaconis or a typed count), a normalization and an optional kernel density estimate, the **Box plot**, the **Pattern by hour** and **by weekday** (in the selected zone), the **Time and value** map for a long range, and the values **Beyond k** standard deviations |
+| **Compare** | Two ranges of one signal, or two signals: range A is the selected range and range B is proposed as the range of the same duration before it (editable); the two trends side by side, the distributions over one another and normalized, the counts, means and spreads with their differences, and the test of the chosen method (chi-square of the histograms, Kolmogorov-Smirnov, Anderson-Darling) with its statistic and p-value, or the reason it does not apply. Unlike units are shown without an overlay or a test |
+| **Spectrum** | For one signal, after linear interpolation to an even interval (the median spacing of the samples unless typed): the **Spectrum** as power spectral density, power spectrum or amplitude spectrum with a window and optional zero padding, the peak frequency with its width, the effective sample rate, the usable duration and the frequency resolution; the **Spectrogram** of overlapping segments; the **Autocorrelation** with the period it finds. A spacing of more than five intervals is a gap that stops the spectrum unless the gap policy interpolates across it. The preparation of the series is written above the plot |
+
+An **i** button beside each tool opens a card that states its calculation
+and the rules of its refusals.
 
 | Control | Effect |
 | --- | --- |
@@ -413,6 +429,16 @@ setting of one signal or one unit is a key such as `width[PV]` or
 | Per signal | `width[PV]`, `dash[PV]`, `gap[PV]`, `fill[PV]`, `decimals[PV]`, `name[PV]` |
 | Per unit | `axisScale[UNIT]`, `axisSymlog[UNIT]`, `axisMin[UNIT]`, `axisMax[UNIT]`, `axisSoftMin[UNIT]`, `axisSoftMax[UNIT]`, `axisZero[UNIT]`, `axisPrefix[UNIT]`, `axisLabel[UNIT]` |
 | Export | `export[product]`, `export[range]`, `export[from]`, `export[to]`, `export[source]`, `export[bins]`, `export[step]`, `export[gap]`, `export[layout]`, `export[alarms]`, `export[values]`, `export[decimals]`, `export[time]`, `export[units]`, `export[stats]` |
+| Analysis tools | `distribution[signal]`, `distribution[view]`, `distribution[rule]`, `distribution[bins]`, `distribution[normalize]`, `distribution[kde]`, `distribution[sigma]`; `trend[signal]`, `trend[rate]`, `trend[fit]`, `trend[limits]`, `trend[threshold]`, `trend[side]`; `compare[mode]`, `compare[a]`, `compare[b]`, `compare[method]`, `compare[from]`, `compare[to]`; `spectrum[signal]`, `spectrum[view]`, `spectrum[interval]`, `spectrum[gaps]`, `spectrum[window]`, `spectrum[output]`, `spectrum[log]`, `spectrum[padding]`, `spectrum[segment]`, `spectrum[overlap]`; a default is not written, a signal defaults to the first `pv`, and `compare[from]` and `compare[to]` are written only when range B was set by hand |
+
+A tool option takes the value of its control as a lower-case name
+(`spectrum[window]=blackman`, `distribution[rule]=count`,
+`compare[method]=ks`), a count or a number as digits
+(`spectrum[segment]=256`, `distribution[bins]=50`, `trend[threshold]=12`,
+`spectrum[interval]=20` in seconds), a check box as `true` or `false`
+(`trend[fit]=true`) and a signal as its PV name; the declaration lists
+every value. Copy link writes them; an address is typed by hand only
+when it is made outside the page, as in a link from another tool.
 
 A parameter takes its first occurrence; an invalid value falls back to
 its default, a pair (`from` and `to`, a fixed range, a typed export
