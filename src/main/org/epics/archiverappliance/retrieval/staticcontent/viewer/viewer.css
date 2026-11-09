@@ -70,6 +70,23 @@
 .dist-table { width: auto; min-width: 280px; }
 .dist-table th[scope="row"] { text-align: left; font-weight: normal; padding-right: 16px; }
 .dist-summary, .dist-beyond { overflow-x: auto; margin-top: 12px; }
+.spec-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; padding: 8px 0; }
+.spec-controls label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.spec-controls label.check-inline { flex-direction: row; align-items: center; }
+.spec-controls input[type="text"] { width: 9.5rem; }
+.spec-plot { margin-top: 8px; }
+.spec-preparation { margin: 8px 0 0; }
+.spec-line { fill: none; stroke: var(--accent); stroke-width: 1.2; }
+.spec-acf { stroke-width: 1.5; }
+.spec-zero { stroke: var(--ink); stroke-opacity: .4; }
+.spec-peak-line { stroke: var(--ink); stroke-dasharray: 4 3; stroke-opacity: .6; }
+.spec-peak { fill: var(--ink); }
+.spec-numbers { overflow-x: auto; margin-top: 12px; }
+.spec-table th[scope="row"] { text-align: left; font-weight: normal; padding-right: 16px; vertical-align: top; }
+.spec-table td { white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+    .spec-table th, .spec-table td { padding: 2px 4px; font-size: 12px; }
+}
 .cmp-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; padding: 8px 0; }
 .cmp-controls label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .cmp-range, .cmp-signals { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; }
