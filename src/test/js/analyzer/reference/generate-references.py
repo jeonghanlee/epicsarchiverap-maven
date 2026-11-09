@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Writes references.json: fixed datasets and the values that NumPy and SciPy compute from them, against which the checks of
-the analyzer routines (stats.js, tests.js, spectrum.js, trend.js) compare their results. NumPy and SciPy are needed to write the file
+the analyzer routines (stats.js, tests.js, spectrum.js, trend.js, compare.js) compare their results. NumPy and SciPy are needed to write the file
 and never to run the checks, which read it.
 
 Usage: python3 -I src/test/js/analyzer/reference/generate-references.py
@@ -244,6 +244,49 @@ reference["trend"] = {
 # A constant series has no coefficient of determination (zero over zero); SciPy settles it by returning a correlation of 0.
 constant = stats.linregress([0.0, 1.0, 2.0, 3.0], [5.0, 5.0, 5.0, 5.0])
 reference["trendConstant"] = {"slope": float(constant.slope), "stderr": float(constant.stderr), "rvalue": float(constant.rvalue)}
+
+# The Compare tab: two samples, the common bins, the chi-square table with the expected counts of SciPy's chi2_contingency, the two-sample
+# Kolmogorov-Smirnov distance with the classical asymptotic p-value, the k-sample Anderson-Darling test, and the decision of each test.
+compare_rng = np.random.default_rng(20261109)
+
+
+def compare_case(name, a, b):
+    a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+    pooled = np.concatenate([a, b])
+    bins = int(math.ceil(math.log2(len(pooled)))) + 1
+    lo, hi = float(pooled.min()), float(pooled.max())
+    flat = not hi > lo
+    case = {"name": name, "a": listing(a), "b": listing(b), "bins": bins}
+    if flat or len(a) < 8 or len(b) < 8:
+        case["refusal"] = "samples" if (len(a) < 8 or len(b) < 8) else "flat"
+        return case
+    ca = np.histogram(a, bins=bins, range=(lo, hi))[0]
+    cb = np.histogram(b, bins=bins, range=(lo, hi))[0]
+    used = (ca + cb) > 0
+    table = np.vstack([ca[used], cb[used]])
+    chi2, p, dof, expected = stats.chi2_contingency(table, correction=False)
+    below = int((expected < 5).sum())
+    case["countsA"], case["countsB"] = [int(c) for c in ca], [int(c) for c in cb]
+    case["expectedBelowFive"], case["cells"] = below, int(expected.size)
+    case["chi2Refused"] = bool(below / expected.size > 0.2)
+    case["chi2"] = {"statistic": float(chi2), "degrees": int(dof), "bins": int(used.sum()), "p": float(p)}
+    d = float(stats.ks_2samp(a, b).statistic)
+    effective = len(a) * len(b) / (len(a) + len(b))
+    case["ks"] = {"statistic": d, "p": float(special.kolmogorov(math.sqrt(effective) * d))}
+    ad = stats.anderson_ksamp([a, b], midrank=True)
+    case["ad"] = {"statistic": float(ad.statistic), "significance": float(ad.significance_level)}
+    return case
+
+
+reference["compareCases"] = [
+    compare_case("equal", compare_rng.normal(10, 2, 400), compare_rng.normal(10, 2, 400)),
+    compare_case("shifted", compare_rng.normal(10, 2, 400), compare_rng.normal(11, 2, 400)),
+    compare_case("unequal sizes", compare_rng.normal(10, 2, 20), compare_rng.normal(10, 2, 2000)),
+    compare_case("twenty each", 1.5 * np.sin(compare_rng.uniform(0, 2 * np.pi, 20)), 1.5 * np.sin(compare_rng.uniform(0, 2 * np.pi, 20))),
+    compare_case("two separate groups", compare_rng.normal(0, 0.5, 100), compare_rng.normal(20, 0.5, 100)),
+    compare_case("few", compare_rng.normal(0, 1, 6), compare_rng.normal(0, 1, 5)),
+    compare_case("flat", [5.0] * 12, [5.0] * 14),
+]
 
 with open(os.path.join(HERE, "references.json"), "w") as out:
     json.dump(reference, out, separators=(",", ":"))
