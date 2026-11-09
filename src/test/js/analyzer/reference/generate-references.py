@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Writes references.json: fixed datasets and the values that NumPy and SciPy compute from them, against which the checks of
-the analyzer routines (stats.js, tests.js, spectrum.js, trend.js, compare.js) compare their results. NumPy and SciPy are needed to write the file
+the analyzer routines (stats.js, tests.js, spectrum.js, trend.js, compare.js, the preparation of the Spectrum tab) compare their results. NumPy and SciPy are needed to write the file
 and never to run the checks, which read it.
 
 Usage: python3 -I src/test/js/analyzer/reference/generate-references.py
@@ -287,6 +287,44 @@ reference["compareCases"] = [
     compare_case("few", compare_rng.normal(0, 1, 6), compare_rng.normal(0, 1, 5)),
     compare_case("flat", [5.0] * 12, [5.0] * 14),
 ]
+
+# The Spectrum tab: the preparation of an irregular series (the median spacing, the gaps, the linear interpolation to an even interval) and
+# the three scalings of the one-sided spectrum (SciPy's periodogram with density and spectrum), on a regular series, on an irregular
+# series with a gap and on a sine whose period is a whole number of samples (the amplitude of its bin is the amplitude of the sine).
+spectrum_rng = np.random.default_rng(20261110)
+
+
+def scalings(even, fs, window):
+    f, density = signal.periodogram(even, fs, window=window, detrend="constant", scaling="density")
+    _, power = signal.periodogram(even, fs, window=window, detrend="constant", scaling="spectrum")
+    return {"window": window, "frequencies": listing(f), "density": listing(density), "power": listing(power)}
+
+
+def spectrum_case(name, times, values, windows=("boxcar", "hann")):
+    times, values = np.asarray(times, dtype=float), np.asarray(values, dtype=float)
+    median = float(np.median(np.diff(times)))
+    count = int(math.floor((times[-1] - times[0]) / median + 1e-9)) + 1
+    case = {"name": name, "times": listing(times), "values": listing(values), "median": median, "count": count}
+    spacings = np.diff(times)
+    case["gaps"] = [{"from": float(times[i]), "to": float(times[i + 1])} for i in np.where(spacings > 5 * median)[0]]
+    even_times = times[0] + np.arange(count) * median
+    even = np.interp(even_times, times, values)
+    case["even"] = listing(even)
+    case["spectra"] = [scalings(even, 1 / median, w) for w in windows]
+    return case
+
+
+regular_times = np.arange(0, 1200 * 10, 10.0)
+sine_values = 1.5 * np.sin(2 * np.pi * regular_times / 600)
+noisy = 1.5 * np.sin(2 * np.pi * regular_times / 600) + 0.3 * spectrum_rng.normal(size=len(regular_times)) + 10.0
+irregular_times = np.cumsum(spectrum_rng.integers(7, 14, size=700)).astype(float)
+irregular_times[300:] += 300.0
+irregular_values = 1.5 * np.sin(2 * np.pi * irregular_times / 600) + 0.3 * spectrum_rng.normal(size=len(irregular_times))
+reference["spectrumCases"] = {
+    "regular": spectrum_case("regular", regular_times, noisy, ("boxcar", "hann", "hamming", "blackman")),
+    "sine": spectrum_case("sine", regular_times, sine_values),
+    "irregularWithGap": spectrum_case("irregular with a gap", irregular_times, irregular_values),
+}
 
 with open(os.path.join(HERE, "references.json"), "w") as out:
     json.dump(reference, out, separators=(",", ":"))

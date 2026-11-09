@@ -291,9 +291,10 @@ export function autocorrelation(values, maxLag) {
 
 /**
  * The period of a series in samples from its autocorrelation: the lag of the highest value after the autocorrelation has first
- * fallen below zero. Null when it never falls below zero within the lags given.
+ * fallen below zero. Null when it never falls below zero within the lags given, or when that highest value is below the
+ * minimum given (the autocorrelation of noise has such small peaks; a period read from one is not a period).
  */
-export function autocorrelationPeriod(r) {
+export function autocorrelationPeriod(r, minimum = -Infinity) {
     let first = -1;
     for (let k = 1; k < r.length; k += 1) {
         if (r[k] < 0) {
@@ -308,5 +309,105 @@ export function autocorrelationPeriod(r) {
     for (let k = first; k < r.length; k += 1) {
         if (r[k] > r[best]) best = k;
     }
-    return best > first ? { lag: best, value: r[best] } : null;
+    return best > first && r[best] >= minimum ? { lag: best, value: r[best] } : null;
+}
+
+/**
+ * The one-sided spectra of the samples at the sampling frequency fs (Hz) in the three scalings that the tab keeps apart: the power
+ * spectral density (unit squared per hertz, SciPy's scaling "density"), the power spectrum (unit squared, the mean square a bin
+ * carries, SciPy's scaling "spectrum": |X|^2 / (sum w)^2, doubled except at zero frequency and at the Nyquist frequency of an even
+ * length) and the amplitude (unit) that a sinusoid of the bin's frequency would have, the square root of twice the power. The mean
+ * is removed and the window applied as in periodogram(). Null for fewer than two samples, a frequency that is not positive or a
+ * transform length below the number of samples.
+ */
+export function spectra(values, fs, windowName = "rectangular", nfft = values.length) {
+    const n = values.length;
+    if (n < 2 || !(fs > 0) || nfft < n) {
+        return null;
+    }
+    let mean = 0;
+    for (let i = 0; i < n; i += 1) mean += values[i];
+    mean /= n;
+    const w = windowFunction(windowName, n);
+    const x = new Float64Array(nfft);
+    let windowSum = 0;
+    let windowPower = 0;
+    for (let i = 0; i < n; i += 1) {
+        x[i] = (values[i] - mean) * w[i];
+        windowSum += w[i];
+        windowPower += w[i] * w[i];
+    }
+    const { re, im } = fft(x);
+    const half = Math.floor(nfft / 2) + 1;
+    const frequencies = new Float64Array(half);
+    const density = new Float64Array(half);
+    const power = new Float64Array(half);
+    const amplitude = new Float64Array(half);
+    for (let k = 0; k < half; k += 1) {
+        frequencies[k] = (k * fs) / nfft;
+        const magnitude = re[k] * re[k] + im[k] * im[k];
+        const doubled = k > 0 && !(nfft % 2 === 0 && k === half - 1);
+        const factor = doubled ? 2 : 1;
+        density[k] = (magnitude * factor) / (fs * windowPower);
+        power[k] = (magnitude * factor) / (windowSum * windowSum);
+        amplitude[k] = Math.sqrt(doubled ? 2 * power[k] : power[k]);
+    }
+    return { frequencies, density, power, amplitude, binWidth: fs / nfft };
+}
+
+// A spacing above this many resampling intervals is a gap of the samples.
+export const GAP_FACTOR = 5;
+// The least and the most points of the even series that a spectrum is made of.
+export const POINTS_LEAST = 16;
+export const POINTS_MOST = 1048576;
+
+/**
+ * The preparation of irregular samples (times in seconds, ascending, and values) for a spectrum: the interval is the one asked for
+ * or, by default, the median spacing; the samples are resampled to it by linear interpolation; the gaps (spacings of more than
+ * GAP_FACTOR intervals) are found and, by the policy "refuse" (the default) stop the preparation, by "interpolate" are bridged by the
+ * interpolation. Returns {ok: false, reason} for an input that cannot give a spectrum, else the series with what it is made of:
+ * interval, whether it was defaulted, the sampling frequency, the number of points, the duration, the spacings (median and largest)
+ * and the gaps with their times.
+ */
+export function prepareSeries(times, values, request = {}) {
+    const n = times.length;
+    if (n < 2 || n !== values.length) {
+        return { ok: false, reason: `A spectrum needs at least 2 samples; the range holds ${n}.` };
+    }
+    const median = medianSpacing(times);
+    if (!(median > 0)) {
+        return { ok: false, reason: "The samples share their times, so there is no spacing to resample from. Choose a range that holds samples at different times." };
+    }
+    const asked = request.interval !== null && request.interval !== undefined;
+    const interval = asked ? request.interval : median;
+    if (!(interval > 0) || !Number.isFinite(interval)) {
+        return { ok: false, reason: "The resampling interval must be a positive number of seconds." };
+    }
+    const count = Math.floor((times[n - 1] - times[0]) / interval + 1e-9) + 1;
+    if (count < POINTS_LEAST) {
+        return { ok: false, reason: `At the interval of ${interval} s the range makes ${count} points; a spectrum needs at least ${POINTS_LEAST}. Choose a longer range or a shorter interval.` };
+    }
+    if (count > POINTS_MOST) {
+        return { ok: false, reason: `At the interval of ${interval} s the range makes ${count} points; the most is ${POINTS_MOST}. Choose a shorter range or a longer interval.` };
+    }
+    const gaps = [];
+    let largest = 0;
+    for (let i = 1; i < n; i += 1) {
+        const spacing = times[i] - times[i - 1];
+        largest = Math.max(largest, spacing);
+        if (spacing > GAP_FACTOR * interval) gaps.push({ from: times[i - 1], to: times[i], length: spacing });
+    }
+    if (gaps.length && (request.gaps ?? "refuse") === "refuse") {
+        const first = gaps[0];
+        return { ok: false, gaps, reason: `The samples have ${gaps.length} gap${gaps.length > 1 ? "s" : ""} of more than ${GAP_FACTOR} intervals; the first is ${first.length} s long (${(first.length / interval).toFixed(1)} intervals). Choose a range without a gap, a longer interval, or the policy that interpolates across the gaps.` };
+    }
+    let low = Infinity;
+    let high = -Infinity;
+    for (const v of values) { if (v < low) low = v; if (v > high) high = v; }
+    if (!(high > low)) {
+        return { ok: false, reason: "All the samples have one value; there is no spectrum to show." };
+    }
+    const even = resampleEven(times, values, interval);
+    return { ok: true, interval, defaulted: !asked, rate: 1 / interval, count: even.values.length, duration: (even.values.length - 1) * interval, start: even.start,
+        values: even.values, median, largest, gaps, irregularity: largest / median, oversampled: interval < median / 2 };
 }
