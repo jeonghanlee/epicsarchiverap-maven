@@ -23,7 +23,9 @@ const NARROW_WIDTH = 360;
 const MEDIUM_WIDTH = 480;
 const TIME_FORMAT = "%Y-%m-%d %H:%M:%S";
 const AXIS_TIME_FORMAT = "%m-%d %H:%M";
-const SIDES = [["above", "above"], ["below", "below"]];
+export const SIDES = [["above", "above"], ["below", "below"]];
+// The settings of the tools and their defaults; the address carries the ones that differ (viewer/tool-address.js).
+export const TREND_TOOL_DEFAULTS = Object.freeze({ signal: null, rate: false, fit: false, limits: false, threshold: "", side: "above" });
 const HOUR_SECONDS = 3600;
 const DAY_SECONDS = 86400;
 
@@ -53,13 +55,14 @@ export function durationText(ms) {
 
 /** The trend tools of the page: the controls are built once; the body and the lines follow each render. */
 export function createTrendTools(host, options) {
-    const settings = { signal: null, rate: false, fit: false, limits: false, threshold: "", side: "above" };
+    const settings = { ...TREND_TOOL_DEFAULTS, ...(options.settings || {}) };
     // What the last render computed: the lines for the overlay and the unit they belong to.
     let drawing = { name: null, unit: null, lines: [], fit: null };
     // The metadata of the retrieval by PV name: {limits} or {failure}; a PV whose request is out is not asked again.
     const metadata = new Map();
     const check = (label, key, before) => {
         const box = node("input", { type: "checkbox", "aria-label": label });
+        box.checked = settings[key];
         box.addEventListener("change", () => { settings[key] = box.checked; if (before) before(box.checked); options.onChange(); });
         return box;
     };
@@ -74,6 +77,8 @@ export function createTrendTools(host, options) {
     const threshold = node("input", { type: "text", inputmode: "decimal", size: "8", "aria-label": "Threshold value", placeholder: "none" });
     const side = node("select", { "aria-label": "Threshold side" });
     for (const [value, text] of SIDES) side.append(node("option", { value }, text));
+    threshold.value = settings.threshold;
+    side.value = settings.side;
     const error = node("p", { class: "error", role: "alert" });
     threshold.addEventListener("change", () => {
         const text = threshold.value.trim();

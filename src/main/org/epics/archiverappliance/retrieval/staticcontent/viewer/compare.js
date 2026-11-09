@@ -17,6 +17,8 @@ const d3 = globalThis.d3;
 
 export const COMPARE_MODES = [["ranges", "Two ranges of one signal"], ["signals", "Two signals"]];
 export const COMPARE_METHODS = [["chi2", "Chi-square (histograms)"], ["ks", "Kolmogorov-Smirnov"], ["ad", "Anderson-Darling"]];
+// The settings of the tab and their defaults; the address carries the ones that differ, and range B only when the user set it (viewer/tool-address.js).
+export const COMPARE_DEFAULTS = Object.freeze({ mode: "ranges", a: null, b: null, method: "chi2", from: null, to: null, edited: false });
 const HEIGHT = 220;
 const DISTRIBUTION_HEIGHT = 260;
 const WIDTH_LEAST = 300;
@@ -84,7 +86,9 @@ export function testText(method, result) {
 
 /** The compare view of the page: its controls are built once and its body is drawn again at each render and at each run. */
 export function createCompare(host, options) {
-    const settings = { mode: "ranges", a: null, b: null, method: "chi2", from: null, to: null, edited: false };
+    const settings = { ...COMPARE_DEFAULTS, ...(options.settings || {}) };
+    // A change of a setting tells the page, which writes the address.
+    const changed = () => { if (options.changed) options.changed(); };
     // The result of the last run with the key of what it was computed from, or null.
     let result = null;
     let running = 0;
@@ -93,12 +97,14 @@ export function createCompare(host, options) {
     let testHost = null;
     const mode = node("select", { "aria-label": "Compare mode" });
     for (const [value, text] of COMPARE_MODES) mode.append(node("option", { value }, text));
+    mode.value = settings.mode;
     const signalA = node("select", { "aria-label": "Compare signal A" });
     const signalB = node("select", { "aria-label": "Compare signal B" });
     const fromB = node("input", { type: "datetime-local", step: "0.001", "aria-label": "Range B from" });
     const toB = node("input", { type: "datetime-local", step: "0.001", "aria-label": "Range B to" });
     const method = node("select", { "aria-label": "Comparison method" });
     for (const [value, text] of COMPARE_METHODS) method.append(node("option", { value }, text));
+    method.value = settings.method;
     const run = node("button", { type: "button" }, "Run comparison");
     const error = node("p", { class: "error", role: "alert" });
     const message = node("p", { class: "note", role: "status" });
@@ -115,10 +121,10 @@ export function createCompare(host, options) {
     const currentKey = () => JSON.stringify([settings.mode, settings.a, settings.mode === "signals" ? settings.b : null, +options.range().from, +options.range().to,
         options.resolution(), settings.mode === "ranges" ? [+settings.from, +settings.to] : null]);
 
-    mode.addEventListener("change", () => { settings.mode = mode.value; clear(); render(); });
-    signalA.addEventListener("change", () => { settings.a = signalA.value; clear(); render(); });
-    signalB.addEventListener("change", () => { settings.b = signalB.value; clear(); render(); });
-    method.addEventListener("change", () => { settings.method = method.value; if (result) fillTest(); });
+    mode.addEventListener("change", () => { settings.mode = mode.value; clear(); render(); changed(); });
+    signalA.addEventListener("change", () => { settings.a = signalA.value; clear(); render(); changed(); });
+    signalB.addEventListener("change", () => { settings.b = signalB.value; clear(); render(); changed(); });
+    method.addEventListener("change", () => { settings.method = method.value; if (result) fillTest(); changed(); });
     for (const input of [fromB, toB]) {
         input.addEventListener("change", () => {
             const start = options.parseTime(fromB.value, settings.from);
@@ -135,6 +141,7 @@ export function createCompare(host, options) {
             settings.edited = true;
             clear();
             render();
+            changed();
         });
     }
     run.addEventListener("click", () => start());

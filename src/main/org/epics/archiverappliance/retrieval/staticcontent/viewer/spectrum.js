@@ -16,10 +16,14 @@ import { pointsInside } from "./distribution.js";
 const d3 = globalThis.d3;
 
 export const SPECTRUM_VIEWS = [["spectrum", "Spectrum"], ["spectrogram", "Spectrogram"], ["autocorrelation", "Autocorrelation"]];
-const OUTPUTS = [["density", "Power spectral density"], ["power", "Power spectrum"], ["amplitude", "Amplitude spectrum"]];
+export const OUTPUTS = [["density", "Power spectral density"], ["power", "Power spectrum"], ["amplitude", "Amplitude spectrum"]];
+export const GAP_POLICIES = [["refuse", "Refuse a gap"], ["interpolate", "Interpolate across gaps"]];
+export const PADDINGS = [["none", "None"], ["power2", "To a power of two"]];
 const WINDOW_TEXT = { rectangular: "Rectangular", hann: "Hann", hamming: "Hamming", blackman: "Blackman" };
-const SEGMENTS = [64, 128, 256, 512, 1024, 2048];
-const OVERLAPS = [["0", "None"], ["0.5", "Half"], ["0.75", "Three quarters"]];
+export const SEGMENTS = [64, 128, 256, 512, 1024, 2048];
+export const OVERLAPS = [["0", "None"], ["0.5", "Half"], ["0.75", "Three quarters"]];
+// The settings of the tab and their defaults; the address carries the ones that differ (viewer/tool-address.js).
+export const SPECTRUM_DEFAULTS = Object.freeze({ signal: null, view: "spectrum", interval: "", gaps: "refuse", window: "hann", output: "power", log: true, padding: "none", segment: "auto", overlap: "0.5" });
 // The autocorrelation has a period only when its highest peak after the first fall below zero is at least this high.
 const PERIOD_PEAK_LEAST = 0.2;
 // The most cells of a spectrogram that are drawn; the frequency rows are merged (the largest of each) to stay below it.
@@ -79,18 +83,21 @@ export function secondsText(seconds) {
 
 /** The spectrum view of the page: its controls are built once and its body is drawn again at each render. */
 export function createSpectrum(host, options) {
-    const settings = { signal: null, view: "spectrum", interval: "", gaps: "refuse", window: "hann", output: "power", log: true, padding: "none", segment: "auto", overlap: "0.5" };
+    const settings = { ...SPECTRUM_DEFAULTS, ...(options.settings || {}) };
+    // A change of a setting draws the view again and tells the page, which writes the address.
+    const changed = () => { render(); if (options.changed) options.changed(); };
     const select = (label, choices, key) => {
         const element = node("select", { "aria-label": label });
         for (const [value, text] of choices) element.append(node("option", { value }, text));
         element.value = settings[key];
-        element.addEventListener("change", () => { settings[key] = element.value; render(); });
+        element.addEventListener("change", () => { settings[key] = element.value; changed(); });
         return element;
     };
     const signal = node("select", { "aria-label": "Spectrum signal" });
-    signal.addEventListener("change", () => { settings.signal = signal.value; render(); });
+    signal.addEventListener("change", () => { settings.signal = signal.value; changed(); });
     const view = select("Spectrum view", SPECTRUM_VIEWS, "view");
     const interval = node("input", { type: "text", inputmode: "decimal", size: "8", "aria-label": "Resampling interval in seconds", placeholder: "median spacing" });
+    interval.value = settings.interval;
     const error = node("p", { class: "error", role: "alert" });
     interval.addEventListener("change", () => {
         const text = interval.value.trim();
@@ -101,15 +108,15 @@ export function createSpectrum(host, options) {
         }
         error.textContent = "";
         settings.interval = text;
-        render();
+        changed();
     });
-    const gaps = select("Gap policy", [["refuse", "Refuse a gap"], ["interpolate", "Interpolate across gaps"]], "gaps");
+    const gaps = select("Gap policy", GAP_POLICIES, "gaps");
     const windowSelect = select("Window", WINDOWS.map((name) => [name, WINDOW_TEXT[name]]), "window");
     const output = select("Output", OUTPUTS, "output");
     const log = node("input", { type: "checkbox", "aria-label": "Logarithmic value axis" });
     log.checked = settings.log;
-    log.addEventListener("change", () => { settings.log = log.checked; render(); });
-    const padding = select("Zero padding", [["none", "None"], ["power2", "To a power of two"]], "padding");
+    log.addEventListener("change", () => { settings.log = log.checked; changed(); });
+    const padding = select("Zero padding", PADDINGS, "padding");
     const segment = select("Segment length", [["auto", "Automatic"], ...SEGMENTS.map((n) => [String(n), `${n} samples`])], "segment");
     const overlap = select("Segment overlap", OVERLAPS, "overlap");
     const field = (text, control) => node("label", null, text, control);

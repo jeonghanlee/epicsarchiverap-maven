@@ -14,11 +14,15 @@ import { partsInZone, formatInZone, zoneName } from "../comm/js/aa/timezone.js";
 const d3 = globalThis.d3;
 
 export const DISTRIBUTION_VIEWS = [["histogram", "Histogram"], ["box", "Box plot"], ["hour", "Pattern by hour"], ["weekday", "Pattern by weekday"], ["heatmap", "Time and value"]];
-const RULES = [["sturges", "Sturges"], ["scott", "Scott"], ["freedman", "Freedman-Diaconis"], ["count", "Bin count"]];
-const NORMALIZATIONS = [["count", "Samples"], ["fraction", "Fraction of samples"], ["density", "Density"]];
+export const RULES = [["sturges", "Sturges"], ["scott", "Scott"], ["freedman", "Freedman-Diaconis"], ["count", "Bin count"]];
+export const NORMALIZATIONS = [["count", "Samples"], ["fraction", "Fraction of samples"], ["density", "Density"]];
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const BINS_LEAST = 1;
-const BINS_MOST = 1000;
+export const BINS_LEAST = 1;
+export const BINS_MOST = 1000;
+export const SIGMA_LEAST = 0.5;
+export const SIGMA_MOST = 20;
+// The settings of the tab and their defaults; the address carries the ones that differ (viewer/tool-address.js).
+export const DISTRIBUTION_DEFAULTS = Object.freeze({ signal: null, view: "histogram", rule: "sturges", bins: 20, normalize: "count", kde: false, sigma: 3 });
 const HEATMAP_ROWS_MOST = 40;
 const HEATMAP_COLUMNS_MOST = 48;
 const BEYOND_LISTED = 20;
@@ -120,16 +124,18 @@ function canvasIn(host, input) {
 
 /** The distribution view of the page: its controls are built once and its body is drawn again at each render. */
 export function createDistribution(host, options) {
-    const settings = { signal: null, view: "histogram", rule: "sturges", bins: 20, normalize: "count", kde: false, sigma: 3 };
+    const settings = { ...DISTRIBUTION_DEFAULTS, ...(options.settings || {}) };
+    // A change of a setting draws the tab again and tells the page, which writes the address.
+    const changed = () => { render(); if (options.changed) options.changed(); };
     const select = (label, choices, key) => {
         const element = node("select", { "aria-label": label });
         for (const [value, text] of choices) element.append(node("option", { value }, text));
         element.value = settings[key];
-        element.addEventListener("change", () => { settings[key] = element.value; render(); });
+        element.addEventListener("change", () => { settings[key] = element.value; changed(); });
         return element;
     };
     const signal = node("select", { "aria-label": "Distribution signal" });
-    signal.addEventListener("change", () => { settings.signal = signal.value; render(); });
+    signal.addEventListener("change", () => { settings.signal = signal.value; changed(); });
     const view = select("Distribution view", DISTRIBUTION_VIEWS, "view");
     const rule = select("Bin rule", RULES, "rule");
     const normalize = select("Normalization", NORMALIZATIONS, "normalize");
@@ -145,22 +151,23 @@ export function createDistribution(host, options) {
         }
         error.textContent = "";
         settings.bins = value;
-        render();
+        changed();
     });
     const kde = node("input", { type: "checkbox", "aria-label": "Kernel density" });
-    kde.addEventListener("change", () => { settings.kde = kde.checked; render(); });
-    const sigma = node("input", { type: "number", min: "0.5", max: "20", step: "0.5", "aria-label": "Standard deviations for the values beyond" });
+    kde.checked = settings.kde;
+    kde.addEventListener("change", () => { settings.kde = kde.checked; changed(); });
+    const sigma = node("input", { type: "number", min: String(SIGMA_LEAST), max: String(SIGMA_MOST), step: "0.5", "aria-label": "Standard deviations for the values beyond" });
     sigma.value = String(settings.sigma);
     sigma.addEventListener("change", () => {
         const value = Number(sigma.value);
-        if (!(value >= 0.5 && value <= 20)) {
-            error.textContent = "Enter a number of standard deviations from 0.5 to 20.";
+        if (!(value >= SIGMA_LEAST && value <= SIGMA_MOST)) {
+            error.textContent = `Enter a number of standard deviations from ${SIGMA_LEAST} to ${SIGMA_MOST}.`;
             sigma.value = String(settings.sigma);
             return;
         }
         error.textContent = "";
         settings.sigma = value;
-        render();
+        changed();
     });
     const field = (text, control) => node("label", null, text, control);
     const info = infoButton(...CARD, options.helpHref);

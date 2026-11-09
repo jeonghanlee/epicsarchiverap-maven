@@ -12,6 +12,7 @@ import { createDistribution } from "./distribution.js";
 import { createTrendTools } from "./trend-tools.js";
 import { createCompare } from "./compare.js";
 import { createSpectrum } from "./spectrum.js";
+import { deepFields, readToolParameters, writeToolParameters } from "./tool-address.js";
 import { csvText, gridOf, interpolateRows, intervalForBins, isoText, longTable, nanosOf, nanosOfDate, observationsOf, parseDuration, timeText, valueText, wideTable } from "./export.js";
 
 const d3 = globalThis.d3;
@@ -34,7 +35,7 @@ const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 // resolution sample, resolved once from the interval option when the selection is made; the Summary statistics come
 // from it. The display dataset (data) is the records of the displayed range at the display resolution; the chart,
 // the Visible range statistics and the min and max bands come from it. When both are the same request they share.
-const state = { pvs: [], from: null, to: null, selected: null, view: "trend", chart: null,
+const state = { pvs: [], from: null, to: null, selected: null, view: "trend", chart: null, tools: null,
     sample: null, interval: "auto", minmax: false, displaySeconds: null,
     summary: new Map(), summaryFailures: new Map(), data: new Map(), failures: new Map(), bands: new Map(),
     // The choices of the Export tab, named as the address names them; a product runs only from its button.
@@ -89,15 +90,6 @@ function readTime(text, original) {
     return candidates.size === 1 ? new Date([...candidates][0]) : null;
 }
 
-/** The first value of each field of the deepObject parameter name (name[field]=value), or an empty Map. */
-function deepFields(parameters, name) {
-    const fields = new Map();
-    for (const [key, value] of parameters) {
-        const match = /^([A-Za-z]+)\[(.*)\]$/.exec(key);
-        if (match && match[1] === name && !fields.has(match[2])) fields.set(match[2], value);
-    }
-    return fields;
-}
 
 /** A resolution of the address: raw, or whole seconds as an ISO 8601 duration; null for anything else. */
 function resolutionOfText(text) {
@@ -107,8 +99,8 @@ function resolutionOfText(text) {
 
 /**
  * Reads the address as docs/analyzer-address.openapi.json declares it: the PVs, the displayed and the selected range,
- * the resolutions, the band, the export choices, the zone, the profile and the view, and the chart state through
- * state.js. An invalid value falls back to its default; a pair is applied whole or not at all.
+ * the resolutions, the band, the export choices, the options of the analysis tools (tool-address.js), the zone, the profile
+ * and the view, and the chart state through state.js. An invalid value falls back to its default; a pair is applied whole or not at all.
  */
 function readAddress() {
     const parameters = new URLSearchParams(window.location.search);
@@ -122,6 +114,7 @@ function readAddress() {
     state.interval = resolutionOfText(parameters.get("interval")) ?? "auto";
     state.minmax = booleanOf(parameters.get("minMax")) ?? false;
     state.view = VIEWS.includes(parameters.get("view")) ? parameters.get("view") : "trend";
+    state.tools = readToolParameters(parameters, state.pvs);
     const zone = parameters.get("tz");
     setZone(ZONES.some((item) => item.id === zone) ? zone : "browser");
     let profile = parameters.get("profile");
@@ -209,6 +202,7 @@ function writeAddress() {
     if (state.minmax === true) parameters.set("minMax", "true");
     parameters.set("view", state.view);
     writeExportParameters(parameters);
+    writeToolParameters(parameters, tools, state.pvs);
     const chartState = chart ? chart.getState() : state.chart;
     writeChartParameters(parameters, { ...chartState, cursorTexts: state.cursorTexts, pinTexts: pinTextsOf(chartState) }, currentZone(), currentProfile(), state.pvs);
     window.history.replaceState(null, "", `${window.location.pathname}?${orderedParameters(parameters)}`);
@@ -1397,6 +1391,8 @@ function wire() {
 readAddress();
 // The trend tools are made after the chart, which may report a state change first; the report waits until they exist.
 let trendTools = null;
+// The analysis tools by the name of their address parameter, once they are built.
+let tools = null;
 let hiddenKey = "";
 chart = createChart($("charts"), {
     id: "analyzer-trend", idPrefix: "trend", legend: true, initialState: state.chart,
@@ -1434,12 +1430,14 @@ function trendSignals() {
         return { name, egu: dataset ? dataset.egu : "", dataset, failure: state.failures.get(name), hidden: chart.getState().hidden.includes(name) };
     });
 }
-trendTools = createTrendTools($("trendTools2"), { signals: trendSignals, window: () => ({ from: state.from, to: state.to }), zone: currentZone, onChange: render, helpHref: helpPage,
-    sourceText, isHidden: (name) => chart.getState().hidden.includes(name) });
-const spectrum = createSpectrum($("spectrumHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage });
+trendTools = createTrendTools($("trendTools2"), { signals: trendSignals, window: () => ({ from: state.from, to: state.to }), zone: currentZone, onChange: () => { render(); writeAddress(); }, helpHref: helpPage,
+    sourceText, isHidden: (name) => chart.getState().hidden.includes(name), settings: state.tools.trend });
+const spectrum = createSpectrum($("spectrumHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage, settings: state.tools.spectrum, changed: writeAddress });
 const compare = createCompare($("compareHost"), { signals: distributionSignals, range: () => state.selected, resolution: () => state.sample ?? resolutionOf(state.selected.from, state.selected.to),
-    fetch: (name, seconds, from, to) => fetchSeries(name, "mean", seconds, from, to), parseTime: readTime, formatTime: inputTime, zone: currentZone, sourceText, helpHref: helpPage });
-const distribution = createDistribution($("distributionHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage });
+    fetch: (name, seconds, from, to) => fetchSeries(name, "mean", seconds, from, to), parseTime: readTime, formatTime: inputTime, zone: currentZone, sourceText, helpHref: helpPage,
+    settings: state.tools.compare, changed: writeAddress });
+const distribution = createDistribution($("distributionHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage, settings: state.tools.distribution, changed: writeAddress });
+tools = { distribution, trend: trendTools, compare, spectrum };
 wire();
 writeAddress();
 if (AVAILABLE_VIEWS.includes(state.view)) {

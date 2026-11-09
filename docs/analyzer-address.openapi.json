@@ -61,6 +61,10 @@
           { "$ref": "#/components/parameters/axisPrefix" },
           { "$ref": "#/components/parameters/axisLabel" },
           { "$ref": "#/components/parameters/export" },
+          { "$ref": "#/components/parameters/distribution" },
+          { "$ref": "#/components/parameters/trend" },
+          { "$ref": "#/components/parameters/compare" },
+          { "$ref": "#/components/parameters/spectrum" },
           { "$ref": "#/components/parameters/shape" },
           { "$ref": "#/components/parameters/yscale" },
           { "$ref": "#/components/parameters/marks" },
@@ -151,6 +155,71 @@
           }
         },
         "description": "The choices of the Export tab, as export[source]=interpolated&export[step]=PT1.5S; they restore the form and never run a product. The step defaults to one second and the gap to none; a custom range needs both from and to, else the shown range is used with a note."
+      },
+      "distribution": {
+        "name": "distribution", "in": "query", "style": "deepObject", "explode": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "signal": { "$ref": "#/components/schemas/pvName" },
+            "view": { "type": "string", "enum": ["histogram", "box", "hour", "weekday", "heatmap"], "default": "histogram" },
+            "rule": { "type": "string", "enum": ["sturges", "scott", "freedman", "count"], "default": "sturges" },
+            "bins": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 20 },
+            "normalize": { "type": "string", "enum": ["count", "fraction", "density"], "default": "count" },
+            "kde": { "type": "boolean", "default": false },
+            "sigma": { "type": "number", "minimum": 0.5, "maximum": 20, "default": 3 }
+          }
+        },
+        "description": "The options of the Distribution tab (phase C), as distribution[view]=box&distribution[bins]=50: the signal (one of the pv values; the first by default), the view, the bin rule and the bin count it uses, the normalization, the kernel density estimate and the number of standard deviations of the values beyond. A field that is not valid keeps its default, and a default is not written."
+      },
+      "trend": {
+        "name": "trend", "in": "query", "style": "deepObject", "explode": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "signal": { "$ref": "#/components/schemas/pvName" },
+            "rate": { "type": "boolean", "default": false },
+            "fit": { "type": "boolean", "default": false },
+            "limits": { "type": "boolean", "default": false },
+            "threshold": { "$ref": "#/components/schemas/finite" },
+            "side": { "type": "string", "enum": ["above", "below"], "default": "above" }
+          }
+        },
+        "description": "The Trend tools (phase C), as trend[fit]=true&trend[threshold]=12: the signal (the first pv by default), the rate of change, the slow trend, the limits of the PV, the threshold in the unit of the signal (none by default) and the side of it that counts as beyond. A field that is not valid keeps its default, and a default is not written."
+      },
+      "compare": {
+        "name": "compare", "in": "query", "style": "deepObject", "explode": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "mode": { "type": "string", "enum": ["ranges", "signals"], "default": "ranges" },
+            "a": { "$ref": "#/components/schemas/pvName" },
+            "b": { "$ref": "#/components/schemas/pvName" },
+            "method": { "type": "string", "enum": ["chi2", "ks", "ad"], "default": "chi2" },
+            "from": { "$ref": "#/components/schemas/time" },
+            "to": { "$ref": "#/components/schemas/time" }
+          }
+        },
+        "description": "The options of the Compare tab (phase C), as compare[mode]=signals&compare[b]=SR:BEAM:CURRENT: two ranges of one signal or two signals, signal A (the first pv by default) and signal B (the first other pv by default), the method of the test, and range B as an ordered pair of times, written only when the user set it (else the page proposes the range of the duration of A that ends where A starts). The options restore the form; the comparison runs from its button."
+      },
+      "spectrum": {
+        "name": "spectrum", "in": "query", "style": "deepObject", "explode": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "signal": { "$ref": "#/components/schemas/pvName" },
+            "view": { "type": "string", "enum": ["spectrum", "spectrogram", "autocorrelation"], "default": "spectrum" },
+            "interval": { "type": "number", "exclusiveMinimum": 0 },
+            "gaps": { "type": "string", "enum": ["refuse", "interpolate"], "default": "refuse" },
+            "window": { "type": "string", "enum": ["rectangular", "hann", "hamming", "blackman"], "default": "hann" },
+            "output": { "type": "string", "enum": ["density", "power", "amplitude"], "default": "power" },
+            "log": { "type": "boolean", "default": true },
+            "padding": { "type": "string", "enum": ["none", "power2"], "default": "none" },
+            "segment": { "type": "string", "enum": ["auto", "64", "128", "256", "512", "1024", "2048"], "default": "auto" },
+            "overlap": { "type": "string", "enum": ["0", "0.5", "0.75"], "default": "0.5" }
+          }
+        },
+        "description": "The options of the Spectrum tab (phase C), as spectrum[view]=spectrogram&spectrum[window]=blackman: the signal (the first pv by default), the view, the resampling interval in seconds (the median spacing of the samples by default), the gap policy, the window, the output of the spectrum view, its logarithmic value axis, the zero padding, and the segment length and overlap of the spectrogram. A field that is not valid keeps its default, and a default is not written."
       },
       "shape": { "name": "shape", "in": "query", "schema": { "type": "string", "enum": ["step", "line", "smooth", "points"], "default": "step" }, "description": "The line shape (phase A)." },
       "yscale": { "name": "yscale", "in": "query", "schema": { "type": "string", "enum": ["linear", "symlog", "log", "sqrt"], "default": "linear" }, "description": "The scale of every axis without its own axisScale (phase A)." },
