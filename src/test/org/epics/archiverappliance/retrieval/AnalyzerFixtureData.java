@@ -40,10 +40,20 @@ import java.util.function.LongToDoubleFunction;
  * <li>sine: 1.5 times the sine of a period of 600 seconds from the start of the window, one value every 10 seconds,
  *     3 days;</li>
  * <li>pattern: 20 plus a daily cosine of amplitude 3 that peaks at 14:00 UTC, minus 4 on Saturday and Sunday, plus a
- *     normal noise of standard deviation 0.2, one value every minute, 28 days.</li>
+ *     normal noise of standard deviation 0.2, one value every minute, 28 days;</li>
+ * <li>basis:N (N from 1 to 16): a sine of period 900 plus 300 N seconds and amplitude 1 plus N/4, plus a normal noise of
+ *     standard deviation 0.5, one value every 10 seconds, 3 days; the sixteen are independent of one another;</li>
+ * <li>target: 2 times basis:1, minus 1.5 times basis:2, plus 0.5 times basis:3 (basis:4 and the others contribute
+ *     nothing), plus 5, plus a normal noise of standard deviation 0.3, one value every 10 seconds, 3 days;</li>
+ * <li>corra and corrb: a pair of normal signals of correlation 0.8 (A of mean 5 and standard deviation 1, B equal to 3
+ *     plus 0.8 times the deviation of A plus a normal noise of standard deviation 0.6), one value every 10 seconds,
+ *     3 days;</li>
+ * <li>slow: 10 plus 2 times the sine of a period of 3600 seconds from the start of the window, one value every 60
+ *     seconds, 3 days, without noise, for the pairing of signals of different rates.</li>
  * </ul>
  *
- * The window ends at the start of the day (UTC) of the end argument, an epoch second that defaults to now.
+ * Each kind draws its noise from its own seed, so a signal does not change when another kind is added. The window ends
+ * at the start of the day (UTC) of the end argument, an epoch second that defaults to now.
  * Usage: AnalyzerFixtureData kind pvName pluginURL csvFile [endEpochSeconds]
  */
 public class AnalyzerFixtureData {
@@ -55,14 +65,53 @@ public class AnalyzerFixtureData {
     public static final double PATTERN_DAILY_AMPLITUDE = 3.0;
     public static final double PATTERN_WEEKEND_DROP = 4.0;
     public static final double PATTERN_NOISE_SD = 0.2;
+    public static final int BASIS_COUNT = 16;
+    public static final double BASIS_NOISE_SD = 0.5;
+    public static final double[] TARGET_COEFFICIENTS = {2.0, -1.5, 0.5, 0.0};
+    public static final double TARGET_OFFSET = 5.0;
+    public static final double TARGET_NOISE_SD = 0.3;
+    public static final double CORR_A_MEAN = 5.0;
+    public static final double CORR_A_SD = 1.0;
+    public static final double CORR_B_OFFSET = 3.0;
+    public static final double CORR_RHO = 0.8;
+    public static final double CORR_B_NOISE_SD = 0.6;
+    public static final double SLOW_BASE = 10.0;
+    public static final double SLOW_AMPLITUDE = 2.0;
+    public static final long SLOW_PERIOD_SECONDS = 3600;
     private static final long SEED = 20261107L;
+    private static final long BASIS_SEED = 20261110L;
+    private static final long CORR_SEED = 20261120L;
     private static final long DAY_SECONDS = 86400L;
 
     /** The signal of a kind: its spacing in seconds, its length in days and the value at an epoch second. */
     private record Signal(long spacing, int days, LongToDoubleFunction valueAt) {}
 
+    /** The period in seconds of the basis signal n (from 1). */
+    public static long basisPeriodSeconds(int n) {
+        return 900L + 300L * n;
+    }
+
+    /** The amplitude of the basis signal n (from 1). */
+    public static double basisAmplitude(int n) {
+        return 1.0 + n / 4.0;
+    }
+
+    /** The value of the basis signal n at an epoch second, with its own source of noise advanced once per call. */
+    private static LongToDoubleFunction basis(int n, long windowStart) {
+        Random noise = new Random(BASIS_SEED + n);
+        return secs -> basisAmplitude(n) * Math.sin(2 * Math.PI * (secs - windowStart) / basisPeriodSeconds(n))
+                + BASIS_NOISE_SD * noise.nextGaussian();
+    }
+
     private static Signal signalOf(String kind, long windowStart) {
         Random random = new Random(SEED);
+        if (kind.startsWith("basis:")) {
+            int n = Integer.parseInt(kind.substring("basis:".length()));
+            if (n < 1 || n > BASIS_COUNT) {
+                throw new IllegalArgumentException("Unknown kind " + kind + "; basis:N takes N from 1 to " + BASIS_COUNT);
+            }
+            return new Signal(10, 3, basis(n, windowStart));
+        }
         switch (kind) {
             case "normal":
                 return new Signal(10, 7, secs -> NORMAL_MEAN + NORMAL_SD * random.nextGaussian());
@@ -80,8 +129,36 @@ public class AnalyzerFixtureData {
                             - (weekend ? PATTERN_WEEKEND_DROP : 0.0)
                             + PATTERN_NOISE_SD * random.nextGaussian();
                 });
+            case "target": {
+                LongToDoubleFunction[] bases = new LongToDoubleFunction[TARGET_COEFFICIENTS.length];
+                for (int k = 0; k < bases.length; k++) {
+                    bases[k] = basis(k + 1, windowStart);
+                }
+                Random noise = new Random(BASIS_SEED);
+                return new Signal(10, 3, secs -> {
+                    double value = TARGET_OFFSET;
+                    for (int k = 0; k < bases.length; k++) {
+                        value += TARGET_COEFFICIENTS[k] * bases[k].applyAsDouble(secs);
+                    }
+                    return value + TARGET_NOISE_SD * noise.nextGaussian();
+                });
+            }
+            case "corra": {
+                Random a = new Random(CORR_SEED);
+                return new Signal(10, 3, secs -> CORR_A_MEAN + CORR_A_SD * a.nextGaussian());
+            }
+            case "corrb": {
+                Random a = new Random(CORR_SEED);
+                Random extra = new Random(CORR_SEED + 1);
+                return new Signal(10, 3, secs -> CORR_B_OFFSET + CORR_RHO * CORR_A_SD * a.nextGaussian()
+                        + CORR_B_NOISE_SD * extra.nextGaussian());
+            }
+            case "slow":
+                return new Signal(60, 3, secs -> SLOW_BASE
+                        + SLOW_AMPLITUDE * Math.sin(2 * Math.PI * (secs - windowStart) / SLOW_PERIOD_SECONDS));
             default:
-                throw new IllegalArgumentException("Unknown kind " + kind + "; use normal, sine or pattern");
+                throw new IllegalArgumentException(
+                        "Unknown kind " + kind + "; use normal, sine, pattern, basis:N, target, corra, corrb or slow");
         }
     }
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Writes references.json: fixed datasets and the values that NumPy and SciPy compute from them, against which the checks of
-the analyzer routines (stats.js, tests.js, spectrum.js, trend.js, compare.js, the preparation of the Spectrum tab) compare their results. NumPy and SciPy are needed to write the file
+the analyzer routines (stats.js, tests.js, spectrum.js, trend.js, compare.js, the preparation of the Spectrum tab, and the fits, correlations,
+regression, principal components, mutual information, clustering and matrix routines of the tools of two and several signals) compare their results. NumPy and SciPy are needed to write the file
 and never to run the checks, which read it.
 
 Usage: python3 -I src/test/js/analyzer/reference/generate-references.py
@@ -324,6 +325,199 @@ reference["spectrumCases"] = {
     "regular": spectrum_case("regular", regular_times, noisy, ("boxcar", "hann", "hamming", "blackman")),
     "sine": spectrum_case("sine", regular_times, sine_values),
     "irregularWithGap": spectrum_case("irregular with a gap", irregular_times, irregular_values),
+}
+
+# The tools of two and several signals: fixed datasets with the values of NumPy and SciPy for the fits, the correlations, the
+# regression, the principal component analysis, the mutual information, the clustering, the profile and the matrix routines.
+# The Landau density of the page is the CERNLIB algorithm (ROOT TMath::Landau), which equals SciPy's landau.pdf with the
+# location log(pi/2) and the scale pi/2 within 5e-9 relative; the model below uses SciPy with that mapping.
+from scipy import optimize, linalg
+from scipy.cluster import hierarchy
+from scipy.spatial import distance
+
+pair_rng = np.random.default_rng(20261111)
+LANDAU_LOCATION = math.log(math.pi / 2)
+LANDAU_SCALE = math.pi / 2
+
+
+def landau_density(v):
+    """The CERNLIB Landau density at the Landau variable v, through SciPy's parameterisation."""
+    return stats.landau.pdf(v, LANDAU_LOCATION, LANDAU_SCALE)
+
+
+def linear_fit(design, y):
+    """Least squares of y on the columns of design: the coefficients, their errors (the covariance scaled by the reduced
+    chi-square, as an unweighted fit has them), the chi-square per degree of freedom and R squared."""
+    coef, _, _, _ = np.linalg.lstsq(design, y, rcond=None)
+    residuals = y - design @ coef
+    dof = len(y) - design.shape[1]
+    chi2 = float(residuals @ residuals)
+    cov = np.linalg.inv(design.T @ design) * (chi2 / dof)
+    ss_tot = float(((y - y.mean()) ** 2).sum())
+    return {"params": listing(coef), "errors": listing(np.sqrt(np.diag(cov))), "chi2PerDof": chi2 / dof, "rSquared": 1 - chi2 / ss_tot, "dof": dof}
+
+
+def iterative_fit(model, x, y, p0, fixed=None, bounds=None):
+    """SciPy curve_fit from p0 (Levenberg-Marquardt without bounds, trust region with them); a fixed parameter is held at
+    its p0 value and left out of the errors."""
+    names = list(range(len(p0)))
+    free = [i for i in names if not (fixed and i in fixed)]
+    def f(xx, *free_values):
+        full = list(p0)
+        for i, v in zip(free, free_values):
+            full[i] = v
+        return model(xx, *full)
+    kwargs = {"method": "lm"} if bounds is None else {"method": "trf", "bounds": ([bounds[0][i] for i in free], [bounds[1][i] for i in free])}
+    popt, pcov = optimize.curve_fit(f, x, y, p0=[p0[i] for i in free], maxfev=20000, **kwargs)
+    full = list(p0)
+    for i, v in zip(free, popt):
+        full[i] = float(v)
+    residuals = y - model(x, *full)
+    dof = len(y) - len(free)
+    chi2 = float(residuals @ residuals)
+    ss_tot = float(((y - y.mean()) ** 2).sum())
+    return {"params": full, "free": free, "errors": listing(np.sqrt(np.diag(pcov))), "chi2PerDof": chi2 / dof, "rSquared": 1 - chi2 / ss_tot, "dof": dof}
+
+
+def sine_model(x, a, f, phi, c):
+    return a * np.sin(2 * np.pi * f * x + phi) + c
+
+
+def gaussian_model(x, a, mu, sigma, c):
+    return a * np.exp(-((x - mu) ** 2) / (2 * sigma ** 2)) + c
+
+
+def landau_model(x, a, mpv, width, c):
+    return a * landau_density((x - mpv) / width) / width + c
+
+
+x60 = np.linspace(0.5, 10.0, 60)
+line_y = -1.0 + 2.5 * x60 + pair_rng.normal(0, 0.4, 60)
+poly_y = 1.0 - 0.8 * x60 + 0.3 * x60 ** 2 + pair_rng.normal(0, 0.5, 60)
+exp_y = 3.0 * np.exp(0.25 * x60) * np.exp(pair_rng.normal(0, 0.05, 60))
+power_y = 2.0 * x60 ** 1.5 * np.exp(pair_rng.normal(0, 0.05, 60))
+log_y = 1.5 + 2.0 * np.log(x60) + pair_rng.normal(0, 0.2, 60)
+sine_x = np.linspace(0, 20, 200)
+sine_y = sine_model(sine_x, 2.0, 0.15, 0.7, 1.0) + pair_rng.normal(0, 0.15, 200)
+gauss_x = np.linspace(-5, 15, 200)
+gauss_y = gaussian_model(gauss_x, 4.0, 5.0, 1.5, 0.5) + pair_rng.normal(0, 0.1, 200)
+landau_x = np.linspace(-5, 25, 300)
+landau_y = landau_model(landau_x, 30.0, 4.0, 1.2, 0.2) + pair_rng.normal(0, 0.05, 300)
+reference["fitCases"] = {
+    "line": {"x": listing(x60), "y": listing(line_y), "truth": [-1.0, 2.5], "fit": linear_fit(np.column_stack([np.ones(60), x60]), line_y)},
+    "polynomial2": {"x": listing(x60), "y": listing(poly_y), "truth": [1.0, -0.8, 0.3], "fit": linear_fit(np.column_stack([np.ones(60), x60, x60 ** 2]), poly_y)},
+    # The exponential, power and logarithm models are linear in a transformed variable: the fit is of the transformed y, and the
+    # natural parameters and their errors follow (a = exp(c0), its error a times the error of c0).
+    "exponential": {"x": listing(x60), "y": listing(exp_y), "truth": [3.0, 0.25], "transformed": linear_fit(np.column_stack([np.ones(60), x60]), np.log(exp_y))},
+    "power": {"x": listing(x60), "y": listing(power_y), "truth": [2.0, 1.5], "transformed": linear_fit(np.column_stack([np.ones(60), np.log(x60)]), np.log(power_y))},
+    "logarithm": {"x": listing(x60), "y": listing(log_y), "truth": [1.5, 2.0], "fit": linear_fit(np.column_stack([np.ones(60), np.log(x60)]), log_y)},
+    "sine": {"x": listing(sine_x), "y": listing(sine_y), "truth": [2.0, 0.15, 0.7, 1.0], "p0": [1.5, 0.14, 0.5, 0.8],
+             "fit": iterative_fit(sine_model, sine_x, sine_y, [1.5, 0.14, 0.5, 0.8]),
+             "fixedOffset": iterative_fit(sine_model, sine_x, sine_y, [1.5, 0.14, 0.5, 1.0], fixed=[3])},
+    "gaussian": {"x": listing(gauss_x), "y": listing(gauss_y), "truth": [4.0, 5.0, 1.5, 0.5], "p0": [3.0, 4.5, 2.0, 0.0],
+                 "fit": iterative_fit(gaussian_model, gauss_x, gauss_y, [3.0, 4.5, 2.0, 0.0]),
+                 "boundedWidth": iterative_fit(gaussian_model, gauss_x, gauss_y, [3.0, 4.5, 2.0, 0.0], bounds=([0, -np.inf, 1.8, -np.inf], [np.inf, np.inf, 3.0, np.inf]))},
+    "landau": {"x": listing(landau_x), "y": listing(landau_y), "truth": [30.0, 4.0, 1.2, 0.2], "p0": [25.0, 3.5, 1.0, 0.0],
+               "landauLocation": LANDAU_LOCATION, "landauScale": LANDAU_SCALE,
+               "density": {"v": listing(np.linspace(-4, 30, 69)), "value": listing(landau_density(np.linspace(-4, 30, 69)))},
+               "fit": iterative_fit(landau_model, landau_x, landau_y, [25.0, 3.5, 1.0, 0.0])},
+}
+
+# Correlations: Pearson and Spearman with their p-values, the cross-correlation over lags (Pearson's r of x[t] and y[t + lag] over
+# the samples both have), and the partial correlation of four variables from the inverse of their correlation matrix.
+cx = pair_rng.normal(0, 1, 200)
+cy = 0.6 * cx + pair_rng.normal(0, 0.8, 200)
+lagged = np.roll(cx, 3) + pair_rng.normal(0, 0.3, 200)
+pearson = stats.pearsonr(cx, cy)
+spearman = stats.spearmanr(cx, cy)
+def cross(x, y, lag):
+    if lag >= 0:
+        a, b = x[: len(x) - lag], y[lag:]
+    else:
+        a, b = x[-lag:], y[: len(y) + lag]
+    return float(np.corrcoef(a, b)[0, 1])
+four = np.column_stack([cx, cy, cx ** 2 + pair_rng.normal(0, 0.5, 200), pair_rng.normal(0, 1, 200)])
+corr4 = np.corrcoef(four, rowvar=False)
+precision = np.linalg.inv(corr4)
+partial = -precision / np.sqrt(np.outer(np.diag(precision), np.diag(precision)))
+np.fill_diagonal(partial, 1.0)
+reference["correlationCases"] = {
+    "x": listing(cx), "y": listing(cy),
+    "pearson": {"r": float(pearson.statistic), "p": float(pearson.pvalue)},
+    "spearman": {"rho": float(spearman.statistic), "p": float(spearman.pvalue)},
+    "lagged": listing(lagged), "lags": list(range(-5, 6)), "cross": [cross(cx, lagged, lag) for lag in range(-5, 6)],
+    "four": [listing(col) for col in four.T], "correlationMatrix": [listing(row) for row in corr4], "partialCorrelation": [listing(row) for row in partial],
+}
+
+# The multiple linear regression of y on three variables with an intercept: the coefficients, their errors, the standardised
+# coefficients (each times the standard deviation of its variable over that of y), R squared and the residuals.
+X3 = pair_rng.normal(0, 1, (120, 3)) * np.array([1.0, 2.0, 0.5])
+ry = 2.0 + 1.5 * X3[:, 0] - 0.7 * X3[:, 1] + 3.0 * X3[:, 2] + pair_rng.normal(0, 0.5, 120)
+design = np.column_stack([np.ones(120), X3])
+regression = linear_fit(design, ry)
+reference["regressionCases"] = {
+    "x": [listing(col) for col in X3.T], "y": listing(ry), "truth": [2.0, 1.5, -0.7, 3.0], **regression,
+    "standardised": listing(np.array(regression["params"][1:]) * X3.std(axis=0, ddof=1) / ry.std(ddof=1)),
+    "residuals": listing(ry - design @ np.array(regression["params"])),
+}
+
+# The principal component analysis of standardised variables: the eigenvalues of the correlation matrix in descending order, the
+# share of the variance of each, and the components with the sign that makes their largest element positive.
+standardised = (four - four.mean(axis=0)) / four.std(axis=0, ddof=1)
+values, vectors = np.linalg.eigh(np.corrcoef(standardised, rowvar=False))
+order = np.argsort(values)[::-1]
+values, vectors = values[order], vectors[:, order]
+for k in range(vectors.shape[1]):
+    if vectors[np.argmax(np.abs(vectors[:, k])), k] < 0:
+        vectors[:, k] = -vectors[:, k]
+reference["pcaCases"] = {"columns": [listing(col) for col in four.T], "eigenvalues": listing(values), "share": listing(values / values.sum()), "components": [listing(vectors[:, k]) for k in range(vectors.shape[1])]}
+
+# The mutual information of two variables as the binned plug-in estimate in nats over k equal-width bins of each variable's range.
+def mutual_information(x, y, bins):
+    counts, _, _ = np.histogram2d(x, y, bins=bins)
+    p = counts / counts.sum()
+    px, py = p.sum(axis=1, keepdims=True), p.sum(axis=0, keepdims=True)
+    nonzero = p > 0
+    return float((p[nonzero] * np.log(p[nonzero] / (px @ py)[nonzero])).sum())
+mi_x, mi_y = pair_rng.normal(0, 1, 500), pair_rng.normal(0, 1, 500)
+reference["mutualInformationCases"] = {"bins": 16, "cases": [
+    {"name": "linear", "x": listing(cx), "y": listing(cy), "value": mutual_information(cx, cy, 16)},
+    {"name": "square", "x": listing(cx), "y": listing(cx ** 2), "value": mutual_information(cx, cx ** 2, 16)},
+    {"name": "independent", "x": listing(mi_x), "y": listing(mi_y), "value": mutual_information(mi_x, mi_y, 16)},
+]}
+
+# Hierarchical clustering of six signals by the distance one minus the absolute correlation, with average linkage: the linkage
+# matrix of SciPy and the order of the leaves, which orders the correlation matrix of the Dependency tab.
+base_a, base_b = pair_rng.normal(0, 1, 300), pair_rng.normal(0, 1, 300)
+six = np.column_stack([base_a, base_a + pair_rng.normal(0, 0.3, 300), -base_a + pair_rng.normal(0, 0.5, 300), base_b, base_b + pair_rng.normal(0, 0.4, 300), pair_rng.normal(0, 1, 300)])
+corr6 = np.corrcoef(six, rowvar=False)
+dist6 = 1 - np.abs(corr6)
+np.fill_diagonal(dist6, 0.0)
+linkage = hierarchy.linkage(distance.squareform(dist6, checks=False), method="average")
+reference["clusteringCases"] = {"correlationMatrix": [listing(row) for row in corr6], "linkage": [listing(row) for row in linkage], "leaves": [int(i) for i in hierarchy.leaves_list(linkage)]}
+
+# The profile of y against x: the mean of y, its standard error and the count in each of ten equal bins of x.
+edges = np.linspace(cx.min(), cx.max(), 11)
+which = np.clip(np.digitize(cx, edges) - 1, 0, 9)
+profile = []
+for b in range(10):
+    inside = cy[which == b]
+    profile.append({"count": int(len(inside)), "mean": float(inside.mean()) if len(inside) else None, "error": float(inside.std(ddof=1) / math.sqrt(len(inside))) if len(inside) > 1 else None})
+reference["profileCases"] = {"x": listing(cx), "y": listing(cy), "edges": listing(edges), "bins": profile}
+
+# The matrix routines: a symmetric positive definite matrix with its inverse, Cholesky factor, a solved system and its eigen
+# decomposition (ascending eigenvalues, each vector with its largest element positive), and a general matrix with its inverse.
+spd = np.array([[4.0, 1.0, 0.5, 0.0], [1.0, 3.0, 0.2, 0.1], [0.5, 0.2, 2.0, 0.3], [0.0, 0.1, 0.3, 1.0]])
+rhs = np.array([1.0, 2.0, 3.0, 4.0])
+evals, evecs = np.linalg.eigh(spd)
+for k in range(4):
+    if evecs[np.argmax(np.abs(evecs[:, k])), k] < 0:
+        evecs[:, k] = -evecs[:, k]
+general = np.array([[2.0, -1.0, 0.0], [1.0, 3.0, 1.0], [0.5, 0.0, 4.0]])
+reference["matrixCases"] = {
+    "spd": [listing(row) for row in spd], "inverse": [listing(row) for row in np.linalg.inv(spd)], "cholesky": [listing(row) for row in np.linalg.cholesky(spd)],
+    "rhs": listing(rhs), "solution": listing(np.linalg.solve(spd, rhs)), "eigenvalues": listing(evals), "eigenvectors": [listing(evecs[:, k]) for k in range(4)],
+    "general": [listing(row) for row in general], "generalInverse": [listing(row) for row in np.linalg.inv(general)],
 }
 
 with open(os.path.join(HERE, "references.json"), "w") as out:

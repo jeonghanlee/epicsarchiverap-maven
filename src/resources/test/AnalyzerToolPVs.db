@@ -1,10 +1,15 @@
-# Soft IOC database for the checks of the Analyzer tools of one signal: three records whose history is generated.
+# Soft IOC database for the checks of the Analyzer tools: records whose history is generated.
 # The live value of each record is a constant, so that the appliance can archive the name and read its unit, precision and limits;
 # the history that the checks use is written into the store of the appliance by AnalyzerFixtureData of src/test (a normal sample,
-# a sine of a known period and a pattern over days) and is not what these records produce.
+# a sine of a known period, a pattern over days, and the signals of known relationship of the tools of two and several signals)
+# and is not what these records produce.
 #   SR:GEN:NORMAL   V   normal sample of mean 10 and standard deviation 2; limits at 2 and 3 standard deviations
 #   SR:GEN:SINE     V   1.5 times the sine of a period of 600 s; limits at 1.0 and 1.4
 #   SR:GEN:PATTERN  kW  20 plus a daily cosine that peaks at 14:00 UTC, minus 4 on Saturday and Sunday, with noise of 0.2
+#   SR:GEN:BASIS:01 to :16  mm  sixteen independent sines of distinct periods with noise, the basis of the dependency checks
+#   SR:GEN:TARGET   mm  2 times basis 1 minus 1.5 times basis 2 plus 0.5 times basis 3, plus 5, with noise of 0.3
+#   SR:GEN:CORR:A, SR:GEN:CORR:B  V  a pair of normal signals of correlation 0.8
+#   SR:GEN:SLOW     V   10 plus 2 times the sine of a period of 3600 s, one value a minute, for the pairing of different rates
 # Load it beside ConsoleChartPVs.db (its st.cmd loads that file); the checks of the Analyzer start one IOC with both.
 
 record(calc, "SR:GEN:NORMAL") {
@@ -45,4 +50,144 @@ record(calc, "SR:GEN:PATTERN") {
     field(LOPR, "10")
     field(HOPR, "30")
     field(DESC, "daily and weekly pattern")
+}
+record(calc, "SR:GEN:BASIS:01") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 1, period 1200 s")
+}
+record(calc, "SR:GEN:BASIS:02") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 2, period 1500 s")
+}
+record(calc, "SR:GEN:BASIS:03") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 3, period 1800 s")
+}
+record(calc, "SR:GEN:BASIS:04") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 4, period 2100 s")
+}
+record(calc, "SR:GEN:BASIS:05") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 5, period 2400 s")
+}
+record(calc, "SR:GEN:BASIS:06") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 6, period 2700 s")
+}
+record(calc, "SR:GEN:BASIS:07") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 7, period 3000 s")
+}
+record(calc, "SR:GEN:BASIS:08") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 8, period 3300 s")
+}
+record(calc, "SR:GEN:BASIS:09") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 9, period 3600 s")
+}
+record(calc, "SR:GEN:BASIS:10") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 10, period 3900 s")
+}
+record(calc, "SR:GEN:BASIS:11") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 11, period 4200 s")
+}
+record(calc, "SR:GEN:BASIS:12") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 12, period 4500 s")
+}
+record(calc, "SR:GEN:BASIS:13") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 13, period 4800 s")
+}
+record(calc, "SR:GEN:BASIS:14") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 14, period 5100 s")
+}
+record(calc, "SR:GEN:BASIS:15") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 15, period 5400 s")
+}
+record(calc, "SR:GEN:BASIS:16") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 16, period 5700 s")
+}
+record(calc, "SR:GEN:TARGET") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "2 b1 - 1.5 b2 + 0.5 b3 + 5, noise 0.3")
+}
+record(calc, "SR:GEN:CORR:A") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(DESC, "normal, mean 5, sd 1")
+}
+record(calc, "SR:GEN:CORR:B") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(DESC, "3 + 0.8 (A - 5) + noise 0.6")
+}
+record(calc, "SR:GEN:SLOW") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(DESC, "10 + 2 sin, period 3600 s, every minute")
 }
