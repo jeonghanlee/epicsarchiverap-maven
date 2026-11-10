@@ -239,10 +239,12 @@
             "brush": { "type": "boolean", "default": false },
             "model": { "type": "string", "enum": ["line", "polynomial", "exponential", "power", "logarithm", "sine", "gaussian", "landau"], "default": "line" },
             "fitFrom": { "$ref": "#/components/schemas/finite" },
-            "fitTo": { "$ref": "#/components/schemas/finite" }
+            "fitTo": { "$ref": "#/components/schemas/finite" },
+            "xUnit": { "type": "string", "pattern": "^[A-Za-z\u00b5\u03a9]{1,5}$", "default": "" },
+            "yUnit": { "type": "string", "pattern": "^[A-Za-z\u00b5\u03a9]{1,5}$", "default": "" }
           }
         },
-        "description": "The options of the Correlation tab (phase D), as correlation[x]=SR:GEN:SINE&correlation[view]=profile: signal X (the first pv by default) and signal Y (the first other pv by default), the view, the point size and transparency, colour by time, the lags of the cross-correlation, the rectangle selection, and the model and range of the fit panel. A fit runs from its button; the start values, fixed parameters and bounds restore from the form only. A field that is not valid keeps its default, and a default is not written."
+        "description": "The options of the Correlation tab (phase D), as correlation[x]=SR:GEN:SINE&correlation[view]=profile: signal X (the first pv by default) and signal Y (the first other pv by default), the view, the point size and transparency, colour by time, the lags of the cross-correlation, the rectangle selection, the unit each signal is shown in (another prefix of the same base unit as its engineering unit, such as um for mm; the unit as stored by default), and the model and range of the fit panel. A fit runs from its button; the start values, fixed parameters and bounds restore from the form only. A field that is not valid keeps its default, and a default is not written."
       },
       "dependency": {
         "name": "dependency", "in": "query", "style": "deepObject", "explode": true,

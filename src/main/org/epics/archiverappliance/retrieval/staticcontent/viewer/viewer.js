@@ -1137,7 +1137,7 @@ async function copyAddress() {
 function saveFit() {
     const fit = correlation.exportables().fit || distribution.exportables().fit;
     if (!fit) throw new Error("No fit has run. Run a fit in the Correlation tab or the Distribution tab first.");
-    const metadata = [`product: fit`, `tab: ${fit.tab}`, `model: ${fit.model} (${fit.definition.text})`, fit.tab === "correlation" ? `data: ${fit.y} against ${fit.x}` : `data: histogram of ${fit.signal}`,
+    const metadata = [`product: fit`, `tab: ${fit.tab}`, `model: ${fit.model} (${fit.definition.text})`, fit.tab === "correlation" ? `data: ${fit.y} against ${fit.x}` : `data: histogram of ${fit.signal}`, ...(fit.tab === "correlation" ? [`unit of x: ${fit.xUnit || "none"}`, `unit of y: ${fit.yUnit || "none"}`] : []),
         `range: ${fit.range[0] === -Infinity ? "all" : fit.range[0]} to ${fit.range[1] === Infinity ? "all" : fit.range[1]}`, `points: ${fit.count}`, `method: ${methodText(fit)}`];
     const rows = fit.definition.parameters.map((name, k) => {
         const free = fit.free.indexOf(k);
@@ -1153,7 +1153,7 @@ function saveDerived() {
     const derived = correlation.exportables().derived;
     if (!derived) throw new Error("No derived signal exists. Enter an expression in the Correlation tab and select Derive first.");
     const zone = currentZone();
-    const metadata = [`product: derived signal`, `expression: ${derived.expression}`, `x: ${derived.x}`, `y: ${derived.y}`, `unit: ${derived.unit || "none"}`, `time: ISO 8601 in ${zoneName(zone, new Date(derived.points[0].t))}`];
+    const metadata = [`product: derived signal`, `expression: ${derived.expression}`, `x: ${derived.x}`, `y: ${derived.y}`, `unit of x: ${derived.xUnit || "none"}`, `unit of y: ${derived.yUnit || "none"}`, `unit: ${derived.unit || "none"}`, `time: ISO 8601 in ${zoneName(zone, new Date(derived.points[0].t))}`];
     saveFile(csvText(metadata, ["time", "value"], derived.points.map((p) => [isoText(nanosOfDate(new Date(p.t)), zone), String(p.v)])), "text/csv", "analyzer-derived.csv");
     $("message").textContent = `Exported the derived signal ${derived.expression}.`;
 }

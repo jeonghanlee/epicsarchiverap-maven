@@ -108,6 +108,10 @@ export function readToolParameters(parameters, pvs) {
         const text = fields.get(key);
         if (text !== undefined && finiteNumber(text) !== null) tools.correlation[key] = text.trim();
     }
+    for (const key of ["xUnit", "yUnit"]) {
+        const text = fields.get(key);
+        if (text !== undefined && /^[A-Za-z\u00b5\u03a9]{1,5}$/.test(text)) tools.correlation[key] = text;
+    }
     choice(tools.distribution, deepFields(parameters, "distribution"), "fit", MODEL_NAMES);
 
     fields = deepFields(parameters, "dependency");

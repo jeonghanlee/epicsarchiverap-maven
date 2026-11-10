@@ -14,6 +14,7 @@ import { pairSeries, GAP_FACTOR } from "../comm/js/aa/pairing.js";
 import { pearson, spearman, crossCorrelation, profile } from "../comm/js/aa/correlation.js";
 import { formatInZone, zoneName } from "../comm/js/aa/timezone.js";
 import { parse } from "../comm/js/aa/expression.js";
+import { compatibleUnits, conversionFactor } from "../comm/js/aa/units.js";
 import { pointsInside } from "./distribution.js";
 import { createFitPanel, fittedCurve, residualsOf, FIT_PANEL_DEFAULTS } from "./fit-panel.js";
 
@@ -24,7 +25,7 @@ export const POINT_SIZES = [["1", "1 px"], ["2", "2 px"], ["3", "3 px"], ["4", "
 export const POINT_OPACITIES = [["1", "Opaque"], ["0.6", "Faded"], ["0.3", "Faint"]];
 export const LAG_CHOICES = [["0", "None"], ["5", "5 pairs"], ["10", "10 pairs"], ["20", "20 pairs"]];
 // The settings of the tab and their defaults; the address carries the ones that differ (viewer/tool-address.js).
-export const CORRELATION_DEFAULTS = Object.freeze({ x: null, y: null, view: "scatter", size: "2", opacity: "0.6", time: false, lags: "10", brush: false, model: FIT_PANEL_DEFAULTS.model, fitFrom: "", fitTo: "" });
+export const CORRELATION_DEFAULTS = Object.freeze({ x: null, y: null, view: "scatter", size: "2", opacity: "0.6", time: false, lags: "10", brush: false, model: FIT_PANEL_DEFAULTS.model, fitFrom: "", fitTo: "", xUnit: "", yUnit: "" });
 const RESIDUAL_HEIGHT = 140;
 export const PAIRS_LEAST = 3;
 export const PROFILE_BINS = 10;
@@ -55,7 +56,8 @@ const CARD = [
         ["Cross-correlation", "Pearson's r between X and Y shifted by a number of pairs, for lags up to the number chosen; the lag of the largest absolute value says whether one signal follows the other, in pairs of the paired sequence, not in seconds."],
         ["Trends", "The two signals over the selected range, one under the other on the same time axis, so that a pair can be placed in time."],
         ["Fit", "A model of Y against X fitted to the pairs in the fit range from Run fit: the line, polynomial, exponential, power and logarithm by least squares (exponential and power in a transformed variable), the sine, Gaussian and Landau by Levenberg-Marquardt from the start values, with parameters fixed or bounded. The errors come from the covariance scaled by the reduced chi-square; the band is one sigma of the fitted curve; the residuals (observed minus fitted) are drawn under the fit result. A fit of another pairing is cleared, and a fit never certifies the physical model."],
-        ["Derived signal", "A typed expression over x and y (or the PV names), evaluated at every pair and drawn as a third trend: a difference, a sum, a ratio, or any arithmetic of them. The unit is yours to name; the Export tab writes the signal as CSV."],
+        ["Unit", "The unit of X and of Y can be shown in another prefix of the same base unit (mm in um, V in mV, kHz in MHz): the values are multiplied by a power of ten and the pairs, the correlation, the fit and its parameters, the trends and the derived signal use the converted values. A unit that is not a prefix and a base unit in use (mm/s, degC, Gs) offers no change, so that nothing is converted by a guess; a change clears a fit made in the earlier unit."],
+        ["Derived signal", "A typed expression over x and y (or the PV names, in the units shown), evaluated at every pair and drawn as a third trend: a difference, a sum, a ratio, or any arithmetic of them. The unit is yours to name; the Export tab writes the signal as CSV."],
     ],
     null,
 ];
@@ -89,8 +91,13 @@ export function createCorrelation(host, options) {
     const signalY = node("select", { "aria-label": "Correlation signal Y" });
     signalX.addEventListener("change", () => { settings.x = signalX.value; changed(); });
     signalY.addEventListener("change", () => { settings.y = signalY.value; changed(); });
+    // The unit each signal is shown in: its own, or another prefix of the same base unit (aa/units.js); the choices follow the signal.
+    const unitSelectX = node("select", { "aria-label": "Correlation unit of X" });
+    const unitSelectY = node("select", { "aria-label": "Correlation unit of Y" });
+    unitSelectX.addEventListener("change", () => { settings.xUnit = unitSelectX.value; changed(); });
+    unitSelectY.addEventListener("change", () => { settings.yUnit = unitSelectY.value; changed(); });
     const swap = node("button", { type: "button", "aria-label": "Swap X and Y" }, "Swap");
-    swap.addEventListener("click", () => { [settings.x, settings.y] = [settings.y, settings.x]; changed(); });
+    swap.addEventListener("click", () => { [settings.x, settings.y] = [settings.y, settings.x]; [settings.xUnit, settings.yUnit] = [settings.yUnit, settings.xUnit]; changed(); });
     const view = select("Correlation view", CORRELATION_VIEWS, "view");
     const size = select("Point size", POINT_SIZES, "size");
     const opacity = select("Point transparency", POINT_OPACITIES, "opacity");
@@ -102,7 +109,7 @@ export function createCorrelation(host, options) {
     brush.checked = settings.brush;
     brush.addEventListener("change", () => { settings.brush = brush.checked; changed(); });
     const field = (text, control) => node("label", null, text, control);
-    const controls = node("div", { class: "cor-controls" }, field("X ", signalX), field("Y ", signalY), swap, field("View ", view), field("Size ", size), field("Points ", opacity),
+    const controls = node("div", { class: "cor-controls" }, field("X ", signalX), field("X unit ", unitSelectX), field("Y ", signalY), field("Y unit ", unitSelectY), swap, field("View ", view), field("Size ", size), field("Points ", opacity),
         node("label", { class: "check-inline" }, time, " Colour by time"), field("Lags ", lags), node("label", { class: "check-inline" }, brush, " Select pairs"), infoButton(...CARD, options.helpHref));
     const message = node("p", { class: "note", role: "status" });
     const pairing = node("p", { class: "note cor-pairing" });
@@ -116,6 +123,8 @@ export function createCorrelation(host, options) {
     // The key of the pairing a fit was computed from; a fit of another pairing is cleared.
     let fitKey = null;
     let pairingKey = null;
+    // The units the last result was shown in, for what the Export tab writes.
+    let shown = { x: "", y: "" };
     fitPanel.onResult(() => { fitKey = pairingKey; render(); });
     const expression = node("input", { type: "text", size: "24", "aria-label": "Derived signal expression", placeholder: "y - x" });
     const unitField = node("input", { type: "text", size: "6", "aria-label": "Derived signal unit", placeholder: "unit" });
@@ -152,6 +161,24 @@ export function createCorrelation(host, options) {
         if (settings.y !== null) signalY.value = settings.y;
     }
 
+    /**
+     * Fills each unit choice with the units that the unit text of its signal can be shown in. A unit that the signal does not offer
+     * (another signal chosen, or a text of the address) is dropped once the samples of the signal are known, and so is the unit that
+     * the signal already has, which is the default; the address is then written again.
+     */
+    function syncUnits(list) {
+        let dropped = false;
+        for (const [select, key, name] of [[unitSelectX, "xUnit", settings.x], [unitSelectY, "yUnit", settings.y]]) {
+            const entry = list.find((item) => item.name === name);
+            const choices = entry ? compatibleUnits(entry.egu) : [];
+            if (settings[key] && entry && entry.dataset && (!choices.includes(settings[key]) || settings[key] === entry.egu)) { settings[key] = ""; dropped = true; }
+            select.replaceChildren(node("option", { value: "" }, entry && entry.egu ? `as stored (${entry.egu})` : "as stored"), ...choices.filter((c) => !entry || c !== entry.egu).map((c) => node("option", { value: c }, c)));
+            select.value = settings[key];
+            select.disabled = choices.length === 0;
+        }
+        if (dropped && options.changed) options.changed();
+    }
+
     /** The finite samples of an entry inside the selected range, or the reason there are none. */
     function samplesOf(entry, role) {
         if (!entry.dataset) return { ok: false, reason: entry.failure ? `The samples of ${role} (${entry.name}) could not be read: ${entry.failure}` : `Loading the samples of ${role}...` };
@@ -163,6 +190,7 @@ export function createCorrelation(host, options) {
     function render() {
         const list = options.signals();
         syncSignals(list);
+        syncUnits(list);
         plots.replaceChildren();
         numbers.replaceChildren();
         trends.replaceChildren();
@@ -186,12 +214,21 @@ export function createCorrelation(host, options) {
             message.textContent = "X and Y are the same signal; choose two different signals.";
             return;
         }
-        const entryX = list.find((item) => item.name === settings.x);
-        const entryY = list.find((item) => item.name === settings.y);
-        const sx = samplesOf(entryX, "X");
+        const storedX = list.find((item) => item.name === settings.x);
+        const storedY = list.find((item) => item.name === settings.y);
+        const sx = samplesOf(storedX, "X");
         if (!sx.ok) { message.textContent = sx.reason; return; }
-        const sy = samplesOf(entryY, "Y");
+        const sy = samplesOf(storedY, "Y");
         if (!sy.ok) { message.textContent = sy.reason; return; }
+        // A change of unit multiplies the values by a power of ten and names the unit shown: the pairs, the correlations, the fit, the
+        // derived signal and the trends all use the converted values.
+        const factorX = (settings.xUnit && conversionFactor(storedX.egu, settings.xUnit)) || 1;
+        const factorY = (settings.yUnit && conversionFactor(storedY.egu, settings.yUnit)) || 1;
+        const entryX = { ...storedX, egu: settings.xUnit || storedX.egu };
+        const entryY = { ...storedY, egu: settings.yUnit || storedY.egu };
+        if (factorX !== 1) sx.points = sx.points.map((p) => ({ ...p, v: p.v * factorX }));
+        if (factorY !== 1) sy.points = sy.points.map((p) => ({ ...p, v: p.v * factorY }));
+        shown = { x: entryX.egu, y: entryY.egu };
         const zone = options.zone();
         const paired = pairSeries(sx.points, sy.points);
         if (!paired.overlap) {
@@ -213,12 +250,13 @@ export function createCorrelation(host, options) {
         const r = pearson(xs, ys);
         const rho = spearman(xs, ys);
         const constant = r === null ? (d3.extent(xs)[0] === d3.extent(xs)[1] ? "X" : "Y") : null;
-        pairingKey = JSON.stringify([settings.x, settings.y, +options.range().from, +options.range().to, entryX.dataset.seconds, paired.pairs.length]);
+        pairingKey = JSON.stringify([settings.x, settings.y, settings.xUnit, settings.yUnit, +options.range().from, +options.range().to, entryX.dataset.seconds, paired.pairs.length]);
         if (fitPanel.result && fitKey !== pairingKey) {
             fitPanel.clear();
             message.textContent = "The pairing the fit used has changed; the fit was cleared. Select Run fit to fit again.";
         }
-        fitPanel.setData(xs, ys, null, `${entryY.name} against ${entryX.name}`);
+        // The units are part of the name of the data, so that the start values of an iterative model follow a change of unit.
+        fitPanel.setData(xs, ys, null, `${entryY.name} (${entryY.egu || "no unit"}) against ${entryX.name} (${entryX.egu || "no unit"})`);
         fitPanel.setEnabled(true);
         const fit = fitPanel.result && fitKey === pairingKey ? fitPanel.result : null;
         if (derived.parsed) {
@@ -250,7 +288,7 @@ export function createCorrelation(host, options) {
     /** What the Export tab can write: the last fit of this pairing and the derived signal. */
     function exportables() {
         const fit = fitPanel.result && fitKey === pairingKey ? fitPanel.result : null;
-        return { fit: fit ? { ...fit, tab: "correlation", x: settings.x, y: settings.y } : null, derived: derived.parsed && derived.points.length ? { expression: derived.expression, unit: derived.unit, x: settings.x, y: settings.y, points: derived.points } : null };
+        return { fit: fit ? { ...fit, tab: "correlation", x: settings.x, y: settings.y, xUnit: shown.x, yUnit: shown.y } : null, derived: derived.parsed && derived.points.length ? { expression: derived.expression, unit: derived.unit, x: settings.x, y: settings.y, xUnit: shown.x, yUnit: shown.y, points: derived.points } : null };
     }
 
     /** The scatter plot, the profile or the density contour, with the two projections. */
