@@ -626,6 +626,25 @@ def cond_case(columns, threshold):
     return {"columns": [listing(col) for col in columns.T], "cond": float(np.linalg.cond(corr)), "threshold": threshold, "pairs": pairs}
 reference["conditionCases"] = {"well": cond_case(cond_base, 0.9), "near": cond_case(cond_near, 0.9)}
 
+# The change of unit: a unit that is an SI prefix and a base unit in use can be shown in another prefix of the same base, the values
+# multiplied by a power of ten (computed here with decimals, and the units that each base lists in ascending order of the factor);
+# a compound, a text such as degC or Gs, an empty text and another base offer no change.
+from decimal import Decimal
+unit_exponent = {"p": -12, "n": -9, "u": -6, "\u00b5": -6, "m": -3, "": 0, "k": 3, "M": 6, "G": 9}
+unit_bases = {"Hz": ["m", "", "k", "M", "G"], "Pa": ["m", "", "k", "M"], "rad": ["u", "m", ""], "Ohm": ["m", "", "k", "M"], "m": ["p", "n", "u", "m", "", "k"],
+              "V": ["n", "u", "m", "", "k", "M"], "A": ["p", "n", "u", "m", "", "k"], "W": ["u", "m", "", "k", "M", "G"], "s": ["p", "n", "u", "m", ""],
+              "T": ["n", "u", "m", ""], "J": ["u", "m", "", "k", "M"], "K": ["m", ""]}
+def unit_factor(a, b):
+    (pa, ba), (pb, bb) = a, b
+    return float(Decimal(10) ** (unit_exponent[pa] - unit_exponent[pb])) if ba == bb else None
+unit_pairs = [(("m", "m"), ("u", "m")), (("u", "m"), ("m", "m")), (("", "V"), ("m", "V")), (("k", "V"), ("", "V")), (("m", "A"), ("u", "A")), (("m", "m"), ("", "m")),
+              (("", "Hz"), ("M", "Hz")), (("\u00b5", "m"), ("m", "m")), (("m", "m"), ("m", "m")), (("k", "Ohm"), ("", "Ohm")), (("m", "rad"), ("u", "rad")), (("n", "s"), ("m", "s"))]
+reference["unitCases"] = {
+    "conversions": [{"from": a[0] + a[1], "to": b[0] + b[1], "factor": unit_factor(a, b)} for a, b in unit_pairs],
+    "refused": [["mm", "mV"], ["Gs", "ms"], ["mm/s", "m/s"], ["", "mm"], ["degC", "K"], ["mm", ""], ["min", "ms"], ["dm", "m"], ["Mm", "m"]],
+    "compatible": {text: [prefix.replace("u", "u") + base for prefix in unit_bases[base]] for text, base in (("mm", "m"), ("V", "V"), ("kHz", "Hz"), ("uA", "A"), ("ms", "s"), ("Pa", "Pa"))},
+}
+
 with open(os.path.join(HERE, "references.json"), "w") as out:
     json.dump(reference, out, separators=(",", ":"))
     out.write("\n")
