@@ -65,6 +65,7 @@
           { "$ref": "#/components/parameters/trend" },
           { "$ref": "#/components/parameters/compare" },
           { "$ref": "#/components/parameters/spectrum" },
+          { "$ref": "#/components/parameters/correlation" },
           { "$ref": "#/components/parameters/shape" },
           { "$ref": "#/components/parameters/yscale" },
           { "$ref": "#/components/parameters/marks" },
@@ -137,7 +138,7 @@
         "schema": {
           "type": "object",
           "properties": {
-            "product": { "type": "string", "enum": ["data", "statistics", "png", "svg", "link", "serverCsv", "serverMat"], "default": "data" },
+            "product": { "type": "string", "enum": ["data", "statistics", "fit", "derived", "png", "svg", "link", "serverCsv", "serverMat"], "default": "data" },
             "range": { "type": "string", "enum": ["view", "custom"], "default": "view" },
             "from": { "$ref": "#/components/schemas/time" },
             "to": { "$ref": "#/components/schemas/time" },
@@ -167,10 +168,11 @@
             "bins": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 20 },
             "normalize": { "type": "string", "enum": ["count", "fraction", "density"], "default": "count" },
             "kde": { "type": "boolean", "default": false },
-            "sigma": { "type": "number", "minimum": 0.5, "maximum": 20, "default": 3 }
+            "sigma": { "type": "number", "minimum": 0.5, "maximum": 20, "default": 3 },
+            "fit": { "type": "string", "enum": ["line", "polynomial", "exponential", "power", "logarithm", "sine", "gaussian", "landau"], "default": "line" }
           }
         },
-        "description": "The options of the Distribution tab (phase C), as distribution[view]=box&distribution[bins]=50: the signal (one of the pv values; the first by default), the view, the bin rule and the bin count it uses, the normalization, the kernel density estimate and the number of standard deviations of the values beyond. A field that is not valid keeps its default, and a default is not written."
+        "description": "The options of the Distribution tab (phase C), as distribution[view]=box&distribution[bins]=50: the signal (one of the pv values; the first by default), the view, the bin rule and the bin count it uses, the normalization, the kernel density estimate, the number of standard deviations of the values beyond and the model of the histogram fit (phase D; a fit runs from its button). A field that is not valid keeps its default, and a default is not written."
       },
       "trend": {
         "name": "trend", "in": "query", "style": "deepObject", "explode": true,
@@ -220,6 +222,26 @@
           }
         },
         "description": "The options of the Spectrum tab (phase C), as spectrum[view]=spectrogram&spectrum[window]=blackman: the signal (the first pv by default), the view, the resampling interval in seconds (the median spacing of the samples by default), the gap policy, the window, the output of the spectrum view, its logarithmic value axis, the zero padding, and the segment length and overlap of the spectrogram. A field that is not valid keeps its default, and a default is not written."
+      },
+      "correlation": {
+        "name": "correlation", "in": "query", "style": "deepObject", "explode": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "x": { "$ref": "#/components/schemas/pvName" },
+            "y": { "$ref": "#/components/schemas/pvName" },
+            "view": { "type": "string", "enum": ["scatter", "profile", "density"], "default": "scatter" },
+            "size": { "type": "string", "enum": ["1", "2", "3", "4"], "default": "2" },
+            "opacity": { "type": "string", "enum": ["1", "0.6", "0.3"], "default": "0.6" },
+            "time": { "type": "boolean", "default": false },
+            "lags": { "type": "string", "enum": ["0", "5", "10", "20"], "default": "10" },
+            "brush": { "type": "boolean", "default": false },
+            "model": { "type": "string", "enum": ["line", "polynomial", "exponential", "power", "logarithm", "sine", "gaussian", "landau"], "default": "line" },
+            "fitFrom": { "$ref": "#/components/schemas/finite" },
+            "fitTo": { "$ref": "#/components/schemas/finite" }
+          }
+        },
+        "description": "The options of the Correlation tab (phase D), as correlation[x]=SR:GEN:SINE&correlation[view]=profile: signal X (the first pv by default) and signal Y (the first other pv by default), the view, the point size and transparency, colour by time, the lags of the cross-correlation, the rectangle selection, and the model and range of the fit panel. A fit runs from its button; the start values, fixed parameters and bounds restore from the form only. A field that is not valid keeps its default, and a default is not written."
       },
       "shape": { "name": "shape", "in": "query", "schema": { "type": "string", "enum": ["step", "line", "smooth", "points"], "default": "step" }, "description": "The line shape (phase A)." },
       "yscale": { "name": "yscale", "in": "query", "schema": { "type": "string", "enum": ["linear", "symlog", "log", "sqrt"], "default": "linear" }, "description": "The scale of every axis without its own axisScale (phase A)." },

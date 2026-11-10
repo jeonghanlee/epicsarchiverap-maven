@@ -185,3 +185,23 @@
 @media (max-width: 480px) {
     .cor-table th, .cor-table td { padding: 2px 4px; font-size: 12px; }
 }
+
+/* The fit panel shared by the Correlation and the Distribution tabs, and the derived signal and the residuals of the Correlation tab. */
+.fit-controls, .fit-parameter { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; padding: 4px 0; }
+.fit-controls label, .fit-parameter label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.fit-parameter label.check-inline { flex-direction: row; align-items: center; }
+.fit-parameter-name { font-weight: bold; min-width: 3rem; align-self: center; }
+.fit-results { overflow-x: auto; margin-top: 8px; }
+.fit-table th[scope="row"] { text-align: left; font-weight: normal; padding-right: 16px; vertical-align: top; }
+.fit-table td { white-space: normal; overflow-wrap: anywhere; }
+.fit-earlier-title, .cor-section-title { margin: 12px 0 4px; font-size: 1rem; }
+.cor-fit-curve { fill: none; stroke: var(--ink); stroke-width: 2; }
+.cor-fit-band { fill: var(--ink); fill-opacity: .15; stroke: none; }
+.cor-residual { fill: var(--accent); }
+.cor-zero { stroke: var(--ink); stroke-opacity: .4; }
+.cor-trend-z { stroke: var(--ink); stroke-dasharray: 5 3; }
+.cor-residuals { margin-top: 8px; }
+.dist-fit-curve { fill: none; stroke: var(--ink); stroke-width: 2; }
+.dist-fit-band { fill: var(--ink); fill-opacity: .15; stroke: none; }
+.dist-residual { fill: var(--accent); }
+.dist-residuals { margin-top: 8px; }

@@ -10,6 +10,7 @@ import { infoButton } from "../comm/js/aa/card.js";
 import { format } from "../comm/js/aa/chart/text.js";
 import { moments, quantiles, boxPlot, kernelDensity } from "../comm/js/aa/stats.js";
 import { partsInZone, formatInZone, zoneName } from "../comm/js/aa/timezone.js";
+import { createFitPanel, fittedCurve, FIT_PANEL_DEFAULTS } from "./fit-panel.js";
 
 const d3 = globalThis.d3;
 
@@ -22,7 +23,8 @@ export const BINS_MOST = 1000;
 export const SIGMA_LEAST = 0.5;
 export const SIGMA_MOST = 20;
 // The settings of the tab and their defaults; the address carries the ones that differ (viewer/tool-address.js).
-export const DISTRIBUTION_DEFAULTS = Object.freeze({ signal: null, view: "histogram", rule: "sturges", bins: 20, normalize: "count", kde: false, sigma: 3 });
+export const DISTRIBUTION_DEFAULTS = Object.freeze({ signal: null, view: "histogram", rule: "sturges", bins: 20, normalize: "count", kde: false, sigma: 3, fit: FIT_PANEL_DEFAULTS.model });
+const RESIDUAL_HEIGHT = 140;
 const HEATMAP_ROWS_MOST = 40;
 const HEATMAP_COLUMNS_MOST = 48;
 const BEYOND_LISTED = 20;
@@ -40,6 +42,7 @@ const CARD = [
     "Distribution: what do the plots and the numbers count?",
     [
         ["In short", "The values of one signal over the selected range. Every count is a count of samples of the dataset named under the plot; it is not the time the signal spent at a value."],
+        ["Fit of the histogram", "A model fitted to the bin heights of the histogram at the bin centres, once you declare that the counts are counts of independent samples: each bin then has a Poisson weight of one over its count, and empty bins are left out. The fitted curve is drawn over the bars in the normalization shown, the residuals (observed minus fitted counts) under the plot; the errors come from the covariance as it is, since the weights carry the scale, and R squared is computed from the unweighted residuals. The fit evaluates the model at the bin centres, not the expected count integrated over the bin. The weights do not apply to a model fitted in a transformed variable (exponential, power); the method row says so. A fit of another histogram, or one made under a declaration since withdrawn, is cleared."],
         ["Dataset", "The selected range at the resolution the page resolved for its Summary: the stored samples, or the means over N seconds. The statistics of means describe the means, not the stored samples, and they do not change when you pan or zoom the Trend."],
         ["Histogram", "Equal-width bins between the minimum and the maximum. The rule gives the number of bins (Sturges, Scott, Freedman-Diaconis) or you give it; the last bin includes the maximum. Density divides a count by the number of samples and the bin width, so that the bars add up to 1; the kernel density is a Gaussian estimate with Silverman's bandwidth."],
         ["Box plot", "The quartiles, the median, whiskers at the most extreme values within 1.5 times the interquartile range of the box, and the values beyond them."],
@@ -179,7 +182,17 @@ export function createDistribution(host, options) {
     const source = node("p", { class: "note dist-source" });
     const summary = node("div", { class: "dist-summary" });
     const beyond = node("div", { class: "dist-beyond" });
-    host.replaceChildren(controls, error, message, plot, source, summary, beyond);
+    const residuals = node("div", { class: "chart dist-residuals" });
+    const poisson = node("input", { type: "checkbox", "aria-label": "The counts are counts of independent samples" });
+    const fitHost = node("div", { class: "dist-fit" });
+    const fitPanel = createFitPanel(fitHost, { label: "Histogram fit", settings: { model: settings.fit, from: "", to: "" }, changed: () => { settings.fit = fitPanel.settings.model; if (options.changed) options.changed(); } });
+    const fitNote = node("p", { class: "note" });
+    let fitKey = null;
+    let histogramKey = null;
+    fitPanel.onResult(() => { fitKey = histogramKey; render(); });
+    poisson.addEventListener("change", () => render());
+    const fitSection = node("div", { class: "dist-fit-section" }, node("h3", { class: "cor-section-title" }, "Fit of the histogram"), node("label", { class: "check-inline" }, poisson, " The counts are counts of independent samples (Poisson weights, one over the count; empty bins left out)"), fitNote, fitHost);
+    host.replaceChildren(controls, error, message, plot, residuals, source, summary, beyond, fitSection);
 
     /** Keeps the options of the signal list as the selection has them, and the chosen signal while it is still selected. */
     function syncSignals(list) {
@@ -195,10 +208,14 @@ export function createDistribution(host, options) {
         const list = options.signals();
         syncSignals(list);
         plot.replaceChildren();
+        residuals.replaceChildren();
         summary.replaceChildren();
         beyond.replaceChildren();
         source.textContent = "";
         const histogramView = settings.view === "histogram";
+        fitSection.hidden = !histogramView;
+        fitPanel.setEnabled(false);
+        fitNote.textContent = "";
         rule.disabled = !(histogramView || settings.view === "heatmap");
         bins.disabled = rule.disabled || settings.rule !== "count";
         normalize.disabled = !histogramView;
@@ -234,6 +251,18 @@ export function createDistribution(host, options) {
         const { number, width: binWidth, bins: binned } = histogramBins(values, m.min, m.max, settings.rule, settings.bins);
         const scale = settings.normalize === "count" ? 1 : settings.normalize === "fraction" ? 1 / m.n : 1 / (m.n * binWidth);
         const heights = binned.map((b) => b.length * scale);
+        // The fit of the histogram: the bin heights (counts) at the bin centres, with Poisson weights once the user declares the counts.
+        // The declaration is part of the key, so that a fit computed under it is cleared when it is withdrawn.
+        histogramKey = JSON.stringify([entry.name, +entry.dataset.from, +entry.dataset.to, entry.dataset.seconds, settings.rule, settings.bins, number, poisson.checked]);
+        if (fitPanel.result && fitKey !== histogramKey) {
+            fitPanel.clear();
+            fitNote.textContent = "The histogram or the count declaration the fit used has changed; the fit was cleared. Select Run fit to fit again.";
+        }
+        const filled = binned.filter((b) => b.length > 0);
+        fitPanel.setData(filled.map((b) => (b.x0 + b.x1) / 2), filled.map((b) => b.length), poisson.checked ? filled.map((b) => 1 / b.length) : null, `the histogram of ${entry.name} (${number} bins)`);
+        fitPanel.setEnabled(poisson.checked && filled.length > 0);
+        if (!poisson.checked) fitNote.textContent = `Declare the counts as counts of independent samples to fit the histogram; a count of samples of means or of a filtered dataset is not a Poisson count.${fitNote.textContent ? ` ${fitNote.textContent}` : ""}`;
+        const fit = fitPanel.result && fitKey === histogramKey ? fitPanel.result : null;
         const grid = Float64Array.from({ length: 200 }, (_, i) => m.min + ((m.max - m.min) * i) / 199);
         const density = settings.kde && m.n <= KDE_SAMPLES_MOST ? kernelDensity(values, grid) : null;
         // A density estimate is a density; it is scaled to the bars: counts per bin, fractions per bin or density.
@@ -253,6 +282,20 @@ export function createDistribution(host, options) {
         }
         for (const [value, name] of [[m.mean, "mean"], [d3.median(values), "median"]]) {
             surface.marks.append("line").attr("class", `dist-${name}`).attr("x1", x(value)).attr("x2", x(value)).attr("y1", MARGIN.top).attr("y2", HEIGHT - MARGIN.bottom);
+        }
+        if (fit) {
+            const curve = fittedCurve(fit, Math.max(m.min, fit.range[0]), Math.min(m.max, fit.range[1]));
+            surface.marks.append("path").attr("class", "dist-fit-band").attr("d", d3.area().x((p) => x(p.x)).y0((p) => y(Math.max(0, (p.y - (Number.isFinite(p.sigma) ? p.sigma : 0)) * scale))).y1((p) => y((p.y + (Number.isFinite(p.sigma) ? p.sigma : 0)) * scale))(curve));
+            surface.marks.append("path").attr("class", "dist-fit-curve").attr("data-model", fit.model).attr("d", d3.line().x((p) => x(p.x)).y((p) => y(p.y * scale))(curve));
+            const res = filled.filter((b) => (b.x0 + b.x1) / 2 >= fit.range[0] && (b.x0 + b.x1) / 2 <= fit.range[1]).map((b) => ({ xc: (b.x0 + b.x1) / 2, r: b.length - fit.definition.evaluate((b.x0 + b.x1) / 2, fit.params) }));
+            const rExtent = d3.extent(res, (p) => p.r);
+            const rPad = (rExtent[1] - rExtent[0]) * 0.1 || 1;
+            const ry = d3.scaleLinear().domain([Math.min(rExtent[0] - rPad, 0), Math.max(rExtent[1] + rPad, 0)]).range([RESIDUAL_HEIGHT - 40, MARGIN.top + 14]);
+            const rSurface = createPlotCanvas({ width: surface.width || Math.max(WIDTH_LEAST, Math.floor(plot.clientWidth || 720)), height: RESIDUAL_HEIGHT, margin: { left: MARGIN.left, right: MARGIN.right, top: MARGIN.top, bottom: 40 }, x, scales: new Map([["count", ry]]), units: ["count"], axisWidth: MARGIN.left, onLeft: 1,
+                unitLabels: true, axisLabels: new Map([["count", `Residuals of ${fit.model}: observed minus fitted counts`]]), axisLabelAnchor: "start", label: `Residuals of the ${fit.model} fit`, xFormat: d3.format(".4~g"), xTicks: x.ticks(5), grid: "y", tickCount: 3 });
+            rSurface.marks.append("line").attr("class", "cor-zero").attr("x1", x.range()[0]).attr("x2", x.range()[1]).attr("y1", ry(0)).attr("y2", ry(0));
+            rSurface.marks.selectAll("circle").data(res).join("circle").attr("class", "dist-residual").attr("r", 3).attr("data-count", res.length).attr("cx", (p) => x(p.xc)).attr("cy", (p) => ry(p.r));
+            residuals.append(rSurface.svg.node());
         }
         const search = d3.bisector((b) => b.x0).right;
         surface.bindHover(plot, ({ x: at }) => {
@@ -398,5 +441,11 @@ export function createDistribution(host, options) {
         beyond.append(heading, node("p", { class: "note" }, `${outside.length} of ${m.n} samples${outside.length > shown.length ? `; the first ${shown.length} in time order are listed` : ""}.`), table);
     }
 
-    return { render, settings };
+    /** What the Export tab can write: the last fit of this histogram. */
+    function exportables() {
+        const fit = fitPanel.result && fitKey === histogramKey ? fitPanel.result : null;
+        return { fit: fit ? { ...fit, tab: "distribution", signal: settings.signal } : null };
+    }
+
+    return { render, settings, exportables };
 }

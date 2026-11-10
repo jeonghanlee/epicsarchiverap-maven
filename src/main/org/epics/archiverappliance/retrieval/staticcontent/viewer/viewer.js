@@ -13,6 +13,7 @@ import { createTrendTools } from "./trend-tools.js";
 import { createCompare } from "./compare.js";
 import { createSpectrum } from "./spectrum.js";
 import { createCorrelation } from "./correlation.js";
+import { methodText } from "./fit-panel.js";
 import { deepFields, readToolParameters, writeToolParameters } from "./tool-address.js";
 import { csvText, gridOf, interpolateRows, intervalForBins, isoText, longTable, nanosOf, nanosOfDate, observationsOf, parseDuration, timeText, valueText, wideTable } from "./export.js";
 
@@ -47,7 +48,7 @@ const state = { pvs: [], from: null, to: null, selected: null, view: "trend", ch
     cursorTexts: [null, null], pinRefs: [] };
 // The defaults of the export choices, for the address.
 const EXPORT_DEFAULTS = { product: "data", range: "view", source: "raw", bins: "700", step: "1", gap: "", layout: "long", alarms: true, values: "source", decimals: "6", time: "iso", units: false, stats: "visible" };
-const EXPORT_CHOICES = { product: ["data", "statistics", "png", "svg", "link", "serverCsv", "serverMat"], range: ["view", "custom"], source: ["plot", "raw", "optimized", "interpolated"],
+const EXPORT_CHOICES = { product: ["data", "statistics", "fit", "derived", "png", "svg", "link", "serverCsv", "serverMat"], range: ["view", "custom"], source: ["plot", "raw", "optimized", "interpolated"],
     layout: ["long", "wide"], values: ["source", "fixed", "exponential"], time: ["iso", "unixms"], stats: ["visible", "selected"] };
 const cache = new Map();
 // The endpoint that gives the last observation at or before a time, and the search period sent with it.
@@ -948,7 +949,7 @@ function renderDataTable() {
 }
 
 // The choices of the Export tab, as the page names them.
-const EXPORT_PRODUCTS = [["data", "Data as CSV"], ["statistics", "Statistics as CSV"], ["png", "Plot as PNG"], ["svg", "Plot as SVG"],
+const EXPORT_PRODUCTS = [["data", "Data as CSV"], ["statistics", "Statistics as CSV"], ["fit", "Fit result as CSV"], ["derived", "Derived signal as CSV"], ["png", "Plot as PNG"], ["svg", "Plot as SVG"],
     ["link", "Address of this view"], ["serverCsv", "Server CSV (getData.csv)"], ["serverMat", "Server MAT (getData.mat)"]];
 const EXPORT_SOURCES = [["plot", "Samples shown"], ["raw", "Raw samples"], ["optimized", "Optimized bins (min, mean, max)"], ["interpolated", "Linear interpolation"]];
 const EXPORT_RANGES = [["view", "Range shown"], ["custom", "Typed range"]];
@@ -1026,6 +1027,8 @@ function renderExport() {
     $("exportNote").textContent = limit || {
         data: "A CSV of the chosen source over the chosen range, with metadata lines first.",
         statistics: "The statistics table as CSV, naming its dataset, source and interval.",
+        fit: "The last fit of the Correlation tab, or else of the Distribution tab: its model, the parameters with their errors, the chi-square per degree of freedom, R squared and the method.",
+        derived: "The derived signal of the Correlation tab as CSV: a time and a value for every pair, with the expression and the two signals in the metadata lines.",
         png: "The plot as it is drawn, with its axes and the visible lines.",
         svg: "The plot as it is drawn, as a scalable image.",
         link: "The address of this view with every option; archived data can change after it is copied.",
@@ -1096,6 +1099,10 @@ async function runExport() {
             await savePlot(choice.product);
         } else if (choice.product === "statistics") {
             saveStatistics();
+        } else if (choice.product === "fit") {
+            saveFit();
+        } else if (choice.product === "derived") {
+            saveDerived();
         } else {
             const range = exportRange();
             if (choice.product === "serverCsv" || choice.product === "serverMat") {
@@ -1119,6 +1126,31 @@ async function copyAddress() {
     } catch (failure) {
         $("message").textContent = "Copy the current address from the address bar; clipboard access is unavailable.";
     }
+}
+
+/** The fit result as CSV: the last fit of the Correlation tab, or else of the Distribution tab. */
+function saveFit() {
+    const fit = correlation.exportables().fit || distribution.exportables().fit;
+    if (!fit) throw new Error("No fit has run. Run a fit in the Correlation tab or the Distribution tab first.");
+    const metadata = [`product: fit`, `tab: ${fit.tab}`, `model: ${fit.model} (${fit.definition.text})`, fit.tab === "correlation" ? `data: ${fit.y} against ${fit.x}` : `data: histogram of ${fit.signal}`,
+        `range: ${fit.range[0] === -Infinity ? "all" : fit.range[0]} to ${fit.range[1] === Infinity ? "all" : fit.range[1]}`, `points: ${fit.count}`, `method: ${methodText(fit)}`];
+    const rows = fit.definition.parameters.map((name, k) => {
+        const free = fit.free.indexOf(k);
+        return [name, String(fit.params[k]), fit.fixed.includes(k) ? "" : free >= 0 ? String(fit.errors[free]) : "", fit.fixed.includes(k) ? "fixed" : "free"];
+    });
+    rows.push(["chi2PerDof", String(fit.chi2PerDof), "", ""], ["rSquared", fit.rSquared === null ? "" : String(fit.rSquared), "", ""], ["dof", String(fit.dof), "", ""], ["converged", String(fit.converged), "", ""]);
+    saveFile(csvText(metadata, ["parameter", "value", "error", "state"], rows), "text/csv", `analyzer-fit-${fit.model}.csv`);
+    $("message").textContent = `Exported the ${fit.model} fit.`;
+}
+
+/** The derived signal of the Correlation tab as CSV. */
+function saveDerived() {
+    const derived = correlation.exportables().derived;
+    if (!derived) throw new Error("No derived signal exists. Enter an expression in the Correlation tab and select Derive first.");
+    const zone = currentZone();
+    const metadata = [`product: derived signal`, `expression: ${derived.expression}`, `x: ${derived.x}`, `y: ${derived.y}`, `unit: ${derived.unit || "none"}`, `time: ISO 8601 in ${zoneName(zone, new Date(derived.points[0].t))}`];
+    saveFile(csvText(metadata, ["time", "value"], derived.points.map((p) => [isoText(nanosOfDate(new Date(p.t)), zone), String(p.v)])), "text/csv", "analyzer-derived.csv");
+    $("message").textContent = `Exported the derived signal ${derived.expression}.`;
 }
 
 /** The data CSV: the chosen source over the range, in the chosen layout and formats, with metadata lines first. */

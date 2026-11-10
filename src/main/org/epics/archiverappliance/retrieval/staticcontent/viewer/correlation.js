@@ -3,7 +3,9 @@
 // density contour, with X and Y projections, points sized, faded or coloured by time, a rectangle selection that counts and
 // correlates the pairs inside it, Pearson's and Spearman's correlation with their p-values, the cross-correlation over lags of
 // the paired sequence, and the two trends under one another sharing the time axis. The pairing is written above the plot with
-// its counts; an input that cannot give a result is refused with its reason and shows no plot and no stale number.
+// its counts; an input that cannot give a result is refused with its reason and shows no plot and no stale number. The fit panel
+// fits a model of Y against X over the pairs from its button, draws the curve with its one-sigma band and the residuals, and a
+// typed expression over x and y makes a derived signal, drawn as a third trend and offered to the Export tab.
 import { createPlotCanvas } from "../comm/js/aa/chart.js";
 import { node } from "../comm/js/aa/dom.js";
 import { infoButton } from "../comm/js/aa/card.js";
@@ -11,7 +13,9 @@ import { format } from "../comm/js/aa/chart/text.js";
 import { pairSeries, GAP_FACTOR } from "../comm/js/aa/pairing.js";
 import { pearson, spearman, crossCorrelation, profile } from "../comm/js/aa/correlation.js";
 import { formatInZone, zoneName } from "../comm/js/aa/timezone.js";
+import { parse } from "../comm/js/aa/expression.js";
 import { pointsInside } from "./distribution.js";
+import { createFitPanel, fittedCurve, residualsOf, FIT_PANEL_DEFAULTS } from "./fit-panel.js";
 
 const d3 = globalThis.d3;
 
@@ -20,7 +24,8 @@ export const POINT_SIZES = [["1", "1 px"], ["2", "2 px"], ["3", "3 px"], ["4", "
 export const POINT_OPACITIES = [["1", "Opaque"], ["0.6", "Faded"], ["0.3", "Faint"]];
 export const LAG_CHOICES = [["0", "None"], ["5", "5 pairs"], ["10", "10 pairs"], ["20", "20 pairs"]];
 // The settings of the tab and their defaults; the address carries the ones that differ (viewer/tool-address.js).
-export const CORRELATION_DEFAULTS = Object.freeze({ x: null, y: null, view: "scatter", size: "2", opacity: "0.6", time: false, lags: "10", brush: false });
+export const CORRELATION_DEFAULTS = Object.freeze({ x: null, y: null, view: "scatter", size: "2", opacity: "0.6", time: false, lags: "10", brush: false, model: FIT_PANEL_DEFAULTS.model, fitFrom: "", fitTo: "" });
+const RESIDUAL_HEIGHT = 140;
 export const PAIRS_LEAST = 3;
 export const PROFILE_BINS = 10;
 export const DENSITY_BANDWIDTH = 12;
@@ -49,6 +54,8 @@ const CARD = [
         ["Correlation", "Pearson's r measures a straight-line relation, Spearman's rho a monotonic one (it correlates the ranks). The p-value is the chance of a correlation at least this far from zero in unrelated signals; it says nothing about the size of an effect. Neither says which signal drives the other."],
         ["Cross-correlation", "Pearson's r between X and Y shifted by a number of pairs, for lags up to the number chosen; the lag of the largest absolute value says whether one signal follows the other, in pairs of the paired sequence, not in seconds."],
         ["Trends", "The two signals over the selected range, one under the other on the same time axis, so that a pair can be placed in time."],
+        ["Fit", "A model of Y against X fitted to the pairs in the fit range from Run fit: the line, polynomial, exponential, power and logarithm by least squares (exponential and power in a transformed variable), the sine, Gaussian and Landau by Levenberg-Marquardt from the start values, with parameters fixed or bounded. The errors come from the covariance scaled by the reduced chi-square; the band is one sigma of the fitted curve; the residuals (observed minus fitted) are drawn under the fit result. A fit of another pairing is cleared, and a fit never certifies the physical model."],
+        ["Derived signal", "A typed expression over x and y (or the PV names), evaluated at every pair and drawn as a third trend: a difference, a sum, a ratio, or any arithmetic of them. The unit is yours to name; the Export tab writes the signal as CSV."],
     ],
     null,
 ];
@@ -103,7 +110,33 @@ export function createCorrelation(host, options) {
     const plots = node("div", { class: "cor-plots" });
     const numbers = node("div", { class: "cor-numbers" });
     const trends = node("div", { class: "cor-trends" });
-    host.replaceChildren(controls, message, pairing, plots, selection, numbers, trends);
+    const residuals = node("div", { class: "chart cor-residuals" });
+    const fitHost = node("div", { class: "cor-fit" });
+    const fitPanel = createFitPanel(fitHost, { label: "Fit", settings: { model: settings.model, from: settings.fitFrom, to: settings.fitTo }, changed: () => { settings.model = fitPanel.settings.model; settings.fitFrom = fitPanel.settings.from; settings.fitTo = fitPanel.settings.to; if (options.changed) options.changed(); } });
+    // The key of the pairing a fit was computed from; a fit of another pairing is cleared.
+    let fitKey = null;
+    let pairingKey = null;
+    fitPanel.onResult(() => { fitKey = pairingKey; render(); });
+    const expression = node("input", { type: "text", size: "24", "aria-label": "Derived signal expression", placeholder: "y - x" });
+    const unitField = node("input", { type: "text", size: "6", "aria-label": "Derived signal unit", placeholder: "unit" });
+    const apply = node("button", { type: "button" }, "Derive");
+    const derivedError = node("p", { class: "error", role: "alert" });
+    const derived = { expression: "", unit: "", parsed: null, points: [] };
+    apply.addEventListener("click", () => {
+        const text = expression.value.trim();
+        derivedError.textContent = "";
+        if (!text) { derived.expression = ""; derived.parsed = null; derived.points = []; render(); return; }
+        const parsed = parse(text);
+        if (!parsed.ok) { derivedError.textContent = parsed.reason; return; }
+        const unknown = parsed.variables.filter((v) => !["x", "y", "X", "Y", settings.x, settings.y].includes(v));
+        if (unknown.length) { derivedError.textContent = `Unknown variable${unknown.length > 1 ? "s" : ""} ${unknown.join(", ")}: use x and y, or the names of the two signals.`; return; }
+        derived.expression = text;
+        derived.unit = unitField.value.trim();
+        derived.parsed = parsed;
+        render();
+    });
+    const derivedHost = node("div", { class: "cor-derived" }, node("h3", { class: "cor-section-title" }, "Derived signal"), node("div", { class: "cor-controls" }, node("label", null, "Expression ", expression), node("label", null, "Unit ", unitField), apply), derivedError);
+    host.replaceChildren(controls, message, pairing, plots, selection, numbers, node("h3", { class: "cor-section-title" }, "Fit of Y against X"), fitHost, residuals, derivedHost, trends);
 
     function syncSignals(list) {
         const names = list.map((entry) => entry.name);
@@ -133,6 +166,8 @@ export function createCorrelation(host, options) {
         plots.replaceChildren();
         numbers.replaceChildren();
         trends.replaceChildren();
+        residuals.replaceChildren();
+        fitPanel.setEnabled(false);
         pairing.textContent = "";
         message.textContent = "";
         selection.textContent = "";
@@ -178,7 +213,22 @@ export function createCorrelation(host, options) {
         const r = pearson(xs, ys);
         const rho = spearman(xs, ys);
         const constant = r === null ? (d3.extent(xs)[0] === d3.extent(xs)[1] ? "X" : "Y") : null;
-        drawMain(entryX, entryY, paired, zone);
+        pairingKey = JSON.stringify([settings.x, settings.y, +options.range().from, +options.range().to, entryX.dataset.seconds, paired.pairs.length]);
+        if (fitPanel.result && fitKey !== pairingKey) {
+            fitPanel.clear();
+            message.textContent = "The pairing the fit used has changed; the fit was cleared. Select Run fit to fit again.";
+        }
+        fitPanel.setData(xs, ys, null, `${entryY.name} against ${entryX.name}`);
+        fitPanel.setEnabled(true);
+        const fit = fitPanel.result && fitKey === pairingKey ? fitPanel.result : null;
+        if (derived.parsed) {
+            const values = { [settings.x]: 0, [settings.y]: 0 };
+            derived.points = paired.pairs.map((p) => { values.x = p.x; values.X = p.x; values.y = p.y; values.Y = p.y; values[settings.x] = p.x; values[settings.y] = p.y; return { t: p.t, v: derived.parsed.evaluate(values) }; }).filter((p) => Number.isFinite(p.v));
+            if (!derived.points.length) derivedError.textContent = `${derived.expression} gives no finite value over the pairs.`;
+        } else {
+            derived.points = [];
+        }
+        drawMain(entryX, entryY, paired, zone, fit);
         const rows = [
             ["Pairs", `${paired.pairs.length} at the union of the sample times`],
             ["Samples", `X ${paired.countX}, Y ${paired.countY}; the slower signal has ${slower}`],
@@ -197,8 +247,14 @@ export function createCorrelation(host, options) {
         drawTrends(entryX, entryY, sx.points, sy.points, zone);
     }
 
+    /** What the Export tab can write: the last fit of this pairing and the derived signal. */
+    function exportables() {
+        const fit = fitPanel.result && fitKey === pairingKey ? fitPanel.result : null;
+        return { fit: fit ? { ...fit, tab: "correlation", x: settings.x, y: settings.y } : null, derived: derived.parsed && derived.points.length ? { expression: derived.expression, unit: derived.unit, x: settings.x, y: settings.y, points: derived.points } : null };
+    }
+
     /** The scatter plot, the profile or the density contour, with the two projections. */
-    function drawMain(entryX, entryY, paired, zone) {
+    function drawMain(entryX, entryY, paired, zone, fit) {
         const pairs = paired.pairs;
         const width = Math.max(WIDTH_LEAST, Math.floor(plots.clientWidth || 720));
         const projectionWidth = Math.min(PROJECTION_HEIGHT * 2, Math.floor(width / 4));
@@ -237,6 +293,24 @@ export function createCorrelation(host, options) {
                 .attr("x1", (b) => x(b.xc)).attr("x2", (b) => x(b.xc)).attr("y1", (b) => y(b.mean - b.error)).attr("y2", (b) => y(b.mean + b.error));
             group.append("path").attr("class", "cor-profile-line").attr("d", d3.line().x((b) => x(b.xc)).y((b) => y(b.mean))(centres));
             group.selectAll("circle").data(centres).join("circle").attr("class", "cor-profile-mean").attr("r", 3.5).attr("cx", (b) => x(b.xc)).attr("cy", (b) => y(b.mean));
+        }
+        if (fit) {
+            const curve = fittedCurve(fit, Math.max(xDomain[0], fit.range[0]), Math.min(xDomain[1], fit.range[1]));
+            surface.marks.append("path").attr("class", "cor-fit-band").attr("data-points", curve.length)
+                .attr("d", d3.area().x((p) => x(p.x)).y0((p) => y(p.y - (Number.isFinite(p.sigma) ? p.sigma : 0))).y1((p) => y(p.y + (Number.isFinite(p.sigma) ? p.sigma : 0)))(curve));
+            surface.marks.append("path").attr("class", "cor-fit-curve").attr("data-model", fit.model).attr("d", d3.line().x((p) => x(p.x)).y((p) => y(p.y))(curve));
+            // The residuals are drawn under the fit result over the full width of the tab, on their own x scale of the same domain.
+            const res = residualsOf(fit, xs, ys);
+            const rWidth = Math.max(WIDTH_LEAST, Math.floor(residuals.clientWidth || width));
+            const rx = d3.scaleLinear().domain(xDomain).range([MARGIN.left, rWidth - MARGIN.right]);
+            const rExtent = d3.extent(res, (p) => p.r);
+            const rPad = (rExtent[1] - rExtent[0]) * 0.1 || 1;
+            const ry = d3.scaleLinear().domain([rExtent[0] - rPad, rExtent[1] + rPad]).range([RESIDUAL_HEIGHT - 40, MARGIN.top + AXIS_TOP_ROOM]);
+            const rSurface = createPlotCanvas({ width: rWidth, height: RESIDUAL_HEIGHT, margin: { left: MARGIN.left, right: MARGIN.right, top: MARGIN.top, bottom: 40 }, x: rx, scales: new Map([[unitY || "y", ry]]), units: [unitY || "y"], axisWidth: MARGIN.left, onLeft: 1,
+                unitLabels: true, axisLabels: new Map([[unitY || "y", `Residuals of ${fit.model}: observed minus fitted ${unitY}`]]), axisLabelAnchor: "start", label: `Residuals of the ${fit.model} fit`, xFormat: d3.format(".4~g"), xTicks: rx.ticks(rWidth < MEDIUM_WIDTH ? 3 : 6), grid: "y", tickCount: 3 });
+            rSurface.marks.append("line").attr("class", "cor-zero").attr("x1", rx.range()[0]).attr("x2", rx.range()[1]).attr("y1", ry(0)).attr("y2", ry(0));
+            rSurface.marks.selectAll("circle").data(res).join("circle").attr("class", "cor-residual").attr("r", 1.5).attr("data-count", res.length).attr("cx", (p) => rx(p.x)).attr("cy", (p) => ry(p.r));
+            residuals.append(rSurface.svg.node());
         }
         const nearest = (px, py) => {
             let best = null;
@@ -295,7 +369,17 @@ export function createCorrelation(host, options) {
             surface.marks.append("path").attr("class", `cor-trend cor-trend-${role.toLowerCase()}`).attr("data-count", points.length).attr("d", d3.line().x((p) => xScale(p.t)).y((p) => y(p.v))(points));
             trends.append(surface.svg.node());
         }
+        if (derived.points.length) {
+            const unit = derived.unit;
+            const [low, high] = d3.extent(derived.points, (p) => p.v);
+            const pad = (high - low) * 0.06 || 1;
+            const y = d3.scaleLinear().domain([low - pad, high + pad]).range([TREND_HEIGHT - 36, MARGIN.top + AXIS_TOP_ROOM]);
+            const surface = createPlotCanvas({ width, height: TREND_HEIGHT, margin: { left: MARGIN.left, right: MARGIN.right, top: MARGIN.top, bottom: 36 }, x: xScale, scales: new Map([[unit || "z", y]]), units: [unit || "z"], axisWidth: MARGIN.left, onLeft: 1,
+                unitLabels: true, axisLabels: new Map([[unit || "z", `Derived: ${derived.expression}${unit ? ` (${unit})` : ""}`]]), axisLabelAnchor: "start", label: `Trend of the derived signal ${derived.expression}`, xFormat: (date) => formatInZone(date, AXIS_TIME_FORMAT, zone), xTicks: ticks, grid: "y", tickCount: 3 });
+            surface.marks.append("path").attr("class", "cor-trend cor-trend-z").attr("data-count", derived.points.length).attr("d", d3.line().x((p) => xScale(p.t)).y((p) => y(p.v))(derived.points));
+            trends.append(surface.svg.node());
+        }
     }
 
-    return { render, settings };
+    return { render, settings, exportables };
 }

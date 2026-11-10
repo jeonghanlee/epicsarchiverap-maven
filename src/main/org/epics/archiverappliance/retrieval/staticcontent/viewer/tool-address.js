@@ -11,6 +11,7 @@ import { SIDES, TREND_TOOL_DEFAULTS } from "./trend-tools.js";
 import { COMPARE_MODES, COMPARE_METHODS, COMPARE_DEFAULTS } from "./compare.js";
 import { SPECTRUM_VIEWS, OUTPUTS, GAP_POLICIES, PADDINGS, SEGMENTS, OVERLAPS, SPECTRUM_DEFAULTS } from "./spectrum.js";
 import { CORRELATION_VIEWS, POINT_SIZES, POINT_OPACITIES, LAG_CHOICES, CORRELATION_DEFAULTS } from "./correlation.js";
+import { MODEL_NAMES } from "../comm/js/aa/fit.js";
 
 export const TOOL_NAMES = ["distribution", "trend", "compare", "spectrum", "correlation"];
 
@@ -101,6 +102,12 @@ export function readToolParameters(parameters, pvs) {
     flag(tools.correlation, fields, "time");
     choice(tools.correlation, fields, "lags", values(LAG_CHOICES));
     flag(tools.correlation, fields, "brush");
+    choice(tools.correlation, fields, "model", MODEL_NAMES);
+    for (const key of ["fitFrom", "fitTo"]) {
+        const text = fields.get(key);
+        if (text !== undefined && finiteNumber(text) !== null) tools.correlation[key] = text.trim();
+    }
+    choice(tools.distribution, deepFields(parameters, "distribution"), "fit", MODEL_NAMES);
     return tools;
 }
 
