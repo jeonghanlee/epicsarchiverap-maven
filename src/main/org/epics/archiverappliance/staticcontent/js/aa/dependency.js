@@ -22,7 +22,8 @@ function spread(values) {
 export function mutualInformation(x, y, bins) {
     const n = Math.min(x.length, y.length);
     if (n < 2 || !(bins >= 2)) return null;
-    const range = (values) => [Math.min(...values), Math.max(...values)];
+    // A loop, not Math.min(...values): a spread of more than about a hundred thousand values overflows the call stack.
+    const range = (values) => { let low = Infinity; let high = -Infinity; for (const v of values) { if (v < low) low = v; if (v > high) high = v; } return [low, high]; };
     const [x0, x1] = range(x.slice(0, n));
     const [y0, y1] = range(y.slice(0, n));
     if (!(x1 > x0 && y1 > y0)) return null;
@@ -118,4 +119,31 @@ export function multipleRegression(columns, y) {
     const standardised = columns.map((column, k) => (fit.params[k + 1] * spread(column).sd) / sy);
     const residuals = y.map((v, i) => v - design[i].reduce((s, d, k) => s + d * fit.params[k], 0));
     return { params: fit.params, errors: fit.errors, standardised, rSquared: fit.rSquared, chi2PerDof: fit.chi2PerDof, dof: fit.dof, residuals, n };
+}
+
+/**
+ * The condition number of the correlation matrix of the columns: its largest eigenvalue over its smallest, so that a value far
+ * above 1e3 warns of columns that are nearly linear combinations of each other. Infinity when the smallest eigenvalue is not
+ * positive; null when a column has no spread or the decomposition fails.
+ */
+export function conditionNumber(columns) {
+    const corr = correlationMatrix(columns);
+    if (corr.some((row) => row.some((v) => !Number.isFinite(v)))) return null;
+    const eigen = symmetricEigen(corr);
+    if (!eigen) return null;
+    const largest = Math.max(...eigen.values);
+    const smallest = Math.min(...eigen.values);
+    return smallest > 0 ? largest / smallest : Infinity;
+}
+
+/** The pairs of columns whose absolute correlation is at least threshold, as [{i, j, r}] with i below j, the largest first. */
+export function collinearPairs(columns, threshold) {
+    const corr = correlationMatrix(columns);
+    const pairs = [];
+    for (let i = 0; i < columns.length; i += 1) {
+        for (let j = i + 1; j < columns.length; j += 1) {
+            if (Number.isFinite(corr[i][j]) && Math.abs(corr[i][j]) >= threshold) pairs.push({ i, j, r: corr[i][j] });
+        }
+    }
+    return pairs.sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
 }

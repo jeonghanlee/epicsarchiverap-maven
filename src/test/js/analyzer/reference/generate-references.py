@@ -600,6 +600,32 @@ line_fit = linear_fit(line_design, line_y)
 line_cov = np.linalg.inv(line_design.T @ line_design) * line_fit["chi2PerDof"]
 reference["fitCases"]["line"]["band"] = {"x": band_xs, "sigma": band_of(lambda xv, a, b: a + b * xv, line_fit["params"], line_cov, band_xs)}
 
+# The alignment of several signals on the times all of them share (the means over one interval of the server carry the time of
+# their interval, and an interval without samples is absent): the common times, the columns on them, the number of distinct times
+# in any signal, the number dropped and the share of the union each signal holds.
+align_times = [[0, 60, 120, 180, 240, 300, 360], [0, 60, 180, 240, 300, 360, 420], [60, 120, 180, 240, 360, 420, 480]]
+align_series = [{"name": f"s{k}", "points": [{"t": t * 1000, "v": float(k * 100 + t / 60)} for t in times]} for k, times in enumerate(align_times)]
+common_times = sorted(set.intersection(*[set(times) for times in align_times]))
+union_times = sorted(set.union(*[set(times) for times in align_times]))
+reference["alignmentCases"] = {
+    "series": align_series, "times": [t * 1000 for t in common_times], "union": len(union_times), "common": len(common_times),
+    "dropped": len(union_times) - len(common_times),
+    "columns": [[float(k * 100 + t / 60) for t in common_times] for k in range(3)],
+    "shares": [len(times) / len(union_times) for times in align_times],
+}
+
+# The condition number of a correlation matrix (the largest eigenvalue over the smallest, as np.linalg.cond gives for a symmetric
+# positive definite matrix) and the pairs of columns whose absolute correlation reaches a threshold, for a well-conditioned set
+# and for a set whose second column is the first plus a little noise.
+cond_base = pair_rng.normal(0, 1, (200, 3))
+cond_near = np.column_stack([cond_base[:, 0], cond_base[:, 0] + pair_rng.normal(0, 0.02, 200), cond_base[:, 2]])
+def cond_case(columns, threshold):
+    corr = np.corrcoef(columns, rowvar=False)
+    pairs = [{"i": i, "j": j, "r": float(corr[i, j])} for i in range(corr.shape[0]) for j in range(i + 1, corr.shape[0]) if abs(corr[i, j]) >= threshold]
+    pairs.sort(key=lambda pair: -abs(pair["r"]))
+    return {"columns": [listing(col) for col in columns.T], "cond": float(np.linalg.cond(corr)), "threshold": threshold, "pairs": pairs}
+reference["conditionCases"] = {"well": cond_case(cond_base, 0.9), "near": cond_case(cond_near, 0.9)}
+
 with open(os.path.join(HERE, "references.json"), "w") as out:
     json.dump(reference, out, separators=(",", ":"))
     out.write("\n")
