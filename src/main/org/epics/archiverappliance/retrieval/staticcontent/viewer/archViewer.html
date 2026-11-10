@@ -66,7 +66,7 @@
       <div class="analysis-tabs" id="analysisTabs" role="tablist" aria-label="Analysis">
         <button type="button" role="tab" id="trendTab" aria-controls="trendPanel" aria-selected="true" data-view="trend">Trend</button>
         <button type="button" role="tab" id="distributionTab" aria-controls="distributionPanel" aria-selected="false" tabindex="-1" data-view="distribution">Distribution</button>
-        <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="correlation">Correlation</button>
+        <button type="button" role="tab" id="correlationTab" aria-controls="correlationPanel" aria-selected="false" tabindex="-1" data-view="correlation">Correlation</button>
         <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="dependency">Dependency</button>
         <button type="button" role="tab" id="spectrumTab" aria-controls="spectrumPanel" aria-selected="false" tabindex="-1" data-view="spectrum">Spectrum</button>
         <button type="button" role="tab" id="compareTab" aria-controls="comparePanel" aria-selected="false" tabindex="-1" data-view="compare">Compare</button>
@@ -127,6 +127,10 @@
       <section id="distributionPanel" role="tabpanel" aria-labelledby="distributionTab" hidden>
         <div class="view-heading"><h2>Distribution</h2></div>
         <div id="distributionHost" class="dist"></div>
+      </section>
+      <section id="correlationPanel" role="tabpanel" aria-labelledby="correlationTab" hidden>
+        <div class="view-heading"><h2>Correlation</h2></div>
+        <div id="correlationHost" class="cor"></div>
       </section>
       <section id="spectrumPanel" role="tabpanel" aria-labelledby="spectrumTab" hidden>
         <div class="view-heading"><h2>Spectrum</h2></div>

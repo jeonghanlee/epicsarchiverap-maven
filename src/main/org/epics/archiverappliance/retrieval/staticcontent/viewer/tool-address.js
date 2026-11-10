@@ -10,8 +10,9 @@ import { DISTRIBUTION_VIEWS, RULES, NORMALIZATIONS, BINS_LEAST, BINS_MOST, SIGMA
 import { SIDES, TREND_TOOL_DEFAULTS } from "./trend-tools.js";
 import { COMPARE_MODES, COMPARE_METHODS, COMPARE_DEFAULTS } from "./compare.js";
 import { SPECTRUM_VIEWS, OUTPUTS, GAP_POLICIES, PADDINGS, SEGMENTS, OVERLAPS, SPECTRUM_DEFAULTS } from "./spectrum.js";
+import { CORRELATION_VIEWS, POINT_SIZES, POINT_OPACITIES, LAG_CHOICES, CORRELATION_DEFAULTS } from "./correlation.js";
 
-export const TOOL_NAMES = ["distribution", "trend", "compare", "spectrum"];
+export const TOOL_NAMES = ["distribution", "trend", "compare", "spectrum", "correlation"];
 
 const values = (choices) => choices.map(([value]) => value);
 const SEGMENT_VALUES = ["auto", ...SEGMENTS.map(String)];
@@ -47,7 +48,7 @@ function signal(target, fields, key, pvs) {
  * to be laid over the defaults of the tool. pvs are the selected PV names, which a signal field must be one of.
  */
 export function readToolParameters(parameters, pvs) {
-    const tools = { distribution: {}, trend: {}, compare: {}, spectrum: {} };
+    const tools = { distribution: {}, trend: {}, compare: {}, spectrum: {}, correlation: {} };
     let fields = deepFields(parameters, "distribution");
     signal(tools.distribution, fields, "signal", pvs);
     choice(tools.distribution, fields, "view", values(DISTRIBUTION_VIEWS));
@@ -90,6 +91,16 @@ export function readToolParameters(parameters, pvs) {
     choice(tools.spectrum, fields, "padding", values(PADDINGS));
     choice(tools.spectrum, fields, "segment", SEGMENT_VALUES);
     choice(tools.spectrum, fields, "overlap", values(OVERLAPS));
+
+    fields = deepFields(parameters, "correlation");
+    signal(tools.correlation, fields, "x", pvs);
+    signal(tools.correlation, fields, "y", pvs);
+    choice(tools.correlation, fields, "view", values(CORRELATION_VIEWS));
+    choice(tools.correlation, fields, "size", values(POINT_SIZES));
+    choice(tools.correlation, fields, "opacity", values(POINT_OPACITIES));
+    flag(tools.correlation, fields, "time");
+    choice(tools.correlation, fields, "lags", values(LAG_CHOICES));
+    flag(tools.correlation, fields, "brush");
     return tools;
 }
 
@@ -98,7 +109,7 @@ function writeFields(parameters, name, settings, defaults, pvs, skip = []) {
     for (const [key, fallback] of Object.entries(defaults)) {
         if (skip.includes(key)) continue;
         const value = settings[key];
-        const base = key === "signal" || key === "a" ? (pvs[0] ?? null) : fallback;
+        const base = key === "signal" || key === "a" || key === "x" ? (pvs[0] ?? null) : fallback;
         if (value === null || value === undefined || value === base) continue;
         parameters.set(`${name}[${key}]`, String(value));
     }
@@ -124,4 +135,11 @@ export function writeToolParameters(parameters, tools, pvs) {
         }
     }
     if (tools.spectrum) writeFields(parameters, "spectrum", tools.spectrum.settings, SPECTRUM_DEFAULTS, pvs);
+    if (tools.correlation) {
+        const settings = tools.correlation.settings;
+        writeFields(parameters, "correlation", settings, CORRELATION_DEFAULTS, pvs, ["y"]);
+        // Signal Y defaults to the first PV other than X.
+        const otherwise = pvs.find((name) => name !== settings.x) ?? pvs[0] ?? null;
+        if (settings.y !== null && settings.y !== otherwise) parameters.set("correlation[y]", settings.y);
+    }
 }

@@ -12,6 +12,7 @@ import { createDistribution } from "./distribution.js";
 import { createTrendTools } from "./trend-tools.js";
 import { createCompare } from "./compare.js";
 import { createSpectrum } from "./spectrum.js";
+import { createCorrelation } from "./correlation.js";
 import { deepFields, readToolParameters, writeToolParameters } from "./tool-address.js";
 import { csvText, gridOf, interpolateRows, intervalForBins, isoText, longTable, nanosOf, nanosOfDate, observationsOf, parseDuration, timeText, valueText, wideTable } from "./export.js";
 
@@ -29,7 +30,7 @@ const HOUR = 3600000;
 const INPUT_FORMAT = "%Y-%m-%dT%H:%M:%S";
 const VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare", "waveform", "image"];
 // The views that have their tool in this version; the others explain that they are not available.
-const AVAILABLE_VIEWS = ["trend", "distribution", "spectrum", "compare"];
+const AVAILABLE_VIEWS = ["trend", "distribution", "correlation", "spectrum", "compare"];
 const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 // The page holds two datasets per PV. The selected dataset (summary) is the records of the selected range at the
 // resolution sample, resolved once from the interval option when the selection is made; the Summary statistics come
@@ -696,6 +697,8 @@ function render() {
         distribution.render();
     } else if (state.view === "spectrum") {
         spectrum.render();
+    } else if (state.view === "correlation") {
+        correlation.render();
     } else if (state.view === "compare") {
         compare.render();
     } else if (state.view !== "trend") {
@@ -870,6 +873,7 @@ function explainView(view, restored = false) {
     $("distributionPanel").hidden = restored || state.view !== "distribution";
     $("comparePanel").hidden = restored || state.view !== "compare";
     $("spectrumPanel").hidden = restored || state.view !== "spectrum";
+    $("correlationPanel").hidden = restored || state.view !== "correlation";
 }
 
 /** Shows the panel of an available view and marks its tab, without writing the address or drawing. */
@@ -879,6 +883,7 @@ function activateView(view) {
     $("distributionPanel").hidden = view !== "distribution";
     $("comparePanel").hidden = view !== "compare";
     $("spectrumPanel").hidden = view !== "spectrum";
+    $("correlationPanel").hidden = view !== "correlation";
     $("unavailableView").hidden = true;
     for (const tab of $("analysisTabs").querySelectorAll('[role="tab"]')) {
         const active = tab.dataset.view === view;
@@ -1433,11 +1438,12 @@ function trendSignals() {
 trendTools = createTrendTools($("trendTools2"), { signals: trendSignals, window: () => ({ from: state.from, to: state.to }), zone: currentZone, onChange: () => { render(); writeAddress(); }, helpHref: helpPage,
     sourceText, isHidden: (name) => chart.getState().hidden.includes(name), settings: state.tools.trend });
 const spectrum = createSpectrum($("spectrumHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage, settings: state.tools.spectrum, changed: writeAddress });
+const correlation = createCorrelation($("correlationHost"), { signals: distributionSignals, range: () => state.selected, zone: currentZone, sourceText, helpHref: helpPage, settings: state.tools.correlation, changed: writeAddress });
 const compare = createCompare($("compareHost"), { signals: distributionSignals, range: () => state.selected, resolution: () => state.sample ?? resolutionOf(state.selected.from, state.selected.to),
     fetch: (name, seconds, from, to) => fetchSeries(name, "mean", seconds, from, to), parseTime: readTime, formatTime: inputTime, zone: currentZone, sourceText, helpHref: helpPage,
     settings: state.tools.compare, changed: writeAddress });
 const distribution = createDistribution($("distributionHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage, settings: state.tools.distribution, changed: writeAddress });
-tools = { distribution, trend: trendTools, compare, spectrum };
+tools = { distribution, trend: trendTools, compare, spectrum, correlation };
 wire();
 writeAddress();
 if (AVAILABLE_VIEWS.includes(state.view)) {

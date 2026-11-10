@@ -158,3 +158,30 @@
 .export-form label { font-size: .875rem; }
 .export-form input[type="text"], .export-form input[type="number"] { width: 9em; }
 .export-links { padding-left: 1.2em; font-size: .875rem; }
+
+/* The Correlation tab: its controls, the scatter plot with its two projections in a grid, the selection, the numbers and the two trends. */
+.cor-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; padding: 8px 0; }
+.cor-controls label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cor-controls label.check-inline { flex-direction: row; align-items: center; }
+.cor-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: 0 4px; margin-top: 8px; }
+.cor-main { min-width: 0; }
+.cor-side svg { display: block; }
+.cor-under svg { display: block; }
+.cor-point { fill: var(--accent); stroke: none; }
+.cor-point.cor-selected { stroke: var(--ink); stroke-width: 1.2; }
+.cor-contour { stroke: var(--ink); stroke-opacity: .25; stroke-width: .5; }
+.cor-profile-line { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.cor-profile-bar { stroke: var(--ink); stroke-width: 1.5; }
+.cor-profile-mean { fill: var(--ink); }
+.cor-projection-bar { fill: var(--accent); fill-opacity: .6; }
+.cor-brush .selection { fill: var(--ink); fill-opacity: .1; stroke: var(--ink); stroke-dasharray: 4 3; }
+.cor-numbers { overflow-x: auto; margin-top: 12px; }
+.cor-table th[scope="row"] { text-align: left; font-weight: normal; padding-right: 16px; vertical-align: top; }
+.cor-table td { white-space: normal; overflow-wrap: anywhere; }
+.cor-trends { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+.cor-trend { fill: none; stroke-width: 1.2; }
+.cor-trend-x { stroke: var(--accent); }
+.cor-trend-y { stroke: var(--ink); }
+@media (max-width: 480px) {
+    .cor-table th, .cor-table td { padding: 2px 4px; font-size: 12px; }
+}
