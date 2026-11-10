@@ -564,6 +564,42 @@ pair_x = [(t * 1000, float(np.sin(t / 50)), False) for t in list(range(0, 110, 1
 pair_y = [(t * 1000, 0.1 * t, False) for t in range(7, 500, 25)]
 reference["pairingCases"] = {"irregular": pair_case(pair_x, pair_y), "aligned": pair_case([(t * 1000, float(t), False) for t in range(0, 100, 10)], [(t * 1000, float(2 * t), False) for t in range(0, 100, 10)])}
 
+# A weighted fit of a histogram (Poisson weights, one over the count, empty bins left out; the covariance taken as it is, SciPy's
+# absolute_sigma) and the one-sigma band of a fitted curve from the covariance and the numerical gradient of the model.
+hist_sample = pair_rng.normal(10.0, 2.0, 5000)
+hist_counts, hist_edges = np.histogram(hist_sample, bins=30, range=(2.0, 18.0))
+hist_centres = (hist_edges[:-1] + hist_edges[1:]) / 2
+keep = hist_counts > 0
+hist_p0 = [float(hist_counts.max()), 10.5, 1.5, 0.0]
+hist_popt, hist_pcov = optimize.curve_fit(gaussian_model, hist_centres[keep], hist_counts[keep].astype(float), p0=hist_p0, sigma=np.sqrt(hist_counts[keep]), absolute_sigma=True, maxfev=20000)
+hist_resid = (hist_counts[keep] - gaussian_model(hist_centres[keep], *hist_popt)) / np.sqrt(hist_counts[keep])
+reference["weightedFitCases"] = {"histogram": {"centres": listing(hist_centres), "counts": [int(c) for c in hist_counts], "p0": hist_p0, "params": listing(hist_popt), "errors": listing(np.sqrt(np.diag(hist_pcov))),
+    "chi2PerDof": float((hist_resid ** 2).sum() / (int(keep.sum()) - 4)), "dof": int(keep.sum()) - 4, "included": int(keep.sum())}}
+
+
+def band_of(model, params, cov, xs):
+    out = []
+    for xv in xs:
+        grad = []
+        for k, pk in enumerate(params):
+            h = 1e-7 * max(1.0, abs(pk))
+            up, down = list(params), list(params)
+            up[k] += h
+            down[k] -= h
+            grad.append((model(xv, *up) - model(xv, *down)) / (2 * h))
+        grad = np.array(grad)
+        out.append(float(np.sqrt(max(grad @ cov @ grad, 0.0))))
+    return out
+
+
+sine_fit_popt, sine_fit_pcov = optimize.curve_fit(sine_model, sine_x, sine_y, p0=[1.5, 0.14, 0.5, 0.8], method="lm", maxfev=20000)
+band_xs = [0.0, 5.0, 10.0, 15.0, 20.0]
+reference["fitCases"]["sine"]["band"] = {"x": band_xs, "sigma": band_of(sine_model, sine_fit_popt, sine_fit_pcov, band_xs)}
+line_design = np.column_stack([np.ones(60), x60])
+line_fit = linear_fit(line_design, line_y)
+line_cov = np.linalg.inv(line_design.T @ line_design) * line_fit["chi2PerDof"]
+reference["fitCases"]["line"]["band"] = {"x": band_xs, "sigma": band_of(lambda xv, a, b: a + b * xv, line_fit["params"], line_cov, band_xs)}
+
 with open(os.path.join(HERE, "references.json"), "w") as out:
     json.dump(reference, out, separators=(",", ":"))
     out.write("\n")

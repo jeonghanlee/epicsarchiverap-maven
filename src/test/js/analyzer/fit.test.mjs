@@ -97,3 +97,29 @@ test("the models refuse data outside their domain and too few points, and the gu
     close(Math.abs(sine.params[1]), cases.sine.fit.params[1], 1e-3, 1e-12, "sine frequency from its own guess");
     assert.equal(fit.MODEL_NAMES.length, 8);
 });
+
+test("a weighted fit of a histogram (Poisson weights, empty bins left out) equals SciPy curve_fit with absolute errors", () => {
+    const h = reference.weightedFitCases.histogram;
+    const kept = h.counts.map((c, i) => i).filter((i) => h.counts[i] > 0);
+    const x = kept.map((i) => h.centres[i]);
+    const y = kept.map((i) => h.counts[i]);
+    const weights = y.map((c) => 1 / c);
+    const result = fit.fitModel("gaussian", x, y, { start: h.p0, weights });
+    assert.equal(result.ok, true);
+    assert.equal(result.weighted, true);
+    closeParams(result.params, h.params, h.errors, "weighted params");
+    closeArray(result.errors, h.errors, 1e-6, "weighted errors");
+    close(result.chi2PerDof, h.chi2PerDof, 1e-6, 1e-15, "weighted chi2 per dof");
+    assert.equal(result.dof, h.dof);
+    assert.equal(x.length, h.included);
+});
+
+test("the one-sigma band of a fitted curve equals the covariance transported through the gradient, for the sine and the line", () => {
+    const s = cases.sine;
+    const sineFit = fit.fitModel("sine", s.x, s.y, { start: s.p0 });
+    s.band.x.forEach((xv, i) => close(fit.fitUncertaintyAt("sine", sineFit, xv), s.band.sigma[i], 1e-5, 1e-12, `sine band at ${xv}`));
+    const l = cases.line;
+    const lineFit = fit.fitModel("line", l.x, l.y);
+    l.band.x.forEach((xv, i) => close(fit.fitUncertaintyAt("line", lineFit, xv), l.band.sigma[i], 1e-6, 1e-12, `line band at ${xv}`));
+    assert.ok(Number.isNaN(fit.fitUncertaintyAt("exponential", fit.fitModel("exponential", cases.exponential.x, cases.exponential.y), 1)), "no band for a model fitted in a transformed variable");
+});

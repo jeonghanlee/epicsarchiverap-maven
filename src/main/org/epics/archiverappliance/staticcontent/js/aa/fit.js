@@ -13,14 +13,21 @@ const LM_CHI2_RELATIVE_LEAST = 1e-15;
 const LM_STEP_RELATIVE_LEAST = 1e-13;
 const JACOBIAN_STEP = 1e-7;
 
-/** The sum of squared residuals of y against the fitted values. */
-function chiSquare(y, fitted) {
+/** The sum of squared residuals of y against the fitted values, each weighted (a weight is one over the variance of y). */
+function chiSquare(y, fitted, weights) {
     let sum = 0;
-    for (let i = 0; i < y.length; i += 1) sum += (y[i] - fitted[i]) ** 2;
+    for (let i = 0; i < y.length; i += 1) sum += (weights ? weights[i] : 1) * (y[i] - fitted[i]) ** 2;
     return sum;
 }
 
-/** The coefficient of determination: one minus the residual sum of squares over the total one; null when y does not vary. */
+/** The covariance of the parameters from the inverse of the normal matrix: scaled by the reduced chi-square for an unweighted
+ * fit (the spread of the data sets the scale), taken as it is for a weighted one (the weights carry the scale). */
+function covarianceOf(inverse, chi2, dof, weighted) {
+    return weighted ? inverse.map((row) => row.map((v) => v)) : inverse.map((row) => row.map((v) => (v * chi2) / dof));
+}
+
+/** The coefficient of determination: one minus the residual sum of squares over the total one, from the unweighted residuals also
+ * for a weighted fit (it describes how much of the spread of y the model explains, not the weighted chi-square); null when y does not vary. */
 function rSquaredOf(y, chi2) {
     const mean = y.reduce((s, v) => s + v, 0) / y.length;
     const total = y.reduce((s, v) => s + (v - mean) ** 2, 0);
@@ -28,17 +35,19 @@ function rSquaredOf(y, chi2) {
 }
 
 /**
- * Least squares of y on the columns of the design matrix (rows are observations): the coefficients, their errors, the covariance
- * (scaled by the reduced chi-square), the chi-square per degree of freedom, R squared and the degrees of freedom. Null when the
- * system is singular or has no degree of freedom.
+ * Least squares of y on the columns of the design matrix (rows are observations), weighted when weights (one over the variance
+ * of each y) are given: the coefficients, their errors, the covariance (scaled by the reduced chi-square for an unweighted fit),
+ * the chi-square per degree of freedom, R squared and the degrees of freedom. Null when the system is singular or has no degree
+ * of freedom.
  */
-export function linearLeastSquares(design, y) {
+export function linearLeastSquares(design, y, weights = null) {
     const n = y.length;
     const p = design.length ? design[0].length : 0;
     if (n <= p || p === 0) {
         return null;
     }
-    const dt = transpose(design);
+    const weighted = design.map((row, i) => row.map((v) => v * (weights ? weights[i] : 1)));
+    const dt = transpose(weighted);
     const normal = multiply(dt, design);
     const inverse = invert(normal);
     if (!inverse) {
@@ -47,10 +56,10 @@ export function linearLeastSquares(design, y) {
     const rhs = dt.map((row) => row.reduce((s, v, i) => s + v * y[i], 0));
     const params = inverse.map((row) => row.reduce((s, v, k) => s + v * rhs[k], 0));
     const fitted = design.map((row) => row.reduce((s, v, k) => s + v * params[k], 0));
-    const chi2 = chiSquare(y, fitted);
+    const chi2 = chiSquare(y, fitted, weights);
     const dof = n - p;
-    const covariance = inverse.map((row) => row.map((v) => (v * chi2) / dof));
-    return { params, errors: covariance.map((row, k) => Math.sqrt(Math.max(row[k], 0))), covariance, chi2PerDof: chi2 / dof, rSquared: rSquaredOf(y, chi2), dof };
+    const covariance = covarianceOf(inverse, chi2, dof, Boolean(weights));
+    return { params, errors: covariance.map((row, k) => Math.sqrt(Math.max(row[k], 0))), covariance, chi2PerDof: chi2 / dof, rSquared: rSquaredOf(y, chiSquare(y, fitted)), dof, weighted: Boolean(weights) };
 }
 
 // The Landau density (CERNLIB DENLAN, as ROOT TMath::Landau computes it): the density of the Landau variable at v. It equals
@@ -157,6 +166,7 @@ function jacobian(model, x, params, free) {
  * converged; null when no degree of freedom is left or the model is not finite at the start.
  */
 export function levenbergMarquardt(model, x, y, start, options = {}) {
+    const weights = options.weights || null;
     const fixed = new Set(options.fixed || []);
     const lower = options.lower || [];
     const upper = options.upper || [];
@@ -172,13 +182,13 @@ export function levenbergMarquardt(model, x, y, start, options = {}) {
     if (fitted.some((v) => !Number.isFinite(v))) {
         return null;
     }
-    let chi2 = chiSquare(y, fitted);
+    let chi2 = chiSquare(y, fitted, weights);
     let damping = LM_DAMPING_START;
     let converged = false;
     let iteration = 0;
     for (; iteration < LM_ITERATIONS_MOST; iteration += 1) {
         // A parameter resting on a bound that the gradient pushes outward stays there for this step.
-        const residuals = y.map((v, i) => v - fitted[i]);
+        const residuals = y.map((v, i) => (v - fitted[i]) * (weights ? weights[i] : 1));
         const jAll = jacobian(model, x, params, estimable);
         const gradient = jAll.map((column) => column.reduce((s, v, i) => s + v * residuals[i], 0));
         const active = estimable.filter((k, j) => {
@@ -189,7 +199,7 @@ export function levenbergMarquardt(model, x, y, start, options = {}) {
         if (!active.length) { converged = true; break; }
         const j = jacobian(model, x, params, active);
         const g = j.map((column) => column.reduce((s, v, i) => s + v * residuals[i], 0));
-        const normal = j.map((a) => j.map((b) => a.reduce((s, v, i) => s + v * b[i], 0)));
+        const normal = j.map((a) => j.map((b) => a.reduce((s, v, i) => s + v * b[i] * (weights ? weights[i] : 1), 0)));
         let improved = false;
         for (let tries = 0; tries < 30; tries += 1) {
             const damped = normal.map((row, a) => row.map((v, b) => (a === b ? v * (1 + damping) : v)));
@@ -198,7 +208,7 @@ export function levenbergMarquardt(model, x, y, start, options = {}) {
             const step = inverse.map((row) => row.reduce((s, v, k) => s + v * g[k], 0));
             const candidate = clamp(params.map((v, k) => { const a = active.indexOf(k); return a < 0 ? v : v + step[a]; }));
             const candidateFitted = x.map((xi) => model(xi, candidate));
-            const candidateChi2 = candidateFitted.some((v) => !Number.isFinite(v)) ? Infinity : chiSquare(y, candidateFitted);
+            const candidateChi2 = candidateFitted.some((v) => !Number.isFinite(v)) ? Infinity : chiSquare(y, candidateFitted, weights);
             if (candidateChi2 < chi2) {
                 const stepSize = Math.sqrt(candidate.reduce((s, v, k) => s + (v - params[k]) ** 2, 0));
                 const scale = Math.sqrt(params.reduce((s, v) => s + v * v, 0)) + 1;
@@ -217,11 +227,11 @@ export function levenbergMarquardt(model, x, y, start, options = {}) {
         if (converged) break;
     }
     const j = jacobian(model, x, params, estimable);
-    const normal = j.map((a) => j.map((b) => a.reduce((s, v, i) => s + v * b[i], 0)));
+    const normal = j.map((a) => j.map((b) => a.reduce((s, v, i) => s + v * b[i] * (weights ? weights[i] : 1), 0)));
     const inverse = invert(normal);
-    const covariance = inverse ? inverse.map((row) => row.map((v) => (v * chi2) / dof)) : null;
+    const covariance = inverse ? covarianceOf(inverse, chi2, dof, Boolean(weights)) : null;
     const errors = covariance ? covariance.map((row, k) => Math.sqrt(Math.max(row[k], 0))) : estimable.map(() => NaN);
-    return { params, free: estimable, errors, covariance, chi2PerDof: chi2 / dof, rSquared: rSquaredOf(y, chi2), dof, iterations: iteration, converged };
+    return { params, free: estimable, errors, covariance, chi2PerDof: chi2 / dof, rSquared: rSquaredOf(y, chiSquare(y, fitted)), dof, iterations: iteration, converged, weighted: Boolean(weights) };
 }
 
 /**
@@ -247,13 +257,13 @@ export function fitModel(name, x, y, options = {}) {
     }
     if (model.kind === "linear") {
         const target = model.transformY ? y.map(model.transformY) : y;
-        const fit = linearLeastSquares(x.map(model.design), target);
+        const fit = linearLeastSquares(x.map(model.design), target, model.transformY ? null : options.weights || null);
         if (!fit) {
             return { ok: false, reason: `The fit of ${model.text} needs more than ${model.parameters.length} points with distinct x.` };
         }
         const natural = model.natural ? model.natural(fit.params, fit.errors) : { params: fit.params, errors: fit.errors };
         return { ok: true, model: name, params: natural.params, errors: natural.errors, free: fit.params.map((_, k) => k), transformed: model.transformY ? fit : null,
-            chi2PerDof: fit.chi2PerDof, rSquared: fit.rSquared, dof: fit.dof, covariance: fit.covariance, converged: true, iterations: 0 };
+            chi2PerDof: fit.chi2PerDof, rSquared: fit.rSquared, dof: fit.dof, covariance: fit.covariance, converged: true, iterations: 0, weighted: fit.weighted };
     }
     const start = options.start || model.guess(x, y);
     const fit = levenbergMarquardt(model.evaluate, x, y, start, options);
@@ -266,4 +276,27 @@ export function fitModel(name, x, y, options = {}) {
 /** The value of the named model at x for the parameters. */
 export function modelValue(name, x, params) {
     return MODELS[name].evaluate(x, params);
+}
+
+/**
+ * The standard deviation of the fitted curve of the named model at x, from the covariance of its free parameters (the gradient of
+ * the model with respect to them, by central differences, transported through the covariance): the half width of the one-sigma
+ * confidence band. NaN without a covariance.
+ */
+export function fitUncertaintyAt(name, fit, x) {
+    if (!fit.covariance) return NaN;
+    const model = MODELS[name];
+    const evaluate = model.kind === "linear" && model.transformY ? null : model.evaluate;
+    if (!evaluate) return NaN;
+    const gradient = fit.free.map((k) => {
+        const h = JACOBIAN_STEP * Math.max(1, Math.abs(fit.params[k]));
+        const up = [...fit.params];
+        const down = [...fit.params];
+        up[k] += h;
+        down[k] -= h;
+        return (evaluate(x, up) - evaluate(x, down)) / (2 * h);
+    });
+    let variance = 0;
+    for (let a = 0; a < gradient.length; a += 1) for (let b = 0; b < gradient.length; b += 1) variance += gradient[a] * fit.covariance[a][b] * gradient[b];
+    return Math.sqrt(Math.max(variance, 0));
 }
