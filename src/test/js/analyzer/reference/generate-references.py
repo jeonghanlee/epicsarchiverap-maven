@@ -520,6 +520,50 @@ reference["matrixCases"] = {
     "general": [listing(row) for row in general], "generalInverse": [listing(row) for row in np.linalg.inv(general)],
 }
 
+# The pairing of two irregular signals at the union of their sample times, by the gap rule of the Correlation tab: the value a
+# signal holds at a time is its last sample at or before it, paired only when that sample is not older than five times the
+# signal's median spacing and the sample that ends the hold does not follow a lost connection. Written here by its own loop.
+def held(points, t, gap_ms):
+    times = [q[0] for q in points]
+    i = int(np.searchsorted(times, t, side="right")) - 1
+    if i < 0:
+        return None
+    t0, v0, _ = points[i]
+    if t - t0 > gap_ms:
+        return None
+    if t > t0 and i + 1 < len(points) and points[i + 1][2]:
+        return None
+    return v0
+
+
+def pair_case(x, y):
+    median = lambda pts: float(np.median(np.diff([q[0] for q in pts]))) if len(pts) > 1 else None
+    gap_x, gap_y = 5 * median(x), 5 * median(y)
+    x_times = {q[0] for q in x}
+    pairs, excluded_x, excluded_y = [], 0, 0
+    for t, v, _ in x:
+        h = held(y, t, gap_y)
+        if h is None:
+            excluded_x += 1
+        else:
+            pairs.append((t, v, h))
+    for t, v, _ in y:
+        if t in x_times:
+            continue
+        h = held(x, t, gap_x)
+        if h is None:
+            excluded_y += 1
+        else:
+            pairs.append((t, h, v))
+    pairs.sort()
+    return {"x": [list(q) for q in x], "y": [list(q) for q in y], "pairs": [list(q) for q in pairs], "excludedX": excluded_x, "excludedY": excluded_y, "medianX": median(x), "medianY": median(y)}
+
+
+# x every 10 s from 0 with a gap of 120 s after 100 s and a lost connection at 400 s; y every 25 s from 7 s. Times in ms.
+pair_x = [(t * 1000, float(np.sin(t / 50)), False) for t in list(range(0, 110, 10)) + list(range(230, 400, 10))] + [(400000, 0.5, True)] + [(t * 1000, float(np.cos(t / 50)), False) for t in range(410, 500, 10)]
+pair_y = [(t * 1000, 0.1 * t, False) for t in range(7, 500, 25)]
+reference["pairingCases"] = {"irregular": pair_case(pair_x, pair_y), "aligned": pair_case([(t * 1000, float(t), False) for t in range(0, 100, 10)], [(t * 1000, float(2 * t), False) for t in range(0, 100, 10)])}
+
 with open(os.path.join(HERE, "references.json"), "w") as out:
     json.dump(reference, out, separators=(",", ":"))
     out.write("\n")
