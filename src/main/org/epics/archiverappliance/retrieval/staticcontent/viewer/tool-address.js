@@ -11,9 +11,10 @@ import { SIDES, TREND_TOOL_DEFAULTS } from "./trend-tools.js";
 import { COMPARE_MODES, COMPARE_METHODS, COMPARE_DEFAULTS } from "./compare.js";
 import { SPECTRUM_VIEWS, OUTPUTS, GAP_POLICIES, PADDINGS, SEGMENTS, OVERLAPS, SPECTRUM_DEFAULTS } from "./spectrum.js";
 import { CORRELATION_VIEWS, POINT_SIZES, POINT_OPACITIES, LAG_CHOICES, CORRELATION_DEFAULTS } from "./correlation.js";
+import { DEPENDENCY_VIEWS, DEPENDENCY_INTERVALS, DEPENDENCY_DEFAULTS } from "./dependency.js";
 import { MODEL_NAMES } from "../comm/js/aa/fit.js";
 
-export const TOOL_NAMES = ["distribution", "trend", "compare", "spectrum", "correlation"];
+export const TOOL_NAMES = ["distribution", "trend", "compare", "spectrum", "correlation", "dependency"];
 
 const values = (choices) => choices.map(([value]) => value);
 const SEGMENT_VALUES = ["auto", ...SEGMENTS.map(String)];
@@ -49,7 +50,7 @@ function signal(target, fields, key, pvs) {
  * to be laid over the defaults of the tool. pvs are the selected PV names, which a signal field must be one of.
  */
 export function readToolParameters(parameters, pvs) {
-    const tools = { distribution: {}, trend: {}, compare: {}, spectrum: {}, correlation: {} };
+    const tools = { distribution: {}, trend: {}, compare: {}, spectrum: {}, correlation: {}, dependency: {} };
     let fields = deepFields(parameters, "distribution");
     signal(tools.distribution, fields, "signal", pvs);
     choice(tools.distribution, fields, "view", values(DISTRIBUTION_VIEWS));
@@ -108,6 +109,11 @@ export function readToolParameters(parameters, pvs) {
         if (text !== undefined && finiteNumber(text) !== null) tools.correlation[key] = text.trim();
     }
     choice(tools.distribution, deepFields(parameters, "distribution"), "fit", MODEL_NAMES);
+
+    fields = deepFields(parameters, "dependency");
+    signal(tools.dependency, fields, "target", pvs);
+    choice(tools.dependency, fields, "view", values(DEPENDENCY_VIEWS));
+    choice(tools.dependency, fields, "interval", values(DEPENDENCY_INTERVALS));
     return tools;
 }
 
@@ -116,7 +122,7 @@ function writeFields(parameters, name, settings, defaults, pvs, skip = []) {
     for (const [key, fallback] of Object.entries(defaults)) {
         if (skip.includes(key)) continue;
         const value = settings[key];
-        const base = key === "signal" || key === "a" || key === "x" ? (pvs[0] ?? null) : fallback;
+        const base = key === "signal" || key === "a" || key === "x" || key === "target" ? (pvs[0] ?? null) : fallback;
         if (value === null || value === undefined || value === base) continue;
         parameters.set(`${name}[${key}]`, String(value));
     }
@@ -149,4 +155,5 @@ export function writeToolParameters(parameters, tools, pvs) {
         const otherwise = pvs.find((name) => name !== settings.x) ?? pvs[0] ?? null;
         if (settings.y !== null && settings.y !== otherwise) parameters.set("correlation[y]", settings.y);
     }
+    if (tools.dependency) writeFields(parameters, "dependency", tools.dependency.settings, DEPENDENCY_DEFAULTS, pvs);
 }

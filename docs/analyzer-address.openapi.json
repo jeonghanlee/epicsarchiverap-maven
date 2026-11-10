@@ -66,6 +66,7 @@
           { "$ref": "#/components/parameters/compare" },
           { "$ref": "#/components/parameters/spectrum" },
           { "$ref": "#/components/parameters/correlation" },
+          { "$ref": "#/components/parameters/dependency" },
           { "$ref": "#/components/parameters/shape" },
           { "$ref": "#/components/parameters/yscale" },
           { "$ref": "#/components/parameters/marks" },
@@ -242,6 +243,18 @@
           }
         },
         "description": "The options of the Correlation tab (phase D), as correlation[x]=SR:GEN:SINE&correlation[view]=profile: signal X (the first pv by default) and signal Y (the first other pv by default), the view, the point size and transparency, colour by time, the lags of the cross-correlation, the rectangle selection, and the model and range of the fit panel. A fit runs from its button; the start values, fixed parameters and bounds restore from the form only. A field that is not valid keeps its default, and a default is not written."
+      },
+      "dependency": {
+        "name": "dependency", "in": "query", "style": "deepObject", "explode": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "target": { "$ref": "#/components/schemas/pvName" },
+            "view": { "type": "string", "enum": ["matrix", "mutual", "ranking", "scatter", "partial", "regression", "pca"], "default": "matrix" },
+            "interval": { "type": "string", "enum": ["auto", "10", "60", "600", "3600", "21600"], "default": "auto" }
+          }
+        },
+        "description": "The options of the Dependency tab (phase D), as dependency[view]=ranking&dependency[target]=SR:GEN:TARGET: the target signal of the ranking, the scatter plot matrix and the regression (the first pv by default), the view, and the common interval in seconds over which the signals are averaged (auto: the interval of the page). A field that is not valid keeps its default, and a default is not written."
       },
       "shape": { "name": "shape", "in": "query", "schema": { "type": "string", "enum": ["step", "line", "smooth", "points"], "default": "step" }, "description": "The line shape (phase A)." },
       "yscale": { "name": "yscale", "in": "query", "schema": { "type": "string", "enum": ["linear", "symlog", "log", "sqrt"], "default": "linear" }, "description": "The scale of every axis without its own axisScale (phase A)." },

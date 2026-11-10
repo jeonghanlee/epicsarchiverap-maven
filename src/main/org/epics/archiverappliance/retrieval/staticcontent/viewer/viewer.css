@@ -205,3 +205,26 @@
 .dist-fit-band { fill: var(--ink); fill-opacity: .15; stroke: none; }
 .dist-residual { fill: var(--accent); }
 .dist-residuals { margin-top: 8px; }
+
+/* The Dependency tab: the matrix with its dendrogram, the numbers tables, the ranking bars, the scatter plot matrix and the residuals. */
+.dep-heatmap-wrap, .dep-table-wrap { overflow-x: auto; margin-top: 8px; }
+.dep-label { font-size: 11px; fill: var(--ink); }
+.dep-value { font-size: 10px; pointer-events: none; }
+.dep-dendrogram { stroke: var(--ink); stroke-width: 1.2; }
+.dep-cell { cursor: pointer; }
+.dep-cell:focus { outline: none; }
+.dep-cell:focus rect, .dep-cell:hover rect { stroke: var(--ink); stroke-width: 2; }
+.dep-readout { min-height: 1.4em; }
+.dep-table th, .dep-table td { padding: 2px 6px; font-size: 12px; white-space: nowrap; }
+.dep-table th[scope="row"], .dep-ranking th[scope="row"], .dep-regression th[scope="row"], .dep-pca th[scope="row"], .dep-loadings th[scope="row"], .dep-coverage th[scope="row"] { text-align: left; font-weight: normal; padding-right: 16px; }
+.dep-bar { display: inline-block; height: 10px; background: var(--accent); min-width: 2px; max-width: 160px; }
+.dep-histogram { fill: var(--accent); fill-opacity: .6; }
+.dep-point { fill: var(--accent); fill-opacity: .6; }
+.dep-r { font-size: 13px; fill: var(--ink); }
+.dep-residual { fill: var(--accent); }
+.dep-residuals { margin-top: 8px; }
+.dep-summary table { margin-bottom: 8px; }
+.dep-body th[scope="col"], .dep-summary th[scope="col"] { text-align: left; }
+@media (max-width: 480px) {
+    .dep-table th, .dep-table td { padding: 2px 4px; font-size: 11px; }
+}
