@@ -130,7 +130,10 @@ EPICS_CA_AUTO_ADDR_LIST=NO
 EPICS_CA_ADDR_LIST=127.0.0.1
 EPICS_PVA_AUTO_ADDR_LIST=NO
 EPICS_PVA_ADDR_LIST=127.0.0.1
-export EPICS_CA_AUTO_ADDR_LIST EPICS_CA_ADDR_LIST EPICS_PVA_AUTO_ADDR_LIST EPICS_PVA_ADDR_LIST
+# The default Channel Access array limit is 16384 bytes, the size of a 2048-element array of doubles; a camera frame of 2304000
+# 16-bit pixels is 4.6 MB (9.2 MB as 32-bit values), so the soft IOC and the engine of the run take a limit of 16 MB.
+EPICS_CA_MAX_ARRAY_BYTES=16000000
+export EPICS_CA_AUTO_ADDR_LIST EPICS_CA_ADDR_LIST EPICS_PVA_AUTO_ADDR_LIST EPICS_PVA_ADDR_LIST EPICS_CA_MAX_ARRAY_BYTES
 
 if [ -z "$run_dir" ]; then
     run_dir=$(mktemp -d "${TMPDIR:-/tmp}/aa-ui-appliance.XXXXXX")

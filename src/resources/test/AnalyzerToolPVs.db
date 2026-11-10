@@ -10,6 +10,12 @@
 #   SR:GEN:TARGET   mm  2 times basis 1 minus 1.5 times basis 2 plus 0.5 times basis 3, plus 5, with noise of 0.3
 #   SR:GEN:CORR:A, SR:GEN:CORR:B  V  a pair of normal signals of correlation 0.8
 #   SR:GEN:SLOW     V   10 plus 2 times the sine of a period of 3600 s, one value a minute, for the pairing of different rates
+#   SR:GEN:WAVE     V   2048-element waveform of doubles: a sine of known frequency, three Gaussian peaks and a slow background
+#   SR:GEN:WAVE:X   mm  the axis of that waveform (element n holds 0.5 n mm), a companion PV of the axis role
+#   SR:GEN:WAVE:FS  Hz  the sampling frequency within the waveform, a companion PV of the frequency role
+#   SR:GEN:IMAGE    count  640 by 480 pixels of unsigned 16-bit values (307200 elements): a Gaussian blob of known centre and width
+#   SR:GEN:IMAGE:W, SR:GEN:IMAGE:H  the width and the height of that image, companion PVs of the size roles
+#   SR:GEN:FRAME    count  1920 by 1200 unsigned 16-bit pixels (2304000 elements), for the measurement of the size of a camera frame
 # Load it beside ConsoleChartPVs.db (its st.cmd loads that file); the checks of the Analyzer start one IOC with both.
 
 record(calc, "SR:GEN:NORMAL") {
@@ -190,4 +196,46 @@ record(calc, "SR:GEN:SLOW") {
     field(EGU, "V")
     field(PREC, "3")
     field(DESC, "10 + 2 sin, period 3600 s, every minute")
+}
+record(waveform, "SR:GEN:WAVE") {
+    field(FTVL, "DOUBLE")
+    field(NELM, "2048")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(DESC, "sine, three peaks and a background")
+}
+record(waveform, "SR:GEN:WAVE:X") {
+    field(FTVL, "DOUBLE")
+    field(NELM, "2048")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "axis of SR:GEN:WAVE, 0.5 mm per element")
+}
+record(ao, "SR:GEN:WAVE:FS") {
+    field(VAL, "2048")
+    field(EGU, "Hz")
+    field(PREC, "1")
+    field(DESC, "sampling frequency within SR:GEN:WAVE")
+}
+record(waveform, "SR:GEN:IMAGE") {
+    field(FTVL, "USHORT")
+    field(NELM, "307200")
+    field(EGU, "count")
+    field(DESC, "640 by 480 image with a Gaussian blob")
+}
+record(ao, "SR:GEN:IMAGE:W") {
+    field(VAL, "640")
+    field(PREC, "0")
+    field(DESC, "width of SR:GEN:IMAGE")
+}
+record(ao, "SR:GEN:IMAGE:H") {
+    field(VAL, "480")
+    field(PREC, "0")
+    field(DESC, "height of SR:GEN:IMAGE")
+}
+record(waveform, "SR:GEN:FRAME") {
+    field(FTVL, "USHORT")
+    field(NELM, "2304000")
+    field(EGU, "count")
+    field(DESC, "1920 by 1200 camera frame for the size measurement")
 }

@@ -645,6 +645,137 @@ reference["unitCases"] = {
     "compatible": {text: [prefix.replace("u", "u") + base for prefix in unit_bases[base]] for text, base in (("mm", "m"), ("V", "V"), ("kHz", "Hz"), ("uA", "A"), ("ms", "s"), ("Pa", "Pa"))},
 }
 
+# Arrays and images. The routines index an array from zero and an image row-major from the top left (the column index runs along X); a
+# region is the half-open block [x0, x1) by [y0, y1) of stored indices. The summary values of an array: the maximum and its first
+# position, the minimum and its first position, the mean, the root mean square, the sum, the centre (the intensity-weighted centroid
+# in elements, defined only when the sum is positive) and the half-maximum width. The half-maximum width is measured at the level
+# half way from the minimum to the maximum, on the first position of the maximum: from there to each side to the first element
+# strictly below the level, and between that element and its neighbour towards the maximum the crossing is linearly interpolated;
+# it is not defined when either side never falls below the level, or when the array is flat. The background of an array is the
+# morphological opening (a minimum filter then a maximum filter over an odd window, the edge value repeated beyond the ends); the
+# peaks are those of find_peaks on the array minus its background (no background when the window is null), whose prominence reaches the fraction 0.05 of the range of that
+# difference, each with the width at half its prominence (peak_widths).
+from scipy import ndimage
+array_rng = np.random.default_rng(20261114)
+
+
+def half_maximum_width(values):
+    values = np.asarray(values, dtype=float)
+    top = int(np.argmax(values))
+    low, high = float(values.min()), float(values.max())
+    if high == low:
+        return None
+    level = low + (high - low) / 2
+    i = top
+    while i > 0 and values[i] >= level:
+        i -= 1
+    if values[i] >= level:
+        return None
+    left = i + (level - values[i]) / (values[i + 1] - values[i])
+    j = top
+    while j < len(values) - 1 and values[j] >= level:
+        j += 1
+    if values[j] >= level:
+        return None
+    right = j - 1 + (values[j - 1] - level) / (values[j - 1] - values[j])
+    return {"left": float(left), "right": float(right), "width": float(right - left), "level": float(level)}
+
+
+def array_summary(values):
+    values = np.asarray(values, dtype=float)
+    total = float(values.sum())
+    indices = np.arange(len(values))
+    return {
+        "max": float(values.max()), "maxAt": int(np.argmax(values)), "min": float(values.min()), "minAt": int(np.argmin(values)),
+        "mean": float(values.mean()), "rms": float(np.sqrt(np.mean(values ** 2))), "sum": total,
+        "centre": float((indices * values).sum() / total) if total > 0 else None,
+        "fwhm": half_maximum_width(values),
+    }
+
+
+def opening(values, window):
+    values = np.asarray(values, dtype=float)
+    return ndimage.maximum_filter1d(ndimage.minimum_filter1d(values, size=window, mode="nearest"), size=window, mode="nearest")
+
+
+def peak_case(values, window, fraction=0.05):
+    values = np.asarray(values, dtype=float)
+    background = np.zeros(len(values)) if window is None else opening(values, window)
+    above = values - background
+    prominence_floor = fraction * float(above.max() - above.min())
+    found, props = signal.find_peaks(above, prominence=prominence_floor)
+    widths = signal.peak_widths(above, found, rel_height=0.5)
+    return {
+        "window": window, "fraction": fraction, "background": listing(background),
+        "peaks": [{"index": int(k), "height": float(above[k]), "prominence": float(props["prominences"][k_i]), "width": float(widths[0][k_i]),
+                   "left": float(widths[2][k_i]), "right": float(widths[3][k_i])} for k_i, k in enumerate(found)],
+    }
+
+
+wave_n = 2048
+wave_index = np.arange(wave_n)
+wave_values = (np.sin(2 * np.pi * 100.5 * wave_index / 2048.0) + 0.5 + 0.4 * (wave_index / (wave_n - 1)) ** 2
+               + sum(h * np.exp(-0.5 * ((wave_index - c) / sg) ** 2) for h, c, sg in ((3.0, 400.0, 12.0), (2.0, 900.0, 20.0), (4.0, 1500.0, 15.0)))
+               + array_rng.normal(0, 0.05, wave_n))
+wave_reference = wave_values + 0.1 * array_rng.normal(0, 1, wave_n) + 0.25
+clean_index = np.arange(401)
+clean_gaussian = 0.2 + 3.0 * np.exp(-0.5 * ((clean_index - 200.3) / 20.0) ** 2)
+ramp = np.linspace(0.0, 10.0, 50)
+plateau = np.concatenate([np.zeros(10), np.linspace(0, 5, 6), np.full(8, 5.0), np.linspace(5, 0, 6), np.zeros(10), [0.5, 3.0, 0.5], np.zeros(10)])
+short_peaks = np.array([0, 1, 0, 0.5, 4, 0.5, 0, 0.2, 0.1, 2.5, 6.0, 2.5, 0.1, 0.3, 0.2, 0.2, 1.0, 0.9, 0, 0], dtype=float)
+reference["arrayCases"] = {
+    "wave": {"values": listing(wave_values), "summary": array_summary(wave_values), "reference": listing(wave_reference), "difference": listing(wave_values - wave_reference),
+             "peaks": peak_case(wave_values, 205)},
+    "gaussian": {"values": listing(clean_gaussian), "summary": array_summary(clean_gaussian), "fwhmOfModel": float(2 * math.sqrt(2 * math.log(2)) * 20.0)},
+    "ramp": {"values": listing(ramp), "summary": array_summary(ramp)},
+    "negative": {"values": [-1.0, -2.0, -3.0, -1.0], "summary": array_summary([-1.0, -2.0, -3.0, -1.0])},
+    "flat": {"values": [2.0, 2.0, 2.0, 2.0], "summary": array_summary([2.0, 2.0, 2.0, 2.0])},
+    "plateau": {"values": listing(plateau), "peaks": peak_case(plateau, None, 0.05), "withBackground": peak_case(plateau, 31, 0.05)},
+    "short": {"values": listing(short_peaks), "peaks": peak_case(short_peaks, 5, 0.05), "withoutBackground": peak_case(short_peaks, None, 0.05), "opening3": listing(opening(short_peaks, 3))},
+    "heatmap": {"frames": [listing(wave_values[:32] * (1 + 0.1 * k)) for k in range(5)], "min": float(min((wave_values[:32] * (1 + 0.1 * k)).min() for k in range(5))),
+                "max": float(max((wave_values[:32] * (1 + 0.1 * k)).max() for k in range(5)))},
+}
+
+# Images: the region sums and projections, the centroid and the peak (the first maximum in row-major order), the Gaussian size of the
+# X and of the Y projection (the Gaussian of the fits, fitted by curve_fit from a start made of the data: the amplitude the range of the
+# projection, the centre the position of its maximum, the width one sixth of its number of positions, the offset its minimum), the
+# subtraction of a constant, and the difference of two frames.
+image_rng = np.random.default_rng(20261115)
+image_w, image_h = 64, 48
+yy, xx = np.mgrid[0:image_h, 0:image_w]
+image_pixels = np.round(1000 + 20000 * np.exp(-0.5 * (((xx - 30.4) / 5.0) ** 2 + ((yy - 22.6) / 3.0) ** 2)) + image_rng.normal(0, 20, (image_h, image_w))).astype(float)
+image_second = np.round(1000 + 20000 * np.exp(-0.5 * (((xx - 33.4) / 5.0) ** 2 + ((yy - 22.6) / 3.0) ** 2)) + image_rng.normal(0, 20, (image_h, image_w))).astype(float)
+
+
+def image_case(pixels, x0, x1, y0, y1):
+    region = pixels[y0:y1, x0:x1]
+    total = float(region.sum())
+    columns = region.sum(axis=0)
+    rows = region.sum(axis=1)
+    xs = np.arange(x0, x1)
+    ys = np.arange(y0, y1)
+    flat = int(np.argmax(region))
+    peak_y, peak_x = divmod(flat, region.shape[1])
+    result = {"x0": x0, "x1": x1, "y0": y0, "y1": y1, "total": total, "projectionX": listing(columns), "projectionY": listing(rows),
+              "peak": {"x": int(x0 + peak_x), "y": int(y0 + peak_y), "value": float(region.max())}, "min": float(region.min()), "mean": float(region.mean()),
+              "centroid": {"x": float((xs * columns).sum() / total), "y": float((ys * rows).sum() / total)} if total > 0 else None}
+    for name, positions, projection in (("fitX", xs, columns), ("fitY", ys, rows)):
+        p0 = [float(projection.max() - projection.min()), float(positions[int(np.argmax(projection))]), len(positions) / 6.0, float(projection.min())]
+        popt, pcov = optimize.curve_fit(gaussian_model, positions.astype(float), projection, p0=p0, maxfev=20000)
+        errors = np.sqrt(np.diag(pcov))
+        result[name] = {"p0": p0, "params": listing(popt), "errors": listing(errors), "sigma": float(abs(popt[2])), "fwhm": float(2 * math.sqrt(2 * math.log(2)) * abs(popt[2]))}
+    return result
+
+
+image_reference_cases = {"pixels": listing(image_pixels), "width": image_w, "height": image_h,
+    "regions": [image_case(image_pixels, 0, image_w, 0, image_h), image_case(image_pixels, 8, 56, 6, 42), image_case(image_pixels, 20, 41, 14, 32)],
+    "constant": 1000.0, "subtracted": {"centroid": {"x": float(((xx * (image_pixels - 1000.0)).sum()) / (image_pixels - 1000.0).sum()), "y": float(((yy * (image_pixels - 1000.0)).sum()) / (image_pixels - 1000.0).sum())},
+                                      "total": float((image_pixels - 1000.0).sum()), "min": float((image_pixels - 1000.0).min())},
+    "second": listing(image_second), "difference": {"total": float((image_pixels - image_second).sum()), "min": float((image_pixels - image_second).min()), "max": float((image_pixels - image_second).max()),
+                                                     "cells": listing((image_pixels - image_second)[10:14, 28:34])},
+    "zero": {"width": 3, "height": 2, "pixels": [0.0] * 6, "centroid": None}}
+reference["imageCases"] = image_reference_cases
+
 with open(os.path.join(HERE, "references.json"), "w") as out:
     json.dump(reference, out, separators=(",", ":"))
     out.write("\n")

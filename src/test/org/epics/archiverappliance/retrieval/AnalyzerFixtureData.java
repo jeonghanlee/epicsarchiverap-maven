@@ -14,11 +14,16 @@ import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.config.StoragePluginURLParser;
 import org.epics.archiverappliance.data.ScalarValue;
+import org.epics.archiverappliance.data.VectorValue;
 import org.epics.archiverappliance.engine.membuf.ArrayListEventStream;
 import org.epics.archiverappliance.utils.simulation.SimulationEvent;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,6 +31,8 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.function.LongToDoubleFunction;
 
@@ -49,12 +56,35 @@ import java.util.function.LongToDoubleFunction;
  *     plus 0.8 times the deviation of A plus a normal noise of standard deviation 0.6), one value every 10 seconds,
  *     3 days;</li>
  * <li>slow: 10 plus 2 times the sine of a period of 3600 seconds from the start of the window, one value every 60
- *     seconds, 3 days, without noise, for the pairing of signals of different rates.</li>
+ *     seconds, 3 days, without noise, for the pairing of signals of different rates;</li>
+ * <li>wavefs, imagew, imageh: constant companion values (2048 Hz, 640 and 480), one value every 60 seconds, 3 days, for
+ *     the roles of the sampling frequency, the width and the height of an array.</li>
  * </ul>
+ *
+ * The array kinds write one waveform event per frame instead of one scalar:
+ *
+ * <ul>
+ * <li>wave: 2048 elements, a sine of 100.5 Hz and amplitude 1 at a sampling frequency of 2048 Hz, three Gaussian peaks
+ *     (positions 400, 900 and 1500, heights 3, 2 and 4, standard deviations 12, 20 and 15 elements; the height of the
+ *     first grows by 1 percent of its start value each frame), a background of 0.5 plus 0.4 times the square of the
+ *     fractional position, and a normal noise of standard deviation 0.05, one frame every 10 seconds for one hour;</li>
+ * <li>waveaxis: the axis of wave, element n holding 0.5 n, one frame at the start of that hour;</li>
+ * <li>image: 640 by 480 pixels, row-major, a Gaussian blob of amplitude 50000 (above the largest signed 16-bit value)
+ *     and standard deviations 25 (X) and 15 (Y) pixels on a background of 1000, whose centre is at X 300 plus 2 per
+ *     frame and Y 240, with a normal noise of standard deviation 20 rounded to whole counts, 20 frames 30 seconds
+ *     apart;</li>
+ * <li>frame: 1920 by 1200 pixels of the same kind (amplitude 40000, background 500, centre 960 and 600, standard
+ *     deviations 80 and 50, noise 10), 6 frames 10 seconds apart, for the measurement of the size of a camera frame.</li>
+ * </ul>
+ *
+ * The array kinds take the archived type as a sixth argument (DBR_WAVEFORM_DOUBLE, DBR_WAVEFORM_INT or
+ * DBR_WAVEFORM_SHORT; wave and waveaxis default to double, image and frame to int) and write the comparison file as CSV
+ * (secs and the elements of the frame) for wave and waveaxis and as a binary file of big-endian 32-bit signed integers
+ * for image and frame (the seconds, then the pixels of each frame in row-major order).
  *
  * Each kind draws its noise from its own seed, so a signal does not change when another kind is added. The window ends
  * at the start of the day (UTC) of the end argument, an epoch second that defaults to now.
- * Usage: AnalyzerFixtureData kind pvName pluginURL csvFile [endEpochSeconds]
+ * Usage: AnalyzerFixtureData kind pvName pluginURL csvFile [endEpochSeconds [dbrType]]
  */
 public class AnalyzerFixtureData {
     public static final double NORMAL_MEAN = 10.0;
@@ -82,6 +112,39 @@ public class AnalyzerFixtureData {
     private static final long BASIS_SEED = 20261110L;
     private static final long CORR_SEED = 20261120L;
     private static final long DAY_SECONDS = 86400L;
+    public static final int WAVE_LENGTH = 2048;
+    public static final double WAVE_SAMPLING_HZ = 2048.0;
+    public static final double WAVE_SINE_HZ = 100.5;
+    public static final double WAVE_SINE_AMPLITUDE = 1.0;
+    public static final double[] WAVE_PEAK_POSITIONS = {400.0, 900.0, 1500.0};
+    public static final double[] WAVE_PEAK_HEIGHTS = {3.0, 2.0, 4.0};
+    public static final double[] WAVE_PEAK_SIGMAS = {12.0, 20.0, 15.0};
+    public static final double WAVE_FIRST_PEAK_GROWTH = 0.01;
+    public static final double WAVE_BACKGROUND_BASE = 0.5;
+    public static final double WAVE_BACKGROUND_RISE = 0.4;
+    public static final double WAVE_NOISE_SD = 0.05;
+    public static final double WAVE_AXIS_STEP = 0.5;
+    public static final int WAVE_FRAMES = 360;
+    public static final long WAVE_SPACING_SECONDS = 10;
+    public static final int IMAGE_WIDTH = 640;
+    public static final int IMAGE_HEIGHT = 480;
+    public static final double IMAGE_AMPLITUDE = 50000.0;
+    public static final double IMAGE_BACKGROUND = 1000.0;
+    public static final double IMAGE_SIGMA_X = 25.0;
+    public static final double IMAGE_SIGMA_Y = 15.0;
+    public static final double IMAGE_CENTRE_X = 300.0;
+    public static final double IMAGE_CENTRE_X_STEP = 2.0;
+    public static final double IMAGE_CENTRE_Y = 240.0;
+    public static final double IMAGE_NOISE_SD = 20.0;
+    public static final int IMAGE_FRAMES = 20;
+    public static final long IMAGE_SPACING_SECONDS = 30;
+    public static final int FRAME_WIDTH = 1920;
+    public static final int FRAME_HEIGHT = 1200;
+    public static final int FRAME_COUNT = 6;
+    public static final long FRAME_SPACING_SECONDS = 10;
+    private static final long ARRAY_SEED = 20261111L;
+    private static final long IMAGE_SEED = 20261112L;
+    private static final long FRAME_SEED = 20261113L;
 
     /** The signal of a kind: its spacing in seconds, its length in days and the value at an epoch second. */
     private record Signal(long spacing, int days, LongToDoubleFunction valueAt) {}
@@ -153,12 +216,19 @@ public class AnalyzerFixtureData {
                 return new Signal(10, 3, secs -> CORR_B_OFFSET + CORR_RHO * CORR_A_SD * a.nextGaussian()
                         + CORR_B_NOISE_SD * extra.nextGaussian());
             }
+            case "wavefs":
+                return new Signal(60, 3, secs -> WAVE_SAMPLING_HZ);
+            case "imagew":
+                return new Signal(60, 3, secs -> IMAGE_WIDTH);
+            case "imageh":
+                return new Signal(60, 3, secs -> IMAGE_HEIGHT);
             case "slow":
                 return new Signal(60, 3, secs -> SLOW_BASE
                         + SLOW_AMPLITUDE * Math.sin(2 * Math.PI * (secs - windowStart) / SLOW_PERIOD_SECONDS));
             default:
                 throw new IllegalArgumentException(
-                        "Unknown kind " + kind + "; use normal, sine, pattern, basis:N, target, corra, corrb or slow");
+                        "Unknown kind " + kind + "; use normal, sine, pattern, basis:N, target, corra, corrb, slow, wavefs, imagew, imageh,"
+                                + " wave, waveaxis, image or frame");
         }
     }
 
@@ -205,6 +275,155 @@ public class AnalyzerFixtureData {
         return count;
     }
 
+
+    /** True for the kinds that write one array per event. */
+    public static boolean isArrayKind(String kind) {
+        return kind.equals("wave") || kind.equals("waveaxis") || kind.equals("image") || kind.equals("frame");
+    }
+
+    /** The elements of the wave frame k: a sine, three peaks (the first one growing), a background and noise. */
+    static double[] waveFrame(int k, Random noise) {
+        double[] values = new double[WAVE_LENGTH];
+        for (int n = 0; n < WAVE_LENGTH; n++) {
+            double position = n / (double) (WAVE_LENGTH - 1);
+            double value = WAVE_SINE_AMPLITUDE * Math.sin(2 * Math.PI * WAVE_SINE_HZ * n / WAVE_SAMPLING_HZ)
+                    + WAVE_BACKGROUND_BASE + WAVE_BACKGROUND_RISE * position * position;
+            for (int p = 0; p < WAVE_PEAK_POSITIONS.length; p++) {
+                double height = WAVE_PEAK_HEIGHTS[p] * (p == 0 ? 1.0 + WAVE_FIRST_PEAK_GROWTH * k : 1.0);
+                double offset = (n - WAVE_PEAK_POSITIONS[p]) / WAVE_PEAK_SIGMAS[p];
+                value += height * Math.exp(-0.5 * offset * offset);
+            }
+            values[n] = value + WAVE_NOISE_SD * noise.nextGaussian();
+        }
+        return values;
+    }
+
+    /** The pixels of an image frame, row-major with the origin at the top left: a Gaussian blob, a background, noise. */
+    static int[] imageFrame(int width, int height, double amplitude, double background, double centreX, double centreY,
+            double sigmaX, double sigmaY, double noiseSd, Random noise) {
+        int[] pixels = new int[width * height];
+        for (int y = 0; y < height; y++) {
+            double dy = (y - centreY) / sigmaY;
+            for (int x = 0; x < width; x++) {
+                double dx = (x - centreX) / sigmaX;
+                double value = background + amplitude * Math.exp(-0.5 * (dx * dx + dy * dy))
+                        + noiseSd * noise.nextGaussian();
+                pixels[y * width + x] = (int) Math.max(0, Math.min(65535, Math.round(value)));
+            }
+        }
+        return pixels;
+    }
+
+    /** The list of numbers of an archived waveform type for the values of a frame (all rounded to whole numbers). */
+    private static VectorValue<? extends Number> vectorOf(ArchDBRTypes type, double[] values) {
+        List<Number> list = new ArrayList<>(values.length);
+        for (double value : values) {
+            switch (type) {
+                case DBR_WAVEFORM_DOUBLE -> list.add(value);
+                case DBR_WAVEFORM_INT -> list.add((int) Math.round(value));
+                case DBR_WAVEFORM_SHORT -> list.add((short) Math.round(value));
+                default -> throw new IllegalArgumentException("Unsupported array type " + type);
+            }
+        }
+        return new VectorValue<Number>(list);
+    }
+
+    /**
+     * Generates the frames of an array kind into the plugin and the comparison file and returns the number of frames
+     * written. The window is the span of the frames, ending at the start of the day of endEpochSeconds.
+     */
+    public static long generateArray(String kind, String pvName, StoragePlugin plugin, Path file, long endEpochSeconds,
+            ArchDBRTypes type) throws Exception {
+        long end = endEpochSeconds - Math.floorMod(endEpochSeconds, DAY_SECONDS);
+        int frames;
+        long spacing;
+        switch (kind) {
+            case "wave" -> {
+                frames = WAVE_FRAMES;
+                spacing = WAVE_SPACING_SECONDS;
+            }
+            case "waveaxis" -> {
+                frames = 1;
+                spacing = WAVE_FRAMES * WAVE_SPACING_SECONDS;
+            }
+            case "image" -> {
+                frames = IMAGE_FRAMES;
+                spacing = IMAGE_SPACING_SECONDS;
+            }
+            case "frame" -> {
+                frames = FRAME_COUNT;
+                spacing = FRAME_SPACING_SECONDS;
+            }
+            default -> throw new IllegalArgumentException("Unknown array kind " + kind);
+        }
+        long start = end - (kind.equals("waveaxis") ? spacing : frames * spacing);
+        Random waveNoise = new Random(ARRAY_SEED);
+        Random imageNoise = new Random(kind.equals("frame") ? FRAME_SEED : IMAGE_SEED);
+        boolean text = kind.equals("wave") || kind.equals("waveaxis");
+        ArrayListEventStream stream = null;
+        int streamYear = -1;
+        try (OutputStream raw = Files.newOutputStream(file);
+                DataOutputStream binary = new DataOutputStream(new BufferedOutputStream(raw));
+                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(raw, StandardCharsets.UTF_8))) {
+            for (int k = 0; k < frames; k++) {
+                long secs = start + k * spacing;
+                double[] values;
+                switch (kind) {
+                    case "wave" -> values = waveFrame(k, waveNoise);
+                    case "waveaxis" -> {
+                        values = new double[WAVE_LENGTH];
+                        for (int n = 0; n < WAVE_LENGTH; n++) {
+                            values[n] = WAVE_AXIS_STEP * n;
+                        }
+                    }
+                    case "image" -> values = toDoubles(imageFrame(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_AMPLITUDE,
+                            IMAGE_BACKGROUND, IMAGE_CENTRE_X + IMAGE_CENTRE_X_STEP * k, IMAGE_CENTRE_Y, IMAGE_SIGMA_X,
+                            IMAGE_SIGMA_Y, IMAGE_NOISE_SD, imageNoise));
+                    default -> values = toDoubles(imageFrame(FRAME_WIDTH, FRAME_HEIGHT, 40000.0, 500.0,
+                            FRAME_WIDTH / 2.0, FRAME_HEIGHT / 2.0, 80.0, 50.0, 10.0, imageNoise));
+                }
+                YearSecondTimestamp yts = TimeUtils.convertToYearSecondTimestamp(secs);
+                if (stream != null && yts.getYear() != streamYear) {
+                    append(plugin, pvName, stream);
+                    stream = null;
+                }
+                if (stream == null) {
+                    streamYear = yts.getYear();
+                    stream = new ArrayListEventStream(
+                            frames, new RemotableEventStreamDesc(type, pvName, (short) streamYear));
+                }
+                VectorValue<? extends Number> vector = vectorOf(type, values);
+                stream.add(new SimulationEvent(yts.getSecondsintoyear(), yts.getYear(), type, vector));
+                if (text) {
+                    StringBuilder row = new StringBuilder().append(secs);
+                    for (int n = 0; n < vector.getElementCount(); n++) {
+                        row.append(',').append(vector.getValue(n));
+                    }
+                    out.write(row.append('\n').toString());
+                } else {
+                    binary.writeLong(secs);
+                    for (int n = 0; n < vector.getElementCount(); n++) {
+                        binary.writeInt(vector.getValue(n).intValue());
+                    }
+                }
+            }
+            out.flush();
+            binary.flush();
+            if (stream != null) {
+                append(plugin, pvName, stream);
+            }
+        }
+        return frames;
+    }
+
+    private static double[] toDoubles(int[] pixels) {
+        double[] values = new double[pixels.length];
+        for (int i = 0; i < pixels.length; i++) {
+            values[i] = pixels[i];
+        }
+        return values;
+    }
+
     private static void append(StoragePlugin plugin, String pvName, ArrayListEventStream stream) throws Exception {
         try (BasicContext context = new BasicContext()) {
             plugin.appendData(context, pvName, stream);
@@ -213,7 +432,7 @@ public class AnalyzerFixtureData {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 4) {
-            System.err.println("Usage: AnalyzerFixtureData kind pvName pluginURL csvFile [endEpochSeconds]");
+            System.err.println("Usage: AnalyzerFixtureData kind pvName pluginURL csvFile [endEpochSeconds [dbrType]]");
             System.exit(2);
         }
         if (args[2].contains("${")) {
@@ -224,8 +443,17 @@ public class AnalyzerFixtureData {
         long end = args.length > 4 ? Long.parseLong(args[4]) : System.currentTimeMillis() / 1000;
         ConfigService configService = new ConfigServiceForTests(new File("./bin"), 1);
         StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(args[2], configService);
-        long count = generate(args[0], args[1], plugin, Path.of(args[3]), end);
         long windowEnd = end - Math.floorMod(end, DAY_SECONDS);
+        if (isArrayKind(args[0])) {
+            ArchDBRTypes type = ArchDBRTypes.valueOf(args.length > 5
+                    ? args[5]
+                    : (args[0].startsWith("wave") ? "DBR_WAVEFORM_DOUBLE" : "DBR_WAVEFORM_INT"));
+            long frames = generateArray(args[0], args[1], plugin, Path.of(args[3]), end, type);
+            System.out.println("generated " + frames + " frames of " + args[1] + " (" + args[0] + ", " + type
+                    + ") before " + windowEnd);
+            System.exit(0);
+        }
+        long count = generate(args[0], args[1], plugin, Path.of(args[3]), end);
         System.out.println("generated " + count + " samples of " + args[1] + " (" + args[0] + ") before " + windowEnd);
         System.exit(0);
     }
