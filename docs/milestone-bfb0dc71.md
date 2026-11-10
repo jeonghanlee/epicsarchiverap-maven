@@ -1294,7 +1294,7 @@ Each step is committed on its own with the T cases it ran, recorded as evidence 
 
 - Landing: `git fetch` on 2026-11-10 12:25 PST showed origin/ahsoka at 51beba15d5b98829e0ad69114a8b3ad60eacf4cb, equal to the local HEAD, with this register as the only change of the working tree; the changed paths of the six steps are in the commits above.
 
-- Issue #39 stays open for M5 by D5; read on 2026-11-10 through `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/39`: OPEN, title Analyzer for archived data, label enhancement, milestone none, updated 2026-11-07T09:14:36Z.
+- Issue #39 stays open for M5 by D5; its body was edited on 2026-11-10 21:11 UTC under Issue authority to record phases C and D, read back through `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/39`: OPEN, title Analyzer for archived data, label enhancement, milestone none, updated 2026-11-10T21:11:12Z.
 
 ##### GitHub Projection
 
@@ -1304,7 +1304,7 @@ GitHub Milestone: none
 Observed State: OPEN (2026-11-10)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-11-04 23:18 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/39` read #39 OPEN, title Analyzer for archived data, label enhancement, assignee jeonghanlee and milestone none; remote updated_at 2026-11-04T22:34:06Z. The published body matches the prepared text and records the eight analysis tabs, fitting and parameter uncertainty, per-tool input checks, preference rules and acceptance criteria. A box per phase is added when the phase plans are accepted (D5).
+Last Compared: 2026-11-10 21:12 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/39` read #39 OPEN after the body edit of 2026-11-10 21:11 UTC under Issue authority: title Analyzer for archived data, label enhancement, assignee jeonghanlee and milestone none; remote updated_at 2026-11-10T21:11:12Z. The body's Verification section records the landing and the checks of the tools for one signal (2026-11-09) and for two and several signals (2026-11-10); the box of the distribution, comparison and spectral results is checked, the boxes of the fits, the inputs, the exports and the book carry the part these phases verified, and the fit box stays open for the expected count integrated over the bin edges. The boxes of the waveform and image tools stay open (D5).
 
 #### M5 - Analyzer phase E: waveform and image analysis
 
@@ -1400,10 +1400,10 @@ Superseded Plan Artifacts: the draft of 2026-10-14 (five steps), replaced in thi
 Title: Analyzer for archived data
 Labels: enhancement
 GitHub Milestone: none
-Observed State: OPEN (2026-11-04)
+Observed State: OPEN (2026-11-10)
 Observed Labels: enhancement
 Observed Milestone: none
-Last Compared: 2026-11-04 23:18 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/39` read #39 OPEN, title Analyzer for archived data, label enhancement, assignee jeonghanlee and milestone none; remote updated_at 2026-11-04T22:34:06Z. The published body matches the prepared text and records the eight analysis tabs, fitting and parameter uncertainty, per-tool input checks, preference rules and acceptance criteria.
+Last Compared: 2026-11-10 21:12 UTC; `gh api repos/jeonghanlee/epicsarchiverap-maven/issues/39` read #39 OPEN after the body edit of 2026-11-10 21:11 UTC under Issue authority: title Analyzer for archived data, label enhancement, assignee jeonghanlee and milestone none; remote updated_at 2026-11-10T21:11:12Z. The body's Verification section records the landing and the checks of the tools for one signal (2026-11-09) and for two and several signals (2026-11-10); the box of the distribution, comparison and spectral results is checked, the boxes of the fits, the inputs, the exports and the book carry the part these phases verified, and the fit box stays open for the expected count integrated over the bin edges. The boxes of the waveform and image tools stay open (D5).
 
 #### M6 - Appliance status as PVA PVs
 
