@@ -87,6 +87,28 @@
 @media (max-width: 480px) {
     .spec-table th, .spec-table td { padding: 2px 4px; font-size: 12px; }
 }
+.wave-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; padding: 8px 0; }
+.wave-controls label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.wave-controls input[type="text"] { width: 7rem; }
+.wave-frames { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 4px 0; }
+.wave-frames input[type="range"] { flex: 1 1 240px; min-width: 120px; }
+.wave-frames label { display: flex; align-items: center; gap: 4px; }
+.wave-plot { margin-top: 8px; }
+.wave-line { fill: none; stroke: var(--accent); stroke-width: 1.2; }
+.wave-max { fill: var(--ink); }
+.wave-heatmap { position: relative; }
+.wave-heatmap canvas { position: absolute; image-rendering: pixelated; }
+.wave-heatmap svg { position: relative; pointer-events: none; }
+.wave-readout { min-height: 1.4em; }
+.wave-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; }
+.wave-legend li { display: flex; align-items: center; gap: 6px; }
+.wave-swatch { display: inline-block; width: 18px; height: 3px; }
+.wave-numbers { overflow-x: auto; margin-top: 12px; }
+.wave-table th[scope="row"] { text-align: left; font-weight: normal; padding-right: 16px; vertical-align: top; }
+.wave-table td { white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+    .wave-table th, .wave-table td { padding: 2px 4px; font-size: 12px; }
+}
 .cmp-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; padding: 8px 0; }
 .cmp-controls label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .cmp-range, .cmp-signals { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; }

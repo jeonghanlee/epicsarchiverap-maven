@@ -13,7 +13,6 @@ import { formatInZone, zoneName } from "../comm/js/aa/timezone.js";
 
 const d3 = globalThis.d3;
 
-const METADATA = "../../bpl/getMetadata";
 const HEIGHT = 240;
 const WIDTH_LEAST = 320;
 const MARGIN = { left: 72, right: 24, top: 36, bottom: 40 };
@@ -117,11 +116,7 @@ export function createTrendTools(host, options) {
     function requestLimits(name) {
         if (metadata.has(name)) return;
         metadata.set(name, { pending: true });
-        fetch(`${METADATA}?${new URLSearchParams({ pv: name })}`)
-            .then((response) => {
-                if (!response.ok) throw new Error(`${response.statusText || "Request failed"} (HTTP ${response.status})`);
-                return response.json();
-            })
+        options.metadata(name)
             .then((body) => metadata.set(name, { limits: limitsOf(body) }))
             .catch((problem) => metadata.set(name, { failure: String(problem.message || problem) }))
             .then(() => options.onChange());

@@ -14,12 +14,14 @@ import { createCompare } from "./compare.js";
 import { createSpectrum } from "./spectrum.js";
 import { createCorrelation } from "./correlation.js";
 import { createDependency } from "./dependency.js";
+import { createWaveform } from "./waveform.js";
 import { methodText } from "./fit-panel.js";
 import { deepFields, readToolParameters, writeToolParameters } from "./tool-address.js";
 import { csvText, gridOf, interpolateRows, intervalForBins, isoText, longTable, nanosOf, nanosOfDate, observationsOf, parseDuration, timeText, valueText, wideTable } from "./export.js";
 
 const d3 = globalThis.d3;
 const DATA = "../../data/getData.json";
+const METADATA = "../../bpl/getMetadata";
 const MATCHING = "../../bpl/getMatchingPVs";
 const APPLIANCE = "../../bpl/getApplianceInfo";
 const CONCURRENT_REQUESTS = 6;
@@ -32,7 +34,7 @@ const HOUR = 3600000;
 const INPUT_FORMAT = "%Y-%m-%dT%H:%M:%S";
 const VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare", "waveform", "image"];
 // The views that have their tool in this version; the others explain that they are not available.
-const AVAILABLE_VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare"];
+const AVAILABLE_VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare", "waveform"];
 const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 // The page holds two datasets per PV. The selected dataset (summary) is the records of the selected range at the
 // resolution sample, resolved once from the interval option when the selection is made; the Summary statistics come
@@ -52,6 +54,8 @@ const EXPORT_DEFAULTS = { product: "data", range: "view", source: "raw", bins: "
 const EXPORT_CHOICES = { product: ["data", "statistics", "fit", "derived", "png", "svg", "link", "serverCsv", "serverMat"], range: ["view", "custom"], source: ["plot", "raw", "optimized", "interpolated"],
     layout: ["long", "wide"], values: ["source", "fixed", "exponential"], time: ["iso", "unixms"], stats: ["visible", "selected"] };
 const cache = new Map();
+// The type information of the PVs asked for in this page session (getMetadata); a PV without any is not kept, so that a later archiving is seen.
+const metadataCache = new Map();
 // The endpoint that gives the last observation at or before a time, and the search period sent with it.
 const DATA_AT_TIME = "../../data/getDataAtTime";
 const SEARCH_PERIOD = "P1D";
@@ -282,6 +286,35 @@ function sourceText(seconds) {
 }
 
 /**
+ * The type information and the engine metadata of a PV, read once per page session and shared by every tool that needs it; rejects with
+ * the reason (the HTTP status) when the appliance has none, and a failed request is not kept, so that a later archiving is seen.
+ */
+function metadataOf(name) {
+    if (!metadataCache.has(name)) {
+        const request = fetch(`${METADATA}?${new URLSearchParams({ pv: name })}`).then((response) => {
+            if (!response.ok) throw new Error(`${response.statusText || "Request failed"} (HTTP ${response.status})`);
+            return response.json();
+        });
+        metadataCache.set(name, request);
+        request.catch(() => metadataCache.delete(name));
+    }
+    return metadataCache.get(name);
+}
+
+/** The metadata of a PV, or null when the appliance has none for it (the PV is not archived, or the request failed). */
+const metadataOrNull = (name) => metadataOf(name).catch(() => null);
+
+/** True for the metadata of a PV that is stored as an array: the scalar tools do not read its records. */
+function isArrayMeta(meta) {
+    return Boolean(meta) && (String(meta.DBRType || "").includes("WAVEFORM") || Number(meta.elementCount) > 1);
+}
+
+/** The records of an array PV over a range as the retrieval gives them (raw or through an operator such as nth_N), for the frames of the Waveform tab. */
+function retrieveFrames(expression, from, to, signal) {
+    return fetch(`${DATA}?${new URLSearchParams({ pv: expression, from: from.toISOString(), to: to.toISOString() })}`, { signal });
+}
+
+/**
  * One dataset of a PV: its records over a range, raw or through the no-fill operator kind (mean, min or max) at a
  * resolution of whole seconds, which leaves an interval without samples empty. Each record keeps the source seconds
  * and nanoseconds, the value, the severity and the status; points carries what the chart draws. A dataset once
@@ -294,6 +327,15 @@ async function fetchSeries(name, kind, seconds, from, to, signal) {
         : `meanSample_${seconds}(${name})`;
     const key = `${pv}|${from.toISOString()}|${to.toISOString()}`;
     if (cache.has(key)) return cache.get(key);
+    // An array PV is not read as scalar samples: its records are whole arrays, so a request for them is as large as the arrays are,
+    // and the scalar tools would only discard them. The Waveform tab reads such a PV in a request of its own.
+    const meta = await metadataOrNull(name);
+    if (isArrayMeta(meta)) {
+        const dataset = { name, egu: meta.units ?? "", points: [], records: [], form: "Array samples", kind, seconds, from, to, elementCount: Number(meta.elementCount) };
+        if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value);
+        cache.set(key, dataset);
+        return dataset;
+    }
     const query = new URLSearchParams({ pv, from: from.toISOString(), to: to.toISOString() });
     const response = await fetch(`${DATA}?${query}`, { signal });
     if (!response.ok) throw new Error(`${response.statusText || "Retrieval failed"} (HTTP ${response.status})`);
@@ -703,6 +745,8 @@ function render() {
         correlation.render();
     } else if (state.view === "dependency") {
         dependency.render();
+    } else if (state.view === "waveform") {
+        waveform.render();
     } else if (state.view === "compare") {
         compare.render();
     } else if (state.view !== "trend") {
@@ -879,6 +923,7 @@ function explainView(view, restored = false) {
     $("spectrumPanel").hidden = restored || state.view !== "spectrum";
     $("correlationPanel").hidden = restored || state.view !== "correlation";
     $("dependencyPanel").hidden = restored || state.view !== "dependency";
+    $("waveformPanel").hidden = restored || state.view !== "waveform";
 }
 
 /** Shows the panel of an available view and marks its tab, without writing the address or drawing. */
@@ -890,6 +935,7 @@ function activateView(view) {
     $("spectrumPanel").hidden = view !== "spectrum";
     $("correlationPanel").hidden = view !== "correlation";
     $("dependencyPanel").hidden = view !== "dependency";
+    $("waveformPanel").hidden = view !== "waveform";
     $("unavailableView").hidden = true;
     for (const tab of $("analysisTabs").querySelectorAll('[role="tab"]')) {
         const active = tab.dataset.view === view;
@@ -1473,7 +1519,7 @@ function trendSignals() {
     });
 }
 trendTools = createTrendTools($("trendTools2"), { signals: trendSignals, window: () => ({ from: state.from, to: state.to }), zone: currentZone, onChange: () => { render(); writeAddress(); }, helpHref: helpPage,
-    sourceText, isHidden: (name) => chart.getState().hidden.includes(name), settings: state.tools.trend });
+    sourceText, isHidden: (name) => chart.getState().hidden.includes(name), settings: state.tools.trend, metadata: metadataOf });
 const spectrum = createSpectrum($("spectrumHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage, settings: state.tools.spectrum, changed: writeAddress });
 const correlation = createCorrelation($("correlationHost"), { signals: distributionSignals, range: () => state.selected, zone: currentZone, sourceText, helpHref: helpPage, settings: state.tools.correlation, changed: writeAddress });
 const dependency = createDependency($("dependencyHost"), { signals: distributionSignals, range: () => state.selected, resolution: () => state.sample ?? resolutionOf(state.selected.from, state.selected.to), autoSeconds,
@@ -1484,7 +1530,9 @@ const compare = createCompare($("compareHost"), { signals: distributionSignals, 
     fetch: (name, seconds, from, to) => fetchSeries(name, "mean", seconds, from, to), parseTime: readTime, formatTime: inputTime, zone: currentZone, sourceText, helpHref: helpPage,
     settings: state.tools.compare, changed: writeAddress });
 const distribution = createDistribution($("distributionHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage, settings: state.tools.distribution, changed: writeAddress });
-tools = { distribution, trend: trendTools, compare, spectrum, correlation, dependency };
+const waveform = createWaveform($("waveformHost"), { signals: distributionSignals, range: () => state.selected, zone: currentZone, helpHref: helpPage, settings: state.tools.waveform,
+    changed: writeAddress, metadata: metadataOrNull, retrieve: retrieveFrames, parseTime: readTime, formatTime: inputTime });
+tools = { distribution, trend: trendTools, compare, spectrum, correlation, dependency, waveform };
 wire();
 writeAddress();
 if (AVAILABLE_VIEWS.includes(state.view)) {

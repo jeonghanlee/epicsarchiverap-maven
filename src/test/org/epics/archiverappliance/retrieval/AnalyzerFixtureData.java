@@ -68,7 +68,8 @@ import java.util.function.LongToDoubleFunction;
  *     (positions 400, 900 and 1500, heights 3, 2 and 4, standard deviations 12, 20 and 15 elements; the height of the
  *     first grows by 1 percent of its start value each frame), a background of 0.5 plus 0.4 times the square of the
  *     fractional position, and a normal noise of standard deviation 0.05, one frame every 10 seconds for one hour;</li>
- * <li>waveaxis: the axis of wave, element n holding 0.5 n, one frame at the start of that hour;</li>
+ * <li>waveaxis: the axis of wave, two frames: element n holding 0.5 n at the start of that hour, and 100 plus 0.25 n
+ *     from its middle, so that the axis read at the time of a frame differs between the two halves of the hour;</li>
  * <li>image: 640 by 480 pixels, row-major, a Gaussian blob of amplitude 50000 (above the largest signed 16-bit value)
  *     and standard deviations 25 (X) and 15 (Y) pixels on a background of 1000, whose centre is at X 300 plus 2 per
  *     frame and Y 240, with a normal noise of standard deviation 20 rounded to whole counts, 20 frames 30 seconds
@@ -124,6 +125,8 @@ public class AnalyzerFixtureData {
     public static final double WAVE_BACKGROUND_RISE = 0.4;
     public static final double WAVE_NOISE_SD = 0.05;
     public static final double WAVE_AXIS_STEP = 0.5;
+    public static final double WAVE_AXIS_SECOND_START = 100.0;
+    public static final double WAVE_AXIS_SECOND_STEP = 0.25;
     public static final int WAVE_FRAMES = 360;
     public static final long WAVE_SPACING_SECONDS = 10;
     public static final int IMAGE_WIDTH = 640;
@@ -343,8 +346,8 @@ public class AnalyzerFixtureData {
                 spacing = WAVE_SPACING_SECONDS;
             }
             case "waveaxis" -> {
-                frames = 1;
-                spacing = WAVE_FRAMES * WAVE_SPACING_SECONDS;
+                frames = 2;
+                spacing = WAVE_FRAMES * WAVE_SPACING_SECONDS / 2;
             }
             case "image" -> {
                 frames = IMAGE_FRAMES;
@@ -356,7 +359,7 @@ public class AnalyzerFixtureData {
             }
             default -> throw new IllegalArgumentException("Unknown array kind " + kind);
         }
-        long start = end - (kind.equals("waveaxis") ? spacing : frames * spacing);
+        long start = end - frames * spacing;
         Random waveNoise = new Random(ARRAY_SEED);
         Random imageNoise = new Random(kind.equals("frame") ? FRAME_SEED : IMAGE_SEED);
         boolean text = kind.equals("wave") || kind.equals("waveaxis");
@@ -373,7 +376,7 @@ public class AnalyzerFixtureData {
                     case "waveaxis" -> {
                         values = new double[WAVE_LENGTH];
                         for (int n = 0; n < WAVE_LENGTH; n++) {
-                            values[n] = WAVE_AXIS_STEP * n;
+                            values[n] = k == 0 ? WAVE_AXIS_STEP * n : WAVE_AXIS_SECOND_START + WAVE_AXIS_SECOND_STEP * n;
                         }
                     }
                     case "image" -> values = toDoubles(imageFrame(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_AMPLITUDE,
