@@ -2,7 +2,8 @@
 """Writes references.json: fixed datasets and the values that NumPy and SciPy compute from them, against which the checks of
 the analyzer routines (stats.js, tests.js, spectrum.js, trend.js, compare.js, the preparation of the Spectrum tab, and the fits, correlations,
 regression, principal components, mutual information, clustering and matrix routines of the tools of two and several signals) compare their results. NumPy and SciPy are needed to write the file
-and never to run the checks, which read it.
+and never to run the checks, which read it. The background of an array is written by ROOT (6.36.10, run as root -l -b -q with
+root_background.C; ROOT is found on the PATH or in ROOT_BIN, and without it the values already in the file are kept).
 
 Usage: python3 -I src/test/js/analyzer/reference/generate-references.py
 """
@@ -651,12 +652,57 @@ reference["unitCases"] = {
 # in elements, defined only when the sum is positive) and the half-maximum width. The half-maximum width is measured at the level
 # half way from the minimum to the maximum, on the first position of the maximum: from there to each side to the first element
 # strictly below the level, and between that element and its neighbour towards the maximum the crossing is linearly interpolated;
-# it is not defined when either side never falls below the level, or when the array is flat. The background of an array is the
-# morphological opening (a minimum filter then a maximum filter over an odd window, the edge value repeated beyond the ends); the
-# peaks are those of find_peaks on the array minus its background (no background when the window is null), whose prominence reaches the fraction 0.05 of the range of that
-# difference, each with the width at half its prominence (peak_widths).
-from scipy import ndimage
+# it is not defined when either side never falls below the level, or when the array is flat. The background of an array is the one
+# that TSpectrum::Background of ROOT computes (the clipping of Morhac: order 2, no smoothing, a rising or a falling width, the number
+# of iterations given); its values here are written by ROOT itself (root_background.C run as root -l -b -q), and when ROOT is not on
+# the PATH (or named by the environment variable ROOT_BIN) the values already in the file are kept. The method of both is the code of
+# TSpectrum in https://github.com/root-project/root/blob/v6-40-04/hist/spectrum/src/TSpectrum.cxx (tag v6-40-04 of the ROOT repository). The peaks are those that
+# SearchHighRes of ROOT finds (root_search.C); the width of a peak, which ROOT does not give, is the width at half of its height above
+# the background of ROOT's clipping, found here by a second method.
+import shutil
+import subprocess
+import tempfile
 array_rng = np.random.default_rng(20261114)
+previous_root = {}
+if os.path.exists(os.path.join(HERE, "references.json")):
+    with open(os.path.join(HERE, "references.json")) as old:
+        previous_root = {case["name"]: case for case in json.load(old).get("arrayCases", {}).get("rootBackground", [])}
+root_bin = os.environ.get("ROOT_BIN") or shutil.which("root")
+root_requests = {}
+
+
+def root_background(name, values, iterations, direction):
+    """The background that ROOT computes for the values (direction 'increasing' or 'decreasing'), kept under the name of the case."""
+    values = [float(v) for v in values]
+    case = {"name": name, "iterations": iterations, "direction": direction, "values": values}
+    if root_bin:
+        flag = 0 if direction == "increasing" else 1
+        with tempfile.TemporaryDirectory() as folder:
+            source = os.path.join(folder, "in.txt")
+            result = os.path.join(folder, "out.txt")
+            with open(source, "w") as handle:
+                handle.write(f"{iterations} {flag} {len(values)}\n" + " ".join(repr(v) for v in values) + "\n")
+            macro = os.path.join(HERE, "root_background.C")
+            done = subprocess.run([root_bin, "-l", "-b", "-q", f'{macro}("{source}","{result}")'], capture_output=True, text=True, timeout=300)
+            if done.returncode != 0 or not os.path.exists(result):
+                raise SystemExit("ROOT failed on the case " + name + ": " + done.stderr[-400:])
+            text = open(result).read().strip()
+            if text.startswith("ERROR"):
+                case["background"] = None
+                case["error"] = text[len("ERROR"):].strip()
+            else:
+                case["background"] = [float(x) for x in text.split()]
+    else:
+        kept = previous_root.get(name)
+        if not kept or kept["values"] != values or kept["iterations"] != iterations or kept["direction"] != direction:
+            raise SystemExit("ROOT is not on the PATH (set ROOT_BIN) and the file holds no background of the case " + name + " for these values")
+        case["background"] = kept["background"]
+        if "error" in kept:
+            case["error"] = kept["error"]
+    root_requests[name] = case
+    if case["background"] is None:
+        return None
+    return np.array(case["background"])
 
 
 def half_maximum_width(values):
@@ -693,23 +739,75 @@ def array_summary(values):
     }
 
 
-def opening(values, window):
-    values = np.asarray(values, dtype=float)
-    return ndimage.maximum_filter1d(ndimage.minimum_filter1d(values, size=window, mode="nearest"), size=window, mode="nearest")
+previous_search = {}
+if os.path.exists(os.path.join(HERE, "references.json")):
+    with open(os.path.join(HERE, "references.json")) as old:
+        previous_search = {case["name"]: case for case in json.load(old).get("arrayCases", {}).get("rootSearch", [])}
+search_requests = {}
 
 
-def peak_case(values, window, fraction=0.05):
+def root_search(name, values, sigma=2.0, threshold=0.05, background=True, markov=True, iterations=3, window=3, max_peaks=100):
+    """The peaks that SearchHighRes of ROOT finds (the engine of TSpectrum::Search), with the deconvolved spectrum it leaves."""
+    values = [float(v) for v in values]
+    case = {"name": name, "values": values, "sigma": sigma, "threshold": threshold, "background": background, "markov": markov,
+            "deconvolutionIterations": iterations, "averageWindow": window, "maxPeaks": max_peaks}
+    if root_bin:
+        with tempfile.TemporaryDirectory() as folder:
+            source = os.path.join(folder, "in.txt")
+            result = os.path.join(folder, "out.txt")
+            with open(source, "w") as handle:
+                handle.write(f"{sigma} {threshold * 100} {int(background)} {int(markov)} {iterations} {window} {max_peaks} {len(values)}\n" + " ".join(repr(v) for v in values) + "\n")
+            macro = os.path.join(HERE, "root_search.C")
+            done = subprocess.run([root_bin, "-l", "-b", "-q", f'{macro}("{source}","{result}")'], capture_output=True, text=True, timeout=300)
+            if done.returncode != 0 or not os.path.exists(result):
+                raise SystemExit("ROOT failed on the search case " + name + ": " + done.stderr[-400:])
+            lines = open(result).read().strip().split("\n")
+            head = lines[0].split()
+            case["positions"] = [float(x) for x in head[1:]]
+            case["deconvolved"] = [float(x) for x in lines[1].split()]
+            case["refused"] = "Error in <TSpectrum::SearchHighRes>" in (done.stdout + done.stderr)
+    else:
+        kept = previous_search.get(name)
+        keys = ("values", "sigma", "threshold", "background", "markov", "deconvolutionIterations", "averageWindow", "maxPeaks")
+        if not kept or any(kept[k] != case[k] for k in keys):
+            raise SystemExit("ROOT is not on the PATH (set ROOT_BIN) and the file holds no search of the case " + name + " for these arguments")
+        case["positions"], case["deconvolved"], case["refused"] = kept["positions"], kept["deconvolved"], kept["refused"]
+    search_requests[name] = case
+    return case
+
+
+def width_at_half(above, index):
+    """The width at half of the height above the background, by a second method: the run of elements at or above half the height."""
+    above = np.asarray(above, dtype=float)
+    height = above[index]
+    if not height > 0:
+        return None
+    half = height / 2
+    low = index
+    while low > 0 and above[low - 1] >= half:
+        low -= 1
+    high = index
+    while high < len(above) - 1 and above[high + 1] >= half:
+        high += 1
+    if low == 0 or high == len(above) - 1:
+        return None
+    left = (low - 1) + (half - above[low - 1]) / (above[low] - above[low - 1])
+    right = high + (above[high] - half) / (above[high] - above[high + 1])
+    return {"left": float(left), "right": float(right), "width": float(right - left)}
+
+
+def peak_widths_case(name, values, search, width_iterations=20, width_direction="decreasing"):
+    """The peaks of a ROOT search with their widths: the background of ROOT's clipping, the width at half of the height above it."""
     values = np.asarray(values, dtype=float)
-    background = np.zeros(len(values)) if window is None else opening(values, window)
+    background = np.zeros(len(values)) if width_iterations is None else root_background(name + "-width", values, width_iterations, width_direction)
     above = values - background
-    prominence_floor = fraction * float(above.max() - above.min())
-    found, props = signal.find_peaks(above, prominence=prominence_floor)
-    widths = signal.peak_widths(above, found, rel_height=0.5)
-    return {
-        "window": window, "fraction": fraction, "background": listing(background),
-        "peaks": [{"index": int(k), "height": float(above[k]), "prominence": float(props["prominences"][k_i]), "width": float(widths[0][k_i]),
-                   "left": float(widths[2][k_i]), "right": float(widths[3][k_i])} for k_i, k in enumerate(found)],
-    }
+    peaks = []
+    for x in search["positions"]:
+        index = int(x + 0.5)
+        width = width_at_half(above, index)
+        peaks.append({"position": x, "index": index, "value": float(values[index]), "height": float(above[index]),
+                      "width": width["width"] if width else None, "left": width["left"] if width else None, "right": width["right"] if width else None})
+    return {"name": name, "values": listing(values), "searchName": search["name"], "widthIterations": width_iterations, "widthDirection": width_direction, "peaks": peaks}
 
 
 wave_n = 2048
@@ -723,18 +821,64 @@ clean_gaussian = 0.2 + 3.0 * np.exp(-0.5 * ((clean_index - 200.3) / 20.0) ** 2)
 ramp = np.linspace(0.0, 10.0, 50)
 plateau = np.concatenate([np.zeros(10), np.linspace(0, 5, 6), np.full(8, 5.0), np.linspace(5, 0, 6), np.zeros(10), [0.5, 3.0, 0.5], np.zeros(10)])
 short_peaks = np.array([0, 1, 0, 0.5, 4, 0.5, 0, 0.2, 0.1, 2.5, 6.0, 2.5, 0.1, 0.3, 0.2, 0.2, 1.0, 0.9, 0, 0], dtype=float)
+positive_noise = np.abs(array_rng.normal(0, 1, 300)) * 3 + 50 * np.exp(-0.5 * ((np.arange(300) - 150) / 10.0) ** 2) + np.linspace(5, 20, 300)
 reference["arrayCases"] = {
     "wave": {"values": listing(wave_values), "summary": array_summary(wave_values), "reference": listing(wave_reference), "difference": listing(wave_values - wave_reference),
-             "peaks": peak_case(wave_values, 205)},
+             },
     "gaussian": {"values": listing(clean_gaussian), "summary": array_summary(clean_gaussian), "fwhmOfModel": float(2 * math.sqrt(2 * math.log(2)) * 20.0)},
     "ramp": {"values": listing(ramp), "summary": array_summary(ramp)},
     "negative": {"values": [-1.0, -2.0, -3.0, -1.0], "summary": array_summary([-1.0, -2.0, -3.0, -1.0])},
     "flat": {"values": [2.0, 2.0, 2.0, 2.0], "summary": array_summary([2.0, 2.0, 2.0, 2.0])},
-    "plateau": {"values": listing(plateau), "peaks": peak_case(plateau, None, 0.05), "withBackground": peak_case(plateau, 31, 0.05)},
-    "short": {"values": listing(short_peaks), "peaks": peak_case(short_peaks, 5, 0.05), "withoutBackground": peak_case(short_peaks, None, 0.05), "opening3": listing(opening(short_peaks, 3))},
+    "plateau": {"values": listing(plateau)},
+    "short": {"values": listing(short_peaks)},
+    "positive": {"values": listing(positive_noise)},
     "heatmap": {"frames": [listing(wave_values[:32] * (1 + 0.1 * k)) for k in range(5)], "min": float(min((wave_values[:32] * (1 + 0.1 * k)).min() for k in range(5))),
                 "max": float(max((wave_values[:32] * (1 + 0.1 * k)).max() for k in range(5)))},
 }
+# The clipping itself, for each way ROOT is called: arrays with negative values and without, both directions, a single iteration, many
+# iterations, and a number of iterations larger than half of a short array.
+for name, values, iterations, direction in (
+        ("wave-20-decreasing", wave_values, 20, "decreasing"), ("wave-20-increasing", wave_values, 20, "increasing"),
+        ("wave-1-decreasing", wave_values, 1, "decreasing"), ("wave-5-increasing", wave_values, 5, "increasing"), ("wave-100-decreasing", wave_values, 100, "decreasing"),
+        ("positive-20-decreasing", positive_noise, 20, "decreasing"), ("positive-7-increasing", positive_noise, 7, "increasing"),
+        ("gaussian-30-decreasing", clean_gaussian, 30, "decreasing"), ("short-2-decreasing", short_peaks, 2, "decreasing"), ("short-4-increasing", short_peaks, 4, "increasing"),
+        ("short-15-decreasing", short_peaks, 15, "decreasing"), ("plateau-6-decreasing", plateau, 6, "decreasing"), ("ramp-10-decreasing", ramp, 10, "decreasing"),
+        ("short-9-decreasing", short_peaks, 9, "decreasing"), ("short-10-decreasing", short_peaks, 10, "decreasing"),
+        ("odd-10-decreasing", np.append(short_peaks, 0.7), 10, "decreasing"), ("odd-11-decreasing", np.append(short_peaks, 0.7), 11, "decreasing"),
+        ("three-1-increasing", np.array([1.0, 5.0, 2.0]), 1, "increasing"), ("two-1-decreasing", np.array([1.0, 5.0]), 1, "decreasing")):
+    root_background(name, values, iterations, direction)
+wave_small = wave_values[:600]
+sym_index = np.arange(120)
+symmetric_pair = 4.0 + 30 * np.exp(-0.5 * ((sym_index - 30.0) / 4.0) ** 2) + 30 * np.exp(-0.5 * ((sym_index - 90.0) / 4.0) ** 2)
+start_rng = np.random.default_rng(20261116)
+signed_index = np.arange(200)
+signed_start = start_rng.normal(0, 0.6, 200) - 2.0 + 25 * np.exp(-0.5 * ((signed_index - 100.0) / 5.0) ** 2)
+start_peak = 2.0 + start_rng.normal(0, 0.1, 150) + 30 * np.exp(-0.5 * ((np.arange(150) - 0.0) / 4.0) ** 2)
+end_peak = 2.0 + start_rng.normal(0, 0.1, 150) + 30 * np.exp(-0.5 * ((np.arange(150) - 149.0) / 4.0) ** 2)
+search_specs = [
+    ("wave-default", wave_values, {}), ("wave-sigma8", wave_values, {"sigma": 8.0}), ("wave-sigma3-plain", wave_values, {"sigma": 3.0, "background": False, "markov": False}),
+    ("wave-threshold30", wave_values, {"sigma": 5.0, "threshold": 0.3}), ("wave-five-peaks", wave_values, {"sigma": 2.0, "max_peaks": 5}),
+    ("wave-decon10", wave_values, {"sigma": 4.0, "iterations": 10, "window": 5}), ("wave-nodecon", wave_values, {"sigma": 4.0, "iterations": 0}),
+    ("positive-default", positive_noise, {}), ("positive-sigma5", positive_noise, {"sigma": 5.0}), ("positive-nomarkov", positive_noise, {"sigma": 3.0, "markov": False}),
+    ("gaussian-sigma20", clean_gaussian, {"sigma": 20.0}), ("gaussian-sigma10-nobackground", clean_gaussian, {"sigma": 10.0, "background": False}),
+    ("short-sigma1", short_peaks, {"sigma": 1.0}), ("plateau-sigma1", plateau, {"sigma": 1.0}), ("ramp-sigma2", ramp, {"sigma": 2.0}),
+    ("wave-small-sigma2", wave_small, {"sigma": 2.0}), ("wave-small-sigma15", wave_small, {"sigma": 15.0}),
+    ("wave-small-sigma1.5", wave_small, {"sigma": 1.5}), ("positive-sigma2.5", positive_noise, {"sigma": 2.5}),
+    ("symmetric-pair", symmetric_pair, {"sigma": 3.0}), ("tie-plain", symmetric_pair, {"sigma": 3.0, "background": False, "markov": False}),
+    ("peak-at-the-start", start_peak, {"sigma": 3.0}), ("signed-noise-start", signed_start, {"sigma": 3.0}), ("peak-at-the-end", end_peak, {"sigma": 3.0}),
+    ("boundary-clipping-ok", np.append(short_peaks[:14], 0.0)[:15], {"sigma": 1.0}), ("refused-boundary-clipping", short_peaks[:14], {"sigma": 1.0}),
+    ("boundary-sigma-ok", positive_noise, {"sigma": 102.2, "background": False}), ("refused-boundary-sigma", positive_noise, {"sigma": 102.3, "background": False}),
+    ("refused-sigma-below-1", short_peaks, {"sigma": 0.5}), ("refused-clipping-window", short_peaks, {"sigma": 3.0}), ("refused-threshold", short_peaks, {"sigma": 1.0, "threshold": 1.5}),
+    ("refused-sigma-too-large", positive_noise, {"sigma": 110.0, "background": False}),
+]
+for name, values, options in search_specs:
+    root_search(name, values, **options)
+reference["arrayCases"]["rootSearch"] = list(search_requests.values())
+width_specs = [("wave-widths", wave_values, "wave-sigma8", 20, "decreasing"), ("wave-widths-none", wave_values, "wave-sigma8", None, "decreasing"),
+               ("wave-widths-rising", wave_values, "wave-sigma3-plain", 12, "increasing"), ("positive-widths", positive_noise, "positive-sigma5", 20, "decreasing"),
+               ("gaussian-widths", clean_gaussian, "gaussian-sigma20", 30, "decreasing"), ("small-widths", wave_small, "wave-small-sigma2", 20, "decreasing")]
+reference["arrayCases"]["peakWidths"] = [peak_widths_case(name, values, search_requests[search_name], iterations, direction) for name, values, search_name, iterations, direction in width_specs]
+reference["arrayCases"]["rootBackground"] = list(root_requests.values())
 
 # Images: the region sums and projections, the centroid and the peak (the first maximum in row-major order), the Gaussian size of the
 # X and of the Y projection (the Gaussian of the fits, fitted by curve_fit from a start made of the data: the amplitude the range of the

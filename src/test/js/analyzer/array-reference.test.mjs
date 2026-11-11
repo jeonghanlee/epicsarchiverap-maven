@@ -45,37 +45,49 @@ test("the half-maximum width of a Gaussian is 2.355 sigma, and it is not defined
     assert.equal(arrays.negative.summary.fwhm, null);
 });
 
-test("the opening of a short array keeps what is wider than the window and removes what is narrower", () => {
-    const short = arrays.short;
-    const opened = short.opening3;
-    assert.equal(opened.length, short.values.length);
-    short.values.forEach((v, i) => assert.ok(opened[i] <= v + 1e-12, `the opening lies on or below the array at ${i}`));
-    assert.equal(opened[4], 0.5, "a single-element peak of 4 between 0.5 and 0.5 is removed down to its neighbours");
-    assert.equal(opened[10], 2.5, "a peak 3 wide is cut to its flank by a window of 3");
-});
-
-test("peaks follow find_peaks: the middle of a plateau counts, neither end of the array is a peak, and the width is at half the prominence", () => {
-    const plateau = arrays.plateau.peaks.peaks;
-    assert.equal(plateau[0].index, 19, "the middle of the plateau at 16 to 23");
-    assert.equal(plateau[0].prominence, plateau[0].height);
-    const noBackground = arrays.short.withoutBackground.peaks.map((p) => p.index);
-    assert.deepEqual(noBackground, [1, 4, 10, 16]);
-    for (const set of [arrays.plateau.peaks, arrays.plateau.withBackground, arrays.short.peaks, arrays.short.withoutBackground, arrays.wave.peaks]) {
-        const n = set.background.length;
-        for (const p of set.peaks) {
-            assert.ok(p.index > 0 && p.index < n - 1, `peak ${p.index} is not an end`);
-            assert.ok(p.width > 0 && p.left < p.index && p.index < p.right, `peak ${p.index} width`);
-            assert.ok(p.prominence > 0 && p.height >= p.prominence - 1e-12);
-        }
+test("the stored backgrounds of ROOT lie on or below the array and leave the first and last element as they are", () => {
+    for (const c of arrays.rootBackground.filter((x) => !x.error)) {
+        assert.equal(c.background.length, c.values.length, c.name);
+        c.values.forEach((v, i) => assert.ok(c.background[i] <= v + 1e-12, `${c.name}: the background lies on or below the array at ${i}`));
+        assert.equal(c.background[0], c.values[0], `${c.name}: the first element is not clipped`);
+        assert.equal(c.background[c.values.length - 1], c.values[c.values.length - 1], `${c.name}: the last element is not clipped`);
     }
 });
 
-test("the wave carries the three peaks it was made with, each above the sine and the background", () => {
-    const tall = arrays.wave.peaks.peaks.filter((p) => p.height > 2.5).map((p) => p.index);
+test("the stored searches of ROOT hold positions inside the array, at most the peaks asked for, and the refusals", () => {
+    for (const c of arrays.rootSearch) {
+        if (c.refused) {
+            assert.deepEqual(c.positions, [], `${c.name}: a refused search finds nothing`);
+            continue;
+        }
+        assert.ok(c.positions.length <= c.maxPeaks, `${c.name}: at most ${c.maxPeaks} peaks`);
+        for (const x of c.positions) assert.ok(x >= 0 && x <= c.values.length - 1, `${c.name}: position ${x}`);
+        assert.equal(c.deconvolved.length, c.values.length);
+    }
+    assert.equal(arrays.rootSearch.filter((c) => c.refused).length, 6);
+    assert.equal(arrays.rootSearch.find((c) => c.name === "wave-five-peaks").positions.length, 5);
+});
+
+test("the wave carries the three peaks it was made with, among the peaks that ROOT lists, each wider than the sine", () => {
+    const found = arrays.rootSearch.find((c) => c.name === "wave-sigma8").positions;
     for (const centre of [400, 900, 1500]) {
-        assert.ok(tall.some((index) => Math.abs(index - centre) < 25), `a peak near ${centre}`);
+        assert.ok(found.some((x) => Math.abs(x - centre) < 25), `a peak near ${centre}`);
     }
     close(arrays.wave.summary.max, Math.max(...arrays.wave.values), 0, 0, "wave maximum");
+});
+
+test("the stored widths are at half of the height above ROOT's background, and none is cut by the array without being null", () => {
+    for (const c of arrays.peakWidths) {
+        const background = c.widthIterations === null ? null : arrays.rootBackground.find((b) => b.name === `${c.name}-width`).background;
+        for (const p of c.peaks) {
+            assert.equal(p.value, c.values[p.index]);
+            close(p.height, c.values[p.index] - (background ? background[p.index] : 0), 1e-12, 1e-12, "height");
+            if (p.width === null) continue;
+            assert.ok(p.left < p.index && p.index < p.right, `${c.name}: peak ${p.index} crossings`);
+            close(p.right - p.left, p.width, 1e-12, 1e-12, "width");
+            assert.ok(p.width > 0);
+        }
+    }
 });
 
 test("the difference array is the array minus its reference, element by element", () => {
