@@ -96,6 +96,8 @@
 .wave-plot { margin-top: 8px; }
 .wave-line { fill: none; stroke: var(--accent); stroke-width: 1.2; }
 .wave-max { fill: var(--ink); }
+.wave-background { stroke: var(--muted, #777); stroke-dasharray: 4 3; }
+.wave-peak { fill: none; stroke: var(--ink); stroke-width: 1.5; }
 .wave-heatmap { position: relative; }
 .wave-heatmap canvas { position: absolute; image-rendering: pixelated; }
 .wave-heatmap svg { position: relative; pointer-events: none; }

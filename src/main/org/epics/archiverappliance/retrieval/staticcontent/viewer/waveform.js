@@ -15,15 +15,27 @@ import { infoButton } from "../comm/js/aa/card.js";
 import { finiteNumber } from "../comm/js/aa/chart/state.js";
 import { ELEMENTS_MOST, FRAMES_MOST, OVERLAY_MOST, REQUEST_BYTES_MOST, SUMMARY_VALUES, elementsText, axisValues, checkFrames, frameAtOrBefore, frameSummaries, framesInside, lengthsOf, overlayFrames, parseFrames, readBounded,
     requestPlan, summarySeries, thinOnPage, drawingIndices } from "../comm/js/aa/arrays.js";
-import { heatmapGrid, summary } from "../comm/js/aa/array.js";
+import { DIRECTIONS, difference, heatmapGrid, peaks, summary } from "../comm/js/aa/array.js";
+import { nextPowerOfTwo, spectra, spectralPeak } from "../comm/js/aa/spectrum.js";
 import { formatInZone, zoneName } from "../comm/js/aa/timezone.js";
 
 const d3 = globalThis.d3;
 
-export const WAVEFORM_VIEWS = [["array", "Array at a time"], ["overlay", "Overlay of times"], ["heatmap", "Time against element"], ["values", "Summary values"], ["series", "Summary value over time"]];
+export const WAVEFORM_VIEWS = [["array", "Array at a time"], ["overlay", "Overlay of times"], ["heatmap", "Time against element"], ["values", "Summary values"], ["series", "Summary value over time"],
+    ["difference", "Difference from a reference"], ["spectrum", "Spectrum"], ["peaks", "Peaks and background"]];
 export const AXIS_CHOICES = [["index", "Element number"], ["typed", "Typed start and step"], ["companion", "Companion PV"]];
-// The settings of the tab and their defaults; the address carries the ones that differ (viewer/tool-address.js).
-export const WAVEFORM_DEFAULTS = Object.freeze({ signal: null, view: "array", axis: "index", axisStart: "0", axisStep: "1", axisUnit: "", axisPv: null, frame: "", overlay: "8", value: "max" });
+export const FS_SOURCES = [["typed", "Typed"], ["pv", "PV of the sampling frequency"]];
+export const SPECTRUM_WINDOWS = [["rectangular", "Rectangular"], ["hann", "Hann"], ["hamming", "Hamming"], ["blackman", "Blackman"]];
+export const SPECTRUM_SCALES = [["log", "Logarithmic"], ["linear", "Linear"]];
+export const PEAK_VIEWS = [["array", "Array with its background"], ["subtracted", "Array minus the background"]];
+const DIRECTION_TEXT = { decreasing: "Falling width", increasing: "Rising width" };
+// The settings of the tab and their defaults; the address carries the ones that differ (viewer/tool-address.js). The peak search keeps the
+// defaults of ROOT's TSpectrum::Search (sigma 2, threshold 5 percent, background removal and Markov smoothing on, 3 deconvolution
+// iterations, an averaging window of 3); the clipped background of the background view and of the widths keeps 20 iterations, falling.
+export const WAVEFORM_DEFAULTS = Object.freeze({ signal: null, view: "array", axis: "index", axisStart: "0", axisStep: "1", axisUnit: "", axisPv: null, frame: "", overlay: "8", value: "max",
+    reference: "", fsSource: "typed", fs: "", fsPv: null, window: "hann", scale: "log", sigma: "2", threshold: "5", searchBackground: true, markov: true, averageWindow: "3",
+    deconvolution: "3", backgroundIterations: "20", backgroundDirection: "decreasing", peakView: "array" });
+const MOST_PEAKS = 100;
 const HEIGHT = 300;
 const WIDTH_LEAST = 320;
 const MARGIN = { left: 84, right: 24, top: 36, bottom: 60 };
@@ -44,6 +56,9 @@ const CARD = [
         ["Axis", "The element number, or a typed start and step (position = start + step x number), or the values of another array PV read at the time of the frame, which must have one value for each element and must not decrease. Nothing is assumed about what the axis means: the unit is the one you type."],
         ["Summary values", "The length, the maximum and minimum with their element, the mean, the root mean square, the sum, the centre (the intensity-weighted centroid, not defined for a sum that is not positive) and the half-maximum width (not defined when the array stays above half of its range on one side)."],
         ["Summary value over time", "One of those values for each frame read, in time order; a frame for which it is not defined is left out and counted."],
+        ["Difference from a reference", "The frame in view minus a reference read at or before a typed time; another length is refused."],
+        ["Spectrum", "The power spectral density of the frame and its strongest peak. The sampling frequency is typed or read from a PV of that role, never the archive rate."],
+        ["Peaks and background", "The peaks of ROOT's TSpectrum in its order, with the height and the width at half height above the clipped background."],
     ],
     null,
 ];
@@ -159,10 +174,39 @@ export function createWaveform(host, options) {
     const next = node("button", { type: "button", "aria-label": "Next frame" }, "Next");
     const timeBox = node("input", { type: "text", size: "20", "aria-label": "Frame at or before the time", placeholder: "time" });
     const goTo = node("button", { type: "button" }, "Go to time");
+    const checkbox = (label, key) => {
+        const element = node("input", { type: "checkbox", "aria-label": label });
+        element.checked = settings[key] === true;
+        element.addEventListener("change", () => { settings[key] = element.checked; changed(); });
+        return element;
+    };
+    const referenceBox = node("input", { type: "text", size: "20", "aria-label": "Reference at or before the time", placeholder: "time" });
+    const readReference = node("button", { type: "button" }, "Read reference");
+    const fsSource = select("Sampling frequency from", FS_SOURCES, "fsSource");
+    const fsBox = textInput("Sampling frequency", "fs", 8, "Hz");
+    const fsPv = node("select", { "aria-label": "Sampling frequency PV" });
+    fsPv.addEventListener("change", () => { settings.fsPv = fsPv.value; forgetFailedFrequencies(); changed(); });
+    const windowSelect = select("Spectrum window", SPECTRUM_WINDOWS, "window");
+    const scaleSelect = select("Spectrum scale", SPECTRUM_SCALES, "scale");
+    const sigmaBox = textInput("Peak sigma", "sigma", 5);
+    const thresholdBox = textInput("Peak threshold", "threshold", 5, "%");
+    const searchBackground = checkbox("Remove the background in the search", "searchBackground");
+    const markov = checkbox("Markov smoothing", "markov");
+    const averageBox = textInput("Markov window", "averageWindow", 4);
+    const deconvolutionBox = textInput("Deconvolution iterations", "deconvolution", 4);
+    const backgroundBox = textInput("Background iterations", "backgroundIterations", 5);
+    const directionSelect = select("Background direction", DIRECTIONS.map((d) => [d, DIRECTION_TEXT[d]]), "backgroundDirection");
+    const peakViewSelect = select("Peaks view", PEAK_VIEWS, "peakView");
     const error = node("p", { class: "error", role: "alert" });
     const field = (text, control) => node("label", null, text, control);
+    const viewFields = {
+        difference: [field("Reference ", referenceBox), readReference],
+        spectrum: [field("Frequency from ", fsSource), field("Sampling frequency ", fsBox), field("Frequency PV ", fsPv), field("Window ", windowSelect), field("Scale ", scaleSelect)],
+        peaks: [field("Sigma ", sigmaBox), field("Threshold % ", thresholdBox), field("Background in search ", searchBackground), field("Markov ", markov), field("Markov window ", averageBox),
+            field("Deconvolution ", deconvolutionBox), field("Background iterations ", backgroundBox), field("Background ", directionSelect), field("Show ", peakViewSelect)],
+    };
     const controls = node("div", { class: "wave-controls" }, field("Signal ", signal), field("View ", view), field("Axis ", axis), field("Start ", axisStart), field("Step ", axisStep), field("Unit ", axisUnit), field("Axis PV ", axisPv),
-        field("Frames overlaid ", overlay), field("Value ", valueSelect), infoButton(...CARD, options.helpHref));
+        field("Frames overlaid ", overlay), field("Value ", valueSelect), ...viewFields.difference, ...viewFields.spectrum, ...viewFields.peaks, infoButton(...CARD, options.helpHref));
     const frameBar = node("div", { class: "wave-frames", role: "group", "aria-label": "Frame of the range" }, previous, slider, next, field("Time ", timeBox), goTo);
     const frameNote = node("p", { class: "note wave-frame-note", role: "status" });
     const message = node("p", { class: "note wave-message", role: "status" });
@@ -192,6 +236,11 @@ export function createWaveform(host, options) {
         }
         if (!others.includes(settings.axisPv)) settings.axisPv = others[0] ?? null;
         if (settings.axisPv !== null) axisPv.value = settings.axisPv;
+        if (others.join("\n") !== [...fsPv.options].map((option) => option.value).join("\n")) {
+            fsPv.replaceChildren(...others.map((name) => node("option", { value: name }, name)));
+        }
+        if (!others.includes(settings.fsPv)) settings.fsPv = others[0] ?? null;
+        if (settings.fsPv !== null) fsPv.value = settings.fsPv;
     }
 
     /** Reads the frames of a signal over the range: the type information, the plan, the request bounded in bytes, and the frames. */
@@ -201,6 +250,7 @@ export function createWaveform(host, options) {
         const mine = { key: `${name}|${range.from.toISOString()}|${range.to.toISOString()}`, name, status: "loading", reason: "", meta: null, plan: null, parsed: null, thinned: null, nav: null, typed: null, step: 1, index: 0, controller };
         current = mine;
         companions.clear();
+        frequencies.clear();
         const fail = (reason) => { if (current === mine) { mine.status = "failed"; mine.reason = reason; render(); } };
         try {
             const meta = await options.metadata(name);
@@ -315,6 +365,46 @@ export function createWaveform(host, options) {
         return entry;
     }
 
+    /**
+     * The sampling frequency within the frame: typed, or the value of the PV of that role at the frame time (its last value at or before
+     * it), read once for a PV and a time. Returns {ok, fs, source} or {ok: false, loading, reason}. The event rate of the archive is never
+     * used: it is how often the array was stored, not how far apart its elements are. A read that failed is kept until the user chooses
+     * the typed source or another PV, and is then read anew when the PV is chosen again.
+     */
+    const frequencies = new Map();
+    const forgetFailedFrequencies = () => { for (const [key, entry] of frequencies) if (entry.state === "failed") frequencies.delete(key); };
+    function samplingFrequency(frame) {
+        if (settings.fsSource === "typed") {
+            forgetFailedFrequencies();
+            if (settings.fs === "") return { ok: false, reason: "Type the sampling frequency within the array, in Hz, or choose a PV of the sampling frequency; the rate at which the archive stored the array is not that frequency." };
+            const fs = finiteNumber(settings.fs);
+            if (!(fs > 0)) return { ok: false, reason: "The sampling frequency is not a positive number of Hz." };
+            return { ok: true, fs, source: "typed" };
+        }
+        if (!settings.fsPv) return { ok: false, reason: "Choose a PV of the sampling frequency, or type it." };
+        const key = `${settings.fsPv}|${frame.t}`;
+        let entry = frequencies.get(key);
+        if (!entry) {
+            entry = { state: "loading" };
+            frequencies.set(key, entry);
+            const mine = current;
+            options.retrieve(settings.fsPv, new Date(frame.t), new Date(frame.t + 1), new AbortController().signal)
+                .then((response) => (response.ok ? response.json() : Promise.reject(new Error(`${response.statusText || "Retrieval failed"} (HTTP ${response.status})`))))
+                .then((body) => {
+                    const sample = Array.isArray(body) && body[0] && Array.isArray(body[0].data) ? body[0].data.find((s) => Number(s.secs) * 1000 <= frame.t + 1) || body[0].data[0] : null;
+                    if (!sample) Object.assign(entry, { state: "failed", reason: `${settings.fsPv} holds no value at or before the time of the frame.` });
+                    else if (Array.isArray(sample.val)) Object.assign(entry, { state: "failed", reason: `${settings.fsPv} is an array, not one number; the sampling frequency is one number of Hz.` });
+                    else if (!(Number(sample.val) > 0)) Object.assign(entry, { state: "failed", reason: `${settings.fsPv} holds ${sample.val} at the time of the frame, not a positive number of Hz.` });
+                    else Object.assign(entry, { state: "ready", fs: Number(sample.val) });
+                    if (current === mine) render();
+                })
+                .catch((problem) => { Object.assign(entry, { state: "failed", reason: String(problem.message || problem) }); if (current === mine) render(); });
+        }
+        if (entry.state === "loading") return { ok: false, loading: true, reason: `Reading the sampling frequency from ${settings.fsPv}...` };
+        if (entry.state === "failed") return { ok: false, reason: entry.reason };
+        return { ok: true, fs: entry.fs, source: settings.fsPv };
+    }
+
     /** The element positions for the frame in view, or {ok: false, reason} when the axis does not fit. */
     function axisOf(frame) {
         const spec = { mode: settings.axis, start: settings.axisStart, step: settings.axisStep };
@@ -354,10 +444,10 @@ export function createWaveform(host, options) {
     };
     const xExtent = (x) => (x[0] === x[x.length - 1] ? [x[0] - 0.5, x[0] + 0.5] : d3.extent(x));
 
-    function drawArray(frame, x) {
+    function drawArray(frame, x, label = `${current.name} at ${timeText(frame.t, options.zone())}`) {
         const unit = valueUnit();
         const { surface, x: xs, y, width } = canvasIn({ xScale: d3.scaleLinear().domain(xExtent(x)), yScale: d3.scaleLinear().domain(extent([frame.values])), yUnit: unit || "value",
-            yLabel: `Value${unitText(unit ? `/ ${unit}` : "")}`, xLabel: axisLabel(), label: `${current.name} at ${timeText(frame.t, options.zone())}`, xFormat: d3.format(".4~g") });
+            yLabel: `Value${unitText(unit ? `/ ${unit}` : "")}`, xLabel: axisLabel(), label, xFormat: d3.format(".4~g") });
         plot.replaceChildren();
         plot.append(surface.svg.node());
         const indices = drawingIndices(frame.values, Math.floor(width - MARGIN.left - MARGIN.right));
@@ -499,6 +589,125 @@ export function createWaveform(host, options) {
         return points;
     }
 
+    /** A table of named rows under the plot. */
+    const rowsTable = (label, rows) => numbers.append(node("table", { class: "chart-stats wave-table", "aria-label": label },
+        node("tbody", null, ...rows.map(([name, value]) => node("tr", { "data-row": name }, node("th", { scope: "row" }, name), node("td", null, value))))));
+
+    /** The frame in view minus the reference frame, element by element, with the summary values of the difference. */
+    function drawDifference(frame, x) {
+        const reference = current.reference;
+        if (!reference) {
+            message.textContent = "Type the time of the reference frame and read it; the difference is the frame in view minus that frame.";
+            return;
+        }
+        if (!reference.values) throw new RangeError(`The reference frame cannot be read: ${reference.problem}`);
+        if (reference.length !== frame.length) {
+            throw new RangeError(`The reference frame has ${reference.length} elements and the frame in view has ${frame.length}; a difference needs one length.`);
+        }
+        const values = difference(frame.values, reference.values);
+        drawArray({ ...frame, values }, x, `${current.name} at ${timeText(frame.t, options.zone())} minus ${timeText(reference.t, options.zone())}`);
+        const s = summary(values);
+        const unit = valueUnit();
+        rowsTable("Summary values of the difference", [
+            ["Reference", timeText(reference.t, options.zone())], ["Frame", timeText(frame.t, options.zone())],
+            ["Maximum", `${number(s.max)}${unitText(unit)} at element ${s.maxAt}`], ["Minimum", `${number(s.min)}${unitText(unit)} at element ${s.minAt}`],
+            ["Mean", `${number(s.mean)}${unitText(unit)}`], ["RMS", `${number(s.rms)}${unitText(unit)}`], ["Sum", `${number(s.sum)}${unitText(unit)}`],
+        ]);
+    }
+
+    /** The power spectral density of the frame in view at its sampling frequency, with the window chosen and the strongest peak. */
+    function drawSpectrum(frame) {
+        const rate = samplingFrequency(frame);
+        if (!rate.ok) {
+            message.textContent = rate.reason;
+            return;
+        }
+        const nfft = nextPowerOfTwo(frame.length);
+        const s = spectra(frame.values, rate.fs, settings.window, nfft);
+        if (!s) throw new RangeError("The frame has too few elements for a spectrum.");
+        const peak = spectralPeak(s.frequencies, s.power);
+        if (!peak || !(peak.power > 0)) throw new RangeError("The frame has no power above 0 Hz: a constant array has no spectrum to show.");
+        const unit = valueUnit();
+        const densityUnit = `${unit || "unit"}²/Hz`;
+        const log = settings.scale === "log";
+        // The logarithmic axis reaches down to 1e-12 of the highest density, as the Spectrum tab draws it: the bin at 0 Hz holds only a
+        // rounding residue once the mean is removed, and a lower bound taken from it would press the spectrum into the top of the plot.
+        const high = d3.max(s.density);
+        const low = log ? Math.max(d3.min(Array.from(s.density).filter((v) => v > 0)), high * 1e-12) : 0;
+        const yScale = log ? d3.scaleLog().domain([low, high]) : d3.scaleLinear().domain([0, high * 1.06 || 1]);
+        const { surface, x: xs, y } = canvasIn({ xScale: d3.scaleLinear().domain([0, rate.fs / 2]), yScale, yUnit: densityUnit, yLabel: `Power spectral density / ${densityUnit}`,
+            xLabel: "Frequency / Hz", label: `Spectrum of ${current.name} at ${timeText(frame.t, options.zone())}`, xFormat: d3.format(".4~g") });
+        plot.replaceChildren();
+        plot.append(surface.svg.node());
+        const line = d3.line().x((_, i) => xs(s.frequencies[i])).y((v) => y(Math.max(v, low)));
+        surface.marks.append("path").attr("class", "wave-line wave-spectrum").attr("data-bins", s.frequencies.length).attr("d", line(Array.from(s.density)));
+        if (peak) {
+            surface.marks.append("circle").attr("class", "wave-max").attr("r", 4).attr("cx", xs(peak.binFrequency)).attr("cy", y(s.density[peak.index]));
+        }
+        const search = d3.bisector((f) => f).center;
+        surface.bindHover(plot, ({ x: at }) => {
+            const k = Math.max(0, Math.min(s.frequencies.length - 1, search(s.frequencies, +at)));
+            return { title: `${number(s.frequencies[k])} Hz`, rows: [`Density: ${number(s.density[k])} ${densityUnit}`] };
+        });
+        rowsTable("Spectrum of the frame", [
+            ["Sampling frequency", `${number(rate.fs)} Hz (${rate.source === "typed" ? "typed" : `${rate.source} at the time of the frame`})`],
+            ["Window", SPECTRUM_WINDOWS.find(([w]) => w === settings.window)[1]], ["Transform length", String(nfft)], ["Bin width", `${number(s.binWidth)} Hz`],
+            ["Peak frequency", peak ? `${number(peak.frequency)} Hz (bin ${number(peak.binFrequency)} Hz)` : "none"],
+            ["Peak width", peak && peak.width !== null ? `${number(peak.width)} Hz at half of the peak power` : "not defined"],
+            ["Peak density", peak ? `${number(s.density[peak.index])} ${densityUnit}` : "none"],
+        ]);
+    }
+
+    /** The settings of the peak search and of the background, read from the controls; a RangeError names the first one out of range. */
+    function peakSettings() {
+        const whole = (text, name, least) => {
+            const v = finiteNumber(text);
+            if (!Number.isInteger(v) || v < least) throw new RangeError(`The ${name} is a whole number, ${least} or more.`);
+            return v;
+        };
+        const sigma = finiteNumber(settings.sigma);
+        if (!Number.isFinite(sigma)) throw new RangeError("The sigma of the searched peaks is not a number.");
+        const percent = finiteNumber(settings.threshold);
+        if (!(percent > 0 && percent < 100)) throw new RangeError("The threshold is a percent of the highest value of the spectrum, above 0 and below 100.");
+        return {
+            sigma, threshold: percent / 100, background: settings.searchBackground, markov: settings.markov,
+            averageWindow: settings.markov ? whole(settings.averageWindow, "averaging window of the Markov smoothing", 1) : 3,
+            deconvolutionIterations: whole(settings.deconvolution, "number of deconvolution iterations", 0), maxPeaks: MOST_PEAKS,
+            widthIterations: whole(settings.backgroundIterations, "number of iterations of the background", 1), widthDirection: settings.backgroundDirection,
+        };
+    }
+
+    /** The peaks of the frame in view as ROOT finds them, the clipped background, and either the array with it or the array minus it. */
+    function drawPeaks(frame, x) {
+        const found = peaks(frame.values, peakSettings());
+        const unit = valueUnit();
+        const subtracted = settings.peakView === "subtracted";
+        const shown = subtracted ? found.above : frame.values;
+        const { surface, x: xs, y } = canvasIn({ xScale: d3.scaleLinear().domain(xExtent(x)), yScale: d3.scaleLinear().domain(extent([shown, ...(subtracted ? [] : [found.background])])), yUnit: unit || "value",
+            yLabel: `Value${unitText(unit ? `/ ${unit}` : "")}`, xLabel: axisLabel(), label: `Peaks of ${current.name} at ${timeText(frame.t, options.zone())}`, xFormat: d3.format(".4~g") });
+        plot.replaceChildren();
+        plot.append(surface.svg.node());
+        const width = Math.floor(plot.clientWidth || 720) - MARGIN.left - MARGIN.right;
+        const line = (values) => d3.line().x((i) => xs(x[i])).y((i) => y(values[i]))(drawingIndices(values, Math.max(1, width)));
+        surface.marks.append("path").attr("class", "wave-line").attr("data-elements", frame.length).attr("d", line(shown));
+        if (!subtracted) surface.marks.append("path").attr("class", "wave-line wave-background").attr("d", line(found.background));
+        for (const p of found.peaks) {
+            surface.marks.append("circle").attr("class", "wave-peak").attr("data-element", p.index).attr("r", 4).attr("cx", xs(positionAt(x, p.position))).attr("cy", y(shown[p.index]));
+        }
+        const search = d3.bisector((v) => v).center;
+        surface.bindHover(plot, ({ x: at }) => {
+            const k = Math.max(0, Math.min(frame.length - 1, search(x, +at)));
+            return { title: `Element ${k}`, rows: [`Value: ${number(frame.values[k])}${unitText(unit)}`, `Background: ${number(found.background[k])}${unitText(unit)}`, `Minus background: ${number(found.above[k])}${unitText(unit)}`] };
+        });
+        const inAxis = (position) => (settings.axis === "index" ? "" : ` (${number(positionAt(x, position))}${settings.axis === "typed" ? unitText(settings.axisUnit) : ""})`);
+        readout.textContent = `${found.peaks.length} peak${found.peaks.length === 1 ? "" : "s"} in the order of ROOT, the highest of the deconvolved spectrum first.`;
+        numbers.append(node("table", { class: "chart-stats wave-table wave-peaks", "aria-label": "Peaks of the frame" },
+            node("thead", null, node("tr", null, ...["", "Position / elements", "Nearest element", "Height", "Width at half height / elements"].map((h) => node("th", { scope: "col" }, h)))),
+            node("tbody", null, ...found.peaks.map((p, k) => node("tr", { "data-row": String(k + 1) }, node("th", { scope: "row" }, String(k + 1)),
+                node("td", null, `${number(p.position)}${inAxis(p.position)}`), node("td", null, String(p.index)), node("td", null, `${number(p.value)}${unitText(unit)}`),
+                node("td", null, p.width === null ? "not defined" : `${number(p.width)}${settings.axis === "index" ? "" : `, ${number(positionAt(x, p.right) - positionAt(x, p.left))}${settings.axis === "typed" ? unitText(settings.axisUnit) : ""} along the axis`}`))))));
+    }
+
     function syncFrameBar() {
         const ready = current.status === "ready";
         frameBar.hidden = !ready;
@@ -529,6 +738,22 @@ export function createWaveform(host, options) {
         axisPv.parentElement.hidden = settings.axis !== "companion";
         overlay.parentElement.hidden = settings.view !== "overlay";
         valueSelect.parentElement.hidden = settings.view !== "series";
+        for (const [name, list] of Object.entries(viewFields)) for (const element of list) element.hidden = settings.view !== name;
+        if (settings.view === "spectrum") {
+            fsBox.parentElement.hidden = settings.fsSource !== "typed";
+            fsPv.parentElement.hidden = settings.fsSource !== "pv";
+        }
+        averageBox.parentElement.hidden = settings.view !== "peaks" || !settings.markov;
+        fsSource.value = settings.fsSource;
+        windowSelect.value = settings.window;
+        scaleSelect.value = settings.scale;
+        directionSelect.value = settings.backgroundDirection;
+        peakViewSelect.value = settings.peakView;
+        searchBackground.checked = settings.searchBackground === true;
+        markov.checked = settings.markov === true;
+        for (const [control, key] of [[fsBox, "fs"], [sigmaBox, "sigma"], [thresholdBox, "threshold"], [averageBox, "averageWindow"], [deconvolutionBox, "deconvolution"], [backgroundBox, "backgroundIterations"]]) {
+            if (document.activeElement !== control) control.value = settings[key];
+        }
         if (document.activeElement !== axisStart) axisStart.value = settings.axisStart;
         if (document.activeElement !== axisStep) axisStep.value = settings.axisStep;
         if (document.activeElement !== axisUnit) axisUnit.value = settings.axisUnit;
@@ -579,6 +804,12 @@ export function createWaveform(host, options) {
                 drawArray(frame, x.x);
             } else if (settings.view === "values") {
                 drawValues(frame, x.x);
+            } else if (settings.view === "difference") {
+                drawDifference(frame, x.x);
+            } else if (settings.view === "spectrum") {
+                drawSpectrum(frame);
+            } else if (settings.view === "peaks") {
+                drawPeaks(frame, x.x);
             } else if (settings.view === "series") {
                 drawSeries(current.thinned);
             } else if (settings.view === "overlay") {
@@ -631,6 +862,34 @@ export function createWaveform(host, options) {
             showTyped(found);
         } catch (problem) {
             error.textContent = `The frame could not be read: ${problem.message || problem}`;
+        }
+    });
+    // The reference of the difference: the frame stored at or before a typed time, read from the archive and kept until another is read or
+    // the selection changes.
+    readReference.addEventListener("click", async () => {
+        error.textContent = "";
+        if (current.status !== "ready") return;
+        const date = options.parseTime ? options.parseTime(referenceBox.value.trim(), new Date(frameInView().t)) : null;
+        if (!date) {
+            error.textContent = "Enter the time of the reference in the zone of the page as year-month-dayThour:minute:second, for example 2026-11-07T12:00:00.";
+            return;
+        }
+        const mine = current;
+        try {
+            const response = await options.retrieve(mine.name, date, new Date(+date + 1), new AbortController().signal);
+            if (!response.ok) throw new Error(`${response.statusText || "Retrieval failed"} (HTTP ${response.status})`);
+            const parsed = parseFrames(await response.json());
+            if (current !== mine) return;
+            const found = parsed.frames.find((f) => f.t <= +date) || parsed.frames[0];
+            if (!found) {
+                error.textContent = "The archive holds no frame at or before the time of the reference.";
+                return;
+            }
+            current.reference = found;
+            settings.reference = String(found.t);
+            changed();
+        } catch (problem) {
+            error.textContent = `The reference could not be read: ${problem.message || problem}`;
         }
     });
     overlay.addEventListener("change", () => {

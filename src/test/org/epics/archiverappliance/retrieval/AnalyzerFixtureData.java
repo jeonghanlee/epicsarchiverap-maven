@@ -57,8 +57,9 @@ import java.util.function.LongToDoubleFunction;
  *     3 days;</li>
  * <li>slow: 10 plus 2 times the sine of a period of 3600 seconds from the start of the window, one value every 60
  *     seconds, 3 days, without noise, for the pairing of signals of different rates;</li>
- * <li>wavefs, imagew, imageh: constant companion values (2048 Hz, 640 and 480), one value every 60 seconds, 3 days, for
- *     the roles of the sampling frequency, the width and the height of an array.</li>
+ * <li>wavefs, imagew, imageh: companion values, one every 60 seconds over 3 days, for the roles of the sampling
+ *     frequency, the width and the height of an array: 640 and 480 throughout, and 2048 Hz up to the middle of the hour
+ *     of wave and 1024 Hz from it, so that a value read at the time of a frame differs between the two halves.</li>
  * </ul>
  *
  * The array kinds write one waveform event per frame instead of one scalar:
@@ -115,6 +116,7 @@ public class AnalyzerFixtureData {
     private static final long DAY_SECONDS = 86400L;
     public static final int WAVE_LENGTH = 2048;
     public static final double WAVE_SAMPLING_HZ = 2048.0;
+    public static final double WAVE_SAMPLING_SECOND_HZ = 1024.0;
     public static final double WAVE_SINE_HZ = 100.5;
     public static final double WAVE_SINE_AMPLITUDE = 1.0;
     public static final double[] WAVE_PEAK_POSITIONS = {400.0, 900.0, 1500.0};
@@ -219,8 +221,10 @@ public class AnalyzerFixtureData {
                 return new Signal(10, 3, secs -> CORR_B_OFFSET + CORR_RHO * CORR_A_SD * a.nextGaussian()
                         + CORR_B_NOISE_SD * extra.nextGaussian());
             }
-            case "wavefs":
-                return new Signal(60, 3, secs -> WAVE_SAMPLING_HZ);
+            case "wavefs": {
+                long change = windowStart + 3 * DAY_SECONDS - WAVE_FRAMES * WAVE_SPACING_SECONDS / 2;
+                return new Signal(60, 3, secs -> secs >= change ? WAVE_SAMPLING_SECOND_HZ : WAVE_SAMPLING_HZ);
+            }
             case "imagew":
                 return new Signal(60, 3, secs -> IMAGE_WIDTH);
             case "imageh":
