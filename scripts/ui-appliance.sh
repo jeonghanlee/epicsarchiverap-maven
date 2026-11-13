@@ -12,10 +12,12 @@
 #   --run-dir DIR      folder for the run, its logs and the copied WARs (default a new folder under ${TMPDIR:-/tmp})
 #   --port-base PORT   first of the four HTTP ports (default 17665)
 #   --settle SECONDS   seconds to wait after the PVs are archived, to collect samples (default 0)
+#   --retrieval-heap SIZE  maximum heap of the retrieval JVM, such as 512m or 2g (default that of the launcher, 256m)
+#   --engine-heap SIZE     maximum heap of the engine JVM, in the same form (default 256m)
 # COMMAND sees AA_MGMT_URL, AA_UI_URL (the Browse page folder), AA_PV_NAMES (file), AA_PV_COUNT and AA_RUN_DIR.
 # A TERM sent to this script is handled after COMMAND ends; stop COMMAND to stop the appliance at once.
 # The run folder stays after the run, about 1.3 GB (the copied WARs and the appliance data); remove it when it is not needed.
-# Needs: unshare, ip, curl, zip, perl, JDK 21 (JAVA_HOME), the build of the WARs. Exit status: that of COMMAND, 2 on a usage error.
+# Needs: unshare, ip, pkill (procps-ng, with --ns), curl, zip, perl, JDK 21 (JAVA_HOME), the build of the WARs. Exit status: that of COMMAND, 2 on a usage error.
 set -eu
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
@@ -34,9 +36,11 @@ ready_timeout=300
 archive_timeout=900
 ioc_pid=''
 app_pid=''
+retrieval_heap=''
+engine_heap=''
 
 usage() {
-    sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//' >&2
+    sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//' >&2
 }
 
 fail() {
@@ -73,7 +77,7 @@ while [ $# -gt 0 ]; do
     case "$1" in
         -h|--help) usage; exit 0 ;;
         --working-tree) working_tree=1; shift ;;
-        --count|--war-source|--source-root|--tomcat-home|--softioc|--run-dir|--port-base|--settle)
+        --count|--war-source|--source-root|--tomcat-home|--softioc|--run-dir|--port-base|--settle|--retrieval-heap|--engine-heap)
             [ $# -ge 2 ] || usage_error "$1 needs a value"
             case "$1" in
                 --count) count=$2 ;;
@@ -84,6 +88,8 @@ while [ $# -gt 0 ]; do
                 --run-dir) run_dir=$2 ;;
                 --port-base) port_base=$2 ;;
                 --settle) settle=$2 ;;
+                --retrieval-heap) retrieval_heap=$2 ;;
+                --engine-heap) engine_heap=$2 ;;
             esac
             shift 2 ;;
         --) shift; break ;;
@@ -99,6 +105,7 @@ command -v curl >/dev/null 2>&1 || fail 'curl is required'
 command -v zip >/dev/null 2>&1 || fail 'zip is required'
 command -v perl >/dev/null 2>&1 || fail 'perl is required'
 command -v ip >/dev/null 2>&1 || fail 'ip is required'
+command -v pkill >/dev/null 2>&1 || fail 'pkill is required'
 if [ -z "$softioc" ]; then
     softioc=$(command -v softIocPVX || command -v softIoc || true)
 fi
@@ -120,6 +127,9 @@ cleanup() {
         kill "$ioc_pid" 2>/dev/null || true
         wait "$ioc_pid" 2>/dev/null || true
     fi
+    # A Channel Access client JVM of the run starts a repeater JVM that outlives it and keeps the namespace alive; only the
+    # processes of this private network namespace match.
+    pkill --ns "$$" --nslist net -f 'com\.cosylab\.epics\.caj\.CARepeater' 2>/dev/null || true
 }
 trap cleanup EXIT
 trap 'exit 130' INT
@@ -130,9 +140,10 @@ EPICS_CA_AUTO_ADDR_LIST=NO
 EPICS_CA_ADDR_LIST=127.0.0.1
 EPICS_PVA_AUTO_ADDR_LIST=NO
 EPICS_PVA_ADDR_LIST=127.0.0.1
-# The default Channel Access array limit is 16384 bytes, the size of a 2048-element array of doubles; a camera frame of 2304000
-# 16-bit pixels is 4.6 MB (9.2 MB as 32-bit values), so the soft IOC and the engine of the run take a limit of 16 MB.
-EPICS_CA_MAX_ARRAY_BYTES=16000000
+# The default Channel Access array limit is 16384 bytes, the size of a 2048-element array of doubles. The archiver reads
+# unsigned 16-bit pixels as 32-bit values, so the largest frame the Image tab reads, 2560 by 2160 pixels (5,529,600
+# elements), is 22.1 MB; the soft IOC and the engine of the run take a limit of 24 MB.
+EPICS_CA_MAX_ARRAY_BYTES=24000000
 export EPICS_CA_AUTO_ADDR_LIST EPICS_CA_ADDR_LIST EPICS_PVA_AUTO_ADDR_LIST EPICS_PVA_ADDR_LIST EPICS_CA_MAX_ARRAY_BYTES
 
 if [ -z "$run_dir" ]; then
@@ -184,6 +195,8 @@ ioc_pid=$!
 start_appliance() {
     set -- --war-dir "$wars" --port-base "$port_base"
     [ -z "$tomcat_home" ] || set -- "$@" --tomcat-home "$tomcat_home"
+    [ -z "$retrieval_heap" ] || set -- "$@" --retrieval-heap "$retrieval_heap"
+    [ -z "$engine_heap" ] || set -- "$@" --engine-heap "$engine_heap"
     "$script_dir/run-local-appliance.bash" "$@" "$run_dir/appliance" >"$run_dir/appliance.log" 2>&1 &
     app_pid=$!
 }
