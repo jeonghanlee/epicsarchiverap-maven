@@ -58,8 +58,9 @@ import java.util.function.LongToDoubleFunction;
  * <li>slow: 10 plus 2 times the sine of a period of 3600 seconds from the start of the window, one value every 60
  *     seconds, 3 days, without noise, for the pairing of signals of different rates;</li>
  * <li>wavefs, imagew, imageh: companion values, one every 60 seconds over 3 days, for the roles of the sampling
- *     frequency, the width and the height of an array: 640 and 480 throughout, and 2048 Hz up to the middle of the hour
- *     of wave and 1024 Hz from it, so that a value read at the time of a frame differs between the two halves.</li>
+ *     frequency, the width and the height of an array: 2048 Hz up to the middle of the hour of wave and 1024 Hz from it,
+ *     and 640 by 480 up to the middle of the frames of image and 480 by 640 from it, so that a value read at the time of
+ *     a frame differs between the two halves.</li>
  * </ul>
  *
  * The array kinds write one waveform event per frame instead of one scalar:
@@ -76,7 +77,15 @@ import java.util.function.LongToDoubleFunction;
  *     frame and Y 240, with a normal noise of standard deviation 20 rounded to whole counts, 20 frames 30 seconds
  *     apart;</li>
  * <li>frame: 1920 by 1200 pixels of the same kind (amplitude 40000, background 500, centre 960 and 600, standard
- *     deviations 80 and 50, noise 10), 6 frames 10 seconds apart, for the measurement of the size of a camera frame.</li>
+ *     deviations 80 and 50, noise 10), 6 frames 10 seconds apart, for the measurement of the size of a camera frame;</li>
+ * <li>laser, als, airy: the pixels of laser.png (1307 by 1075), als.png (537 by 537) and airy.png (2560 by 1920) of
+ *     src/test/js/analyzer/reference/images, whose SOURCES.md names their published originals, 3 identical frames 30
+ *     seconds apart each;</li>
+ * <li>screen: screen-0.png to screen-4.png of the same folder (1034 by 779, 12-bit counts), synthetic frames of a
+ *     low-current electron beam on a YAG:Ce screen, 5 frames 10 seconds apart;</li>
+ * <li>bound: 2560 by 2160 pixels (5,529,600, the largest frame the Image tab reads) of the kind of frame (amplitude
+ *     40000, background 500, centre 1280 and 1080, standard deviations 160 and 90, noise 10), 2 frames 30 seconds
+ *     apart.</li>
  * </ul>
  *
  * The array kinds take the archived type as a sixth argument (DBR_WAVEFORM_DOUBLE, DBR_WAVEFORM_INT or
@@ -147,6 +156,16 @@ public class AnalyzerFixtureData {
     public static final int FRAME_HEIGHT = 1200;
     public static final int FRAME_COUNT = 6;
     public static final long FRAME_SPACING_SECONDS = 10;
+    /** The folder, on the test class path, of the PNG images that the picture kinds archive. */
+    public static final String PICTURE_FOLDER = "/js/analyzer/reference/images/";
+    public static final int PICTURE_FRAMES = 3;
+    public static final long PICTURE_SPACING_SECONDS = 30;
+    public static final int SCREEN_FRAMES = 5;
+    public static final int BOUND_WIDTH = 2560;
+    public static final int BOUND_HEIGHT = 2160;
+    public static final int BOUND_FRAMES = 2;
+    private static final long BOUND_SEED = 20261113L;
+    public static final long SCREEN_SPACING_SECONDS = 10;
     private static final long ARRAY_SEED = 20261111L;
     private static final long IMAGE_SEED = 20261112L;
     private static final long FRAME_SEED = 20261113L;
@@ -225,17 +244,21 @@ public class AnalyzerFixtureData {
                 long change = windowStart + 3 * DAY_SECONDS - WAVE_FRAMES * WAVE_SPACING_SECONDS / 2;
                 return new Signal(60, 3, secs -> secs >= change ? WAVE_SAMPLING_SECOND_HZ : WAVE_SAMPLING_HZ);
             }
-            case "imagew":
-                return new Signal(60, 3, secs -> IMAGE_WIDTH);
-            case "imageh":
-                return new Signal(60, 3, secs -> IMAGE_HEIGHT);
+            case "imagew": {
+                long change = windowStart + 3 * DAY_SECONDS - IMAGE_FRAMES * IMAGE_SPACING_SECONDS / 2;
+                return new Signal(60, 3, secs -> secs >= change ? IMAGE_HEIGHT : IMAGE_WIDTH);
+            }
+            case "imageh": {
+                long change = windowStart + 3 * DAY_SECONDS - IMAGE_FRAMES * IMAGE_SPACING_SECONDS / 2;
+                return new Signal(60, 3, secs -> secs >= change ? IMAGE_WIDTH : IMAGE_HEIGHT);
+            }
             case "slow":
                 return new Signal(60, 3, secs -> SLOW_BASE
                         + SLOW_AMPLITUDE * Math.sin(2 * Math.PI * (secs - windowStart) / SLOW_PERIOD_SECONDS));
             default:
                 throw new IllegalArgumentException(
                         "Unknown kind " + kind + "; use normal, sine, pattern, basis:N, target, corra, corrb, slow, wavefs, imagew, imageh,"
-                                + " wave, waveaxis, image or frame");
+                                + " wave, waveaxis, image, frame, laser, als, airy, screen or bound");
         }
     }
 
@@ -285,7 +308,31 @@ public class AnalyzerFixtureData {
 
     /** True for the kinds that write one array per event. */
     public static boolean isArrayKind(String kind) {
-        return kind.equals("wave") || kind.equals("waveaxis") || kind.equals("image") || kind.equals("frame");
+        return kind.equals("wave") || kind.equals("waveaxis") || kind.equals("image") || kind.equals("frame")
+                || isPictureKind(kind) || kind.equals("screen") || kind.equals("bound");
+    }
+
+    /** True for the kinds that archive a published image of the reference folder. */
+    static boolean isPictureKind(String kind) {
+        return kind.equals("laser") || kind.equals("als") || kind.equals("airy");
+    }
+
+    /** The pixels of a single-channel PNG of the reference folder on the test class path, row-major. */
+    static double[] picturePixels(String name) throws java.io.IOException {
+        try (java.io.InputStream in = AnalyzerFixtureData.class.getResourceAsStream(PICTURE_FOLDER + name)) {
+            if (in == null) {
+                throw new java.io.FileNotFoundException(PICTURE_FOLDER + name + " is not on the test class path");
+            }
+            java.awt.image.Raster raster = javax.imageio.ImageIO.read(in).getRaster();
+            if (raster.getNumBands() != 1) {
+                throw new IllegalArgumentException(name + " has " + raster.getNumBands() + " channels, not one");
+            }
+            int width = raster.getWidth();
+            int height = raster.getHeight();
+            double[] pixels = new double[width * height];
+            raster.getSamples(0, 0, width, height, 0, pixels);
+            return pixels;
+        }
     }
 
     /** The elements of the wave frame k: a sine, three peaks (the first one growing), a background and noise. */
@@ -361,11 +408,23 @@ public class AnalyzerFixtureData {
                 frames = FRAME_COUNT;
                 spacing = FRAME_SPACING_SECONDS;
             }
+            case "laser", "als", "airy" -> {
+                frames = PICTURE_FRAMES;
+                spacing = PICTURE_SPACING_SECONDS;
+            }
+            case "screen" -> {
+                frames = SCREEN_FRAMES;
+                spacing = SCREEN_SPACING_SECONDS;
+            }
+            case "bound" -> {
+                frames = BOUND_FRAMES;
+                spacing = PICTURE_SPACING_SECONDS;
+            }
             default -> throw new IllegalArgumentException("Unknown array kind " + kind);
         }
         long start = end - frames * spacing;
         Random waveNoise = new Random(ARRAY_SEED);
-        Random imageNoise = new Random(kind.equals("frame") ? FRAME_SEED : IMAGE_SEED);
+        Random imageNoise = new Random(kind.equals("frame") ? FRAME_SEED : kind.equals("bound") ? BOUND_SEED : IMAGE_SEED);
         boolean text = kind.equals("wave") || kind.equals("waveaxis");
         ArrayListEventStream stream = null;
         int streamYear = -1;
@@ -386,6 +445,10 @@ public class AnalyzerFixtureData {
                     case "image" -> values = toDoubles(imageFrame(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_AMPLITUDE,
                             IMAGE_BACKGROUND, IMAGE_CENTRE_X + IMAGE_CENTRE_X_STEP * k, IMAGE_CENTRE_Y, IMAGE_SIGMA_X,
                             IMAGE_SIGMA_Y, IMAGE_NOISE_SD, imageNoise));
+                    case "laser", "als", "airy" -> values = picturePixels(kind + ".png");
+                    case "screen" -> values = picturePixels("screen-" + k + ".png");
+                    case "bound" -> values = toDoubles(imageFrame(BOUND_WIDTH, BOUND_HEIGHT, 40000.0, 500.0,
+                            BOUND_WIDTH / 2.0, BOUND_HEIGHT / 2.0, 160.0, 90.0, 10.0, imageNoise));
                     default -> values = toDoubles(imageFrame(FRAME_WIDTH, FRAME_HEIGHT, 40000.0, 500.0,
                             FRAME_WIDTH / 2.0, FRAME_HEIGHT / 2.0, 80.0, 50.0, 10.0, imageNoise));
                 }

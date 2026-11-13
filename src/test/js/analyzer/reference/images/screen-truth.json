@@ -1,0 +1,57 @@
+{
+ "width": 1034,
+ "height": 779,
+ "bits": 12,
+ "umPerPixel": 20.0,
+ "sigmaXum": 600.0,
+ "sigmaYum": 300.0,
+ "tiltDeg": 20.0,
+ "thicknessUm": 500.0,
+ "viewDeg": 45.0,
+ "psfSigmaUm": 10.0,
+ "haloFraction": 0.01,
+ "haloWidth": 4.0,
+ "saturation": 2.0,
+ "peakElectrons": 12000.0,
+ "darkNoiseE": 12.0,
+ "gainDnPerE": 0.4,
+ "offsetDn": 100.0,
+ "seed": 20261112,
+ "frames": [
+  {
+   "frame": 0,
+   "centreX": 500.0,
+   "centreY": 400.0,
+   "clipped": 761,
+   "max": 4095
+  },
+  {
+   "frame": 1,
+   "centreX": 503.0,
+   "centreY": 400.0,
+   "clipped": 767,
+   "max": 4095
+  },
+  {
+   "frame": 2,
+   "centreX": 506.0,
+   "centreY": 400.0,
+   "clipped": 764,
+   "max": 4095
+  },
+  {
+   "frame": 3,
+   "centreX": 509.0,
+   "centreY": 400.0,
+   "clipped": 767,
+   "max": 4095
+  },
+  {
+   "frame": 4,
+   "centreX": 512.0,
+   "centreY": 400.0,
+   "clipped": 761,
+   "max": 4095
+  }
+ ]
+}

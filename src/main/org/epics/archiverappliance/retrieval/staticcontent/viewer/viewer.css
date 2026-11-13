@@ -105,6 +105,22 @@
 .wave-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; }
 .wave-legend li { display: flex; align-items: center; gap: 6px; }
 .wave-swatch { display: inline-block; width: 18px; height: 3px; }
+.img-picture { position: relative; margin-top: 8px; }
+.img-picture canvas { position: absolute; display: block; image-rendering: pixelated; cursor: crosshair; }
+.img-axes { position: absolute; left: 0; top: 0; }
+.img-axis-label { font-size: 12px; fill: var(--ink); }
+.img-overlay { position: absolute; pointer-events: none; }
+.img-iso { fill: none; stroke: #fff; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.img-iso-1 { stroke-dasharray: 6 3; }
+.img-iso-2 { stroke-dasharray: 2 2; }
+.img-region-box { stroke: #ff3b30; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.img-layout { display: grid; grid-template-columns: max-content max-content; align-items: start; margin-top: 8px; }
+.img-layout .img-picture { margin-top: 0; }
+.img-projection { position: relative; }
+.img-projection-x { grid-column: 1; }
+.img-projection-plot .img-projection-line { stroke: var(--ink); }
+.img-colourbar { vertical-align: middle; overflow: visible; }
+.img-fit { stroke: var(--ink); stroke-dasharray: 4 3; }
 .wave-numbers { overflow-x: auto; margin-top: 12px; }
 .wave-table th[scope="row"] { text-align: left; font-weight: normal; padding-right: 16px; vertical-align: top; }
 .wave-table td { white-space: normal; overflow-wrap: anywhere; }

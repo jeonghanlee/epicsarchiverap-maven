@@ -71,7 +71,7 @@
         <button type="button" role="tab" id="spectrumTab" aria-controls="spectrumPanel" aria-selected="false" tabindex="-1" data-view="spectrum">Spectrum</button>
         <button type="button" role="tab" id="compareTab" aria-controls="comparePanel" aria-selected="false" tabindex="-1" data-view="compare">Compare</button>
         <button type="button" role="tab" id="waveformTab" aria-controls="waveformPanel" aria-selected="false" tabindex="-1" data-view="waveform">Waveform</button>
-        <button type="button" role="tab" aria-controls="unavailableView" aria-selected="false" aria-disabled="true" tabindex="-1" data-view="image">Image</button>
+        <button type="button" role="tab" id="imageTab" aria-controls="imagePanel" aria-selected="false" tabindex="-1" data-view="image">Image</button>
       </div>
       <div id="unavailableView" class="unavailable" role="status" hidden>
         <p id="unavailableReason"></p>
@@ -147,6 +147,10 @@
       <section id="waveformPanel" role="tabpanel" aria-labelledby="waveformTab" hidden>
         <div class="view-heading"><h2>Waveform</h2></div>
         <div id="waveformHost" class="wave"></div>
+      </section>
+      <section id="imagePanel" role="tabpanel" aria-labelledby="imageTab" hidden>
+        <div class="view-heading"><h2>Image</h2></div>
+        <div id="imageHost" class="wave img"></div>
       </section>
       <footer class="viewer-status"><p id="message" class="message" role="status"></p><p id="activeRange" class="note"></p></footer>
     </main>

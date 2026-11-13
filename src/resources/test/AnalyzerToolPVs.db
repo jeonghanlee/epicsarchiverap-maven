@@ -234,6 +234,36 @@ record(ao, "SR:GEN:IMAGE:H") {
     field(PREC, "0")
     field(DESC, "height of SR:GEN:IMAGE")
 }
+record(waveform, "SR:GEN:IMG:LASER") {
+    field(FTVL, "USHORT")
+    field(NELM, "1405025")
+    field(EGU, "count")
+    field(DESC, "1307 by 1075 laser beam profile")
+}
+record(waveform, "SR:GEN:IMG:ALS") {
+    field(FTVL, "USHORT")
+    field(NELM, "288369")
+    field(EGU, "count")
+    field(DESC, "537 by 537 ALS electron beam profile")
+}
+record(waveform, "SR:GEN:IMG:AIRY") {
+    field(FTVL, "USHORT")
+    field(NELM, "4915200")
+    field(EGU, "count")
+    field(DESC, "2560 by 1920 diffraction pattern")
+}
+record(waveform, "SR:GEN:IMG:SCREEN") {
+    field(FTVL, "USHORT")
+    field(NELM, "805486")
+    field(EGU, "count")
+    field(DESC, "1034 by 779 synthetic YAG:Ce screen")
+}
+record(waveform, "SR:GEN:IMG:BOUND") {
+    field(FTVL, "USHORT")
+    field(NELM, "5529600")
+    field(EGU, "count")
+    field(DESC, "2560 by 2160 frame at the read bound")
+}
 record(waveform, "SR:GEN:FRAME") {
     field(FTVL, "USHORT")
     field(NELM, "2304000")

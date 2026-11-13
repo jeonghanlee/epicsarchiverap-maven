@@ -15,6 +15,7 @@ import { createSpectrum } from "./spectrum.js";
 import { createCorrelation } from "./correlation.js";
 import { createDependency } from "./dependency.js";
 import { createWaveform } from "./waveform.js";
+import { createImage } from "./image.js";
 import { methodText } from "./fit-panel.js";
 import { deepFields, readToolParameters, writeToolParameters } from "./tool-address.js";
 import { csvText, gridOf, interpolateRows, intervalForBins, isoText, longTable, nanosOf, nanosOfDate, observationsOf, parseDuration, timeText, valueText, wideTable } from "./export.js";
@@ -34,7 +35,7 @@ const HOUR = 3600000;
 const INPUT_FORMAT = "%Y-%m-%dT%H:%M:%S";
 const VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare", "waveform", "image"];
 // The views that have their tool in this version; the others explain that they are not available.
-const AVAILABLE_VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare", "waveform"];
+const AVAILABLE_VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare", "waveform", "image"];
 const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 // The page holds two datasets per PV. The selected dataset (summary) is the records of the selected range at the
 // resolution sample, resolved once from the interval option when the selection is made; the Summary statistics come
@@ -747,6 +748,8 @@ function render() {
         dependency.render();
     } else if (state.view === "waveform") {
         waveform.render();
+    } else if (state.view === "image") {
+        image.render();
     } else if (state.view === "compare") {
         compare.render();
     } else if (state.view !== "trend") {
@@ -924,6 +927,7 @@ function explainView(view, restored = false) {
     $("correlationPanel").hidden = restored || state.view !== "correlation";
     $("dependencyPanel").hidden = restored || state.view !== "dependency";
     $("waveformPanel").hidden = restored || state.view !== "waveform";
+    $("imagePanel").hidden = restored || state.view !== "image";
 }
 
 /** Shows the panel of an available view and marks its tab, without writing the address or drawing. */
@@ -936,6 +940,7 @@ function activateView(view) {
     $("correlationPanel").hidden = view !== "correlation";
     $("dependencyPanel").hidden = view !== "dependency";
     $("waveformPanel").hidden = view !== "waveform";
+    $("imagePanel").hidden = view !== "image";
     $("unavailableView").hidden = true;
     for (const tab of $("analysisTabs").querySelectorAll('[role="tab"]')) {
         const active = tab.dataset.view === view;
@@ -1532,7 +1537,9 @@ const compare = createCompare($("compareHost"), { signals: distributionSignals, 
 const distribution = createDistribution($("distributionHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage, settings: state.tools.distribution, changed: writeAddress });
 const waveform = createWaveform($("waveformHost"), { signals: distributionSignals, range: () => state.selected, zone: currentZone, helpHref: helpPage, settings: state.tools.waveform,
     changed: writeAddress, metadata: metadataOrNull, retrieve: retrieveFrames, parseTime: readTime, formatTime: inputTime });
-tools = { distribution, trend: trendTools, compare, spectrum, correlation, dependency, waveform };
+const image = createImage($("imageHost"), { signals: distributionSignals, range: () => state.selected, zone: currentZone, helpHref: helpPage, settings: state.tools.image,
+    changed: writeAddress, metadata: metadataOrNull, retrieve: retrieveFrames, parseTime: readTime, formatTime: inputTime });
+tools = { distribution, trend: trendTools, compare, spectrum, correlation, dependency, waveform, image };
 wire();
 writeAddress();
 if (AVAILABLE_VIEWS.includes(state.view)) {
