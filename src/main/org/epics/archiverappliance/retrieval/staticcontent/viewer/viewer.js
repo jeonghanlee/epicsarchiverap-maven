@@ -34,8 +34,6 @@ const CACHE_LIMIT = 48;
 const HOUR = 3600000;
 const INPUT_FORMAT = "%Y-%m-%dT%H:%M:%S";
 const VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare", "waveform", "image"];
-// The views that have their tool in this version; the others explain that they are not available.
-const AVAILABLE_VIEWS = ["trend", "distribution", "correlation", "dependency", "spectrum", "compare", "waveform", "image"];
 const PV_NAME = /^[a-zA-Z0-9:_\-+[\];/,#{}^<>]+(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/;
 // The page holds two datasets per PV. The selected dataset (summary) is the records of the selected range at the
 // resolution sample, resolved once from the interval option when the selection is made; the Summary statistics come
@@ -911,25 +909,6 @@ function resetTime() {
     applyRange(state.selected.from, state.selected.to);
 }
 
-/**
- * Says that a view has no tool in this version. The view of the page in view stays, unless the page was opened on the
- * unavailable view itself (restored), when no view is shown and Return to Trend is offered.
- */
-function explainView(view, restored = false) {
-    const label = view[0].toUpperCase() + view.slice(1);
-    $("unavailableView").hidden = false;
-    $("unavailableReason").textContent = `${label} is not available in this version. No ${view} analysis has run.`;
-    $("returnTrend").hidden = !restored;
-    $("trendPanel").hidden = restored || state.view !== "trend";
-    $("distributionPanel").hidden = restored || state.view !== "distribution";
-    $("comparePanel").hidden = restored || state.view !== "compare";
-    $("spectrumPanel").hidden = restored || state.view !== "spectrum";
-    $("correlationPanel").hidden = restored || state.view !== "correlation";
-    $("dependencyPanel").hidden = restored || state.view !== "dependency";
-    $("waveformPanel").hidden = restored || state.view !== "waveform";
-    $("imagePanel").hidden = restored || state.view !== "image";
-}
-
 /** Shows the panel of an available view and marks its tab, without writing the address or drawing. */
 function activateView(view) {
     state.view = view;
@@ -941,7 +920,6 @@ function activateView(view) {
     $("dependencyPanel").hidden = view !== "dependency";
     $("waveformPanel").hidden = view !== "waveform";
     $("imagePanel").hidden = view !== "image";
-    $("unavailableView").hidden = true;
     for (const tab of $("analysisTabs").querySelectorAll('[role="tab"]')) {
         const active = tab.dataset.view === view;
         tab.setAttribute("aria-selected", String(active));
@@ -953,10 +931,6 @@ function showView(view) {
     activateView(view);
     writeAddress();
     render();
-}
-
-function showTrend() {
-    showView("trend");
 }
 
 function wireTabs(host, activate) {
@@ -1452,7 +1426,7 @@ function wire() {
     $("projection").addEventListener("change", () => chart.setState({ projection: $("projection").checked }));
     renderRetrievalOptions();
     renderDisplayOptions();
-    wireTabs($("analysisTabs"), (tab) => AVAILABLE_VIEWS.includes(tab.dataset.view) ? showView(tab.dataset.view) : explainView(tab.dataset.view, !AVAILABLE_VIEWS.includes(state.view)));
+    wireTabs($("analysisTabs"), (tab) => showView(tab.dataset.view));
     wireTabs($("settingsTabs"), (tab) => {
         for (const item of $("settingsTabs").querySelectorAll('[role="tab"]')) {
             const active = item === tab;
@@ -1461,7 +1435,6 @@ function wire() {
             $(item.dataset.panel + "Panel").hidden = !active;
         }
     });
-    $("returnTrend").addEventListener("click", showTrend);
     $("toggleSettings").addEventListener("click", () => {
         const hidden = !$("settings").hidden;
         $("settings").hidden = hidden;
@@ -1542,12 +1515,7 @@ const image = createImage($("imageHost"), { signals: distributionSignals, range:
 tools = { distribution, trend: trendTools, compare, spectrum, correlation, dependency, waveform, image };
 wire();
 writeAddress();
-if (AVAILABLE_VIEWS.includes(state.view)) {
-    activateView(state.view);
-} else {
-    $("trendTab").setAttribute("aria-selected", "false");
-    explainView(state.view, true);
-}
+activateView(state.view);
 setupHeader();
 render();
 if (state.pvs.length) load();

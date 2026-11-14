@@ -259,8 +259,12 @@ export function createImage(host, options) {
                 const step = (range.to - range.from) / STOPS_MOST;
                 mine.stops = Array.from({ length: STOPS_MOST }, (_, k) => Math.round(+range.from + step * (k + 1)));
             }
-            const wanted = settings.frame === "" ? -1 : mine.stops.findIndex((s) => s >= finiteNumber(settings.frame) + 1);
+            // The frame of the settings is the end of a stop minus a millisecond, as the tab writes it, or a time typed: a time that is no stop is read
+            // as Go to time reads it, the frame at or before it through a window ending just after it.
+            const asked = settings.frame === "" ? null : finiteNumber(settings.frame);
+            const wanted = asked === null ? -1 : mine.stops.findIndex((s) => s === asked + 1);
             mine.index = wanted >= 0 ? wanted : mine.stops.length - 1;
+            if (asked !== null && wanted < 0) mine.typed = asked + 1;
             mine.status = "ready";
             render();
         } catch (problem) {
@@ -686,12 +690,16 @@ export function createImage(host, options) {
     }
 
     slider.addEventListener("input", () => moveTo(Number(slider.value)));
-    // Previous and Next move one stop; from a frame read at a typed time, to the stop after or before that time.
+    // Previous and Next move one stop; from a frame read at a typed time, Next goes to the stop after the one that holds the frame and Previous to the stop before it.
     const step = (direction) => {
         if (current.status !== "ready") return;
         if (current.typed !== null) {
             const t = current.typed;
-            const at = direction > 0 ? current.stops.findIndex((s) => s > t) : current.stops.map((s) => s < t).lastIndexOf(true);
+            // Both moves leave the stop that holds the frame in view: a time typed at the instant of a frame lies inside the bin that ends after it,
+            // and a time typed between two frames lies after the bin of the frame found.
+            const own = current.stops.findIndex((s) => s > (current.lastShown ?? 0));
+            const ownEnd = own < 0 ? -Infinity : current.stops[own];
+            const at = direction > 0 ? current.stops.findIndex((s) => s > Math.max(t, ownEnd)) : (own < 0 ? current.stops.length : own) - 1;
             return moveTo(at < 0 ? (direction > 0 ? current.stops.length - 1 : 0) : at);
         }
         moveTo(current.index + direction, direction);

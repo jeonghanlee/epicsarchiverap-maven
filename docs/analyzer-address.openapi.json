@@ -67,6 +67,8 @@
           { "$ref": "#/components/parameters/spectrum" },
           { "$ref": "#/components/parameters/correlation" },
           { "$ref": "#/components/parameters/dependency" },
+          { "$ref": "#/components/parameters/waveform" },
+          { "$ref": "#/components/parameters/image" },
           { "$ref": "#/components/parameters/shape" },
           { "$ref": "#/components/parameters/yscale" },
           { "$ref": "#/components/parameters/marks" },
@@ -257,6 +259,71 @@
           }
         },
         "description": "The options of the Dependency tab (phase D), as dependency[view]=ranking&dependency[target]=SR:GEN:TARGET: the target signal of the ranking, the scatter plot matrix and the regression (the first pv by default), the view, and the common interval in seconds over which the signals are averaged (auto: the interval of the page). A field that is not valid keeps its default, and a default is not written."
+      },
+      "waveform": {
+        "name": "waveform", "in": "query", "style": "deepObject", "explode": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "signal": { "$ref": "#/components/schemas/pvName" },
+            "view": { "type": "string", "enum": ["array", "overlay", "heatmap", "values", "series", "difference", "spectrum", "peaks"], "default": "array" },
+            "axis": { "type": "string", "enum": ["index", "typed", "companion"], "default": "index" },
+            "axisStart": { "type": "number", "default": 0 },
+            "axisStep": { "type": "number", "default": 1 },
+            "axisUnit": { "type": "string", "pattern": "^[A-Za-z\u00b5\u03a9]{1,5}$", "default": "" },
+            "axisPv": { "$ref": "#/components/schemas/pvName" },
+            "frame": { "$ref": "#/components/schemas/time" },
+            "overlay": { "type": "integer", "minimum": 1, "maximum": 20, "default": 8 },
+            "value": { "type": "string", "enum": ["max", "maxAt", "min", "mean", "rms", "sum", "centre", "width"], "default": "max" },
+            "reference": { "$ref": "#/components/schemas/time" },
+            "fsSource": { "type": "string", "enum": ["typed", "pv"], "default": "typed" },
+            "fs": { "$ref": "#/components/schemas/finite" },
+            "fsPv": { "$ref": "#/components/schemas/pvName" },
+            "window": { "type": "string", "enum": ["rectangular", "hann", "hamming", "blackman"], "default": "hann" },
+            "scale": { "type": "string", "enum": ["log", "linear"], "default": "log" },
+            "sigma": { "type": "number", "default": 2 },
+            "threshold": { "type": "number", "default": 5 },
+            "searchBackground": { "type": "boolean", "default": true },
+            "markov": { "type": "boolean", "default": true },
+            "averageWindow": { "type": "integer", "minimum": 0, "default": 3 },
+            "deconvolution": { "type": "integer", "minimum": 0, "default": 3 },
+            "backgroundIterations": { "type": "integer", "minimum": 0, "default": 20 },
+            "backgroundDirection": { "type": "string", "enum": ["decreasing", "increasing"], "default": "decreasing" },
+            "peakView": { "type": "string", "enum": ["array", "subtracted"], "default": "array" }
+          }
+        },
+        "description": "The options of the Waveform tab (phase E), as waveform[view]=spectrum&waveform[fsSource]=pv&waveform[fsPv]=SR:GEN:WAVE:FS: the signal (the first pv by default), the view, the X axis (the element number, a typed start and step with its unit, or a companion PV, which is written only when the axis is the companion), the frame in view and the reference frame as times (the frame is the one at or before the time), the number of frames overlaid (1 to 20), the summary value, the sampling frequency typed or from a PV (written only when the source is the PV), the window and the scale of the spectrum, the settings of the peak search (sigma, threshold in percent, the background removal, the Markov smoothing and its window, the deconvolution iterations) and the background (iterations and direction) with the view of the peaks. Every field of the tab is carried. A field that is not valid keeps its default, and a default is not written; a value outside the limits of ROOT is read as typed and refused by the tab with its reason."
+      },
+      "image": {
+        "name": "image", "in": "query", "style": "deepObject", "explode": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "signal": { "$ref": "#/components/schemas/pvName" },
+            "view": { "type": "string", "enum": ["frame", "difference", "series"], "default": "frame" },
+            "sizeSource": { "type": "string", "enum": ["typed", "pv"], "default": "typed" },
+            "width": { "type": "integer", "minimum": 0 },
+            "height": { "type": "integer", "minimum": 0 },
+            "widthPv": { "$ref": "#/components/schemas/pvName" },
+            "heightPv": { "$ref": "#/components/schemas/pvName" },
+            "frame": { "$ref": "#/components/schemas/time" },
+            "x0": { "type": "integer", "minimum": 0 },
+            "x1": { "type": "integer", "minimum": 0 },
+            "y0": { "type": "integer", "minimum": 0 },
+            "y1": { "type": "integer", "minimum": 0 },
+            "background": { "type": "string", "enum": ["none", "level", "region"], "default": "none" },
+            "level": { "$ref": "#/components/schemas/finite" },
+            "bx0": { "type": "integer", "minimum": 0 },
+            "bx1": { "type": "integer", "minimum": 0 },
+            "by0": { "type": "integer", "minimum": 0 },
+            "by1": { "type": "integer", "minimum": 0 },
+            "flipX": { "type": "boolean", "default": false },
+            "flipY": { "type": "boolean", "default": false },
+            "reference": { "$ref": "#/components/schemas/time" },
+            "seriesValue": { "type": "string", "enum": ["total", "centroidX", "centroidY", "peak", "sigmaX", "sigmaY"], "default": "centroidX" }
+          }
+        },
+        "description": "The options of the Image tab (phase E), as image[sizeSource]=pv&image[widthPv]=SR:GEN:IMAGE:W&image[x0]=100: the signal (the first pv by default), the view, the size of the picture typed or from the PVs of its width and height (the two PVs are written only when the size is read from them; a size is never taken from the length of the array), the frame in view and the reference frame as times (the frame shown is the one at or before the time, and the address keeps the time given), the region of interest and the background (a typed level or a second region) as stored pixel indices, the flips of the picture and the value of the series over the range. Every field of the tab is carried. A field that is not valid keeps its default, and a default is not written; a size or a region the tab refuses is refused with its reason as when typed."
       },
       "shape": { "name": "shape", "in": "query", "schema": { "type": "string", "enum": ["step", "line", "smooth", "points"], "default": "step" }, "description": "The line shape (phase A)." },
       "yscale": { "name": "yscale", "in": "query", "schema": { "type": "string", "enum": ["linear", "symlog", "log", "sqrt"], "default": "linear" }, "description": "The scale of every axis without its own axisScale (phase A)." },
