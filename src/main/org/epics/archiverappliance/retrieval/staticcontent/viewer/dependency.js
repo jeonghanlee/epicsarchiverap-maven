@@ -276,6 +276,8 @@ export function createDependency(host, options) {
                 const element = g.node();
                 const text = `${names[i]} against ${names[j]}: ${i === j ? "the signal itself" : fixed(v, 4)}`;
                 element.setAttribute("aria-label", i === j ? text : `${text}. Open in the Correlation tab`);
+                // The diagonal has no button and the arrow keys step over it, so it is not a stop of the Tab key.
+                if (i === j) element.setAttribute("tabindex", "-1");
                 if (i !== j) {
                     element.setAttribute("role", "button");
                     element.setAttribute("tabindex", cells.length === 0 ? "0" : "-1");
