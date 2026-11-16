@@ -266,6 +266,10 @@ the number of bins or points times a byte count for each. A raw read streams
 its data and declares nothing, so it completes while there is no memory
 pressure, even when it is longer than the heap.
 
+A raw request declares no size and the pressure check runs once every 1024
+events, so a raw request of a few events that are arrays of millions of
+elements passes the three checks and can exhaust the heap.
+
 The operators `firstSample`, `deadBand`, `flyers`, and `ignoreflyers` declare
 no size either. While they build the result they keep the events they select in
 memory. The declared-size check does not count that memory. The pressure check,
@@ -357,6 +361,20 @@ reason, leaving no result of an earlier input on the page.
 | **Spectrum** | For one signal, after linear interpolation to an even interval (the median spacing of the samples unless typed): the **Spectrum** as power spectral density, power spectrum or amplitude spectrum with a window and optional zero padding, the peak frequency with its width, the effective sample rate, the usable duration and the frequency resolution; the **Spectrogram** of overlapping segments; the **Autocorrelation** with the period it finds. A spacing of more than five intervals is a gap that stops the spectrum unless the gap policy interpolates across it. The preparation of the series is written above the plot |
 | **Waveform** | For one array PV, a frame at a time (**Previous**, **Next**, the slider over the frames of the range and **Go to time**, which shows the frame at or before the typed time): the array against its element number or against a typed start and step or a companion PV, the frames of the range overlaid or as a heatmap of time against element, the summary values of each frame (maximum and its position, minimum, mean, RMS, sum, centre and half-maximum width) and their series over the range, the **Difference** from a reference frame, the **Spectrum** (the sampling frequency typed or read from a PV, never taken from the rate of the archive; a window, a logarithmic or a linear scale and the peak frequency) and the **Peaks** found by the search of ROOT with the background subtracted. A range of frames is thinned to at most 200 frames and 2,304,000 elements, and the page names the step it took. |
 | **Image** | For one array PV with a typed or PV-given width and height (never the length of the array): one frame as a heatmap with a colour bar and iso-lines at 10, 50 and 90 percent, a region chosen with the mouse or typed in stored pixel indices, the total, mean, minimum, peak, centroid and Gaussian size of the region or of the whole frame, the **X** and **Y** projections on the pixel axes of the picture, a background level or the mean of a second region subtracted, the **Difference** from a reference frame, the values over at most 100 frames of the range with **Cancel**, and **Flip X** and **Flip Y**. One frame is read at a time, and a frame of more than 5,529,600 elements is refused before any request. |
+
+The Image tab is not complete for arrays of millions of elements. The page
+reads a frame of up to 5,529,600 elements, but the appliance does not yet
+bound the memory that such arrays need. The engine ran out of memory while
+it archived them with a heap of 256 MB and archived them with 512 MB, and a
+raw retrieval of one such frame ran out of memory with a retrieval heap of
+384 MB and was answered with 512 MB. These values are observations, not
+limits. Set the heaps of the engine and of the retrieval in the variable
+that carries `-Xmx` for each instance: `JAVA_OPTS`
+([installation page](installing.md#environment)), or `CATALINA_OPTS` in an
+installation from the bundle ([step 13](install-bundle.md#steps)), where a
+`-Xmx` in `JAVA_OPTS` has no effect because Tomcat passes `CATALINA_OPTS`
+after it. Archive and read the largest array once on a test appliance
+before such a PV is archived in production.
 
 An **i** button beside each tool opens a card that states its calculation
 and the rules of its refusals.
