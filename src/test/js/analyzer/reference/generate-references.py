@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Writes references.json: fixed datasets and the values that NumPy and SciPy compute from them, against which the checks of
-the analyzer routines (stats.js, tests.js, spectrum.js, trend.js, compare.js, the preparation of the Spectrum tab, and the fits, correlations,
+the analyzer routines (stats.js, tests.js, spectrum.js, trend.js, compare.js, the preparation of the Spectrum tab, and the correlations,
 regression, principal components, mutual information, clustering and matrix routines of the tools of two and several signals) compare their results. NumPy and SciPy are needed to write the file
 and never to run the checks, which read it. The background of an array is written by ROOT (6.36.10, run as root -l -b -q with
 root_background.C; ROOT is found on the PATH or in ROOT_BIN, and without it the values already in the file are kept).
@@ -328,22 +328,13 @@ reference["spectrumCases"] = {
     "irregularWithGap": spectrum_case("irregular with a gap", irregular_times, irregular_values),
 }
 
-# The tools of two and several signals: fixed datasets with the values of NumPy and SciPy for the fits, the correlations, the
+# The tools of two and several signals: fixed datasets with the values of NumPy and SciPy for the correlations, the
 # regression, the principal component analysis, the mutual information, the clustering, the profile and the matrix routines.
-# The Landau density of the page is the CERNLIB algorithm (ROOT TMath::Landau), which equals SciPy's landau.pdf with the
-# location log(pi/2) and the scale pi/2 within 5e-9 relative; the model below uses SciPy with that mapping.
 from scipy import optimize, linalg
 from scipy.cluster import hierarchy
 from scipy.spatial import distance
 
 pair_rng = np.random.default_rng(20261111)
-LANDAU_LOCATION = math.log(math.pi / 2)
-LANDAU_SCALE = math.pi / 2
-
-
-def landau_density(v):
-    """The CERNLIB Landau density at the Landau variable v, through SciPy's parameterisation."""
-    return stats.landau.pdf(v, LANDAU_LOCATION, LANDAU_SCALE)
 
 
 def linear_fit(design, y):
@@ -358,71 +349,14 @@ def linear_fit(design, y):
     return {"params": listing(coef), "errors": listing(np.sqrt(np.diag(cov))), "chi2PerDof": chi2 / dof, "rSquared": 1 - chi2 / ss_tot, "dof": dof}
 
 
-def iterative_fit(model, x, y, p0, fixed=None, bounds=None):
-    """SciPy curve_fit from p0 (Levenberg-Marquardt without bounds, trust region with them); a fixed parameter is held at
-    its p0 value and left out of the errors."""
-    names = list(range(len(p0)))
-    free = [i for i in names if not (fixed and i in fixed)]
-    def f(xx, *free_values):
-        full = list(p0)
-        for i, v in zip(free, free_values):
-            full[i] = v
-        return model(xx, *full)
-    kwargs = {"method": "lm"} if bounds is None else {"method": "trf", "bounds": ([bounds[0][i] for i in free], [bounds[1][i] for i in free])}
-    popt, pcov = optimize.curve_fit(f, x, y, p0=[p0[i] for i in free], maxfev=20000, **kwargs)
-    full = list(p0)
-    for i, v in zip(free, popt):
-        full[i] = float(v)
-    residuals = y - model(x, *full)
-    dof = len(y) - len(free)
-    chi2 = float(residuals @ residuals)
-    ss_tot = float(((y - y.mean()) ** 2).sum())
-    return {"params": full, "free": free, "errors": listing(np.sqrt(np.diag(pcov))), "chi2PerDof": chi2 / dof, "rSquared": 1 - chi2 / ss_tot, "dof": dof}
-
-
-def sine_model(x, a, f, phi, c):
-    return a * np.sin(2 * np.pi * f * x + phi) + c
-
-
 def gaussian_model(x, a, mu, sigma, c):
     return a * np.exp(-((x - mu) ** 2) / (2 * sigma ** 2)) + c
 
 
-def landau_model(x, a, mpv, width, c):
-    return a * landau_density((x - mpv) / width) / width + c
-
-
-x60 = np.linspace(0.5, 10.0, 60)
-line_y = -1.0 + 2.5 * x60 + pair_rng.normal(0, 0.4, 60)
-poly_y = 1.0 - 0.8 * x60 + 0.3 * x60 ** 2 + pair_rng.normal(0, 0.5, 60)
-exp_y = 3.0 * np.exp(0.25 * x60) * np.exp(pair_rng.normal(0, 0.05, 60))
-power_y = 2.0 * x60 ** 1.5 * np.exp(pair_rng.normal(0, 0.05, 60))
-log_y = 1.5 + 2.0 * np.log(x60) + pair_rng.normal(0, 0.2, 60)
-sine_x = np.linspace(0, 20, 200)
-sine_y = sine_model(sine_x, 2.0, 0.15, 0.7, 1.0) + pair_rng.normal(0, 0.15, 200)
-gauss_x = np.linspace(-5, 15, 200)
-gauss_y = gaussian_model(gauss_x, 4.0, 5.0, 1.5, 0.5) + pair_rng.normal(0, 0.1, 200)
-landau_x = np.linspace(-5, 25, 300)
-landau_y = landau_model(landau_x, 30.0, 4.0, 1.2, 0.2) + pair_rng.normal(0, 0.05, 300)
-reference["fitCases"] = {
-    "line": {"x": listing(x60), "y": listing(line_y), "truth": [-1.0, 2.5], "fit": linear_fit(np.column_stack([np.ones(60), x60]), line_y)},
-    "polynomial2": {"x": listing(x60), "y": listing(poly_y), "truth": [1.0, -0.8, 0.3], "fit": linear_fit(np.column_stack([np.ones(60), x60, x60 ** 2]), poly_y)},
-    # The exponential, power and logarithm models are linear in a transformed variable: the fit is of the transformed y, and the
-    # natural parameters and their errors follow (a = exp(c0), its error a times the error of c0).
-    "exponential": {"x": listing(x60), "y": listing(exp_y), "truth": [3.0, 0.25], "transformed": linear_fit(np.column_stack([np.ones(60), x60]), np.log(exp_y))},
-    "power": {"x": listing(x60), "y": listing(power_y), "truth": [2.0, 1.5], "transformed": linear_fit(np.column_stack([np.ones(60), np.log(x60)]), np.log(power_y))},
-    "logarithm": {"x": listing(x60), "y": listing(log_y), "truth": [1.5, 2.0], "fit": linear_fit(np.column_stack([np.ones(60), np.log(x60)]), log_y)},
-    "sine": {"x": listing(sine_x), "y": listing(sine_y), "truth": [2.0, 0.15, 0.7, 1.0], "p0": [1.5, 0.14, 0.5, 0.8],
-             "fit": iterative_fit(sine_model, sine_x, sine_y, [1.5, 0.14, 0.5, 0.8]),
-             "fixedOffset": iterative_fit(sine_model, sine_x, sine_y, [1.5, 0.14, 0.5, 1.0], fixed=[3])},
-    "gaussian": {"x": listing(gauss_x), "y": listing(gauss_y), "truth": [4.0, 5.0, 1.5, 0.5], "p0": [3.0, 4.5, 2.0, 0.0],
-                 "fit": iterative_fit(gaussian_model, gauss_x, gauss_y, [3.0, 4.5, 2.0, 0.0]),
-                 "boundedWidth": iterative_fit(gaussian_model, gauss_x, gauss_y, [3.0, 4.5, 2.0, 0.0], bounds=([0, -np.inf, 1.8, -np.inf], [np.inf, np.inf, 3.0, np.inf]))},
-    "landau": {"x": listing(landau_x), "y": listing(landau_y), "truth": [30.0, 4.0, 1.2, 0.2], "p0": [25.0, 3.5, 1.0, 0.0],
-               "landauLocation": LANDAU_LOCATION, "landauScale": LANDAU_SCALE,
-               "density": {"v": listing(np.linspace(-4, 30, 69)), "value": listing(landau_density(np.linspace(-4, 30, 69)))},
-               "fit": iterative_fit(landau_model, landau_x, landau_y, [25.0, 3.5, 1.0, 0.0])},
-}
+# The fits of the fit tab are made by ROOT (root_fits.C writes root-fits.json). These draws keep the random sequence of the cases
+# below as it was, when the data of those fits came from this generator.
+for size, scale in ((60, 0.4), (60, 0.5), (60, 0.05), (60, 0.05), (60, 0.2), (200, 0.15), (200, 0.1), (300, 0.05)):
+    pair_rng.normal(0, scale, size)
 
 # Correlations: Pearson and Spearman with their p-values, the cross-correlation over lags (Pearson's r of x[t] and y[t + lag] over
 # the samples both have), and the partial correlation of four variables from the inverse of their correlation matrix.
@@ -565,41 +499,9 @@ pair_x = [(t * 1000, float(np.sin(t / 50)), False) for t in list(range(0, 110, 1
 pair_y = [(t * 1000, 0.1 * t, False) for t in range(7, 500, 25)]
 reference["pairingCases"] = {"irregular": pair_case(pair_x, pair_y), "aligned": pair_case([(t * 1000, float(t), False) for t in range(0, 100, 10)], [(t * 1000, float(2 * t), False) for t in range(0, 100, 10)])}
 
-# A weighted fit of a histogram (Poisson weights, one over the count, empty bins left out; the covariance taken as it is, SciPy's
-# absolute_sigma) and the one-sigma band of a fitted curve from the covariance and the numerical gradient of the model.
-hist_sample = pair_rng.normal(10.0, 2.0, 5000)
-hist_counts, hist_edges = np.histogram(hist_sample, bins=30, range=(2.0, 18.0))
-hist_centres = (hist_edges[:-1] + hist_edges[1:]) / 2
-keep = hist_counts > 0
-hist_p0 = [float(hist_counts.max()), 10.5, 1.5, 0.0]
-hist_popt, hist_pcov = optimize.curve_fit(gaussian_model, hist_centres[keep], hist_counts[keep].astype(float), p0=hist_p0, sigma=np.sqrt(hist_counts[keep]), absolute_sigma=True, maxfev=20000)
-hist_resid = (hist_counts[keep] - gaussian_model(hist_centres[keep], *hist_popt)) / np.sqrt(hist_counts[keep])
-reference["weightedFitCases"] = {"histogram": {"centres": listing(hist_centres), "counts": [int(c) for c in hist_counts], "p0": hist_p0, "params": listing(hist_popt), "errors": listing(np.sqrt(np.diag(hist_pcov))),
-    "chi2PerDof": float((hist_resid ** 2).sum() / (int(keep.sum()) - 4)), "dof": int(keep.sum()) - 4, "included": int(keep.sum())}}
-
-
-def band_of(model, params, cov, xs):
-    out = []
-    for xv in xs:
-        grad = []
-        for k, pk in enumerate(params):
-            h = 1e-7 * max(1.0, abs(pk))
-            up, down = list(params), list(params)
-            up[k] += h
-            down[k] -= h
-            grad.append((model(xv, *up) - model(xv, *down)) / (2 * h))
-        grad = np.array(grad)
-        out.append(float(np.sqrt(max(grad @ cov @ grad, 0.0))))
-    return out
-
-
-sine_fit_popt, sine_fit_pcov = optimize.curve_fit(sine_model, sine_x, sine_y, p0=[1.5, 0.14, 0.5, 0.8], method="lm", maxfev=20000)
-band_xs = [0.0, 5.0, 10.0, 15.0, 20.0]
-reference["fitCases"]["sine"]["band"] = {"x": band_xs, "sigma": band_of(sine_model, sine_fit_popt, sine_fit_pcov, band_xs)}
-line_design = np.column_stack([np.ones(60), x60])
-line_fit = linear_fit(line_design, line_y)
-line_cov = np.linalg.inv(line_design.T @ line_design) * line_fit["chi2PerDof"]
-reference["fitCases"]["line"]["band"] = {"x": band_xs, "sigma": band_of(lambda xv, a, b: a + b * xv, line_fit["params"], line_cov, band_xs)}
+# The histogram fit and the bands of the fit tab are taken from ROOT (root_fits.C, root-fits.json); this draw keeps the random
+# sequence of the cases below as it was.
+pair_rng.normal(10.0, 2.0, 5000)
 
 # The alignment of several signals on the times all of them share (the means over one interval of the server carry the time of
 # their interval, and an interval without samples is absent): the common times, the columns on them, the number of distinct times
@@ -880,10 +782,8 @@ width_specs = [("wave-widths", wave_values, "wave-sigma8", 20, "decreasing"), ("
 reference["arrayCases"]["peakWidths"] = [peak_widths_case(name, values, search_requests[search_name], iterations, direction) for name, values, search_name, iterations, direction in width_specs]
 reference["arrayCases"]["rootBackground"] = list(root_requests.values())
 
-# Images: the region sums and projections, the centroid and the peak (the first maximum in row-major order), the Gaussian size of the
-# X and of the Y projection (the Gaussian of the fits, fitted by curve_fit from a start made of the data: the amplitude the range of the
-# projection, the centre the position of its maximum, the width one sixth of its number of positions, the offset its minimum), the
-# subtraction of a constant, and the difference of two frames.
+# Images: the region sums and projections, the centroid and the peak (the first maximum in row-major order), the subtraction of a
+# constant, and the difference of two frames. The Gaussian size of the projections is computed by ROOT (root_fits.C).
 image_rng = np.random.default_rng(20261115)
 image_w, image_h = 64, 48
 yy, xx = np.mgrid[0:image_h, 0:image_w]
@@ -903,11 +803,6 @@ def image_case(pixels, x0, x1, y0, y1):
     result = {"x0": x0, "x1": x1, "y0": y0, "y1": y1, "total": total, "projectionX": listing(columns), "projectionY": listing(rows),
               "peak": {"x": int(x0 + peak_x), "y": int(y0 + peak_y), "value": float(region.max())}, "min": float(region.min()), "mean": float(region.mean()),
               "centroid": {"x": float((xs * columns).sum() / total), "y": float((ys * rows).sum() / total)} if total > 0 else None}
-    for name, positions, projection in (("fitX", xs, columns), ("fitY", ys, rows)):
-        p0 = [float(projection.max() - projection.min()), float(positions[int(np.argmax(projection))]), len(positions) / 6.0, float(projection.min())]
-        popt, pcov = optimize.curve_fit(gaussian_model, positions.astype(float), projection, p0=p0, maxfev=20000)
-        errors = np.sqrt(np.diag(pcov))
-        result[name] = {"p0": p0, "params": listing(popt), "errors": listing(errors), "sigma": float(abs(popt[2])), "fwhm": float(2 * math.sqrt(2 * math.log(2)) * abs(popt[2]))}
     return result
 
 

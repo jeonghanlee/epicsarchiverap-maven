@@ -10,6 +10,7 @@ import { infoButton } from "../comm/js/aa/card.js";
 import { format } from "../comm/js/aa/chart/text.js";
 import { moments, quantiles, boxPlot, kernelDensity } from "../comm/js/aa/stats.js";
 import { partsInZone, formatInZone, zoneName } from "../comm/js/aa/timezone.js";
+import { modelMeanOverBin } from "../comm/js/aa/fit.js";
 import { createFitPanel, fittedCurve, FIT_PANEL_DEFAULTS } from "./fit-panel.js";
 
 const d3 = globalThis.d3;
@@ -42,7 +43,7 @@ const CARD = [
     "Distribution: what do the plots and the numbers count?",
     [
         ["In short", "The values of one signal over the selected range. Every count is a count of samples of the dataset named under the plot; it is not the time the signal spent at a value."],
-        ["Fit of the histogram", "A model fitted to the bin heights of the histogram at the bin centres, once you declare that the counts are counts of independent samples: each bin then has a Poisson weight of one over its count, and empty bins are left out. The fitted curve is drawn over the bars in the normalization shown, the residuals (observed minus fitted counts) under the plot; the errors come from the covariance as it is, since the weights carry the scale, and R squared is computed from the unweighted residuals. The fit evaluates the model at the bin centres, not the expected count integrated over the bin. The weights do not apply to a model fitted in a transformed variable (exponential, power); the method row says so. A fit of another histogram, or one made under a declaration since withdrawn, is cleared."],
+        ["Fit of the histogram", "A model fitted to the counts of the bins of the histogram, once you declare that the counts are counts of independent samples: each bin then has a Poisson weight of one over its count, and empty bins are left out. The expected count of a bin is the mean of the model over the bin, from its lower to its upper edge, not the model at the bin centre; a bin is in the fit range when its centre is. The fitted curve is drawn over the bars in the normalization shown, the residuals (the count of a bin minus its expected count) under the plot; the errors come from the covariance as it is, since the weights carry the scale, and R squared is computed from the unweighted residuals. A fit of another histogram, or one made under a declaration since withdrawn, is cleared."],
         ["Dataset", "The selected range at the resolution the page resolved for its Summary: the stored samples, or the means over N seconds. The statistics of means describe the means, not the stored samples, and they do not change when you pan or zoom the Trend."],
         ["Histogram", "Equal-width bins between the minimum and the maximum. The rule gives the number of bins (Sturges, Scott, Freedman-Diaconis) or you give it; the last bin includes the maximum. Density divides a count by the number of samples and the bin width, so that the bars add up to 1; the kernel density is a Gaussian estimate with Silverman's bandwidth."],
         ["Box plot", "The quartiles, the median, whiskers at the most extreme values within 1.5 times the interquartile range of the box, and the values beyond them."],
@@ -251,7 +252,8 @@ export function createDistribution(host, options) {
         const { number, width: binWidth, bins: binned } = histogramBins(values, m.min, m.max, settings.rule, settings.bins);
         const scale = settings.normalize === "count" ? 1 : settings.normalize === "fraction" ? 1 / m.n : 1 / (m.n * binWidth);
         const heights = binned.map((b) => b.length * scale);
-        // The fit of the histogram: the bin heights (counts) at the bin centres, with Poisson weights once the user declares the counts.
+        // The fit of the histogram: the counts of the bins against the mean of the model over each bin (the bin edges go to the panel
+        // with the bin centres), with Poisson weights once the user declares the counts.
         // The declaration is part of the key, so that a fit computed under it is cleared when it is withdrawn.
         histogramKey = JSON.stringify([entry.name, +entry.dataset.from, +entry.dataset.to, entry.dataset.seconds, settings.rule, settings.bins, number, poisson.checked]);
         if (fitPanel.result && fitKey !== histogramKey) {
@@ -259,7 +261,8 @@ export function createDistribution(host, options) {
             fitNote.textContent = "The histogram or the count declaration the fit used has changed; the fit was cleared. Select Run fit to fit again.";
         }
         const filled = binned.filter((b) => b.length > 0);
-        fitPanel.setData(filled.map((b) => (b.x0 + b.x1) / 2), filled.map((b) => b.length), poisson.checked ? filled.map((b) => 1 / b.length) : null, `the histogram of ${entry.name} (${number} bins)`);
+        fitPanel.setData(filled.map((b) => (b.x0 + b.x1) / 2), filled.map((b) => b.length), poisson.checked ? filled.map((b) => 1 / b.length) : null, `the histogram of ${entry.name} (${number} bins)`,
+            { low: filled.map((b) => b.x0), high: filled.map((b) => b.x1) });
         fitPanel.setEnabled(poisson.checked && filled.length > 0);
         if (!poisson.checked) fitNote.textContent = `Declare the counts as counts of independent samples to fit the histogram; a count of samples of means or of a filtered dataset is not a Poisson count.${fitNote.textContent ? ` ${fitNote.textContent}` : ""}`;
         const fit = fitPanel.result && fitKey === histogramKey ? fitPanel.result : null;
@@ -287,7 +290,7 @@ export function createDistribution(host, options) {
             const curve = fittedCurve(fit, Math.max(m.min, fit.range[0]), Math.min(m.max, fit.range[1]));
             surface.marks.append("path").attr("class", "dist-fit-band").attr("d", d3.area().x((p) => x(p.x)).y0((p) => y(Math.max(0, (p.y - (Number.isFinite(p.sigma) ? p.sigma : 0)) * scale))).y1((p) => y((p.y + (Number.isFinite(p.sigma) ? p.sigma : 0)) * scale))(curve));
             surface.marks.append("path").attr("class", "dist-fit-curve").attr("data-model", fit.model).attr("d", d3.line().x((p) => x(p.x)).y((p) => y(p.y * scale))(curve));
-            const res = filled.filter((b) => (b.x0 + b.x1) / 2 >= fit.range[0] && (b.x0 + b.x1) / 2 <= fit.range[1]).map((b) => ({ xc: (b.x0 + b.x1) / 2, r: b.length - fit.definition.evaluate((b.x0 + b.x1) / 2, fit.params) }));
+            const res = filled.filter((b) => (b.x0 + b.x1) / 2 >= fit.range[0] && (b.x0 + b.x1) / 2 <= fit.range[1]).map((b) => ({ xc: (b.x0 + b.x1) / 2, r: b.length - modelMeanOverBin(fit.model, b.x0, b.x1, fit.params) }));
             const rExtent = d3.extent(res, (p) => p.r);
             const rPad = (rExtent[1] - rExtent[0]) * 0.1 || 1;
             const ry = d3.scaleLinear().domain([Math.min(rExtent[0] - rPad, 0), Math.max(rExtent[1] + rPad, 0)]).range([RESIDUAL_HEIGHT - 40, MARGIN.top + 14]);

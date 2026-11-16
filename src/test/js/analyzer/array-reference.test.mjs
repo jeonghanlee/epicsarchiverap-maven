@@ -5,7 +5,7 @@
 // the stored values. The routines themselves are checked in their own files.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { reference, close, closeArray } from "./reference.mjs";
+import { reference, rootFits, close, closeArray } from "./reference.mjs";
 
 const arrays = reference.arrayCases;
 const images = reference.imageCases;
@@ -129,12 +129,13 @@ test("an image region has the sums, projections, centroid and peak of the pixels
 });
 
 test("the Gaussian size of the blob of known centre and width is within the error of the values it was made with", () => {
-    const whole = images.regions[0];
-    const within = (actual, truth, error, what) => assert.ok(Math.abs(actual - truth) <= 4 * error, `${what}: ${actual} is more than four errors (${error}) from ${truth}`);
-    within(whole.fitX.params[1], 30.4, whole.fitX.errors[1], "mu X");
-    within(whole.fitX.params[2], 5.0, whole.fitX.errors[2], "sigma X");
-    within(whole.fitY.params[1], 22.6, whole.fitY.errors[1], "mu Y");
-    within(whole.fitY.params[2], 3.0, whole.fitY.errors[2], "sigma Y");
+    const whole = rootFits.imageCases.regions[0];
+    const truth = rootFits.imageCases.truth;
+    const within = (actual, expected, error, what) => assert.ok(Math.abs(actual - expected) <= 4 * error, `${what}: ${actual} is more than four errors (${error}) from ${expected}`);
+    within(whole.fitX.fit.params[1], truth.x[0], whole.fitX.fit.errors[1], "mu X");
+    within(Math.abs(whole.fitX.fit.params[2]), truth.x[1], whole.fitX.fit.errors[2], "sigma X");
+    within(whole.fitY.fit.params[1], truth.y[0], whole.fitY.fit.errors[1], "mu Y");
+    within(Math.abs(whole.fitY.fit.params[2]), truth.y[1], whole.fitY.fit.errors[2], "sigma Y");
     close(whole.fitX.fwhm, FWHM_FACTOR * whole.fitX.sigma, 1e-12, 0, "FWHM X");
     close(whole.fitY.fwhm, FWHM_FACTOR * whole.fitY.sigma, 1e-12, 0, "FWHM Y");
 });

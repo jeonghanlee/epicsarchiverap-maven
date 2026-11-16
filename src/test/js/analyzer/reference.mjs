@@ -4,6 +4,9 @@ import assert from "node:assert/strict";
 
 export const reference = JSON.parse(readFileSync(new URL("./reference/references.json", import.meta.url), "utf8"));
 
+/** The data and the fits that ROOT makes of them (root_fits.C): fitCases and weightedFitCases. */
+export const rootFits = JSON.parse(readFileSync(new URL("./reference/root-fits.json", import.meta.url), "utf8"));
+
 /** The two numbers agree within rel times the expected one, and an absolute floor for expected values near zero. */
 export function close(actual, expected, rel = 1e-9, floor = 1e-12, what = "value") {
     assert.ok(Number.isFinite(actual), `${what}: ${actual} is not a finite number`);

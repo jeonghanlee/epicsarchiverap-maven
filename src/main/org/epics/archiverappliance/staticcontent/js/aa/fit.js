@@ -1,8 +1,11 @@
-// The fits of the analyzer: linear least squares of a design matrix, the models that are linear in a transformed variable (line,
-// polynomial, exponential, power, logarithm), the iterative least squares of Levenberg-Marquardt for the sine, Gaussian and
-// Landau shapes with fixed and bounded parameters, the covariance of the parameters and the Landau density (the CERNLIB
-// algorithm of ROOT TMath::Landau). The parameter errors come from the covariance scaled by the reduced chi-square, as an
-// unweighted fit has them (SciPy curve_fit without absolute errors). The bundled D3 has none of these.
+// The fits of the analyzer, after ROOT 6.36.10 (TGraph::Fit and TH1::Fit): linear least squares of a design matrix for the line,
+// polynomial and logarithm, the iterative least squares of Levenberg-Marquardt, in the variable of the data, for the exponential,
+// power, sine, Gaussian and Landau shapes with fixed and bounded parameters, and the Landau density (the CERNLIB algorithm of ROOT
+// TMath::Landau). The covariance of an iterative fit is the inverse of half the Hessian of the chi-square at the solution, by
+// central differences, the matrix that HESSE of Minuit2 estimates (the Gauss-Newton matrix when that is not positive definite); the errors of an
+// unweighted fit are scaled by the reduced chi-square, as ROOT scales a fit without error bars. With options.edges (the low and
+// high edge of the bin of each point) the value of the model at a point is its mean over the bin, as the option I of TH1::Fit
+// takes it. The bundled D3 has none of these.
 import { invert, transpose, multiply } from "./matrix.js";
 
 const LM_ITERATIONS_MOST = 500;
@@ -12,6 +15,56 @@ const LM_DAMPING_DOWN = 0.1;
 const LM_CHI2_RELATIVE_LEAST = 1e-15;
 const LM_STEP_RELATIVE_LEAST = 1e-13;
 const JACOBIAN_STEP = 1e-7;
+const HESSIAN_STEP = 1e-3;
+const BIN_QUADRATURE_POINTS = 16;
+
+/** The nodes and weights of the Gauss-Legendre rule of n points on [-1, 1], by Newton's method on the Legendre polynomial. */
+function gaussLegendre(n) {
+    const nodes = [];
+    const weights = [];
+    for (let i = 0; i < n; i += 1) {
+        let z = Math.cos((Math.PI * (i + 0.75)) / (n + 0.5));
+        let derivative = 1;
+        for (let iteration = 0; iteration < 100; iteration += 1) {
+            let previous = 1;
+            let current = z;
+            for (let k = 2; k <= n; k += 1) {
+                const next = ((2 * k - 1) * z * current - (k - 1) * previous) / k;
+                previous = current;
+                current = next;
+            }
+            derivative = (n * (z * current - previous)) / (z * z - 1);
+            const step = current / derivative;
+            z -= step;
+            if (Math.abs(step) < 1e-15) break;
+        }
+        nodes.push(z);
+        weights.push(2 / ((1 - z * z) * derivative * derivative));
+    }
+    return { nodes, weights };
+}
+const RULE = gaussLegendre(BIN_QUADRATURE_POINTS);
+
+/** The mean of fn over [low, high]: the integral over the bin divided by its width (the value ROOT fits with the option I). */
+function meanOverBin(fn, low, high) {
+    const middle = (low + high) / 2;
+    const half = (high - low) / 2;
+    let sum = 0;
+    for (let k = 0; k < RULE.nodes.length; k += 1) sum += RULE.weights[k] * fn(middle + half * RULE.nodes[k]);
+    return sum / 2;
+}
+
+/** The mean over [low, high] of each element of the vector fn returns (a row of a design matrix). */
+function meanVectorOverBin(fn, low, high) {
+    const middle = (low + high) / 2;
+    const half = (high - low) / 2;
+    let sum = null;
+    for (let k = 0; k < RULE.nodes.length; k += 1) {
+        const row = fn(middle + half * RULE.nodes[k]);
+        sum = sum ? sum.map((v, c) => v + RULE.weights[k] * row[c]) : row.map((v) => RULE.weights[k] * v);
+    }
+    return sum.map((v) => v / 2);
+}
 
 /** The sum of squared residuals of y against the fitted values, each weighted (a weight is one over the variance of y). */
 function chiSquare(y, fitted, weights) {
@@ -100,17 +153,14 @@ export function landauDensity(v) {
 }
 
 /**
- * The models of the fit panel. A linear model gives the design columns of x and, when it fits a transformed y, the transform and
- * the way back to the natural parameters; an iterative model gives its value at x and an initial guess from the data. params are
- * the natural parameters named in parameters.
+ * The models of the fit panel. A linear model gives the design columns of x; an iterative model gives its value at x and an
+ * initial guess from the data. params are the parameters named in parameters.
  */
 export const MODELS = {
     line: { kind: "linear", parameters: ["a", "b"], text: "a + b x", design: (x) => [1, x], evaluate: (x, [a, b]) => a + b * x },
     polynomial: { kind: "linear", parameters: ["c0", "c1", "c2"], text: "c0 + c1 x + c2 x^2", design: (x) => [1, x, x * x], evaluate: (x, c) => c.reduce((s, v, k) => s + v * x ** k, 0) },
-    exponential: { kind: "linear", parameters: ["a", "b"], text: "a exp(b x)", design: (x) => [1, x], transformY: Math.log, domain: (x, y) => y > 0,
-        natural: ([c0, c1], [e0, e1]) => ({ params: [Math.exp(c0), c1], errors: [Math.exp(c0) * e0, e1] }), evaluate: (x, [a, b]) => a * Math.exp(b * x) },
-    power: { kind: "linear", parameters: ["a", "b"], text: "a x^b", design: (x) => [1, Math.log(x)], transformY: Math.log, domain: (x, y) => x > 0 && y > 0,
-        natural: ([c0, c1], [e0, e1]) => ({ params: [Math.exp(c0), c1], errors: [Math.exp(c0) * e0, e1] }), evaluate: (x, [a, b]) => a * x ** b },
+    exponential: { kind: "iterative", parameters: ["a", "b"], text: "a exp(b x)", evaluate: (x, [a, b]) => a * Math.exp(b * x), guess: (x, y) => guessLogLinear(x, y, false) },
+    power: { kind: "iterative", parameters: ["a", "b"], text: "a x^b", domain: (x) => x > 0, evaluate: (x, [a, b]) => a * x ** b, guess: (x, y) => guessLogLinear(x, y, true) },
     logarithm: { kind: "linear", parameters: ["a", "b"], text: "a + b ln x", design: (x) => [1, Math.log(x)], domain: (x) => x > 0, evaluate: (x, [a, b]) => a + b * Math.log(x) },
     sine: { kind: "iterative", parameters: ["A", "f", "phi", "c"], text: "A sin(2 pi f x + phi) + c",
         evaluate: (x, [a, f, phi, c]) => a * Math.sin(2 * Math.PI * f * x + phi) + c, guess: guessSine },
@@ -121,6 +171,13 @@ export const MODELS = {
 };
 
 export const MODEL_NAMES = Object.keys(MODELS);
+
+/** An initial guess of the exponential or the power: the line through the logarithm of the positive y (against x, or against ln x), which the iteration then refines in the variable of the data. */
+function guessLogLinear(x, y, logX) {
+    const points = x.map((xi, i) => [logX ? Math.log(xi) : xi, y[i]]).filter(([u, v]) => Number.isFinite(u) && v > 0);
+    const fit = points.length > 2 ? linearLeastSquares(points.map(([u]) => [1, u]), points.map(([, v]) => Math.log(v))) : null;
+    return fit ? [Math.exp(fit.params[0]), fit.params[1]] : [y.reduce((s, v) => s + v, 0) / y.length || 1, 0];
+}
 
 /** An initial guess of a sine: the amplitude from the spread, the frequency from the zero crossings of the centred values. */
 function guessSine(x, y) {
@@ -156,6 +213,32 @@ function jacobian(model, x, params, free) {
         down[k] -= h;
         return x.map((xi) => (model(xi, up) - model(xi, down)) / (2 * h));
     });
+}
+
+/**
+ * Half the Hessian of the chi-square of y against model(x, params) with respect to the free indices, by central differences
+ * (the matrix HESSE of Minuit inverts); null when it is not positive definite on its diagonal or not finite.
+ */
+function halfHessian(model, x, y, weights, params, free) {
+    const at = (changes) => {
+        const q = [...params];
+        for (const [k, d] of changes) q[k] += d;
+        const fitted = x.map((xi) => model(xi, q));
+        return fitted.some((v) => !Number.isFinite(v)) ? NaN : chiSquare(y, fitted, weights);
+    };
+    const f0 = at([]);
+    const h = free.map((k) => HESSIAN_STEP * Math.max(Math.abs(params[k]), 1e-2));
+    const matrix = free.map(() => free.map(() => 0));
+    for (let a = 0; a < free.length; a += 1) {
+        matrix[a][a] = (at([[free[a], h[a]]]) - 2 * f0 + at([[free[a], -h[a]]])) / (2 * h[a] * h[a]);
+        for (let b = a + 1; b < free.length; b += 1) {
+            const mixed = (at([[free[a], h[a]], [free[b], h[b]]]) - at([[free[a], h[a]], [free[b], -h[b]]]) - at([[free[a], -h[a]], [free[b], h[b]]]) + at([[free[a], -h[a]], [free[b], -h[b]]])) / (8 * h[a] * h[b]);
+            matrix[a][b] = mixed;
+            matrix[b][a] = mixed;
+        }
+    }
+    const usable = matrix.every((row, a) => row[a] > 0 && row.every(Number.isFinite));
+    return usable ? matrix : null;
 }
 
 /**
@@ -227,17 +310,17 @@ export function levenbergMarquardt(model, x, y, start, options = {}) {
         if (converged) break;
     }
     const j = jacobian(model, x, params, estimable);
-    const normal = j.map((a) => j.map((b) => a.reduce((s, v, i) => s + v * b[i] * (weights ? weights[i] : 1), 0)));
-    const inverse = invert(normal);
+    const gaussNewton = j.map((a) => j.map((b) => a.reduce((s, v, i) => s + v * b[i] * (weights ? weights[i] : 1), 0)));
+    const curvature = halfHessian(model, x, y, weights, params, estimable);
+    const inverse = (curvature && invert(curvature)) || invert(gaussNewton);
     const covariance = inverse ? covarianceOf(inverse, chi2, dof, Boolean(weights)) : null;
     const errors = covariance ? covariance.map((row, k) => Math.sqrt(Math.max(row[k], 0))) : estimable.map(() => NaN);
     return { params, free: estimable, errors, covariance, chi2PerDof: chi2 / dof, rSquared: rSquaredOf(y, chiSquare(y, fitted)), dof, iterations: iteration, converged, weighted: Boolean(weights) };
 }
 
 /**
- * Fits the named model to the points (x and y arrays of equal length): a linear model by least squares (on the transformed y when
- * the model has one, the natural parameters and their errors following), an iterative model by Levenberg-Marquardt from
- * options.start (or the model's guess) with options.fixed, options.lower and options.upper. Returns {ok: false, reason} when a
+ * Fits the named model to the points (x and y arrays of equal length): a linear model by least squares, an iterative model by
+ * Levenberg-Marquardt from options.start (or the model's guess) with options.fixed, options.lower and options.upper. Returns {ok: false, reason} when a
  * value is not finite, the data do not fit the model's domain or no degree of freedom is left.
  */
 export function fitModel(name, x, y, options = {}) {
@@ -255,18 +338,26 @@ export function fitModel(name, x, y, options = {}) {
             return { ok: false, reason: `${outside} of the ${x.length} points lie outside the domain of the model ${model.text}.` };
         }
     }
+    const edges = options.edges || null;
+    if (edges && (edges.low.length !== x.length || edges.high.length !== x.length)) {
+        return { ok: false, reason: "The bin edges and the points differ in number." };
+    }
     if (model.kind === "linear") {
-        const target = model.transformY ? y.map(model.transformY) : y;
-        const fit = linearLeastSquares(x.map(model.design), target, model.transformY ? null : options.weights || null);
+        const design = edges ? x.map((_, i) => meanVectorOverBin(model.design, edges.low[i], edges.high[i])) : x.map(model.design);
+        if (design.some((row) => row.some((v) => !Number.isFinite(v)))) {
+            return { ok: false, reason: `The model ${model.text} is not finite over every bin.` };
+        }
+        const fit = linearLeastSquares(design, y, options.weights || null);
         if (!fit) {
             return { ok: false, reason: `The fit of ${model.text} needs more than ${model.parameters.length} points with distinct x.` };
         }
-        const natural = model.natural ? model.natural(fit.params, fit.errors) : { params: fit.params, errors: fit.errors };
-        return { ok: true, model: name, params: natural.params, errors: natural.errors, free: fit.params.map((_, k) => k), transformed: model.transformY ? fit : null,
+        return { ok: true, model: name, params: fit.params, errors: fit.errors, free: fit.params.map((_, k) => k),
             chi2PerDof: fit.chi2PerDof, rSquared: fit.rSquared, dof: fit.dof, covariance: fit.covariance, converged: true, iterations: 0, weighted: fit.weighted };
     }
     const start = options.start || model.guess(x, y);
-    const fit = levenbergMarquardt(model.evaluate, x, y, start, options);
+    // Over bins the value at a point is the mean of the model over its bin; the points are then the indices of the bins.
+    const evaluate = edges ? (i, p) => meanOverBin((t) => model.evaluate(t, p), edges.low[i], edges.high[i]) : model.evaluate;
+    const fit = levenbergMarquardt(evaluate, edges ? x.map((_, i) => i) : x, y, start, options);
     if (!fit) {
         return { ok: false, reason: `The fit of ${model.text} needs more points than free parameters and a finite model at the start values.` };
     }
@@ -278,6 +369,11 @@ export function modelValue(name, x, params) {
     return MODELS[name].evaluate(x, params);
 }
 
+/** The mean of the named model over the bin [low, high] for the parameters: the expected value of a bin that the option I of ROOT fits. */
+export function modelMeanOverBin(name, low, high, params) {
+    return meanOverBin((t) => MODELS[name].evaluate(t, params), low, high);
+}
+
 /**
  * The standard deviation of the fitted curve of the named model at x, from the covariance of its free parameters (the gradient of
  * the model with respect to them, by central differences, transported through the covariance): the half width of the one-sigma
@@ -286,8 +382,7 @@ export function modelValue(name, x, params) {
 export function fitUncertaintyAt(name, fit, x) {
     if (!fit.covariance) return NaN;
     const model = MODELS[name];
-    const evaluate = model.kind === "linear" && model.transformY ? null : model.evaluate;
-    if (!evaluate) return NaN;
+    const evaluate = model.evaluate;
     const gradient = fit.free.map((k) => {
         const h = JACOBIAN_STEP * Math.max(1, Math.abs(fit.params[k]));
         const up = [...fit.params];

@@ -18,13 +18,14 @@ const fieldText = (v) => (Number.isFinite(v) ? Number(v.toPrecision(6)).toString
 /**
  * Builds the panel into host. options: {label: the aria prefix of the controls, settings: {model, from, to} from the address,
  * changed(): called when a setting of the address changes, helpHref}. Returns {settings, result, earlier, setData(x, y, weights,
- * context), clear(), onResult(callback)}: setData gives the panel the points to fit (weights optional, context a text for the
- * list of earlier fits) and refreshes the parameter fields from the model's guess when the model or the data changed.
+ * context, edges), clear(), onResult(callback)}: setData gives the panel the points to fit (weights optional, context a text for
+ * the list of earlier fits, edges {low, high} the bin of each point when the points are bins) and refreshes the parameter fields
+ * from the model's guess when the model or the data changed.
  */
 export function createFitPanel(host, options) {
     const settings = { ...FIT_PANEL_DEFAULTS, ...(options.settings || {}) };
     const prefix = options.label || "Fit";
-    const state = { x: [], y: [], weights: null, context: "", guessFor: null, result: null, earlier: [], listeners: [] };
+    const state = { x: [], y: [], weights: null, edges: null, context: "", guessFor: null, result: null, earlier: [], listeners: [] };
     const model = node("select", { "aria-label": `${prefix} model` });
     for (const name of MODEL_NAMES) model.append(node("option", { value: name }, `${name[0].toUpperCase()}${name.slice(1)}: ${MODELS[name].text}`));
     model.value = settings.model;
@@ -79,21 +80,26 @@ export function createFitPanel(host, options) {
         if (definition.kind === "linear") parameters.append(node("p", { class: "note" }, `${definition.text} is solved by least squares; it has no start values, fixed parameters or bounds.`));
     }
 
-    /** The points inside the fit range. */
+    /** The points inside the fit range; a bin is inside when its point (its centre) is. */
     function selected() {
         const low = settings.from === "" ? -Infinity : finiteNumber(settings.from);
         const high = settings.to === "" ? Infinity : finiteNumber(settings.to);
         const x = [];
         const y = [];
         const weights = state.weights ? [] : null;
+        const edges = state.edges ? { low: [], high: [] } : null;
         state.x.forEach((v, i) => {
             if (v >= low && v <= high) {
                 x.push(v);
                 y.push(state.y[i]);
                 if (weights) weights.push(state.weights[i]);
+                if (edges) {
+                    edges.low.push(state.edges.low[i]);
+                    edges.high.push(state.edges.high[i]);
+                }
             }
         });
-        return { x, y, weights, low, high };
+        return { x, y, weights, edges, low, high };
     }
 
     function start() {
@@ -123,9 +129,9 @@ export function createFitPanel(host, options) {
             upper.push(hi);
         }
         if (fixed.length === definition.parameters.length) { error.textContent = "Every parameter is fixed; nothing is left to fit."; return; }
-        const fit = fitModel(settings.model, inside.x, inside.y, { start: startValues, fixed, lower, upper, weights: inside.weights });
+        const fit = fitModel(settings.model, inside.x, inside.y, { start: startValues, fixed, lower, upper, weights: inside.weights, edges: inside.edges });
         if (!fit.ok) { error.textContent = fit.reason; state.result = null; results.replaceChildren(); emit(); return; }
-        state.result = { ...fit, model: settings.model, definition, range: [inside.low, inside.high], count: inside.x.length, fixed, lower, upper, weightsOffered: Boolean(inside.weights), context: state.context, at: new Date() };
+        state.result = { ...fit, model: settings.model, definition, range: [inside.low, inside.high], count: inside.x.length, fixed, lower, upper, binned: Boolean(inside.edges), context: state.context, at: new Date() };
         state.earlier.unshift(state.result);
         if (state.earlier.length > EARLIER_FITS_MOST) state.earlier.length = EARLIER_FITS_MOST;
         showResult();
@@ -159,11 +165,15 @@ export function createFitPanel(host, options) {
         settings,
         get result() { return state.result; },
         element: host,
-        /** The points the next fit uses; the parameter fields follow the model's guess when the model or the number of points changed. */
-        setData(x, y, weights, context) {
+        /**
+         * The points the next fit uses; the parameter fields follow the model's guess when the model or the number of points changed.
+         * With edges the points are bins and the fit takes the mean of the model over each bin.
+         */
+        setData(x, y, weights, context, edges) {
             state.x = x;
             state.y = y;
             state.weights = weights || null;
+            state.edges = edges || null;
             state.context = context || "";
             model.value = settings.model;
             from.value = settings.from;
@@ -178,15 +188,13 @@ export function createFitPanel(host, options) {
 }
 
 /**
- * The method of a fit result in words: least squares (weighted or not, or in a transformed variable) or Levenberg-Marquardt with
- * its iterations and convergence, and where the errors come from: the covariance as it is for a weighted fit, scaled by the
- * reduced chi-square for an unweighted one. Weights offered to a model fitted in a transformed variable are named as not applied.
+ * The method of a fit result in words: least squares for a linear model, Levenberg-Marquardt with its iterations and convergence
+ * for the others, each in the variable of the data; where the errors come from: the covariance as it is for a weighted fit,
+ * scaled by the reduced chi-square for an unweighted one; and, for a fit of bins, that the expected value of a bin is the mean
+ * of the model over it.
  */
 export function methodText(r) {
-    const weighting = r.weighted ? "weighted by one over the count of each bin (Poisson), the errors from the covariance as it is" : "unweighted, the errors from the covariance scaled by the reduced chi-square";
-    if (r.definition.kind === "linear" && r.definition.transformY) {
-        return `least squares of the transformed values (${r.definition.text} is linear in a transformed variable), unweighted; the errors of the natural parameters follow from those of the transformed ones${r.weightsOffered ? "; the Poisson weights do not apply to a model fitted in a transformed variable" : ""}`;
-    }
+    const weighting = `${r.weighted ? "weighted by one over the count of each bin (Poisson), the errors from the covariance as it is" : "unweighted, the errors from the covariance scaled by the reduced chi-square"}${r.binned ? "; the expected value of a bin is the mean of the model over the bin" : ""}`;
     if (r.definition.kind === "linear") return `least squares, ${weighting}`;
     return `Levenberg-Marquardt from the start values, ${r.iterations} iteration${r.iterations === 1 ? "" : "s"}, ${r.converged ? "converged" : "stopped before convergence"}; ${weighting}`;
 }

@@ -1,49 +1,43 @@
-// The reference values of the tools of two and several signals (generate-references.py), checked for what the routines will be
-// compared against: each fixed dataset recovers the parameters it was made with within four standard errors, the fixed and
-// bounded fits hold their constraints, and the matrix, correlation, component and clustering values have the properties the
-// routines must reproduce. The routines themselves are checked in their own files.
+// The reference values of the tools of two and several signals, checked for what the routines will be compared against: the fits
+// that ROOT makes (root_fits.C, root-fits.json) recover the parameters each fixed dataset was made with within four standard
+// errors and hold their fixed and bounded parameters, and the matrix, correlation, component and clustering values
+// (generate-references.py) have the properties the routines must reproduce. The routines themselves are checked in their own files.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { reference, close, closeArray } from "./reference.mjs";
+import { reference, rootFits, close, closeArray } from "./reference.mjs";
 
-const fits = reference.fitCases;
+const fits = rootFits.fitCases;
 const within = (actual, truth, error, what, k = 4) => assert.ok(Math.abs(actual - truth) <= k * error, `${what}: ${actual} is more than ${k} errors (${error}) from ${truth}`);
 
-test("the linear fits recover the parameters of the line, the polynomial and the logarithm within four errors", () => {
-    for (const name of ["line", "polynomial2", "logarithm"]) {
+test("the fits of ROOT recover the parameters of every model within four errors, with the status 0 and a free parameter for each start value", () => {
+    for (const name of ["line", "polynomial2", "exponential", "power", "logarithm", "sine", "gaussian", "landau"]) {
         const c = fits[name];
+        assert.equal(c.fit.status, 0, `${name}: status`);
+        assert.equal(c.fit.params.length, c.start.length);
         c.fit.params.forEach((p, i) => within(p, c.truth[i], c.fit.errors[i], `${name}[${i}]`));
-        assert.equal(c.fit.dof, c.x.length - c.fit.params.length);
-        assert.ok(c.fit.rSquared > 0.9 && c.fit.rSquared <= 1);
+        assert.equal(c.fit.ndf, c.x.length - c.fit.params.length);
+        assert.ok(c.fit.rSquared > 0.9 && c.fit.rSquared <= 1, `${name}: R squared ${c.fit.rSquared}`);
     }
 });
 
-test("the exponential and power fits recover their natural parameters through the transformed fit", () => {
-    for (const name of ["exponential", "power"]) {
-        const c = fits[name];
-        const [c0, c1] = c.transformed.params;
-        const [e0, e1] = c.transformed.errors;
-        within(Math.exp(c0), c.truth[0], Math.exp(c0) * e0, `${name} a`);
-        within(c1, c.truth[1], e1, `${name} b`);
-    }
+test("the histogram fit of ROOT leaves the empty bins out and recovers the mean and the width of the draws within four errors", () => {
+    const h = rootFits.weightedFitCases.histogram;
+    assert.equal(h.included, h.counts.filter((c) => c > 0).length);
+    assert.equal(h.fit.ndf, h.included - h.fit.params.length);
+    assert.equal(h.fit.status, 0);
+    within(h.fit.params[1], 10.0, h.fit.errors[1], "mean");
+    within(h.fit.params[2], 2.0, h.fit.errors[2], "width");
 });
 
-test("the iterative fits recover the sine, the Gaussian and the Landau parameters within four errors", () => {
-    for (const name of ["sine", "gaussian", "landau"]) {
-        const c = fits[name];
-        c.fit.free.forEach((index, j) => within(c.fit.params[index], c.truth[index], c.fit.errors[j], `${name}[${index}]`));
-        assert.equal(c.fit.free.length, c.p0.length);
-    }
-});
-
-test("a fixed parameter keeps its value and is left out of the errors; a bounded parameter stops at its bound", () => {
+test("a fixed parameter keeps its value and has no error; a bounded parameter stops at its bound", () => {
     const fixed = fits.sine.fixedOffset;
     assert.equal(fixed.params[3], 1.0);
-    assert.deepEqual(fixed.free, [0, 1, 2]);
-    assert.equal(fixed.errors.length, 3);
+    assert.equal(fixed.errors[3], 0);
+    assert.equal(fixed.ndf, fits.sine.x.length - 3);
     const bounded = fits.gaussian.boundedWidth;
-    close(bounded.params[2], 1.8, 1e-9, 1e-12, "bounded width");
-    assert.ok(bounded.chi2PerDof > fits.gaussian.fit.chi2PerDof, "a constrained fit cannot do better than the free one");
+    // Minuit2 keeps a bounded parameter inside its limits through a sine transformation; the refined fit ends on the bound to rounding.
+    close(bounded.params[fits.gaussian.bounds.index], fits.gaussian.bounds.low, 1e-12, 1e-12, "bounded width");
+    assert.ok(bounded.chi2 > fits.gaussian.fit.chi2, "a constrained fit cannot do better than the free one");
 });
 
 test("the Landau density of the reference is the CERNLIB density: positive, peaking near -0.22 and integrating to about one", () => {

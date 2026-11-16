@@ -1,11 +1,11 @@
-// The image routines (aa/image.js) against the values that NumPy and SciPy compute from the fixed 64 by 48 image of the reference
-// file: the sums, projections, centroid and peak of three regions, the Gaussian size of the projections (curve_fit from the same
-// start), the subtraction of a constant, the difference of two frames, and the refusals of a size that does not match the element
-// count and of a region outside the image.
+// The image routines (aa/image.js) against the values that NumPy computes from the fixed 64 by 48 image of the reference file: the
+// sums, projections, centroid and peak of three regions, the subtraction of a constant, the difference of two frames, and the refusals
+// of a size that does not match the element count and of a region outside the image. The Gaussian size of the projections is checked
+// against the TGraph::Fit of ROOT (root_fits.C, root-fits.json) on the image that ROOT's own generator drew.
 import test from "node:test";
 import assert from "node:assert/strict";
 import "./load-d3.mjs";
-import { reference, close, closeArray } from "./reference.mjs";
+import { reference, rootFits, close, closeArray } from "./reference.mjs";
 
 const image = await import("../../../main/org/epics/archiverappliance/staticcontent/js/aa/image.js");
 const ref = reference.imageCases;
@@ -32,15 +32,20 @@ test("with no region the whole image is taken", () => {
     assert.equal(stats.projectionY.length, ref.height);
 });
 
-test("the Gaussian size of the X and the Y projection equals curve_fit from the same start, within 1e-6 or a tenth of the error", () => {
-    for (const r of ref.regions) {
-        const size = image.regionSize(ref.pixels, ref.width, ref.height, region(r));
+test("the Gaussian size of the X and the Y projection equals the ROOT fit of the same projection, within 1e-6 or a tenth of the error", () => {
+    const root = rootFits.imageCases;
+    for (const r of root.regions) {
+        const size = image.regionSize(root.pixels, root.width, root.height, region(r));
         for (const [axis, expected] of [["x", r.fitX], ["y", r.fitY]]) {
             const fit = size[axis];
             assert.ok(fit.ok, `${axis} fit: ${fit.reason}`);
+            assert.equal(expected.fit.status, 0, `${axis}: ROOT status`);
             fit.params.forEach((p, k) => {
-                const tolerance = Math.max(1e-6 * Math.abs(expected.params[k]), 0.1 * expected.errors[k]);
-                assert.ok(Math.abs(p - expected.params[k]) <= tolerance, `${axis} parameter ${k}: ${p} against ${expected.params[k]}`);
+                // The width of a Gaussian enters squared: ROOT may return it with either sign, the size is its magnitude.
+                const wanted = k === 2 ? Math.abs(expected.fit.params[k]) : expected.fit.params[k];
+                const actual = k === 2 ? Math.abs(p) : p;
+                const tolerance = Math.max(1e-6 * Math.abs(wanted), 0.1 * expected.fit.errors[k]);
+                assert.ok(Math.abs(actual - wanted) <= tolerance, `${axis} parameter ${k}: ${actual} against ${wanted}`);
             });
             close(fit.sigma, expected.sigma, 1e-6, 0, `${axis} sigma`);
             close(fit.fwhm, expected.fwhm, 1e-6, 0, `${axis} FWHM`);
