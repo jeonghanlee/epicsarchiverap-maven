@@ -2,29 +2,22 @@ package org.epics.archiverappliance.retrieval;
 
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.epics.archiverappliance.mgmt.pva.actions.PvaActionException;
+import org.epics.archiverappliance.retrieval.ServletTransportFixture.Response;
 import org.epics.archiverappliance.retrieval.pva.PvaGetPVData;
 import org.epics.pva.data.nt.PVAURI;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.epics.archiverappliance.retrieval.ServletTransportFixture.request;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Real servlet/action and PB-store paths, with only the HTTP transport boundary substituted. */
@@ -53,15 +46,7 @@ class RetrievalProtectedRequestTest {
         }
         config.getRetrievalRuntimeState().configureMemoryProtection(new RetrievalMemoryProtection.Settings(
                 BUDGET_FRACTION, .85, .95, .9, 1, Duration.ofMillis(100), SCALAR_BIN_BYTES, 256, 176));
-        ServletContext context = (ServletContext) Proxy.newProxyInstance(ServletContext.class.getClassLoader(),
-                new Class<?>[]{ServletContext.class}, (proxy, method, args) ->
-                        method.getName().equals("getAttribute") && args[0].equals(ConfigService.CONFIG_SERVICE_NAME)
-                                ? config : null);
-        ServletConfig servletConfig = (ServletConfig) Proxy.newProxyInstance(ServletConfig.class.getClassLoader(),
-                new Class<?>[]{ServletConfig.class}, (proxy, method, args) ->
-                        method.getName().equals("getServletContext") ? context : null);
-        servlet = new DataRetrievalServlet();
-        servlet.init(servletConfig);
+        servlet = ServletTransportFixture.initServlet(config);
     }
 
     private static Map<String, String> query(String operator) {
@@ -71,61 +56,6 @@ class RetrievalProtectedRequestTest {
         query.put("to", TO);
         if (!operator.equals("raw")) query.put("pp", operator);
         return query;
-    }
-
-    private static HttpServletRequest request(String path, Map<String, String> query) {
-        return (HttpServletRequest) Proxy.newProxyInstance(HttpServletRequest.class.getClassLoader(),
-                new Class<?>[]{HttpServletRequest.class}, (proxy, method, args) -> switch (method.getName()) {
-                    case "getPathInfo" -> "/" + path;
-                    case "getParameter" -> query.get(args[0]);
-                    case "getParameterMap" -> query.entrySet().stream().collect(java.util.stream.Collectors.toMap(
-                            Map.Entry::getKey, entry -> new String[]{entry.getValue()}));
-                    case "getParameterNames" -> java.util.Collections.enumeration(query.keySet());
-                    case "getParameterValues" -> query.containsKey(args[0]) ? query.get(args[0]).split(",") : null;
-                    case "getRemoteAddr" -> "127.0.0.1";
-                    case "getMethod" -> query.getOrDefault("method", "GET");
-                    case "getContentType" -> "application/x-www-form-urlencoded";
-                    case "getHeader" -> null;
-                    case "getRequestURL" -> new StringBuffer("http://localhost/retrieval/data/" + path);
-                    default -> throw new UnsupportedOperationException(method.toString());
-                });
-    }
-
-    private static class Response {
-        final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        int status = 200;
-        String message;
-        boolean committed;
-        boolean interruptOnWrite;
-        boolean commitOnWrite;
-        boolean closed;
-        final java.io.StringWriter text = new java.io.StringWriter();
-        final ServletOutputStream output = new ServletOutputStream() {
-            @Override public boolean isReady() { return true; }
-            @Override public void setWriteListener(WriteListener listener) { }
-            @Override public void write(int value) {
-                bytes.write(value);
-                if (interruptOnWrite && bytes.size() >= 256) {
-                    if (commitOnWrite) committed = true;
-                    Thread.currentThread().interrupt();
-                }
-            }
-            @Override public void close() { closed = true; }
-        };
-        final HttpServletResponse transport = (HttpServletResponse) Proxy.newProxyInstance(
-                HttpServletResponse.class.getClassLoader(), new Class<?>[]{HttpServletResponse.class},
-                (proxy, method, args) -> switch (method.getName()) {
-                    case "getOutputStream" -> output;
-                    case "getWriter" -> new java.io.PrintWriter(text);
-                    case "isCommitted" -> committed;
-                    case "flushBuffer" -> { committed = true; yield null; }
-                    case "reset" -> { assertFalse(committed); bytes.reset(); yield null; }
-                    case "sendError" -> { assertFalse(committed); status = (int) args[0];
-                        message = args.length > 1 ? (String) args[1] : null; yield null; }
-                    case "setStatus" -> { status = (int) args[0]; yield null; }
-                    case "setContentType", "setHeader", "addHeader", "setCharacterEncoding" -> null;
-                    default -> throw new UnsupportedOperationException(method.toString());
-                });
     }
 
     @Test void oversizedDeclarationsFailBeforePreallocationInEveryFormat() throws Exception {

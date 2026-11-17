@@ -2,8 +2,8 @@ package org.epics.archiverappliance.retrieval;
 
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
+import org.epics.archiverappliance.retrieval.ServletTransportFixture.Response;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -11,15 +11,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Proxy;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,15 +45,7 @@ class RetrievalEmptyRangeRequestTest {
         typeInfo.setDataStores(new String[] {"pb://localhost?name=MTS&rootFolder="
                 + config.getPBRootFolder() + "&partitionGranularity=PARTITION_YEAR"});
         config.updateTypeInfoForPV(PV, typeInfo);
-        ServletContext context = (ServletContext) Proxy.newProxyInstance(ServletContext.class.getClassLoader(),
-                new Class<?>[] {ServletContext.class}, (proxy, method, args) ->
-                        method.getName().equals("getAttribute") && args[0].equals(ConfigService.CONFIG_SERVICE_NAME)
-                                ? config : null);
-        ServletConfig servletConfig = (ServletConfig) Proxy.newProxyInstance(ServletConfig.class.getClassLoader(),
-                new Class<?>[] {ServletConfig.class}, (proxy, method, args) ->
-                        method.getName().equals("getServletContext") ? context : null);
-        servlet = new DataRetrievalServlet();
-        servlet.init(servletConfig);
+        servlet = ServletTransportFixture.initServlet(config);
     }
 
     private static HttpServletRequest request(String operator, String from, String to) {
@@ -70,57 +54,17 @@ class RetrievalEmptyRangeRequestTest {
         query.put("from", from);
         query.put("to", to);
         if (!operator.equals("raw")) query.put("pp", operator);
-        return (HttpServletRequest) Proxy.newProxyInstance(HttpServletRequest.class.getClassLoader(),
-                new Class<?>[] {HttpServletRequest.class}, (proxy, method, args) -> switch (method.getName()) {
-                    case "getPathInfo" -> "/getData.json";
-                    case "getParameter" -> query.get(args[0]);
-                    case "getParameterMap" -> query.entrySet().stream().collect(java.util.stream.Collectors.toMap(
-                            Map.Entry::getKey, entry -> new String[] {entry.getValue()}));
-                    case "getParameterNames" -> java.util.Collections.enumeration(query.keySet());
-                    case "getParameterValues" -> query.containsKey(args[0]) ? query.get(args[0]).split(",") : null;
-                    case "getRemoteAddr" -> "127.0.0.1";
-                    case "getMethod" -> "GET";
-                    case "getContentType" -> "application/x-www-form-urlencoded";
-                    case "getHeader" -> null;
-                    case "getRequestURL" -> new StringBuffer("http://localhost/retrieval/data/getData.json");
-                    default -> throw new UnsupportedOperationException(method.toString());
-                });
+        return ServletTransportFixture.request("getData.json", query);
     }
 
-    /** A response whose body and status the test reads back. */
-    private static class Response {
-        final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        int status = 200;
-        String message;
-        boolean committed;
-        final ServletOutputStream output = new ServletOutputStream() {
-            @Override public boolean isReady() { return true; }
-            @Override public void setWriteListener(WriteListener listener) { }
-            @Override public void write(int value) { bytes.write(value); }
-        };
-        final HttpServletResponse transport = (HttpServletResponse) Proxy.newProxyInstance(
-                HttpServletResponse.class.getClassLoader(), new Class<?>[] {HttpServletResponse.class},
-                (proxy, method, args) -> switch (method.getName()) {
-                    case "getOutputStream" -> output;
-                    case "getWriter" -> new java.io.PrintWriter(output);
-                    case "isCommitted" -> committed;
-                    case "flushBuffer" -> { committed = true; yield null; }
-                    case "reset" -> { bytes.reset(); yield null; }
-                    case "sendError" -> { status = (int) args[0]; message = args.length > 1 ? (String) args[1] : null; yield null; }
-                    case "setStatus" -> { status = (int) args[0]; yield null; }
-                    case "setContentType", "setHeader", "addHeader", "setCharacterEncoding", "setContentLength" -> null;
-                    default -> throw new UnsupportedOperationException(method.toString());
-                });
-
-        /** The number of samples in the JSON answer; an answer without an entry for the PV holds none. */
-        int samples() throws Exception {
-            JSONArray answer = (JSONArray) JSONValue.parseWithException(bytes.toString(StandardCharsets.UTF_8));
-            int samples = 0;
-            for (Object entry : answer) {
-                samples += ((JSONArray) ((JSONObject) entry).get("data")).size();
-            }
-            return samples;
+    /** The number of samples in the JSON answer; an answer without an entry for the PV holds none. */
+    private static int samples(Response response) throws Exception {
+        JSONArray answer = (JSONArray) JSONValue.parseWithException(response.body());
+        int samples = 0;
+        for (Object entry : answer) {
+            samples += ((JSONArray) ((JSONObject) entry).get("data")).size();
         }
+        return samples;
     }
 
     private static Response get(String operator, String from, String to) throws Exception {
@@ -134,7 +78,7 @@ class RetrievalEmptyRangeRequestTest {
     void rawRequestOverARangeWithoutSamplesAnswersNoSamples() throws Exception {
         Response response = get("raw", EMPTY_FROM, EMPTY_TO);
         assertEquals(200, response.status, response.message);
-        assertEquals(0, response.samples());
+        assertEquals(0, samples(response));
     }
 
     /** Each operator is checked on its own, so one failing operator does not hide the others. */
@@ -143,7 +87,7 @@ class RetrievalEmptyRangeRequestTest {
         assertAll(OPERATORS.stream().map(operator -> (Executable) () -> {
             Response response = get(operator, EMPTY_FROM, EMPTY_TO);
             assertEquals(200, response.status, operator + ": " + response.message);
-            assertEquals(0, response.samples(), operator);
+            assertEquals(0, samples(response), operator);
         }));
     }
 
@@ -152,7 +96,7 @@ class RetrievalEmptyRangeRequestTest {
         assertAll(OPERATORS.stream().map(operator -> (Executable) () -> {
             Response response = get(operator, DATA_FROM, DATA_TO);
             assertEquals(200, response.status, operator + ": " + response.message);
-            assertTrue(response.samples() > 0, operator + " answered no sample over a range with samples");
+            assertTrue(samples(response) > 0, operator + " answered no sample over a range with samples");
         }));
     }
 }

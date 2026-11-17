@@ -2,23 +2,15 @@ package org.epics.archiverappliance.retrieval;
 
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
-import org.epics.archiverappliance.config.ConfigService;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
+import org.epics.archiverappliance.retrieval.ServletTransportFixture.Response;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Proxy;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,15 +59,7 @@ class RetrievalConcurrentRequestTest {
                     + config.getPBRootFolder() + "&partitionGranularity=PARTITION_YEAR"});
             config.updateTypeInfoForPV(pv, typeInfo);
         }
-        ServletContext context = (ServletContext) Proxy.newProxyInstance(ServletContext.class.getClassLoader(),
-                new Class<?>[] {ServletContext.class}, (proxy, method, args) ->
-                        method.getName().equals("getAttribute") && args[0].equals(ConfigService.CONFIG_SERVICE_NAME)
-                                ? config : null);
-        ServletConfig servletConfig = (ServletConfig) Proxy.newProxyInstance(ServletConfig.class.getClassLoader(),
-                new Class<?>[] {ServletConfig.class}, (proxy, method, args) ->
-                        method.getName().equals("getServletContext") ? context : null);
-        servlet = new DataRetrievalServlet();
-        servlet.init(servletConfig);
+        servlet = ServletTransportFixture.initServlet(config);
     }
 
     private static HttpServletRequest request(String pv, String operator) {
@@ -84,53 +68,14 @@ class RetrievalConcurrentRequestTest {
         query.put("from", FROM);
         query.put("to", TO);
         if (!operator.equals("raw")) query.put("pp", operator);
-        return (HttpServletRequest) Proxy.newProxyInstance(HttpServletRequest.class.getClassLoader(),
-                new Class<?>[] {HttpServletRequest.class}, (proxy, method, args) -> switch (method.getName()) {
-                    case "getPathInfo" -> "/getData.json";
-                    case "getParameter" -> query.get(args[0]);
-                    case "getParameterMap" -> query.entrySet().stream().collect(java.util.stream.Collectors.toMap(
-                            Map.Entry::getKey, entry -> new String[] {entry.getValue()}));
-                    case "getParameterNames" -> java.util.Collections.enumeration(query.keySet());
-                    case "getParameterValues" -> query.containsKey(args[0]) ? query.get(args[0]).split(",") : null;
-                    case "getRemoteAddr" -> "127.0.0.1";
-                    case "getMethod" -> "GET";
-                    case "getContentType" -> "application/x-www-form-urlencoded";
-                    case "getHeader" -> null;
-                    case "getRequestURL" -> new StringBuffer("http://localhost/retrieval/data/getData.json");
-                    default -> throw new UnsupportedOperationException(method.toString());
-                });
+        return ServletTransportFixture.request("getData.json", query);
     }
 
-    /** A response whose body and status the test reads back. */
-    private static class Response {
-        final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        volatile int status = 200;
-        volatile String message;
-        volatile boolean committed;
-        final ServletOutputStream output = new ServletOutputStream() {
-            @Override public boolean isReady() { return true; }
-            @Override public void setWriteListener(WriteListener listener) { }
-            @Override public void write(int value) { bytes.write(value); }
-        };
-        final HttpServletResponse transport = (HttpServletResponse) Proxy.newProxyInstance(
-                HttpServletResponse.class.getClassLoader(), new Class<?>[] {HttpServletResponse.class},
-                (proxy, method, args) -> switch (method.getName()) {
-                    case "getOutputStream" -> output;
-                    case "getWriter" -> new java.io.PrintWriter(output);
-                    case "isCommitted" -> committed;
-                    case "flushBuffer" -> { committed = true; yield null; }
-                    case "reset" -> { bytes.reset(); yield null; }
-                    case "sendError" -> { status = (int) args[0]; message = args.length > 1 ? (String) args[1] : null; yield null; }
-                    case "setStatus" -> { status = (int) args[0]; yield null; }
-                    case "setContentType", "setHeader", "addHeader", "setCharacterEncoding", "setContentLength" -> null;
-                    default -> throw new UnsupportedOperationException(method.toString());
-                });
-
-        int samples() throws Exception {
-            JSONArray answer = (JSONArray) JSONValue.parseWithException(bytes.toString(StandardCharsets.UTF_8));
-            JSONObject first = (JSONObject) answer.get(0);
-            return ((JSONArray) first.get("data")).size();
-        }
+    /** The number of samples of the first PV in the JSON answer. */
+    private static int samples(Response response) throws Exception {
+        JSONArray answer = (JSONArray) JSONValue.parseWithException(response.body());
+        JSONObject first = (JSONObject) answer.get(0);
+        return ((JSONArray) first.get("data")).size();
     }
 
     @Test
@@ -155,7 +100,7 @@ class RetrievalConcurrentRequestTest {
                 for (Future<Response> answer : answers) {
                     Response response = answer.get(2, TimeUnit.MINUTES);
                     assertEquals(200, response.status, "round " + round + ": " + response.message);
-                    assertTrue(response.samples() > 0, "round " + round + ": samples");
+                    assertTrue(samples(response) > 0, "round " + round + ": samples");
                 }
             }
         } finally {
