@@ -3519,7 +3519,7 @@ Status: Not started
 - Make `Nth`, `Optimized` and `OptimizedWithLastSample` answer a range without samples with an empty stream, as `CAPlotBinning`, `LastSample`, `FirstFill`, `LastFill` and the binned operators do.
 - Keep the answers of these operators over a range with samples unchanged.
 
-Out of scope: the Waveform tab of the Analyzer, which reads the answer as it is; the operators that already answer an empty range.
+Out of scope: the Waveform tab of the Analyzer, which reads the answer as it is; the operators that already answer an empty range; a check of the PVA path, which reads the same operators and is changed by the same code.
 
 ##### Completion Criteria
 
@@ -3531,6 +3531,7 @@ Out of scope: the Waveform tab of the Analyzer, which reads the answer as it is;
 
 - Decision Date 2026-11-11: the owner directed that this defect, found while rehearsing the checks of step 4 of M5, is worked as its own row and not inside M5.
 - D21 (Decision Date 2026-11-16): the row is part of release Ahsoka (M21) and is worked before M30.
+- Decision Date 2026-11-16: the empty answer carries the null description of the operators that already answer an empty range, so the retrieval log holds the same ERROR line for it as for them; a description built for the empty stream, which would remove that line, is not part of this row, which keeps the answer of the operators that already answer an empty range.
 
 ##### Implementation Plan
 
@@ -3540,7 +3541,7 @@ Implementation Authorization: none
 Superseded Plan Artifacts: none
 
 1. Reproduce the 500 in a servlet test on a range without samples, with `nth_N`, `optimized_N` and `optimLastSample_N`.
-2. Return an empty stream from the consolidated stream of each of the three when no stream reached it.
+2. Return an empty stream from the consolidated stream of each of the three when no stream reached it, with the null description that `LastSample`, `FirstFill`, `CAPlotBinning` and the binned operators use for it; the servlet then skips the stream, logs the same ERROR line `Skipping event stream without a desc` and answers HTTP 200 with `[]`.
 
 ##### Test Plan
 
