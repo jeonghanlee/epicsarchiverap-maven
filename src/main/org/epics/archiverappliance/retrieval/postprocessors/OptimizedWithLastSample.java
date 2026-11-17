@@ -158,7 +158,9 @@ public class OptimizedWithLastSample implements PostProcessor, PostProcessorWith
 
     @Override
     public EventStream getConsolidatedEventStream() {
-        if (allEvents == null) throw new IllegalStateException("Optimized input stream was not initialized");
+        // When no stream reached this operator there is nothing to describe: the answer is an empty stream without a
+        // description, as the other operators that consolidate their stream answer a range without samples.
+        if (allEvents == null) return new ArrayListEventStream(0, srcDesc);
         if (numEvents > allEvents.size()) {
             return customStatsConsolidatedEventStream();
         } else {
