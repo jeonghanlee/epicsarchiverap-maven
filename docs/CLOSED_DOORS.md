@@ -102,3 +102,13 @@ Examined state: commit `39061b8d`. Decision date: 2026-11-09.
 | ID | Candidate | Verdict | Premise | Evidence |
 | --- | --- | --- | --- | --- |
 | CD-24 | The threshold of the note, half of the median spacing, against any interval shorter than the median spacing | Keep | The note names the frequency above which nothing was measured, half of the sampling frequency of the samples; at an interval between half of the median spacing and the median spacing that frequency is at or above the Nyquist frequency of the resampled series, so the spectrum shows no band that was not measured and the note would warn about nothing on the plot. The interpolation between samples is stated in the preparation line for every interval. The threshold is the value of the accepted plan and the routine checks fix it. | `staticcontent/js/aa/spectrum.js` (`oversampled: interval < median / 2`); `retrieval/staticcontent/viewer/spectrum.js` (the note); `src/test/js/analyzer/spectrum-tab.test.mjs` and the mutation `oversampling threshold moved` of the register row T2-5 |
+
+## The precision of a PV whose new record has none - Release Verification 2 of release Ahsoka
+
+One candidate of Release Verification 2 of M21: after `SR:BPM:03:Y` changes from a `calc` record with `PREC` 3 to a
+`longin` record, which has no precision, `getPVTypeInfo` reports precision 0 and no longer 3.
+Examined state: commit `0d2c83cf`. Decision date: 2026-11-18.
+
+| ID | Candidate | Verdict | Premise | Evidence |
+| --- | --- | --- | --- | --- |
+| CD-25 | Store precision 0 for a Channel Access type that carries no precision, instead of keeping the earlier value or storing none | Keep | The integer control and graphic types of Channel Access carry no precision, so the IOC sends none for the new record; 0 shows the integer values with no fractional digits, while keeping 3 would report a field of a record that no longer exists, and storing none would change what every reader of `getPVTypeInfo` receives. `updateTypeInfo` stores the value the IOC sends, as M14 decided. | `config/MetaInfo.java` (`applyBasicInfo`: `dbr instanceof PRECISION ? ... : 0`; `updateTypeInfo`); `work/m21-release/rv2-m13-run1/` (`typeinfo-before.json`, `typeinfo-after.json`, the engine log line `Updating metadata for pv SR:BPM:03:Y: precision=0`) |
