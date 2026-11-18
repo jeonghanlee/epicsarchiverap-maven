@@ -55,7 +55,9 @@ def determinePolicy(pvInfoDict):
 		userPolicyOverride = pvInfoDict['policyName']
 
 	if userPolicyOverride == '2HzPVs' or (userPolicyOverride == '' and pvInfoDict['eventRate'] > 2.0):
-		pvPolicyDict['samplingPeriod'] = 1.0
+		# A MONITOR period of 0.1 s sizes a buffer for 20 events per second with the shipped write period of 10 s
+		# and margin of 10 s; a faster PV loses samples, and the loss is counted.
+		pvPolicyDict['samplingPeriod'] = 0.1
 		pvPolicyDict['samplingMethod'] = 'MONITOR'
 		pvPolicyDict['dataStores'] = [
 			shorttermstore_plugin_url, 
@@ -73,9 +75,9 @@ def determinePolicy(pvInfoDict):
 			]
 		pvPolicyDict['policyName'] = 'Default';
 	elif userPolicyOverride == 'BPMS' or (userPolicyOverride == '' and pvInfoDict['pvName'].startswith('BPMS') and pvInfoDict['storageRate'] > 35):
-		# We limit BPM PVs to 1GB/year (34 bytes/sec)
-		# We reduce the sampling rate (and hence increase the sampling period) to cater to this. 
-		pvPolicyDict['samplingPeriod'] = pvInfoDict['storageRate']/(35*pvInfoDict['eventRate'])
+		# The period of a MONITOR PV sizes its sample buffer and does not limit what is stored, so a BPMS PV keeps
+		# the period of the other policies.
+		pvPolicyDict['samplingPeriod'] = 1.0
 		pvPolicyDict['samplingMethod'] = 'MONITOR'
 		pvPolicyDict['dataStores'] = [
 			shorttermstore_plugin_url, 

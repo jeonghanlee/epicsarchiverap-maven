@@ -60,7 +60,7 @@ the medium term store (MTS) and the long term store (LTS).
 
 The engine holds the samples of each PV in a buffer in memory until the
 next write to the STS. The figures follow a PV archived with the
-MONITOR method on the default site, whose write period is 10 s.
+MONITOR method, with the write period of 10 s of the default site.
 
 ![The path of an event through the sample buffer: the timestamp check,
 the sample buffer, the swap at each write period and the write to the
@@ -86,7 +86,8 @@ at the next write while new samples fill the new buffer.
 ### How many slots a buffer has
 
 The number of slots follows from the sampling period of the PV: the
-samples expected in one write period plus a margin of one second. The
+samples expected in one write period plus a margin, 10 s in the site
+file of the default site. The
 formula is in [What is the difference between SCAN and
 MONITOR?](faq.md#what-is-the-difference-between-scan-and-monitor), and
 the write period and the margin are the properties
@@ -95,8 +96,8 @@ the write period and the margin are the properties
 [Configuration](configuration.md).
 
 ![The slots of a buffer for a sampling period of 1.0 s and of 0.1 s: 10
-expected samples and a margin of 1 give 11 slots, 100 expected samples
-and a margin of 10 give 110 slots](images/sample-buffer-capacity.svg)
+expected samples and a margin of 10 give 20 slots, 100 expected samples
+and a margin of 100 give 200 slots](images/sample-buffer-capacity.svg)
 
 For a Channel Access PV, `getPVDetails` returns the number of slots as
 Sample buffer capacity.
@@ -105,8 +106,9 @@ Sample buffer capacity.
 
 If more samples arrive between two writes than the buffer has slots,
 each new sample pushes out the oldest one, and the batch that is written
-holds the newest samples. A buffer of 11 slots that receives 20 samples
-keeps samples 10 to 20 and loses the first 9.
+holds the newest samples. A buffer of 11 slots, which a 1.0 s PV has with
+a margin of 1 s, that receives 20 samples keeps samples 10 to 20 and
+loses the first 9.
 
 ![Twenty samples arrive between two writes into a buffer of 11 slots:
 samples 1 to 9 are pushed out and counted as buffer-full losses, and
@@ -114,8 +116,9 @@ samples 10 to 20 are kept](images/sample-buffer-overflow.svg)
 
 The losses begin when more updates arrive in one write period than the
 buffer has slots, that is, above the number of slots divided by the
-write period per second: 1.1 updates per second for 11 slots and 11 for
-110 slots.
+write period per second: 1.1 updates per second for 11 slots, 2 for the
+20 slots of a 1.0 s PV on the default site and 20 for the 200 slots of a
+0.1 s PV.
 
 ## Stores
 
