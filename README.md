@@ -22,7 +22,8 @@ The build needs JDK 21 and a Git clone with the `origin/master` branch:
 ```
 
 The four WARs and the release bundle `aa-<date>-<commit>.tar.gz` are written
-under `target/`. A release is an annotated tag named `YYYY-MM`.
+under `target/`. A release is an annotated tag named after the release, for
+example `2026-10` or `Ahsoka`.
 
 ## Deployment
 
