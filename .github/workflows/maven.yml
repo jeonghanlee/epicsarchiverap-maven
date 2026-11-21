@@ -116,6 +116,24 @@ jobs:
       - name: Build, test, and check dependencies
         run: ./mvnw -B -ntp clean verify
 
+      # The Maven Wrapper hides the error of curl when it cannot fetch the Maven distribution. After a failed build this
+      # step fetches the same files with the same flags and prints the tools, the name resolution and the answer, in the
+      # same container; it changes nothing and never fails the job on its own.
+      - name: Diagnose the download of the Maven distribution after a failure
+        if: ${{ failure() }}
+        run: |
+          set +e
+          base=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.16
+          curl --version | head -n 1
+          sed -n '1,2p' /etc/os-release
+          cat /etc/resolv.conf
+          getent hosts repo.maven.apache.org
+          for file in apache-maven-3.9.16-bin.tar.gz apache-maven-3.9.16-bin.zip; do
+            curl -sS -f -L -m 60 -o /dev/null -w "$file http_code=%{http_code} remote_ip=%{remote_ip} time=%{time_total}\n" "$base/$file"
+            echo "curl exit $?"
+          done
+          exit 0
+
       - name: Preserve test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
