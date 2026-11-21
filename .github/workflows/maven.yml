@@ -113,8 +113,24 @@ jobs:
       - name: Show the release history access
         run: git log --oneline remotes/origin/master | head -n 3
 
+      # Maven Central can answer a runner with HTTP 429, so the Maven distribution that the wrapper fetches is kept
+      # between runs and a job fetches it only when it has none.
+      - name: Restore the Maven distribution of the wrapper
+        id: maven-wrapper-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ matrix.report }}-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+
       - name: Build, test, and check dependencies
         run: ./mvnw -B -ntp clean verify
+
+      - name: Keep the Maven distribution of the wrapper
+        if: ${{ always() && steps.maven-wrapper-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ matrix.report }}-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
 
       # The Maven Wrapper hides the error of curl when it cannot fetch the Maven distribution. After a failed build this
       # step fetches the same files with the same flags and prints the tools, the name resolution and the answer, in the
