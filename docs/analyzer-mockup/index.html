@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analyzer - interface proposal</title>
+  <link rel="stylesheet" href="../../src/main/org/epics/archiverappliance/staticcontent/css/chart.css">
+  <link rel="stylesheet" href="mockup.css">
+  <script src="../../src/main/org/epics/archiverappliance/staticcontent/js/vendor/d3.min.js" defer></script>
+  <script src="signal-data.js" defer></script>
+  <script src="signal-catalog.js" defer></script>
+  <script src="fit-engine.js" defer></script>
+  <script src="fit-ui.js" defer></script>
+  <script src="shared-chart.js" defer></script>
+  <script src="mockup-help.js" defer></script>
+  <script src="range-summary.js" defer></script>
+  <script src="shared-plots.js" defer></script>
+  <script src="mockup.js" defer></script>
+</head>
+<body>
+  <aside class="review-strip" aria-label="Mockup review controls">
+    <span><strong>INTERFACE PROPOSAL</strong> <span class="review-note">Reference-based synthetic data. <a href="../analyzer-signal-examples/README.md">Sources and models</a></span></span>
+    <div class="review-controls">
+      <label>Signal example <select id="example"></select></label>
+      <label>Scope <select id="scope"><option value="full">Complete design</option><option value="m1">M1 foundation</option></select></label>
+      <label>State <select id="demo-state"><option value="ready">Ready</option><option value="loading">Loading</option><option value="empty">No data</option><option value="error">Request error</option><option value="partial">Partial data</option></select></label>
+    </div>
+  </aside>
+  <header class="site-header">
+    <img src="../../src/main/org/epics/archiverappliance/staticcontent/img/archiverheader.svg" alt="Archiver Appliance">
+    <span>Store signals, analyze in place</span>
+  </header>
+  <nav class="site-nav" aria-label="Main menu">
+    <div class="site-links">
+      <button type="button" data-site="Archive PVs">Archive PVs</button>
+      <button type="button" data-site="Browse PVs">Browse PVs</button>
+      <button type="button" data-site="System">System</button>
+      <button type="button" data-site="Help">Help</button>
+      <span class="site-current" aria-current="page">Analyzer</span>
+    </div>
+    <div class="preferences">
+      <label>Profile <select id="profile"><option value="default">Default</option><option value="redgreen">Red-green</option><option value="mono">Monochrome</option></select></label>
+      <label>Time zone <select id="zone"><option value="UTC">UTC</option><option value="America/Los_Angeles">America/Los_Angeles</option><option value="browser">Browser</option></select></label>
+    </div>
+  </nav>
+  <main>
+    <div class="page-title">
+      <div><p class="eyebrow">ARCHIVED SIGNAL ANALYSIS</p><h1>Analyzer</h1></div>
+      <div class="page-actions"><button id="copy-link" type="button">Copy link</button><button id="toggle-panel" type="button" aria-controls="inspector" aria-expanded="true">Hide settings</button></div>
+    </div>
+    <section class="selection" aria-label="Shared analysis selection">
+      <div class="selection-top">
+        <form id="pv-form"><label for="pv-input">Signal in this example</label><div class="inline"><input id="pv-input" list="pv-list" placeholder="Choose a signal" autocomplete="off"><datalist id="pv-list"></datalist><button type="submit" class="primary">Plot</button></div></form>
+        <div class="selected-signals"><span class="field-label">Selected signals <span id="signal-count" class="count"></span></span><div id="chips" class="chips"></div></div>
+      </div>
+      <form id="range-form" class="range-form">
+        <label>From <input id="from" type="datetime-local" step="0.001" required></label>
+        <label>To <input id="to" type="datetime-local" step="0.001" required></label>
+        <div class="range-shortcuts" role="group" aria-label="Example range"><button type="button" id="full-range">Full range</button></div>
+        <button type="submit" class="primary">Show</button>
+        <span class="range-zone" id="range-zone"></span>
+      </form>
+      <p class="inline-message" id="message" role="status" aria-live="polite"></p>
+    </section>
+    <section class="example-context" aria-label="Signal meaning and analysis questions">
+      <div><p class="eyebrow" id="example-title"></p><h2 id="example-question"></h2><p id="example-detail"></p></div>
+      <div id="example-actions" class="example-actions"></div>
+    </section>
+    <div class="analysis-tabs" id="analysis-tabs" role="tablist" aria-label="Analysis"></div>
+    <div class="workspace" id="workspace">
+      <section class="analysis-view" id="analysis-panel" role="tabpanel" tabindex="0">
+        <div class="view-heading"><div><h2 id="view-title"></h2><p id="view-description"></p></div><span class="tag" id="view-kind"></span></div>
+        <div id="view-inputs" class="view-inputs"></div>
+        <div id="data-note" class="data-note"></div>
+        <div id="chart-area" class="chart-area"></div>
+        <div id="legend" class="legend" aria-label="Drawn signals"></div>
+        <section class="results" aria-label="Analysis results"><div class="section-title"><h3 id="results-title">Summary</h3><span id="results-note"></span></div><div id="results-body"></div></section>
+      </section>
+      <aside class="inspector" id="inspector" aria-label="Analysis settings">
+        <div class="inspector-heading"><h2 id="inspector-title">Trend settings</h2><span class="small-label">CURRENT VIEW</span></div>
+        <div class="panel-tabs" id="panel-tabs" role="tablist" aria-label="Settings panels"></div>
+        <div class="panel-content" id="panel-content" role="tabpanel"></div>
+      </aside>
+    </div>
+    <footer class="data-footer"><span id="footer-state"></span><span id="footer-range"></span><span>Design preview / synthetic data</span></footer>
+    <details class="review-guide"><summary>About the data and the M1 boundary</summary><p>This offline mockup uses eight saved synthetic signal families. Values, units, acquisition axes, and frame timestamps come from the linked source JSON files. Signal identifiers name dataset columns; they are not installed facility PV names. No appliance is connected.</p><p>Histograms, correlations, summary statistics, and amplitude spectra are calculated from the selected samples. A spectrum requires complete uniform time samples. Camera profiles use the selected saved image. Controls marked Preview remain proposals. This does not implement or accept any production milestone; M1 foundation exposes only Trend.</p><p><a href="../analyzer-signal-examples/README.md">Physical models and primary references</a> / <a href="../../docs/design-analyzer-ui.md">Interface design</a></p></details>
+  </main>
+  <dialog id="share-dialog"><h2>Mockup address</h2><p>This link contains the demonstration selection and settings. It is not a production analyzer URL.</p><label>Address <textarea id="share-address" rows="5" readonly></textarea></label><form method="dialog"><button class="primary">Close</button></form></dialog>
+</body>
+</html>

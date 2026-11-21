@@ -1,0 +1,355 @@
+{
+  "errors": [],
+  "checks": [
+    {
+      "example": "beam_current",
+      "view": "trend",
+      "rows": 7201,
+      "range": [
+        1767225600000,
+        1767232801000
+      ],
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "beam_current",
+      "recipe": "Full operation",
+      "view": "trend",
+      "rows": 7201,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "beam_current",
+      "recipe": "Missed injections",
+      "view": "trend",
+      "rows": 360,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "beam_current",
+      "recipe": "Partial beam loss",
+      "view": "trend",
+      "rows": 780,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "bpm",
+      "view": "trend",
+      "rows": 8643,
+      "range": [
+        1767225600000,
+        1767398460000
+      ],
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "bpm",
+      "recipe": "Slow drift",
+      "view": "trend",
+      "rows": 8643,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "bpm",
+      "recipe": "Temperature relationship",
+      "view": "correlation",
+      "rows": 2881,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "bpm",
+      "recipe": "Fast vibration",
+      "view": "trend",
+      "rows": 32000,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "bpm",
+      "recipe": "Baseline spectrum",
+      "view": "spectrum",
+      "rows": 820,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "bpm",
+      "recipe": "Disturbed spectrum",
+      "view": "spectrum",
+      "rows": 410,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "magnet_supply",
+      "view": "trend",
+      "rows": 40000,
+      "range": [
+        1767225600000,
+        1767225610001
+      ],
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "magnet_supply",
+      "recipe": "Ramp tracking",
+      "view": "trend",
+      "rows": 40000,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "magnet_supply",
+      "recipe": "Healthy ripple",
+      "view": "spectrum",
+      "rows": 410,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "magnet_supply",
+      "recipe": "Increased ripple",
+      "view": "spectrum",
+      "rows": 410,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "magnet_supply",
+      "recipe": "Before / after",
+      "view": "compare",
+      "rows": 8000,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "rf_cavity",
+      "view": "waveform",
+      "rows": 2001,
+      "range": [
+        1767225600000,
+        1767225603000
+      ],
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "rf_cavity",
+      "recipe": "Normal pulse",
+      "view": "waveform",
+      "rows": 2001,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "rf_cavity",
+      "recipe": "Early RF trip",
+      "view": "waveform",
+      "rows": 4002,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "rf_cavity",
+      "recipe": "Detuned cavity",
+      "view": "waveform",
+      "rows": 4002,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "vacuum",
+      "view": "trend",
+      "rows": 5764,
+      "range": [
+        1767225600000,
+        1767312060000
+      ],
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "vacuum",
+      "recipe": "Pump-down curves",
+      "view": "trend",
+      "rows": 5764,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "vacuum",
+      "recipe": "Pressure burst",
+      "view": "trend",
+      "rows": 400,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "vacuum",
+      "recipe": "Persistent pressure floor",
+      "view": "trend",
+      "rows": 1444,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "temperature",
+      "view": "trend",
+      "rows": 5403,
+      "range": [
+        1767225600000,
+        1767229202000
+      ],
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "temperature",
+      "recipe": "Step response",
+      "view": "trend",
+      "rows": 1500,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "temperature",
+      "recipe": "Missing interval",
+      "view": "trend",
+      "rows": 375,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "temperature",
+      "recipe": "Steady-state spread",
+      "view": "distribution",
+      "rows": 16,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "photon_counts",
+      "view": "trend",
+      "rows": 6000,
+      "range": [
+        1767225600100,
+        1767226200100
+      ],
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "photon_counts",
+      "recipe": "Shutter and attenuation",
+      "view": "trend",
+      "rows": 6000,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "photon_counts",
+      "recipe": "Constant illumination",
+      "view": "distribution",
+      "rows": 21,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "photon_counts",
+      "recipe": "Dark counts",
+      "view": "distribution",
+      "rows": 26,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "photon_counts",
+      "recipe": "Attenuated counts",
+      "view": "distribution",
+      "rows": 32,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "camera",
+      "view": "image",
+      "rows": 6144,
+      "range": [
+        1767225600000,
+        1767225615301
+      ],
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "camera",
+      "recipe": "Initial image",
+      "view": "image",
+      "rows": 6144,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "camera",
+      "recipe": "Saturated image",
+      "view": "image",
+      "rows": 6144,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "camera",
+      "recipe": "Spatial profile",
+      "view": "waveform",
+      "rows": 192,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "example": "camera",
+      "recipe": "Spot motion and width",
+      "view": "trend",
+      "rows": 64,
+      "empty": "",
+      "nanPaths": false
+    },
+    {
+      "tab": "distribution",
+      "rows": 22,
+      "empty": ""
+    },
+    {
+      "tab": "correlation",
+      "rows": 2881,
+      "empty": ""
+    },
+    {
+      "tab": "dependency",
+      "rows": 9,
+      "empty": ""
+    },
+    {
+      "tab": "spectrum",
+      "rows": 2049,
+      "empty": ""
+    },
+    {
+      "tab": "compare",
+      "rows": 2881,
+      "empty": ""
+    },
+    {
+      "tab": "trend",
+      "rows": 8643,
+      "empty": ""
+    }
+  ]
+}

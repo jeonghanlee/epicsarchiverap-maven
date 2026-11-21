@@ -1,0 +1,68 @@
+{
+  "observed_at": "2026-11-05T17:52:14.479030+00:00",
+  "canvas_checks": 46,
+  "canvas_errors": [],
+  "fit_browser_checks": 135,
+  "fit_browser_errors": [],
+  "numerical_fit_cases": 15,
+  "appliance_checks": 69,
+  "appliance_outcome": {
+    "started": "2026-11-05T17:47:50.712Z",
+    "complete": true,
+    "children": [
+      {
+        "name": "ioc",
+        "pid": 3672307,
+        "command": [
+          "/usr/local/bin/procServ",
+          "--foreground",
+          "--noautorestart",
+          "--oneshot",
+          "--info-file",
+          "/data/gitsrc/epicsarchiverap-maven/work/analyzer-m1-verification/run-010/ioc.info",
+          "--logfile",
+          "/data/gitsrc/epicsarchiverap-maven/work/analyzer-m1-verification/run-010/ioc-console.log",
+          "--chdir",
+          "/data/gitsrc/epicsarchiverap-maven/src/resources/test",
+          "-P",
+          "unix:/data/gitsrc/epicsarchiverap-maven/work/analyzer-m1-verification/run-010/ioc.sock",
+          "/home/jeonglee/alsu-epics/1.3.0/debian-13/7.0.10/modules/pvxs-1.5.2/bin/linux-x86_64/softIocPVX",
+          "st.cmd"
+        ]
+      },
+      {
+        "name": "appliance",
+        "pid": 3672308,
+        "command": [
+          "/data/gitsrc/epicsarchiverap-maven/scripts/run-local-appliance.bash",
+          "--war-dir",
+          "/data/gitsrc/epicsarchiverap-maven/work/analyzer-m1-verification/run-010/wars",
+          "--tomcat-home",
+          "/data/gitsrc/epicsarchiverap-maven/work/m14-runtime-support/apache-tomcat-9.0.122",
+          "--stop-timeout",
+          "60",
+          "/data/gitsrc/epicsarchiverap-maven/work/analyzer-m1-verification/run-010/appliance"
+        ]
+      }
+    ],
+    "browser_exit": 0,
+    "exit_status": {
+      "appliance": 143,
+      "ioc": 0
+    },
+    "finished": "2026-11-05T17:50:29.516Z"
+  },
+  "packaged_chart_css": {
+    "aa-20261105-852f1388-mgmt.war": "72c4781f710adfc729e71dfa631a324f1b932faf7445f0fd04751b10dd41eae1",
+    "aa-20261105-852f1388-retrieval.war": "72c4781f710adfc729e71dfa631a324f1b932faf7445f0fd04751b10dd41eae1"
+  },
+  "sources": {
+    "src/main/org/epics/archiverappliance/staticcontent/css/chart.css": "72c4781f710adfc729e71dfa631a324f1b932faf7445f0fd04751b10dd41eae1",
+    "src/main/org/epics/archiverappliance/staticcontent/js/aa/chart/canvas.js": "0460047bda74f9beb90a7828bc0c9924ec4f3f3b7c1eb3e3325173129c207dcc",
+    "src/main/org/epics/archiverappliance/staticcontent/js/aa/chart/draw.js": "857bd467bf8d4cea9c8be078da02abf189b45df876c454a6c676fe5aafd8d9e5",
+    "work/analyzer-mockup/mockup.js": "96f95cf8b7b720daad271cc8587ba8db5d38177df3dc4b2197591a7bbff3357c",
+    "work/analyzer-mockup/shared-plots.js": "6c082624925b9aa67118c944223b037fff272b7c7e14ba655c815f872c9bbdec",
+    "work/analyzer-mockup/canvas-demo.js": "0ccc7ec63f163e3e53651b3231f96b2c10e167a2fb07fb2e656251bb0bba72a2",
+    "work/analyzer-mockup/shared-chart.js": "75ff8c2616c482ccabceec8bd526a9b35ab6f47e733e401db7c2493ee97a3623"
+  }
+}

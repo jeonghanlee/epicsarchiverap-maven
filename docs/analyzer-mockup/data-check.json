@@ -1,0 +1,55 @@
+{
+  "status": "passed",
+  "scope": "Actual browser-generated CSV from the local mockup, compared with saved source JSON and NumPy calculations",
+  "checks": [
+    {
+      "check": "bpm_browser_fft_vs_numpy",
+      "bins": 820,
+      "max_absolute_error": 7.105427357601002e-15
+    },
+    {
+      "check": "magnet_supply_browser_fft_vs_numpy",
+      "bins": 410,
+      "max_absolute_error": 5.204170427930421e-17
+    },
+    {
+      "check": "rf_capture_and_reference_match_saved_waveforms",
+      "rows": 4002
+    },
+    {
+      "check": "camera_pixels_profiles_histogram_match_source_frame",
+      "pixels": 6144,
+      "histogram_sum": 6144
+    },
+    {
+      "check": "temperature_observations_and_gaps_preserved",
+      "rows": 5403,
+      "missing": 30
+    },
+    {
+      "check": "pearson_matrix_vs_numpy_from_saved_samples",
+      "cells": 9
+    },
+    {
+      "check": "correlation_pairs_match_saved_samples",
+      "pairs": 2881
+    },
+    {
+      "check": "comparison_uses_labeled_source_intervals",
+      "rows": 8000
+    }
+  ],
+  "export_sha256": {
+    "export-bpm-spectrum.csv": "a965eb3f7375df838ade96baddcb1199841633ac489aa8ced45cce80de11b81f",
+    "export-camera-histogram.csv": "771d90528fb41be89b367014c44a81c96c21f0403f53b20bca6f37e8f1c9860a",
+    "export-camera-pixels.csv": "3d50182c0646f69a4fedfe146f57d2dbbc481a1e725e1a6a4e3a4ad0b9dc1e7b",
+    "export-camera-profile-x.csv": "de3b39e9b41c4283f5adfae8dba652eb15d9a157535b59ed17bce6a6c5b317a3",
+    "export-camera-profile-y.csv": "b9c1d9613f3a1c92154dbd18c094ec044b1c3b2b77e772f62fe9630b08f549c0",
+    "export-compare.csv": "de1c89c27a6198954a78368320b7bcb5c91804d13672cbfad9377561746c3863",
+    "export-correlation.csv": "5a2d0fa828d45b630d89d65d60ed60e2550c44a5e42f07bba860d2b5cb800618",
+    "export-dependency.csv": "c894a1fe535740aaf2afa8a2dc88292901c02ddabde0bfaf26f392a8322009ff",
+    "export-magnet-spectrum.csv": "5c590491acd91d2d903ee417117f92fe890273a4388e11277b868eb18763ee9d",
+    "export-rf-waveform.csv": "f50cd50866f4558b19f32e31eb5df69426b08ff4b3d51b41d36c31428e3042b4",
+    "export-temperature.csv": "c39cc83bb7afccfcc36788f88cc1d4b2c44acef66ed594be94e62bd594eeac7c"
+  }
+}

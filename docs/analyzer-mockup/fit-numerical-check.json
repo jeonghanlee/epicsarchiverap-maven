@@ -1,0 +1,262 @@
+{
+  "cases": [
+    {
+      "case": "fit-bin-range-gaussian",
+      "rows": 20,
+      "source_observations_match": true,
+      "scipy_objective": 28.455751715047544,
+      "objective_difference": 7.187501661931606e-05,
+      "max_prediction_difference": 0.0003997341228760831,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "unavailable",
+        "max_relative_standard_error_difference": null,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-bin-range-poisson",
+      "rows": 40,
+      "source_observations_match": true,
+      "scipy_objective": 37.331105452427366,
+      "objective_difference": 4.75353090223507e-12,
+      "max_prediction_difference": 2.5535648262575705e-07,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "estimated",
+        "max_relative_standard_error_difference": 1.0760975444057408e-07,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-bpm-all-fixed",
+      "rows": 2881,
+      "source_observations_match": true,
+      "scipy_objective": 156.14540685677133,
+      "objective_difference": 1.1368683772161603e-13,
+      "max_prediction_difference": 0.0,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "fixed",
+        "max_relative_standard_error_difference": null,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-bpm-bounded",
+      "rows": 2881,
+      "source_observations_match": true,
+      "scipy_objective": 366.68650481506563,
+      "objective_difference": 6.252776074688882e-13,
+      "max_prediction_difference": 7.105427357601002e-15,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "unavailable",
+        "max_relative_standard_error_difference": null,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-bpm-gaussian-offset",
+      "rows": 2881,
+      "source_observations_match": true,
+      "scipy_objective": 8329.147686470036,
+      "objective_difference": 9.094947017729282e-12,
+      "max_prediction_difference": 1.8331073347189336e-08,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "estimated",
+        "max_relative_standard_error_difference": 5.906386491005833e-14,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-bpm-linear",
+      "rows": 2881,
+      "source_observations_match": true,
+      "scipy_objective": 156.14540685677133,
+      "objective_difference": 1.1368683772161603e-13,
+      "max_prediction_difference": 1.3144152433142153e-11,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "estimated",
+        "max_relative_standard_error_difference": 2.1760371282653068e-14,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-bpm-near-bound",
+      "rows": 2881,
+      "source_observations_match": true,
+      "scipy_objective": 156.14540685677133,
+      "objective_difference": 1.1368683772161603e-13,
+      "max_prediction_difference": 1.3144152433142153e-11,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "unavailable",
+        "max_relative_standard_error_difference": null,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-bpm-quadratic",
+      "rows": 2881,
+      "source_observations_match": true,
+      "scipy_objective": 156.13807601470842,
+      "objective_difference": 7.958078640513122e-13,
+      "max_prediction_difference": 2.476738099788274e-08,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "estimated",
+        "max_relative_standard_error_difference": 1.1324274851176597e-13,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-bpm-range",
+      "rows": 461,
+      "source_observations_match": true,
+      "scipy_objective": 46.502330272322226,
+      "objective_difference": 0.0,
+      "max_prediction_difference": 7.804582535797522e-10,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "unavailable",
+        "max_relative_standard_error_difference": null,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-custom-count-gaussian",
+      "rows": 37,
+      "source_observations_match": true,
+      "scipy_objective": 41.808502878979695,
+      "objective_difference": 0.00020583797302009543,
+      "max_prediction_difference": 8.644092513065971e-05,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "estimated",
+        "max_relative_standard_error_difference": 4.266993996138169e-06,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-dark-poisson",
+      "rows": 20,
+      "source_observations_match": true,
+      "scipy_objective": 2.513939943588842,
+      "objective_difference": 3.5837999234900053e-13,
+      "max_prediction_difference": 4.833937481407702e-06,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "estimated",
+        "max_relative_standard_error_difference": 3.8758507514558005e-10,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-photon-exact-rate",
+      "rows": 2000,
+      "source_observations_match": true,
+      "scipy_objective": 0.0,
+      "objective_difference": 0.0,
+      "max_prediction_difference": 0.0,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "unavailable",
+        "max_relative_standard_error_difference": null,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-photon-poisson",
+      "rows": 20,
+      "source_observations_match": true,
+      "scipy_objective": 21.794977320426266,
+      "objective_difference": 3.04929415051447e-11,
+      "max_prediction_difference": 3.16626322103275e-05,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "estimated",
+        "max_relative_standard_error_difference": 1.7991164114050662e-11,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-temperature-background",
+      "rows": 20,
+      "source_observations_match": true,
+      "scipy_objective": 7.330142164193546,
+      "objective_difference": 6.695871817008481e-06,
+      "max_prediction_difference": 0.00012010194674871855,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "unavailable",
+        "max_relative_standard_error_difference": null,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-temperature-gaussian-ols",
+      "rows": 20,
+      "source_observations_match": true,
+      "scipy_objective": 422.1970617749012,
+      "objective_difference": 0.003265035047490983,
+      "max_prediction_difference": 7.393277039113855e-05,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "estimated",
+        "max_relative_standard_error_difference": 5.16267802930237e-06,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-temperature-gaussian",
+      "rows": 20,
+      "source_observations_match": true,
+      "scipy_objective": 7.330142164193576,
+      "objective_difference": 6.695871787698593e-06,
+      "max_prediction_difference": 0.00012002821762280291,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "estimated",
+        "max_relative_standard_error_difference": 4.061787237219505e-06,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-temperature-least-squares",
+      "rows": 20,
+      "source_observations_match": true,
+      "scipy_objective": 422.1970617749037,
+      "objective_difference": 0.0032650342324132,
+      "max_prediction_difference": 6.580350307672234e-05,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "unavailable",
+        "max_relative_standard_error_difference": null,
+        "parameter_csv_matches_json": true
+      }
+    },
+    {
+      "case": "fit-temperature-range-fixed",
+      "rows": 7,
+      "source_observations_match": true,
+      "scipy_objective": 5.259692771511828,
+      "objective_difference": 3.34580304599541e-05,
+      "max_prediction_difference": 6.724127368329391e-05,
+      "csv_matches_json": true,
+      "uncertainty": {
+        "status": "estimated",
+        "max_relative_standard_error_difference": 2.892835114565173e-06,
+        "parameter_csv_matches_json": true
+      }
+    }
+  ],
+  "source_hashes": {
+    "fit-engine.js": "04405968a458bb186d433b1296c9c4e8c679c0a202a7bcc0bed88ca079c28e2e",
+    "fit-ui.js": "74e3069943b2b2a20b244782f023b2465086ed4d3550ff18283ea969d68493e4",
+    "mockup.js": "889b093d00c53a23b7d423986f7da970bad74aa6d4252f42178d8fafdb098efb",
+    "signal-data.js": "80e94892937103a6f4a81e1f3e233104a8c035fa33592fdda6ee58977dccf001"
+  }
+}

@@ -103,7 +103,7 @@ The register splits the scenarios over its phases. Scenario 1 needs the Trend ta
 
 The current proposal uses eight analysis tabs: Trend, Distribution, Correlation, Dependency, Spectrum, Compare, Waveform and Image. Common PV selection and time range stay above them. The active view contains its input selectors, plot and result table; a right-hand panel contains Signals, Axes, Options, Data and Export. Its availability depends on the selected signal types and the implemented tools.
 
-[Analyzer interface design](design-analyzer-ui.md) specifies the complete page, each view, shared and local state, unavailable tools, data handling, compact layouts and the M1-M5 boundaries. The [clickable mockup](../work/analyzer-mockup/index.html) demonstrates the full composition and a separate M1 foundation mode using explicitly synthetic examples.
+[Analyzer interface design](design-analyzer-ui.md) specifies the complete page, each view, shared and local state, unavailable tools, data handling, compact layouts and the M1-M5 boundaries. The [clickable mockup](analyzer-mockup/index.html) demonstrates the full composition and a separate M1 foundation mode using explicitly synthetic examples.
 
 Decision 2026-11-04 (D9): place one shared time-range control group with the common PV and time selection above the analysis tabs. Every chart uses that common range; do not repeat the time controls for each chart. Axes contains the unit-specific Y-range settings. Existing console chart placement remains unchanged.
 

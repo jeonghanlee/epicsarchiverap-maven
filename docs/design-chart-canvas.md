@@ -61,7 +61,7 @@ The returned object contains `svg`, `marks`, `x`, `scales`, `units`, `width`, `h
 
 ## Offline consumers
 
-`work/analyzer-mockup/build-chart.cjs` compiles the actual production modules with webpack for direct `file://` use and records SHA-256 hashes in `shared-chart-sources.json`. Rebuild after changing a chart module. `shared-plots.js` adapts the canvas to the mockup; `canvas-demo.html` and `canvas-demo.js` demonstrate two independent instances, a time axis and a numeric axis, with saved synthetic temperature observations and no Analyzer page state; `verify-canvas.cjs` exercises them in a browser and checks the bundle against the source hashes.
+`docs/analyzer-mockup/build-chart.cjs` compiles the actual production modules with webpack for direct `file://` use and records SHA-256 hashes in `shared-chart-sources.json`. Rebuild after changing a chart module. `shared-plots.js` adapts the canvas to the mockup; `canvas-demo.html` and `canvas-demo.js` demonstrate two independent instances, a time axis and a numeric axis, with saved synthetic temperature observations and no Analyzer page state; `verify-canvas.cjs` exercises them in a browser and checks the bundle against the source hashes.
 
 The mockup stores displayed domains separately from the selected data interval. Zoom, pan and reset affect only the display; bins, fit input, covariance and exported observations remain unchanged. The copied URL preserves display ranges, while changing the data selection clears them. Fit parameters and fitted results remain local to the open page.
 

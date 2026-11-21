@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "scope": "Same generator and models, new output directory and independent process",
+  "matching_data_files": 28,
+  "local_links_checked": 48,
+  "source_sha256": {
+    "generate.py": "46774aac51ac71682ee0ec11d95f31eb1d7a39c0b9322fc0b5570cba2e3b52e2",
+    "models.json": "77a0847ffa93d05c7c93e66f79a9b71814625fec041eb6f97c4692d470d2f185"
+  },
+  "retained_replay_directory": "/tmp/analyzer-signal-replay-rtvmicom"
+}
