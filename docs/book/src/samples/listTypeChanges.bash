@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Lists the PVs that the engines report as dropping events because of a type change, with the
-# type each PV started with and the type Channel Access now reports. One GET
-# /getPVsByDroppedEventsTypeChange selects the PVs (paused PVs are excluded by the engines);
-# one GET /getPVDetails per PV reads "Archiver DBR type (initial)" and "Archiver DBR type (from CA)",
-# which the management service merges from the engine's details.
+# Lists the PVs that drop events because of a type change, with the type each PV started with and
+# the type the control system now reports. One GET /getPVsByDroppedEventsTypeChange selects the
+# PVs: the PVs the engines report as dropping events, and the PVs the engine paused because their
+# type changed, whose rows carry oldType and newType. A row with both types is printed from the
+# row; for the others one GET /getPVDetails per PV reads "Archiver DBR type (initial)" and
+# "Archiver DBR type (from CA)", which the management service merges from the engine's details.
 #
 # A PV whose details cannot be read or lack either field is reported on stderr and the run
 # continues; the run then exits 1. The management report drops an engine that does not answer,
@@ -48,8 +49,8 @@ usage() {
 }
 
 main() {
-    local timeout="$ARC_DEFAULT_TIMEOUT" bpl pv previous current status="$ARC_EXIT_OK"
-    local -a positional=() pvs=()
+    local timeout="$ARC_DEFAULT_TIMEOUT" bpl row pv previous current status="$ARC_EXIT_OK"
+    local -a positional=() rows=()
     while (( $# > 0 )); do
         case "$1" in
             --timeout)
@@ -91,9 +92,15 @@ main() {
     arc_json_check "$ARC_TMP/report.json" \
         'type == "array" and all(.[]; type == "object" and (.pvName | type == "string" and length > 0))' \
         'a type-change report array of objects with pvName' || exit "$ARC_EXIT_FAILED"
-    mapfile -t pvs < <(jq -r '.[].pvName' "$ARC_TMP/report.json")
+    # One line per row: the name, then the two types when the row carries them, else two empty fields.
+    mapfile -t rows < <(jq -r '.[] | [.pvName, (.oldType // ""), (.newType // "")] | @tsv' "$ARC_TMP/report.json")
 
-    for pv in "${pvs[@]}"; do
+    for row in "${rows[@]}"; do
+        IFS=$'\t' read -r pv previous current <<< "$row"
+        if [[ -n "$previous" && -n "$current" ]]; then
+            printf 'PV: %s Previous %s Current %s\n' "$(pad "$pv" 40)" "$(pad "$previous" 20)" "$(pad "$current" 20)"
+            continue
+        fi
         if ! arc_get "$timeout" "$ARC_TMP/details.json" "$bpl" getPVDetails "pv=$pv"; then
             arc_error "cannot read the details of $pv"
             status="$ARC_EXIT_FAILED"

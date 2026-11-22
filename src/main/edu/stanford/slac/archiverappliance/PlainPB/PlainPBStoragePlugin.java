@@ -865,7 +865,7 @@ public class PlainPBStoragePlugin implements StoragePlugin, ETLSource, ETLDest, 
                 ETLInfo etlInfo = new ETLInfo(
                         pvName,
                         fileinfo.getType(),
-                        path.toAbsolutePath().toString(),
+                        deletionKey(path),
                         partitionGranularity,
                         new FileStreamCreator(pvName, path, fileinfo),
                         fileinfo.getFirstEvent(),

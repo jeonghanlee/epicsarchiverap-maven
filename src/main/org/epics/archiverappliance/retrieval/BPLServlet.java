@@ -14,6 +14,7 @@ import org.epics.archiverappliance.common.GetVersion;
 import org.epics.archiverappliance.common.SetLogLevel;
 import org.epics.archiverappliance.common.ProcessMetricsReport;
 import org.epics.archiverappliance.config.ConfigService;
+import org.epics.archiverappliance.mgmt.bpl.GetApplianceInfo;
 import org.epics.archiverappliance.retrieval.bpl.AreWeArchivingPV;
 import org.epics.archiverappliance.retrieval.bpl.FilterArchivedPVs;
 import org.epics.archiverappliance.retrieval.bpl.GetClientConfiguration;
@@ -48,6 +49,7 @@ public class BPLServlet extends HttpServlet {
             new HashMap<String, Class<? extends BPLAction>>();
 
     static {
+        getActions.put("/getApplianceInfo", GetApplianceInfo.class);
         getActions.put("/getApplianceMetrics", ApplianceMetrics.class);
         getActions.put("/getApplianceMetricsForAppliance", ApplianceMetricsDetails.class);
         getActions.put("/getInstanceMetricsForAppliance", InstanceReportDetails.class);

@@ -1,0 +1,272 @@
+# Soft IOC database for the checks of the Analyzer tools: records whose history is generated.
+# The live value of each record is a constant, so that the appliance can archive the name and read its unit, precision and limits;
+# the history that the checks use is written into the store of the appliance by AnalyzerFixtureData of src/test (a normal sample,
+# a sine of a known period, a pattern over days, and the signals of known relationship of the tools of two and several signals)
+# and is not what these records produce.
+#   SR:GEN:NORMAL   V   normal sample of mean 10 and standard deviation 2; limits at 2 and 3 standard deviations
+#   SR:GEN:SINE     V   1.5 times the sine of a period of 600 s; limits at 1.0 and 1.4
+#   SR:GEN:PATTERN  kW  20 plus a daily cosine that peaks at 14:00 UTC, minus 4 on Saturday and Sunday, with noise of 0.2
+#   SR:GEN:BASIS:01 to :16  mm  sixteen independent sines of distinct periods with noise, the basis of the dependency checks
+#   SR:GEN:TARGET   mm  2 times basis 1 minus 1.5 times basis 2 plus 0.5 times basis 3, plus 5, with noise of 0.3
+#   SR:GEN:CORR:A, SR:GEN:CORR:B  V  a pair of normal signals of correlation 0.8
+#   SR:GEN:SLOW     V   10 plus 2 times the sine of a period of 3600 s, one value a minute, for the pairing of different rates
+#   SR:GEN:WAVE     V   2048-element waveform of doubles: a sine of known frequency, three Gaussian peaks and a slow background
+#   SR:GEN:WAVE:X   mm  the axis of that waveform (element n holds 0.5 n mm in the first half of the hour and 100 + 0.25 n mm
+#                       in the second), a companion PV of the axis role
+#   SR:GEN:WAVE:FS  Hz  the sampling frequency within the waveform, a companion PV of the frequency role
+#   SR:GEN:IMAGE    count  640 by 480 pixels of unsigned 16-bit values (307200 elements): a Gaussian blob of known centre and width
+#   SR:GEN:IMAGE:W, SR:GEN:IMAGE:H  the width and the height of that image, companion PVs of the size roles
+#   SR:GEN:FRAME    count  1920 by 1200 unsigned 16-bit pixels (2304000 elements), for the measurement of the size of a camera frame
+# Load it beside ConsoleChartPVs.db (its st.cmd loads that file); the checks of the Analyzer start one IOC with both.
+
+record(calc, "SR:GEN:NORMAL") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(LOPR, "0")
+    field(HOPR, "20")
+    field(LOLO, "4")
+    field(LLSV, "MAJOR")
+    field(LOW, "6")
+    field(LSV, "MINOR")
+    field(HIGH, "14")
+    field(HSV, "MINOR")
+    field(HIHI, "16")
+    field(HHSV, "MAJOR")
+    field(DESC, "normal sample, mean 10, sd 2")
+}
+record(calc, "SR:GEN:SINE") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(LOPR, "-2")
+    field(HOPR, "2")
+    field(LOW, "-1")
+    field(LSV, "MINOR")
+    field(HIGH, "1")
+    field(HSV, "MINOR")
+    field(DESC, "sine, period 600 s, amplitude 1.5")
+}
+record(calc, "SR:GEN:PATTERN") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "kW")
+    field(PREC, "3")
+    field(LOPR, "10")
+    field(HOPR, "30")
+    field(DESC, "daily and weekly pattern")
+}
+record(calc, "SR:GEN:BASIS:01") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 1, period 1200 s")
+}
+record(calc, "SR:GEN:BASIS:02") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 2, period 1500 s")
+}
+record(calc, "SR:GEN:BASIS:03") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 3, period 1800 s")
+}
+record(calc, "SR:GEN:BASIS:04") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 4, period 2100 s")
+}
+record(calc, "SR:GEN:BASIS:05") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 5, period 2400 s")
+}
+record(calc, "SR:GEN:BASIS:06") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 6, period 2700 s")
+}
+record(calc, "SR:GEN:BASIS:07") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 7, period 3000 s")
+}
+record(calc, "SR:GEN:BASIS:08") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 8, period 3300 s")
+}
+record(calc, "SR:GEN:BASIS:09") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 9, period 3600 s")
+}
+record(calc, "SR:GEN:BASIS:10") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 10, period 3900 s")
+}
+record(calc, "SR:GEN:BASIS:11") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 11, period 4200 s")
+}
+record(calc, "SR:GEN:BASIS:12") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 12, period 4500 s")
+}
+record(calc, "SR:GEN:BASIS:13") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 13, period 4800 s")
+}
+record(calc, "SR:GEN:BASIS:14") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 14, period 5100 s")
+}
+record(calc, "SR:GEN:BASIS:15") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 15, period 5400 s")
+}
+record(calc, "SR:GEN:BASIS:16") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "basis 16, period 5700 s")
+}
+record(calc, "SR:GEN:TARGET") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "2 b1 - 1.5 b2 + 0.5 b3 + 5, noise 0.3")
+}
+record(calc, "SR:GEN:CORR:A") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(DESC, "normal, mean 5, sd 1")
+}
+record(calc, "SR:GEN:CORR:B") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(DESC, "3 + 0.8 (A - 5) + noise 0.6")
+}
+record(calc, "SR:GEN:SLOW") {
+    field(SCAN, "10 second")
+    field(CALC, "0")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(DESC, "10 + 2 sin, period 3600 s, every minute")
+}
+record(waveform, "SR:GEN:WAVE") {
+    field(FTVL, "DOUBLE")
+    field(NELM, "2048")
+    field(EGU, "V")
+    field(PREC, "3")
+    field(DESC, "sine, three peaks and a background")
+}
+record(waveform, "SR:GEN:WAVE:X") {
+    field(FTVL, "DOUBLE")
+    field(NELM, "2048")
+    field(EGU, "mm")
+    field(PREC, "3")
+    field(DESC, "axis of SR:GEN:WAVE")
+}
+record(ao, "SR:GEN:WAVE:FS") {
+    field(VAL, "2048")
+    field(EGU, "Hz")
+    field(PREC, "1")
+    field(DESC, "sampling frequency within SR:GEN:WAVE")
+}
+record(waveform, "SR:GEN:IMAGE") {
+    field(FTVL, "USHORT")
+    field(NELM, "307200")
+    field(EGU, "count")
+    field(DESC, "640 by 480 image with a Gaussian blob")
+}
+record(ao, "SR:GEN:IMAGE:W") {
+    field(VAL, "640")
+    field(PREC, "0")
+    field(DESC, "width of SR:GEN:IMAGE")
+}
+record(ao, "SR:GEN:IMAGE:H") {
+    field(VAL, "480")
+    field(PREC, "0")
+    field(DESC, "height of SR:GEN:IMAGE")
+}
+record(waveform, "SR:GEN:IMG:LASER") {
+    field(FTVL, "USHORT")
+    field(NELM, "1405025")
+    field(EGU, "count")
+    field(DESC, "1307 by 1075 laser beam profile")
+}
+record(waveform, "SR:GEN:IMG:ALS") {
+    field(FTVL, "USHORT")
+    field(NELM, "288369")
+    field(EGU, "count")
+    field(DESC, "537 by 537 ALS electron beam profile")
+}
+record(waveform, "SR:GEN:IMG:AIRY") {
+    field(FTVL, "USHORT")
+    field(NELM, "4915200")
+    field(EGU, "count")
+    field(DESC, "2560 by 1920 diffraction pattern")
+}
+record(waveform, "SR:GEN:IMG:SCREEN") {
+    field(FTVL, "USHORT")
+    field(NELM, "805486")
+    field(EGU, "count")
+    field(DESC, "1034 by 779 synthetic YAG:Ce screen")
+}
+record(waveform, "SR:GEN:IMG:BOUND") {
+    field(FTVL, "USHORT")
+    field(NELM, "5529600")
+    field(EGU, "count")
+    field(DESC, "2560 by 2160 frame at the read bound")
+}
+record(waveform, "SR:GEN:FRAME") {
+    field(FTVL, "USHORT")
+    field(NELM, "2304000")
+    field(EGU, "count")
+    field(DESC, "1920 by 1200 camera frame for the size measurement")
+}

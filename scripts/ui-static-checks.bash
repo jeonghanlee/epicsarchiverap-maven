@@ -3,7 +3,8 @@
 # A management page keeps the marker blocks the site overlay replaces, every full page carries a content
 # security policy, no page has an inline script, an event-handler or style attribute, no interface file refers
 # to jQuery or to an outside host, every element id a script reads exists in its page, the vendored chart
-# library is the file its record names, and the text colors of the shared stylesheet keep their contrast.
+# library is the file its record names, the text colors of the shared stylesheet keep their contrast, and the
+# declaration, the module defaults and the book name the same options of every analysis tool.
 # The last section copies the tree, breaks one thing per copy and requires the checks to refuse each copy.
 #
 # Usage: bash scripts/ui-static-checks.bash
@@ -121,7 +122,7 @@ while IFS= read -r page; do
     esac
 
     case "${name}" in
-        mgmt/staticcontent/*)
+        mgmt/staticcontent/*|retrieval/staticcontent/viewer/archViewer.html)
             for block in site_header site_logo site_navbar site_footer; do
                 begins=$(grep -c -F "@begin(${block})" "${page}" || true)
                 ends=$(grep -c -F "@end(${block})" "${page}" || true)
@@ -232,6 +233,11 @@ d3_recorded=$(grep -o -E '[0-9a-f]{64}' "${UI}/staticcontent/js/vendor/d3.SOURCE
 d3_actual=$(sha256sum "${UI}/staticcontent/js/vendor/d3.min.js" | cut -d' ' -f1)
 assert_eq "${d3_actual}" "${d3_recorded}" "d3.min.js matches the SHA-256 recorded in d3.SOURCE.txt"
 
+# ---- the vendored search library is the file its record names ----------------------------------------
+ufuzzy_recorded=$(grep -o -E '[0-9a-f]{64}' "${UI}/staticcontent/js/vendor/ufuzzy.SOURCE.txt" | head -1 || true)
+ufuzzy_actual=$(sha256sum "${UI}/staticcontent/js/vendor/uFuzzy.iife.min.js" | cut -d' ' -f1)
+assert_eq "${ufuzzy_actual}" "${ufuzzy_recorded}" "uFuzzy.iife.min.js matches the SHA-256 recorded in ufuzzy.SOURCE.txt"
+
 # ---- scripts, styles and images named by a page exist ----------------------------------------------
 # comm/ is the shared folder staticcontent/, which the build serves as ui/comm of every web application.
 while IFS= read -r page; do
@@ -245,6 +251,7 @@ while IFS= read -r page; do
         case "${reference}" in
             comm/*) shared="staticcontent/${reference#comm/}" ;;
             ../comm/*) shared="staticcontent/${reference#../comm/}" ;;
+            ../js/menu.js) shared="mgmt/staticcontent/js/menu.js" ;;
         esac
         if [[ -f "${UI}/${resolved}" || -f "${UI}/${shared}" ]]; then
             _record_pass "${name} finds ${reference}"
@@ -426,6 +433,81 @@ PY
 )
 assert_eq "${cards}" "" "Every information card keeps the form: In short first, at most six rows, the fixed rows in order, no typed threshold (wrong: ${cards})"
 
+# ---- the three places that name the options of the analysis tools agree ----------------------------
+# The declaration docs/analyzer-address.openapi.json, the defaults written in the modules of the viewer and the
+# Analysis tools row of the address table of the book name the same fields for every tool; for the Waveform and Image
+# tabs each default and each enumerated value of the declaration also equals the one of the module.
+consistency=$(python3 -I - "${ROOT}" <<'PY'
+import json, os, re, sys
+root = sys.argv[1]
+declaration = json.load(open(os.path.join(root, "docs/analyzer-address.openapi.json"), encoding="utf-8"))["components"]["parameters"]
+ui = os.path.join(root, "src/main/org/epics/archiverappliance")
+viewer = os.path.join(ui, "retrieval/staticcontent/viewer")
+shared = os.path.join(ui, "staticcontent/js/aa")
+book = open(os.path.join(root, "docs/book/src/retrieval.md"), encoding="utf-8").read()
+row = next(line for line in book.split("\n") if line.startswith("| Analysis tools"))
+FILES = {"distribution": "distribution.js", "trend": "trend-tools.js", "compare": "compare.js", "spectrum": "spectrum.js",
+         "correlation": "correlation.js", "dependency": "dependency.js", "waveform": "waveform.js", "image": "image.js"}
+DEFAULTS = {"distribution": "DISTRIBUTION_DEFAULTS", "trend": "TREND_TOOL_DEFAULTS", "compare": "COMPARE_DEFAULTS", "spectrum": "SPECTRUM_DEFAULTS",
+            "correlation": "CORRELATION_DEFAULTS", "dependency": "DEPENDENCY_DEFAULTS", "waveform": "WAVEFORM_DEFAULTS", "image": "IMAGE_DEFAULTS"}
+CHOICES = {
+    "waveform": {"view": ("waveform.js", "WAVEFORM_VIEWS"), "axis": ("waveform.js", "AXIS_CHOICES"), "fsSource": ("waveform.js", "FS_SOURCES"),
+                 "window": ("waveform.js", "SPECTRUM_WINDOWS"), "scale": ("waveform.js", "SPECTRUM_SCALES"), "peakView": ("waveform.js", "PEAK_VIEWS"),
+                 "value": ("SHARED/arrays.js", "SUMMARY_VALUES"), "backgroundDirection": ("SHARED/array.js", "DIRECTIONS")},
+    "image": {"view": ("image.js", "IMAGE_VIEWS"), "sizeSource": ("image.js", "SIZE_SOURCES"), "background": ("image.js", "BACKGROUNDS"),
+              "seriesValue": ("image.js", "SERIES_VALUES")},
+}
+faults = []
+
+def read(name):
+    folder, _, file = name.rpartition("/")
+    return open(os.path.join(shared if folder else viewer, file or name), encoding="utf-8").read()
+
+def module_defaults(tool):
+    text = read(FILES[tool])
+    body = re.search(r"export const " + DEFAULTS[tool] + r"\s*=\s*Object\.freeze\(\{(.*?)\}\);", text, re.S).group(1)
+    return {key.strip(): value.strip() for key, value in (pair.split(":", 1) for pair in re.split(r",\s*(?=[A-Za-z0-9]+:)", body))}
+
+def literal(text):
+    if text == "null":
+        return None
+    if text in ("true", "false"):
+        return text == "true"
+    return text.strip('"')
+
+for tool in FILES:
+    declared = set(declaration[tool]["schema"]["properties"])
+    booked = set(re.findall(r"`" + tool + r"\[([A-Za-z0-9]+)\]`", row))
+    modular = set(module_defaults(tool))
+    if tool == "compare":
+        modular = (modular - {"edited"}) | {"from", "to"}
+    for name, fields in (("the book row", booked), ("the module defaults", modular)):
+        if declared != fields:
+            missing = sorted(declared - fields)
+            extra = sorted(fields - declared)
+            faults.append(f"{tool}: the declaration and {name} name different fields (declared only: {missing}; there only: {extra})")
+
+for tool, choices in CHOICES.items():
+    defaults = module_defaults(tool)
+    properties = declaration[tool]["schema"]["properties"]
+    for key, spec in properties.items():
+        want = literal(defaults[key])
+        has = "default" in spec
+        if has and str(spec["default"]).lower() != str(want).lower():
+            faults.append(f"{tool}[{key}]: the default of the declaration ({spec['default']}) differs from the module ({want})")
+        if not has and want not in (None, ""):
+            faults.append(f"{tool}[{key}]: the module defaults to {want} and the declaration gives no default")
+    for key, (file, name) in choices.items():
+        text = read(file)
+        listed = re.search(r"export const " + name + r"\s*=\s*(\[.*?\]);", text, re.S).group(1)
+        values = re.findall(r'\["([^"]+)"', listed) if name != "DIRECTIONS" else re.findall(r'"([^"]+)"', listed)
+        if values != properties[key].get("enum"):
+            faults.append(f"{tool}[{key}]: the enumerated values of the declaration differ from the module ({properties[key].get('enum')} and {values})")
+print("; ".join(faults))
+PY
+)
+assert_eq "${consistency}" "" "The declaration, the module defaults and the book name the same options (wrong: ${consistency})"
+
 # ---- the checks reject a copy with one defect each -------------------------------------------------
 # A check that cannot fail protects nothing: each copy below holds one defect and must be refused,
 # and for the reason named, not for another one.
@@ -437,6 +519,9 @@ function expect_rejected {
     cp -a "${UI}/retrieval/staticcontent" "${tree}/src/main/org/epics/archiverappliance/retrieval/staticcontent"
     cp -a "${UI}/staticcontent" "${tree}/src/main/org/epics/archiverappliance/staticcontent"
     cp -a "${SITES}/." "${tree}/src/sitespecific/"
+    mkdir -p "${tree}/docs/book/src"
+    cp -a "${ROOT}/docs/analyzer-address.openapi.json" "${tree}/docs/"
+    cp -a "${ROOT}/docs/book/src/retrieval.md" "${tree}/docs/book/src/"
     F="${tree}/src/${relative}" bash -c "${snippet}"
     output=$(UI_STATIC_TREE_UNDER_TEST="${tree}" bash "${BASH_SOURCE[0]}" 2>&1) || status=$?
     if [[ "${status}" -eq 0 ]]; then
@@ -452,6 +537,8 @@ A="main/org/epics/archiverappliance"
 if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
     expect_rejected "a page without its navigation block" "marker block site_navbar" \
         "${A}/mgmt/staticcontent/system.html" "sed -i '/@begin(site_navbar)/d' \"\$F\""
+    expect_rejected "an analyzer without its header block" "marker block site_header" \
+        "${A}/retrieval/staticcontent/viewer/archViewer.html" "sed -i '/@begin(site_header)/d' \"\$F\""
     expect_rejected "a main menu without its navigation name" "names its main menu navigation" \
         "${A}/mgmt/staticcontent/system.html" "sed -i 's| aria-label=\"Main menu\"||' \"\$F\""
     expect_rejected "a dialog without its name" "names every dialog by a heading" \
@@ -486,6 +573,8 @@ if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
         "${A}/retrieval/staticcontent/viewer/viewer.js" "sed -i 's|meanSample_|mean_|' \"\$F\""
     expect_rejected "a vendored chart library that differs from its record" "matches the SHA-256 recorded" \
         "${A}/staticcontent/js/vendor/d3.min.js" "printf '\\n' >> \"\$F\""
+    expect_rejected "a vendored search library that differs from its record" "uFuzzy.iife.min.js matches the SHA-256 recorded" \
+        "${A}/staticcontent/js/vendor/uFuzzy.iife.min.js" "printf '\\n' >> \"\$F\""
     expect_rejected "a faint text color below the contrast limit" "contrast of at least 4.5:1" \
         "${A}/staticcontent/css/main.css" "sed -i 's|--ink-3: var(--c-muted);|--ink-3: #9aa9ae;|' \"\$F\""
     expect_rejected "an information card whose first row is not In short" "the first row is not In short" \
@@ -494,6 +583,12 @@ if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
         "${A}/mgmt/staticcontent/js/operations.js" "sed -i '0,/\\[\"What to do\", /s//[\"Also\", \"x.\"], [\"What to do\", /' \"\$F\""
     expect_rejected "an information card that types a threshold" "a typed number" \
         "${A}/mgmt/staticcontent/js/system.js" "sed -i 's|\${THRESHOLDS.daysLeftProblem} days|7 days|' \"\$F\""
+    expect_rejected "a book row without a Waveform field" "waveform: the declaration and the book row name different fields" \
+        "../docs/book/src/retrieval.md" "sed -i 's|\`waveform\[sigma\]\`, ||' \"\$F\""
+    expect_rejected "a declaration whose Image views are reordered" "image[view]: the enumerated values of the declaration differ" \
+        "../docs/analyzer-address.openapi.json" "sed -i 's|\"enum\": \\[\"frame\", \"difference\", \"series\"\\]|\"enum\": [\"difference\", \"frame\", \"series\"]|' \"\$F\""
+    expect_rejected "a Waveform default that differs from the declaration" "waveform[sigma]: the default of the declaration" \
+        "${A}/retrieval/staticcontent/viewer/waveform.js" "sed -i 's|sigma: \"2\", threshold|sigma: \"3\", threshold|' \"\$F\""
     expect_rejected "an information card that names a properties setting" "a setting of a properties file" \
         "${A}/mgmt/staticcontent/js/retrieval.js" "sed -i 's|Nothing on the server changes|See archappl.properties|' \"\$F\""
 fi

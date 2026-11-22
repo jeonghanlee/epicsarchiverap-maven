@@ -46,6 +46,7 @@ function placeCard(button, card) {
 
 function showCard(button, title, text, action, helpHref) {
     closeCard();
+    const help = typeof helpHref === "function" ? helpHref() : helpHref;
     const rows = Array.isArray(text);
     const body = rows
         ? node("dl", { class: "rows" }, ...text.flatMap(([term, detail]) => [node("dt", null, term), node("dd", null, detail)]))
@@ -54,7 +55,8 @@ function showCard(button, title, text, action, helpHref) {
         node("h4", null, title),
         body,
         action ? node("p", { class: "act" }, action) : null,
-        node("div", { class: "foot" }, node("a", { href: helpHref }, "More in Help"), node("button", { type: "button", class: "plain close" }, "Close")),
+        node("div", { class: "foot" }, help ? node("a", { href: help }, "More in Help") : null,
+            node("button", { type: "button", class: "plain close" }, "Close")),
     );
     card.querySelector(".close").addEventListener("click", () => {
         const owner = openCard && openCard.button;
@@ -130,6 +132,7 @@ function infoGlyph() {
  * rows of a term and its text), what to do about it and a link into the help page. The card stays open across a
  * refresh of the page that rebuilds its button. With small set, the control is the quiet one of a table row, and its
  * card is the narrow one of a single sentence.
+ * helpHref is an address or a function resolving it when the card opens; no address leaves out the Help link.
  */
 export function infoButton(title, text, action, helpHref, small) {
     const button = node("button", { type: "button", class: small ? "info small" : "info", "aria-expanded": "false", "aria-label": `About ${title}` }, infoGlyph());

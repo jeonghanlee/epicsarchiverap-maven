@@ -16,6 +16,7 @@ import org.epics.archiverappliance.EventStreamDesc;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.PVNames;
 import org.epics.archiverappliance.config.PVTypeInfo;
+import org.epics.archiverappliance.utils.ui.MetaFields;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -87,6 +88,7 @@ public class RemotableEventStreamDesc extends EventStreamDesc {
 
         if (engineMetadata != null) {
             this.headers.putAll(engineMetadata);
+            MetaFields.trimEnumLabels(this.headers);
         }
     }
 

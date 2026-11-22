@@ -20,6 +20,8 @@ import javax.management.remote.JMXServiceURL;
 
 import org.epics.archiverappliance.TomcatSetup;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -125,6 +127,31 @@ public class MgmtPageLinksTest {
     private static HttpResponse<String> get(HttpClient client, String relativePath) throws Exception {
         URI uri = URI.create(ConfigServiceForTests.MGMT_UI_URL + "/" + relativePath);
         return client.send(HttpRequest.newBuilder(uri).timeout(REQUEST_TIMEOUT).GET().build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    /** Exercises the retrieval WAR and its own appliance-info action; browser navigation is checked separately. */
+    @Test
+    public void analyzerAndItsOwnApplianceInfoResolve() throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        URI page = URI.create(ConfigServiceForTests.DATA_RETRIEVAL_URL + "/ui/viewer/archViewer.html");
+        Set<URI> dependencies = staticDependencies(client, page);
+        Assertions.assertTrue(dependencies.contains(page.resolve("../js/menu.js").normalize()));
+        Assertions.assertTrue(dependencies.contains(page.resolve("../comm/js/aa/chart/state.js").normalize()));
+        URI action = page.resolve("../../bpl/getApplianceInfo").normalize();
+        Assertions.assertEquals(page.getAuthority(), action.getAuthority());
+        HttpResponse<String> response = client.send(
+                HttpRequest.newBuilder(action).timeout(REQUEST_TIMEOUT).GET().build(), HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(200, response.statusCode(), "The analyzer uses its own retrieval BPL endpoint");
+        JSONObject info = (JSONObject) JSONValue.parse(response.body());
+        Assertions.assertNotNull(info);
+        Assertions.assertEquals(ConfigServiceForTests.MGMT_URL, info.get("mgmtURL"));
+        URI console = URI.create(info.get("mgmtURL") + "/").resolve("../ui/");
+        for (String target : List.of("archive.html", "index.html", "system.html", "help.html", "analyzer.html")) {
+            HttpResponse<Void> destination = client.send(
+                    HttpRequest.newBuilder(console.resolve(target)).timeout(REQUEST_TIMEOUT).GET().build(),
+                    HttpResponse.BodyHandlers.discarding());
+            Assertions.assertEquals(200, destination.statusCode(), "Analyzer console target: " + target);
+        }
     }
 
     /**

@@ -239,7 +239,8 @@ public abstract class SummaryStatsPostProcessor
                             inheritValuesFromPreviousBins,
                             zeroOutEmptyBins(),
                             vectorType,
-                            elementCount);
+                            elementCount,
+                            end);
                 }
             }
         };
@@ -328,7 +329,8 @@ public abstract class SummaryStatsPostProcessor
                     inheritValuesFromPreviousBins,
                     zeroOutEmptyBins(),
                     isProvidingVectorData(),
-                    getElementCount());
+                    getElementCount(),
+                    this.end);
         }
     }
     /* (non-Javadoc)

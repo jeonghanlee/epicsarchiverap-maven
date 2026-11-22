@@ -1,0 +1,78 @@
+{
+  "synthetic": true,
+  "seed": 20261104,
+  "time_origin_utc": "2026-01-01T00:00:00Z",
+  "parameter_policy": "All numeric model parameters are illustrative choices, not measured facility settings. Sources establish signal types and phenomena, not these parameter values.",
+  "beam_current": {
+    "source_ids": [1],
+    "duration_s": 7200, "sample_interval_s": 1,
+    "target_mA": 400, "lifetime_s": 28800,
+    "injection_period_s": 60, "missed_injection_s": [1800, 1860, 1920],
+    "partial_loss_s": 4200, "loss_fraction": 0.08, "recovery_limit_mA_per_injection": 4,
+    "noise_rms_mA": 0.02
+  },
+  "bpm": {
+    "source_ids": [2, 3],
+    "slow_duration_s": 172800, "slow_interval_s": 60,
+    "temperature_baseline_degC": 23, "temperature_amplitude_degC": 0.4,
+    "temperature_period_s": 86400, "response_delay_s": 1800,
+    "sensitivity_um_per_degC": [6, -3], "slow_noise_rms_um": 0.08,
+    "fast_sample_rate_Hz": 2000, "fast_duration_s": 8,
+    "frequencies_Hz": [12, 60, 120], "amplitudes_um": [0.2, 0.8, 0.15],
+    "fast_noise_rms_um": 0.04, "disturbance_start_s": 4, "disturbance_end_s": 6,
+    "disturbance_multiplier": 3
+  },
+  "magnet_supply": {
+    "source_ids": [4],
+    "sample_rate_Hz": 2000, "duration_s": 10,
+    "initial_A": 100, "final_A": 110, "ramp_start_s": 2, "ramp_end_s": 4,
+    "response_time_s": 0.08, "noise_rms_A": 0.001,
+    "ripple_frequencies_Hz": [10, 60, 120], "ripple_amplitudes_A": [0.008, 0.012, 0.004],
+    "degraded_start_s": 7, "degraded_multiplier": 3
+  },
+  "rf_cavity": {
+    "source_ids": [5],
+    "sample_interval_us": 2, "duration_us": 4000,
+    "target_MV": 15, "time_constant_us": 350,
+    "fill_end_us": 800, "pulse_end_us": 2200, "trip_us": 1500,
+    "detuning_Hz": 200, "iq_noise_rms_MV": 0.008,
+    "model": "Single complex first-order cavity envelope; no beam loading, feedback, or RF carrier simulation."
+  },
+  "vacuum": {
+    "source_ids": [6],
+    "duration_s": 86400, "sample_interval_s": 60,
+    "initial_pressure_mbar": 0.00002, "time_offset_s": 60,
+    "base_pressure_mbar": 0.000000002, "leak_floor_mbar": 0.0000002,
+    "burst_start_s": 28800, "burst_amplitude_mbar": 0.000005,
+    "burst_decay_s": 600, "relative_noise_rms": 0.02,
+    "model": "High-vacuum outgassing regime only; not an atmospheric pump-down model."
+  },
+  "temperature": {
+    "source_ids": [7],
+    "duration_s": 3600, "sample_interval_s": 2,
+    "initial_degC": 22, "step_degC": 3, "step_s": 600,
+    "delay_s": 20, "normal_tau_s": 120, "slow_tau_s": 240,
+    "noise_rms_degC": 0.025, "gap_start_s": 1700, "gap_end_s": 1760
+  },
+  "photon_counts": {
+    "source_ids": [8],
+    "duration_s": 600, "exposure_s": 0.1,
+    "source_rate_per_s": 800, "dark_rate_per_s": 5,
+    "shutter_closed_start_s": 200, "shutter_closed_end_s": 260,
+    "attenuation_start_s": 400, "attenuation_factor": 0.5,
+    "model": "Independent Poisson counts in contiguous exposure windows; no dead time, afterpulsing, or nonclassical light."
+  },
+  "camera": {
+    "source_ids": [9, 10],
+    "frame_count": 32, "height": 64, "width": 96,
+    "nominal_interval_s": 0.5, "interval_jitter_s": 0.08,
+    "pixel_scale_um": 5, "initial_center_x_px": 38, "center_y_px": 31,
+    "drift_x_px_per_frame": 0.4, "sigma_x_px": 7, "sigma_y_px": 5,
+    "broadening_start_frame": 16, "sigma_x_increment_px": 0.15,
+    "background_adu": 80, "normal_peak_adu": 2000, "saturated_peak_adu": 6000,
+    "saturation_start_frame": 26, "adc_max_adu": 4095,
+    "read_noise_rms_adu": 2, "gain_adu_per_detected_photon": 1,
+    "centroid_threshold_adu": 120, "histogram_bins": 64,
+    "model": "Axis-aligned Gaussian spot with Poisson pixel noise, read noise, ADC clipping, and chosen image-plane calibration. No optical PSF or emittance reconstruction."
+  }
+}

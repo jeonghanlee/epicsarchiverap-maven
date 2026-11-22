@@ -1,0 +1,205 @@
+{
+  "status": "passed",
+  "scope": "Saved synthetic data only; not analyzer or archive integration",
+  "checks": [
+    {
+      "name": "scenario_count",
+      "passed": true,
+      "observed": 8,
+      "expected": 8
+    },
+    {
+      "name": "json_csv_units_axes_and_values",
+      "passed": true,
+      "observed": 20,
+      "expected": "All tables match exactly; axes increase and units are present"
+    },
+    {
+      "name": "beam_lifetime_from_observations_h",
+      "passed": true,
+      "observed": 7.9749187216142525,
+      "expected": "8 h within 2%, excluding injection samples"
+    },
+    {
+      "name": "beam_partial_loss_fraction",
+      "passed": true,
+      "observed": 0.0799757513028968,
+      "expected": "0.08 within 0.001"
+    },
+    {
+      "name": "missed_injections",
+      "passed": true,
+      "observed": 3,
+      "expected": 3
+    },
+    {
+      "name": "bpm_temperature_delay_s",
+      "passed": true,
+      "observed": 1800,
+      "expected": "1800 s within 120 s"
+    },
+    {
+      "name": "bpm_dominant_frequencies_Hz",
+      "passed": true,
+      "observed": [
+        12.0,
+        60.0,
+        120.0
+      ],
+      "expected": [
+        12,
+        60,
+        120
+      ]
+    },
+    {
+      "name": "bpm_disturbance_rms_ratio",
+      "passed": true,
+      "observed": 2.9957003369130133,
+      "expected": "3 within 0.1"
+    },
+    {
+      "name": "magnet_ripple_rms_ratio",
+      "passed": true,
+      "observed": 2.9850886670441312,
+      "expected": "3 within 0.1 on constant-current plateaus"
+    },
+    {
+      "name": "magnet_ripple_frequencies_Hz",
+      "passed": true,
+      "observed": [
+        10.0,
+        60.0,
+        120.0
+      ],
+      "expected": [
+        10,
+        60,
+        120
+      ]
+    },
+    {
+      "name": "rf_decay_time_constant_us",
+      "passed": true,
+      "observed": 350.1176917140958,
+      "expected": "350 us within 5 us"
+    },
+    {
+      "name": "rf_flat_top_MV",
+      "passed": true,
+      "observed": 15.000551137632687,
+      "expected": "15 MV within 0.02 MV"
+    },
+    {
+      "name": "rf_early_trip_decay_ratio",
+      "passed": true,
+      "observed": 0.36775526267556297,
+      "expected": "exp(-1) at one time constant after trip"
+    },
+    {
+      "name": "vacuum_loglog_slopes",
+      "passed": true,
+      "observed": {
+        "metal": -0.9714702566333631,
+        "polymer": -0.48608518939788353
+      },
+      "expected": "Approximately -1 for metal and -0.5 for polymer in the selected interval"
+    },
+    {
+      "name": "vacuum_burst_recovery_ratio",
+      "passed": true,
+      "observed": 0.9995172462845693,
+      "expected": "Return to metal curve within 5%"
+    },
+    {
+      "name": "vacuum_persistent_floor",
+      "passed": true,
+      "observed": 13.382549035886697,
+      "expected": "Leak pressure remains more than 10 times the clean pressure near 24 h"
+    },
+    {
+      "name": "temperature_response_fits",
+      "passed": true,
+      "observed": {
+        "normal": {
+          "response_start_s": 620.3150794287309,
+          "tau_s": 120.41066104023544
+        },
+        "slow": {
+          "response_start_s": 620.4583204553622,
+          "tau_s": 237.32675793819487
+        }
+      },
+      "expected": "120/240 s within 5%; response starts at 620 s within 4 s"
+    },
+    {
+      "name": "temperature_gap_preserved",
+      "passed": true,
+      "observed": 30,
+      "expected": "30 missing samples with matching quality"
+    },
+    {
+      "name": "photon_constant_state_statistics",
+      "passed": true,
+      "observed": {
+        "mean_counts": 80.627,
+        "variance_over_mean": 1.0597888399344972
+      },
+      "expected": "Mean 80.5 within 2; Poisson variance/mean near 1"
+    },
+    {
+      "name": "photon_state_changes",
+      "passed": true,
+      "observed": {
+        "dark_mean_counts": 0.4716666666666667,
+        "attenuated_mean_counts": 40.676
+      },
+      "expected": "Means 0.5 and 40.5 per exposure"
+    },
+    {
+      "name": "camera_drift_px_per_frame",
+      "passed": true,
+      "observed": 0.40048589954948477,
+      "expected": "0.4 within 0.02"
+    },
+    {
+      "name": "camera_saturation_and_projections",
+      "passed": true,
+      "observed": {
+        "saturated_frames": 6,
+        "last_frame_saturated_pixels": 118
+      },
+      "expected": "Six saturated frames; profiles and histograms match the saved pixel arrays"
+    }
+  ],
+  "data_sha256": {
+    "data/beam_current/current.csv": "258545d064d37e69550f88b7c3ba6a3cca9ebd68920533107679f62834d355bd",
+    "data/beam_current.json": "0d4745664e5bca7a36e245703bfa0e2987162857121cbbc7b87a3a90cdd05bdf",
+    "data/bpm/fast.csv": "dd6768f92ec0fcfc0f830e58d8eed3179dce534622d3c033e368a201fad71fc0",
+    "data/bpm/slow.csv": "22119063f92f431673f57f96f62630826e175913a59b1dcb5fba8239cc1e0a90",
+    "data/bpm.json": "b1582e63ca252a583866075401512fbe4a300ff01eb6e933e02c54a27d91aac1",
+    "data/camera/histogram_000.csv": "38bd79601549b449afb3b2ae71b906b94278ab3060406ea87b269bdacd9d462f",
+    "data/camera/histogram_016.csv": "d64809fb1410c0adfad4976207688f15d79f9b8b1ed9d03021d8f6869969dd4c",
+    "data/camera/histogram_031.csv": "dd321fb25a9171652d97146ce1a091adebc3f27e8a07c13216b6bde5615c8154",
+    "data/camera/profile_x_000.csv": "e53b9bb4cfc6521ca3a4a12707cbf6d4322a923f4074b205368860e9bbdf1326",
+    "data/camera/profile_x_016.csv": "a67484f1afde1ca35e118e446b049f2d555c9a2767f0be592fd3ce6ceaba549a",
+    "data/camera/profile_x_031.csv": "7e98a1701a6cb4ae13dd53a90cccff5dc8472b18c06047c3e486bf5ee20333d1",
+    "data/camera/profile_y_000.csv": "f79096423e6f260f0798f46a733c78b682977519beda90d0a7e01528378c4e2e",
+    "data/camera/profile_y_016.csv": "dc1c6232ddd39b8844d86fc9f23e57be091b572c257723b1db4a606215f0a15b",
+    "data/camera/profile_y_031.csv": "b8400a1ff5823155017db8ac8df4bbc3bfdef82c7689d072e8870894734e0fc6",
+    "data/camera/statistics.csv": "e2c4dc986f48a2c85ed1534b7347ecae3492920add7bdcddd153f72dc4f3a96f",
+    "data/camera.json": "dbd06530c30908c24ae98733430607b7f255ff68fd82e2796bd57962f7bda15e",
+    "data/magnet_supply/current.csv": "bac6f8006ba989e03cdcab0bd41a5e193ae2d912df479fddb2c0bb4778b21712",
+    "data/magnet_supply.json": "0e76a8da5fba4f3b9c566f533063f5aa5d2fccaaae4dc25f3ad6285ac2a60e04",
+    "data/photon_counts/counts.csv": "40a2bbcbfc6945b5831f7a46d7d6ecb9db46e6a087370043e2ef50771d3aaca5",
+    "data/photon_counts.json": "e9c6247604e877d76b6c149c1b8bf25d467d6db2367a9f740aad6d0fcc62bfe7",
+    "data/rf_cavity/detuned.csv": "966554317cbe355f83efba6da2f37616539dd6fdd6a06b276d7686497f4cf174",
+    "data/rf_cavity/normal.csv": "85c33510276944d55220b5ffc78fb60941d08767f9b74b5385ea99d44b87540e",
+    "data/rf_cavity/trip.csv": "86d05ed4869f535103f9f01b799bd77aa084723590870d6e009507652a145579",
+    "data/rf_cavity.json": "f3e86a2420a65f2d8316d9edc3d5f77ce5238d37feea5a63d7f0e90655dc472b",
+    "data/temperature/response.csv": "015e17a4df658ae7fcf4f19f8df7b2d39bb81dda00cc3dcf1a5b2922883917b7",
+    "data/temperature.json": "58efda76a0953d63474c1c2dfb3a6ff3babf26979f90a7bdb714fe777bbc9e05",
+    "data/vacuum/pressure.csv": "734d105d73517432f1fe9a20255430f679735611c5c6c479a0ed713966257fd6",
+    "data/vacuum.json": "11880d0bb3dc82d440920761b22d268d907f20b2e1d912985d1e57bf0634b52b"
+  }
+}

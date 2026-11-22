@@ -44,6 +44,7 @@ public class PVDetails implements org.epics.archiverappliance.common.reports.PVD
 
             if (typeInfoForPV.isPaused()) {
                 LinkedList<Map<String, String>> statuses = new LinkedList<Map<String, String>>();
+                addDetailedStatus(statuses, "Latest metadata availability", "paused");
                 List<CommandThreadChannel> immortalChannelsForPV =
                         configService.getEngineContext().getAllChannelsForPV(pvName);
                 if (immortalChannelsForPV.isEmpty()) {
@@ -64,6 +65,17 @@ public class PVDetails implements org.epics.archiverappliance.common.reports.PVD
             if (metrics != null) {
                 LinkedList<Map<String, String>> statuses = metrics.getDetailedStatus();
                 ArchiveEngine.getLowLevelStateInfo(pvName, configService, statuses);
+                ArchiveChannel metadataChannel = configService.getEngineContext().getChannelList().get(pvName);
+                String availability = metadataChannel == null ? "unavailable"
+                        : metadataChannel.isConnected() ? "available" : "disconnected";
+                addDetailedStatus(statuses, "Latest metadata availability", availability);
+                if (availability.equals("available")) {
+                    metadataChannel.getLatestMetadata().entrySet().stream()
+                            .sorted(Map.Entry.comparingByKey())
+                            .forEach(entry -> addDetailedStatus(statuses,
+                                    "Latest metadata: " + entry.getKey(), entry.getValue()));
+                }
+
 
                 if (dbrType.isV3Type()) {
                     ArchiveChannel channel =

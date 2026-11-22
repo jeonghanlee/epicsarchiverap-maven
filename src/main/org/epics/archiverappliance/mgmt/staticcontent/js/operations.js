@@ -60,7 +60,7 @@ const CARDS = [
         [
             ["In short", "PVs of one host that lost their connection at the same time are one group, which is usually one IOC."],
             ["Groups", `PVs of one host that lost their connection within ${T.lossWindowSeconds} seconds of each other are one group.`],
-            ["The host", "The host the Channel Access connection came from; the appliance reports no IOC name, and a PV Access PV has no host."],
+            ["The host", "The endpoint reported by the CA or PVA connection. PVA endpoints may include a port. The appliance reports no IOC name; one host can serve several IOCs."],
             ["Partly listed", "A host listed with only some of its PVs may still be running: its other PVs are connected."],
             ["What to do", "PVs lists the group, Open in Browse PVs selects them on that page, and Pause these… pauses the PVs that no longer exist."],
         ],
@@ -100,7 +100,7 @@ const CARDS = [
             ["Normal", `Below ${T.writeAttentionPercent} % of the period.`],
             ["Attention", `${T.writeAttentionPercent} % or more: the writer needs more than half of its period.`],
             ["Problem", `${T.writeProblemPercent} %: the writer needs all of its period, and samples are lost.`],
-            ["What to do", "Slow the fastest PVs with Change sampling, check the disk under the short term store, or add an appliance. The write delay a buffer absorbs is a setting described in the manual; ask the administrator."],
+            ["What to do", "Store fewer samples of the fastest PVs. A Monitor PV stores every change whatever its period, so change it to Scan with a longer period in Change sampling in Browse PVs; a PV on Scan needs only a longer period. Also check the disk under the short term store, or add an appliance. The write delay a buffer absorbs is a setting described in the manual; ask the administrator."],
         ],
     ],
     [
@@ -108,7 +108,7 @@ const CARDS = [
         "Fastest PVs: which PVs send the most?",
         [
             ["In short", "The five PVs with the highest sample rate; they take the largest share of the write time and of the storage."],
-            ["What to do", "A PV that is faster than needed gets a longer period with Change sampling in Browse PVs."],
+            ["What to do", "Find a PV that is faster than needed by its name in Browse PVs, open More and choose Change sampling. Change it to Scan with a longer period, or give it a longer period if it is on Scan already. A longer period on a Monitor PV only makes its buffer smaller."],
         ],
     ],
     [

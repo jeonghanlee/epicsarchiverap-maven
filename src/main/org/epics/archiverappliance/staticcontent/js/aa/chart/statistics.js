@@ -5,15 +5,15 @@ const d3 = globalThis.d3;
 import { format } from "./text.js";
 
 /**
- * The table of basic statistics of the samples in view, one row per drawn series: samples, minimum, mean, median,
- * maximum, standard deviation and the unit.
+ * The table of basic statistics of a set of samples, one row per series: samples, minimum, mean, median, maximum,
+ * standard deviation and the unit. heading names the set (Statistics unless the page says otherwise).
  */
-export function buildStatistics(rows, info) {
+export function buildStatistics(rows, info, heading = "Statistics") {
     const wrap = document.createElement("div");
     wrap.className = "chart-stats-wrap";
     const title = document.createElement("h3");
     title.className = "chart-stats-title";
-    title.textContent = "Statistics";
+    title.textContent = heading;
     const table = document.createElement("table");
     table.className = "chart-stats";
     table.setAttribute("aria-label", "Statistics");

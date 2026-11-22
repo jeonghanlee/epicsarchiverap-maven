@@ -2,7 +2,7 @@
 
 const d3 = globalThis.d3;
 
-import { PALETTE } from "./series.js";
+import { lineLook } from "./series.js";
 
 // The Y projection: the room right of the right axes, the bins of a histogram and its longest bar, in pixels.
 export const PROJECTION_WIDTH = 140;
@@ -18,12 +18,12 @@ export function drawProjection(svg, { drawn, all, ranges, inView, yOf, projectio
         const chosen = ranges.get(s.egu || "");
         const [floor, ceiling] = chosen ? [Math.min(...chosen), Math.max(...chosen)] : [-Infinity, Infinity];
         const values = inView(s).map((p) => p.v).filter((v) => Number.isFinite(v) && v >= floor && v <= ceiling);
-        statistics.push({ name: s.name, egu: s.egu, color: PALETTE[all.indexOf(s) % PALETTE.length], values });
+        statistics.push({ name: s.name, egu: s.egu, color: lineLook(s, all.indexOf(s)).color, values });
         if (projection !== true || !values.length) {
             continue;
         }
         const scale = yOf(s);
-        const color = PALETTE[all.indexOf(s) % PALETTE.length];
+        const color = lineLook(s, all.indexOf(s)).color;
         const bandX = width - margin.right + axisWidth * onRight + 14;
         const bins = d3.bin().domain(scale.domain()).thresholds(PROJECTION_BINS)(values);
         const most = Math.max(1, d3.max(bins, (b) => b.length));

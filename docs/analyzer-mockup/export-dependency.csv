@@ -1,0 +1,10 @@
+x,y,pearson_r,paired_samples,source
+bpm.slow.bpm_x_um,bpm.slow.bpm_x_um,1,2881,synthetic
+bpm.slow.bpm_x_um,bpm.slow.bpm_y_um,-0.9945789647433436,2881,synthetic
+bpm.slow.bpm_x_um,bpm.slow.temperature_degC,0.9905822283956981,2881,synthetic
+bpm.slow.bpm_y_um,bpm.slow.bpm_x_um,-0.9945789647433436,2881,synthetic
+bpm.slow.bpm_y_um,bpm.slow.bpm_y_um,1,2881,synthetic
+bpm.slow.bpm_y_um,bpm.slow.temperature_degC,-0.9869712831368843,2881,synthetic
+bpm.slow.temperature_degC,bpm.slow.bpm_x_um,0.9905822283956981,2881,synthetic
+bpm.slow.temperature_degC,bpm.slow.bpm_y_um,-0.9869712831368843,2881,synthetic
+bpm.slow.temperature_degC,bpm.slow.temperature_degC,1,2881,synthetic

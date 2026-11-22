@@ -8,6 +8,8 @@ import { drawHistogram, drawScatter } from "../comm/js/aa/plots.js";
 import { valueParts, dateTimeText, instantTitle } from "./browse/format.js";
 import { buildDetails } from "./browse/details.js";
 import { currentZone, onZoneChange } from "../comm/js/aa/timezone.js";
+import { onProfileChange } from "../comm/js/aa/chart/profile.js";
+import { withChartState } from "../comm/js/aa/chart/state.js";
 
 // Initial limits of the table, the chart, the concurrent requests and the indexed names. They are configuration; measurement and use adjust them.
 const LIMITS = { table: 100, chart: 5, concurrentRequests: 6, indexed: 500000 };
@@ -61,7 +63,7 @@ const REPORTS = {
     silent: { endpoint: "../bpl/getSilentPVsReport", params: TOP, value: "lastKnownEvent", ranked: true, note: "Silent longest first. Beside each PV: the time of its last event." },
     droppedtime: { endpoint: "../bpl/getPVsByDroppedEventsTimestamp", params: TOP, value: "eventsDropped", ranked: true, note: "Highest first. Beside each PV: events dropped for a wrong time stamp." },
     droppedbuffer: { endpoint: "../bpl/getPVsByDroppedEventsBuffer", params: TOP, value: "eventsDropped", ranked: true, note: "Highest first. Beside each PV: events dropped by buffer overflow." },
-    droppedtype: { endpoint: "../bpl/getPVsByDroppedEventsTypeChange", params: TOP, value: "eventsDropped", ranked: true, note: "Highest first. Beside each PV: events dropped by a type change." },
+    droppedtype: { endpoint: "../bpl/getPVsByDroppedEventsTypeChange", params: TOP, value: "eventsDropped", ranked: true, note: "Highest first. Beside each PV: events dropped by a type change. The PVs the engine paused for a type change follow, without a count." },
 };
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -126,6 +128,8 @@ const state = {
     count: 0,
     asOf: 0,
     overflow: false,
+    matchNote: false,
+    similar: [],
     partial: false,
     query: "",
     mode: "contains",
@@ -234,6 +238,7 @@ worker.onmessage = (event) => {
         state.total = message.total;
         state.groups = message.groups || {};
         state.partial = Boolean(message.partial);
+        state.similar = Array.isArray(message.similar) ? message.similar : [];
         renderFinder();
     }
 };
@@ -269,6 +274,24 @@ function runSearch() {
     writeAddress();
 }
 
+/**
+ * The names close to the text of a search that finds few or no PV, under the list of matches. They are not matches: the count of the
+ * list and "Select matches" do not use them, and a click selects one name as a click in the list does.
+ */
+function renderSimilar() {
+    const names = state.selectedOnly ? [] : state.similar;
+    const box = $("similarBox");
+    box.hidden = !names.length;
+    const list = $("similar");
+    list.textContent = "";
+    for (const name of names) {
+        const selected = state.selected.includes(name);
+        const button = node("button", { type: "button", class: "plain", "aria-pressed": String(selected), title: selected ? "Selected; click to clear it" : "Select this PV" }, name);
+        button.addEventListener("click", () => toggle(name));
+        list.append(node("li", null, button));
+    }
+}
+
 function renderFinder() {
     const groups = $("groups");
     groups.textContent = "";
@@ -288,6 +311,7 @@ function renderFinder() {
 
     $("count").textContent = countText();
     renderResults();
+    renderSimilar();
     renderArchiveOffer();
 }
 
@@ -342,7 +366,54 @@ function updateListTools() {
     $("listSelected").disabled = !state.selected.length;
     $("listSelected").setAttribute("aria-pressed", String(state.selectedOnly));
     $("listClear").disabled = !state.selected.length;
+    // The list shows the selected PVs, not the matches, while Selected only is on; the control acts on the matches.
+    $("listAll").disabled = state.selectedOnly || !state.results.length;
     $("count").textContent = countText();
+}
+
+/**
+ * Adds the PVs of the list of matches to the table in the order of the list, up to the limit of the table. A PV that is
+ * selected stays and is not added twice, and no selected PV is removed to make room. The note says how many were added.
+ */
+function selectMatches() {
+    const matches = state.results;
+    const chosen = new Set(state.selected);
+    const fresh = matches.filter((name) => !chosen.has(name));
+    const room = Math.max(0, LIMITS.table - state.selected.length);
+    const added = fresh.slice(0, room);
+    for (const name of added) {
+        state.selected.push(name);
+    }
+    if (!state.focus && added.length) {
+        state.focus = added[0];
+    }
+    const count = `${state.total.toLocaleString()}${state.partial ? " or more" : ""}`;
+    let note;
+    if (!fresh.length) {
+        note = `All ${count} matches are already selected.`;
+    } else if (!added.length) {
+        note = `The table holds at most ${LIMITS.table} PVs; no match was added.`;
+    } else if (added.length < fresh.length) {
+        note = `Added ${added.length.toLocaleString()} of ${count} matches; the table holds at most ${LIMITS.table} PVs.`;
+    } else {
+        note = `Added ${added.length.toLocaleString()} of ${count} matches.`;
+    }
+    if (state.partial) {
+        note += " The list is partial, so only the names it holds were used.";
+    } else if (matches.length < state.total) {
+        note += ` The list holds the first ${matches.length.toLocaleString()} of them.`;
+    }
+    afterSelection();
+    $("limitNote").textContent = note;
+    state.matchNote = true;
+}
+
+/** The note of "Select matches" describes that action only, so the next change of the selection removes it. */
+function dropMatchNote() {
+    if (state.matchNote) {
+        $("limitNote").textContent = "";
+        state.matchNote = false;
+    }
 }
 
 /** Shows only the selected PVs in the list, or the matches again. */
@@ -468,6 +539,7 @@ function moveInResults(event) {
 // ---- selection, status, data ---------------------------------------------------------------
 
 function toggle(name) {
+    dropMatchNote();
     const index = state.selected.indexOf(name);
     if (index >= 0) {
         state.selected.splice(index, 1);
@@ -486,6 +558,7 @@ function toggle(name) {
 function afterSelection() {
     state.plotted = state.plotted.filter((name) => state.selected.includes(name));
     renderResults();
+    renderSimilar();
     renderTable();
     refreshStatus();
     refreshData();
@@ -764,11 +837,7 @@ function analyzerHref(names) {
     }
     query.set("from", from.toISOString());
     query.set("to", to.toISOString());
-    // The analyzer, a service of its own, gets the chosen zone in the address; the browser zone needs no parameter.
-    if (currentZone() !== "browser") {
-        query.set("tz", currentZone());
-    }
-    return `analyzer.html?${query}`;
+    return withChartState(`analyzer.html?${query}`, chart?.getState());
 }
 
 function plotCell(name) {
@@ -834,6 +903,7 @@ function togglePlottedOnly() {
 
 /** Unticks every chosen PV, so that the table is empty and nothing is plotted. */
 function clearSelection() {
+    dropMatchNote();
     state.selected = [];
     state.focus = null;
     afterSelection();
@@ -1488,15 +1558,20 @@ function say(text) {
 }
 
 /**
- * One dialog serves every maintenance operation. config: {title, name, text, fields: [{id, label, options | type,
- * value, min, step}], ack, submit, danger, run(values) -> message}. run throws to refuse; its message is shown
- * under the list on success.
+ * One dialog serves every maintenance operation. config: {title, name, text, help: {href, text}, fields: [{id, label,
+ * options | type, value, min, step}], ack, submit, danger, run(values) -> message}. run throws to refuse; its message
+ * is shown under the list on success. help is a link that opens in a new tab, so that the dialog stays open.
  */
 function openMaintain(config) {
     const dialog = $("maintainDialog");
     $("maintainTitle").textContent = config.title;
     $("maintainName").textContent = config.name || "";
     $("maintainText").textContent = config.text || "";
+    $("maintainHelpRow").hidden = !config.help;
+    if (config.help) {
+        $("maintainHelp").href = config.help.href;
+        $("maintainHelp").textContent = config.help.text;
+    }
     $("maintainError").textContent = "";
     const fields = $("maintainFields");
     fields.textContent = "";
@@ -1588,9 +1663,13 @@ async function openChangeSampling(name) {
     openMaintain({
         title: "Change sampling",
         name,
-        text: "The new method and period apply at once to a running PV. The stored data does not change.",
+        text: "Monitor stores every change of the PV; its period is the shortest time you expect between two changes and only sizes the buffer. " +
+            "Scan looks at the PV once per period and stores its latest value if it changed.\n\n" +
+            "A running PV is rebuilt with the new values, so its collection stops for a moment, except a PV that stays Scan " +
+            "when its period changes by less than 0.1 s. A paused PV takes the new values when it resumes. The stored data does not change.",
+        help: { href: "help.html#browse-sampling", text: "How sampling and the buffer work (opens in a new tab)" },
         fields: [
-            { id: "method", label: "Sampling method", options: [["MONITOR", "Monitor: store each change"], ["SCAN", "Scan: store at a fixed period"]], value: info.samplingMethod },
+            { id: "method", label: "Sampling method", options: [["MONITOR", "Monitor: store each change"], ["SCAN", "Scan: store at most once per period"]], value: info.samplingMethod },
             { id: "period", label: "Sampling period in seconds", type: "number", min: String(state.minimumSamplingPeriod), step: "any", value: info.samplingPeriod },
         ],
         submit: "Change",
@@ -1849,7 +1928,7 @@ function wire() {
         onZoom: zoomTo,
         onPan: panBy,
         onReset: resetWindow,
-        onOptionsChange: () => renderTable(),
+        onStateChange: () => renderTable(),
     });
     $("plotFirst").textContent = `First ${LIMITS.chart}`;
     $("plotFirst").title = `Turn on the Plot boxes of the first ${LIMITS.chart} PVs of the table and turn off the others`;
@@ -1862,10 +1941,13 @@ function wire() {
     $("selNone").addEventListener("click", clearSelection);
     $("listSelected").title = "Show only the selected PVs in the list; press again to show the matches";
     $("listSelected").addEventListener("click", toggleSelectedOnly);
+    $("listAll").title = `Add the PVs of the list to the table, up to ${LIMITS.table}; the PVs already selected stay`;
+    $("listAll").addEventListener("click", selectMatches);
     $("listClear").title = "Untick every PV, so that the table is empty";
     $("listClear").addEventListener("click", clearSelection);
     // The Last event cells are written in the chosen zone; the chart widget redraws itself.
     onZoneChange(() => renderTable());
+    onProfileChange(() => renderTable());
     // A tap that leaves the cell where the note of the Plot limit was shown hides it.
     document.addEventListener("click", () => {
         if (state.plotNoteStays) {

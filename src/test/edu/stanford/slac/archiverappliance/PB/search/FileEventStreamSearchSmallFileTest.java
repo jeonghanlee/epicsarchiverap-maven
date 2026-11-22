@@ -31,6 +31,7 @@ public class FileEventStreamSearchSmallFileTest {
 
     @BeforeEach
     public void setUp() throws Exception {
+        Files.createDirectories(path.getParent());
         Files.deleteIfExists(path);
     }
 

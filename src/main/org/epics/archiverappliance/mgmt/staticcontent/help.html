@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="css/help.css" />
     <script src="js/menu.js" defer></script>
     <script type="module" src="comm/js/aa/timezone.js"></script>
+    <script type="module" src="comm/js/aa/chart/profile.js"></script>
   </head>
   <body>
     <div class="pageheader">
@@ -55,11 +56,11 @@
         <h2 id="move-around-heading">Moving around</h2>
         <dl class="controls">
           <dt>The menu bar</dt>
-          <dd>Choose a task: <b>Archive PVs</b>, <b>Browse PVs</b>, <b>System</b>, <b>Help</b>, <b>Analyzer</b>. The entry of the page you are on is underlined.</dd>
+          <dd>Choose a task: <b>Archive PVs</b>, <b>Browse PVs</b>, <b>System</b>, <b>Help</b>, <b>Analyzer</b>. The entry of the page you are on is underlined. Beside the time zone, <b>Profile</b> chooses how the lines of the charts are told apart: <b>Default</b>, <b>Red-green</b> for readers who cannot tell red from green, and <b>Monochrome</b> for readers who see no color. Every profile gives each line its own color, dash pattern and marker. The choice is kept in this browser and passed to the data viewer.</dd>
           <dt><b>Menu</b> button</dt>
           <dd>On a narrow screen the entries fold behind it. Tap it to open the list, tap an entry to go there.</dd>
           <dt>The address</dt>
-          <dd>The Browse PVs page keeps what you selected and the window in its address. Copy the address or bookmark it to come back to the same view.</dd>
+          <dd>The Browse PVs page keeps what you selected and the window in its address. Copy the address or bookmark it to come back to the same view. A menu entry opens a page at the last address it had in this browser tab; a new tab starts fresh, and an address you open yourself, for example from a bookmark, is used as it is.</dd>
         </dl>
       </section>
 
@@ -70,7 +71,7 @@
         <h3 id="archive-add">Add one PV or a list</h3>
         <ol>
           <li>Type one name, or paste a list with one name per line, into <b>Add PVs</b>. The note under the box counts the names and points at any that are not valid PV names.</li>
-          <li>Leave <b>Sampling</b> as it is to let the policy of the site choose the method and the period of each PV. Open it to choose <b>Monitor</b> or <b>Scan</b>, a period, a policy or a controlling PV for every name; a period replaces the choice of the policy, and without a period the method and the controlling PV are not used.</li>
+          <li>Leave <b>Sampling</b> as it is to let the policy of the site choose the method and the period of each PV. Open it to choose <b>Monitor</b> or <b>Scan</b>, a period, a policy or a controlling PV for every name; a period replaces the choice of the policy, and without a period the method and the controlling PV are not used. <b>Monitor</b> stores every change and uses the period to size its buffer; <b>Scan</b> stores at most one sample per period. <a href="#browse-sampling">Change how a PV is sampled</a> explains both.</li>
           <li>Click <b>Archive</b>. Each name is first searched on the network; a name a server answers is archived and appears under <b>Requested in this visit</b> with the answer of the request and its state, and a name no server answers is listed with <b>Archive anyway</b>, for an IOC that is not up yet.</li>
         </ol>
 
@@ -96,7 +97,7 @@
 
         <h3 id="browse-select">Select PVs</h3>
         <ol>
-          <li>Click a name in the list to select it; click again to clear it. With the keyboard: arrow keys to move, <kbd>Space</kbd> or <kbd>Enter</kbd> to select. Under the count, <b>Selected only</b> shows only the selected PVs in the list until you press it again, and <b>Clear selection</b> clears every selection.</li>
+          <li>Click a name in the list to select it; click again to clear it. With the keyboard: arrow keys to move, <kbd>Space</kbd> or <kbd>Enter</kbd> to select. Under the count, <b>Selected only</b> shows only the selected PVs in the list until you press it again, <b>Select matches</b> adds the PVs of the list to the table in the order of the list, up to the limit of 100, and says how many it added and how many it left out, and <b>Clear selection</b> clears every selection. <b>Select matches</b> keeps the PVs that are already selected and is off while <b>Selected only</b> is on. When a Contains search of at least three characters finds fewer than 10 PVs, <b>Similar names</b> under the list offers up to 20 names that differ from the text by a typo or a missing character; a click selects one, and they are not counted among the matches and not added by <b>Select matches</b>. The list is not shown for Glob or Regex, when the text is the whole name of a PV (the case of the letters does not matter), with a prefix button or a Show list chosen, or when more than 500,000 PVs are archived, because the page then does not hold the list of names and the server answers each search.</li>
           <li>Each selected PV gets a row in the table (up to 100) with its protocol, state, trend, value and the time of its last event. The <b>i</b> button beside the count of the table explains the columns; the one in the <b>State</b> column says what a lost sample is and what to do about it.</li>
           <li>Turn on <b>Plot</b> in a row to draw that PV in the chart (up to 5 at a time). When 5 are on, the other <b>Plot</b> boxes are disabled until you turn one off; point at one, or tap it, to read why. <b>First 5</b>, beside the count of the table, turns on the first five rows and turns off the others; <b>Deselect all</b> turns every <b>Plot</b> box off; <b>Plotted only</b> shows only the rows whose <b>Plot</b> box is on, until you press it again; <b>Clear selection</b> unticks every PV, so the table is empty.</li>
           <li>Click <b>Details</b> in a row to see what the archiver reports about the PV, in groups.</li>
@@ -115,6 +116,15 @@
           <li>Use the buttons in the row of the PV. Only the buttons that fit its state appear: <b>Pause</b> or <b>Resume</b>, <b>More</b>, <b>Cancel request</b> for a request that has not started, or a link to <a href="#archive">Archive PVs</a> for a PV that is not archived.</li>
           <li><b>More</b> holds <b>Change sampling…</b>, <b>Maintenance…</b> (rename, type change and consolidation; its <b>i</b> button explains the three) and <b>Stop archiving…</b>. Each says what it does before it acts.</li>
           <li>To act on every PV of the table at once, use <b>Pause all selected…</b>, <b>Resume all selected…</b> or <b>Stop archiving all selected…</b> under the table. Each asks before it acts.</li>
+        </ol>
+
+        <h3 id="browse-sampling">Change how a PV is sampled</h3>
+        <ol>
+          <li>Open <b>More</b> in the row of the PV and choose <b>Change sampling…</b>. Choose the <b>Sampling method</b>, type the <b>Sampling period in seconds</b> and press <b>Change</b>. The field does not accept a period below the minimum of the appliance, 0.1 s unless the site sets another.</li>
+          <li><b>Monitor</b> stores every change of the PV. Its period does not limit how often samples are stored; it is the shortest time you expect between two changes, and the appliance sizes the memory buffer of the PV from it. <b>Scan</b> looks at the PV once per period and stores its latest value if it changed, so its period is the shortest interval between two stored samples.</li>
+          <li>The buffer holds the samples of a PV until the next write to the short term store, by default every 10 s. It has one slot for each period of that interval plus a margin, 10 s on the default site, for example 20 slots for a period of 1.0 s and 200 slots for 0.1 s. When more samples arrive between two writes than the buffer has slots, each new sample pushes out the oldest one, so the first samples of that interval are missing. They are counted as lost; the <b>i</b> button in the <b>State</b> column of the table explains how to read the count.</li>
+          <li>For <b>Monitor</b>, choose a period no larger than the real interval between the updates of the PV, so that the buffer holds one write interval of them, and no smaller than the minimum above. Take the real interval from what you know of the PV, for example the scan period of its record: the Estimated event rate in the Details window counts only the samples the buffer accepted, so for a PV that loses samples it reads lower than the real rate. A smaller period makes a larger buffer and uses more memory. A period far smaller than the PV needs wastes that memory but loses nothing. A PV that updates faster than the minimum period allows cannot have a buffer sized for it, so it can lose samples as described above.</li>
+          <li>The new method and period are stored first. A running PV is then rebuilt with them, so its collection stops for a moment; a PV that stays on <b>Scan</b> and whose period changes by less than 0.1 s is not rebuilt and keeps running with the old period; changing a PV from <b>Scan</b> to <b>Monitor</b>, or the period by more, rebuilds it. A paused PV takes the new values when you press <b>Resume</b>. The data already stored does not change.</li>
         </ol>
 
         <h3 id="browse-viewer">Open PVs in the Analyzer</h3>
@@ -141,7 +151,8 @@
           <li>Type an archived PV in <b>Add a PV</b>; names that match appear as you type. Click <b>Add</b> to plot it. This does not start archiving.</li>
           <li>Click <b>remove</b> beside a PV to take it off the chart.</li>
           <li>Click <b>10m</b> to <b>7d</b>, or set <b>From</b> and <b>To</b> and click <b>Show</b>, to choose the time window.</li>
-          <li><b>Copy link</b> copies an address that opens the same view; <b>Download CSV</b> saves the data shown.</li>
+          <li>The analysis tabs read the selected range. <b>Distribution</b> shows the histogram, box plot, pattern by hour or weekday and the <b>Time and value</b> map of one signal, with its summary and the values beyond k standard deviations. The <b>Trend tools</b> under the plot add the rate of change, a slow trend, the limits of the PV and a threshold with the time beyond it. <b>Correlation</b> pairs two signals at the union of their sample times and shows their scatter plot, profile or density, Pearson and Spearman, the cross-correlation and a <b>Fit</b> with its parameters, errors and residuals, a <b>Derived signal</b> from a typed expression, and <b>X unit</b> and <b>Y unit</b> to show a signal in another prefix of its unit (mm in um); the <b>Fit of the histogram</b> under the Distribution histogram needs you to declare that the counts are counts of independent samples. <b>Dependency</b> takes three to twenty signals averaged over one interval and shows their correlation matrix with a dendrogram, the mutual information, a ranking against a target, a scatter plot matrix, the partial correlation, a regression and the principal components; a cell opens Correlation. <b>Compare</b> puts two ranges of one signal, or two signals, side by side with their distributions and the tests of whether they differ. <b>Spectrum</b> shows the spectrum, spectrogram or autocorrelation of one signal after resampling it to an even interval, and writes the preparation above the plot. <b>Waveform</b> draws one array PV a frame at a time, overlaid or as a heatmap over time, with its summary values, the difference from a reference frame, its spectrum (you give the sampling frequency) and its peaks with the background subtracted. <b>Image</b> draws one frame as a heatmap with a colour bar and iso-lines, takes a region by mouse or by typing and shows its total, centroid, peak, projections and Gaussian size, the difference of two frames and the values over a range of frames (you give the width and height). Each tool refuses an input it cannot use and says why; the copied address carries the options of the tools.</li>
+          <li>The <b>Data</b> tab lists the samples in view; the <b>Export</b> tab saves data, statistics, a fit result, a derived signal or the plot, shows the retrieval's own CSV and MAT links, and its <b>Copy link</b> copies an address that opens the same view with every setting. An <b>i</b> beside <b>Summary</b>, <b>Visible range</b>, <b>Interval</b> and the Export form says how its values are calculated.</li>
         </ol>
       </section>
 

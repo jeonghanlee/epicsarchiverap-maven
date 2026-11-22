@@ -66,7 +66,7 @@ import org.epics.pva.data.PVAny;
  * display.units, "EGU"
  * control.limitLow, "DRVL"
  * control.limitHigh, "DRVH"
- * control.minStep, "PREC"
+ * display.precision, "PREC"
  * valueAlarm.lowAlarmLimit, "LOLO"
  * valueAlarm.lowWarningLimit, "LOW"
  * valueAlarm.highWarningLimit, "HIGH"
@@ -89,7 +89,7 @@ public class FieldValuesCache {
         v4FieldNames2v3FieldNames.put("display.units", "EGU");
         v4FieldNames2v3FieldNames.put("control.limitLow", "DRVL");
         v4FieldNames2v3FieldNames.put("control.limitHigh", "DRVH");
-        v4FieldNames2v3FieldNames.put("control.minStep", "PREC");
+        v4FieldNames2v3FieldNames.put("display.precision", "PREC");
         v4FieldNames2v3FieldNames.put("valueAlarm.lowAlarmLimit", "LOLO");
         v4FieldNames2v3FieldNames.put("valueAlarm.lowWarningLimit", "LOW");
         v4FieldNames2v3FieldNames.put("valueAlarm.highWarningLimit", "HIGH");
@@ -425,9 +425,9 @@ public class FieldValuesCache {
      * @param metaFieldNames Any fields that should always be archived if they change
      * @return A flat map of String values
      */
-    public HashMap<String, String> getUpdatedFieldValues(final boolean getEverything, final List<String> metaFieldNames) {
+    public synchronized HashMap<String, String> getUpdatedFieldValues(final boolean getEverything, final List<String> metaFieldNames) {
         if (getEverything) {
-            return (HashMap<String, String>) this.cachedFieldValues;
+            return new HashMap<>(this.cachedFieldValues);
         }
         Map<String, String> changed = new HashMap<>();
         for (String key: this.lastChangedFields) {
@@ -452,8 +452,8 @@ public class FieldValuesCache {
      *                      PVAStructure
      * @throws Exception Throws when structure is invalid.
      */
-    public void updateFieldValues(PVAStructure pvaStructure, BitSet changes) throws Exception {
-        var changed = changes == null ? this.cachedFieldValues
+    public synchronized void updateFieldValues(PVAStructure pvaStructure, BitSet changes) throws Exception {
+        var changed = changes == null || changes.get(0) ? currentFieldValues(pvaStructure)
                 : changedFieldValues(pvaStructure, changes, this.bit2FieldNameMapping);
         this.lastChangedFields = changed.keySet();
         this.cachedFieldValues.putAll(changed);
@@ -464,7 +464,7 @@ public class FieldValuesCache {
      * 
      * @return flat map of string values
      */
-    public HashMap<String, String> getCurrentFieldValues() {
+    public synchronized HashMap<String, String> getCurrentFieldValues() {
         return v3NamedValues(cachedFieldValues);
     }
 

@@ -1,0 +1,377 @@
+{
+  "source": "synthetic",
+  "view": "distribution",
+  "example": "temperature",
+  "selection": [
+    "temperature",
+    "default",
+    1767228000000,
+    1767229202000,
+    "ready",
+    "full",
+    [
+      "temperature.response.normal_degC",
+      20,
+      24.98,
+      25.02
+    ]
+  ],
+  "x_unit": "degC",
+  "y_unit": "sample count",
+  "config": {
+    "model": "normal",
+    "low": 24.98,
+    "high": 25.02,
+    "x0": 0,
+    "objective": "poisson",
+    "parameters": [
+      {
+        "name": "n",
+        "initial": 343,
+        "unit": "samples / full distribution",
+        "scale": 343,
+        "min": 1e-9,
+        "max": "",
+        "fixed": false
+      },
+      {
+        "name": "mu",
+        "initial": 24.99997644173624,
+        "unit": "degC",
+        "scale": 0.011318316292207423,
+        "min": "",
+        "max": "",
+        "fixed": false
+      },
+      {
+        "name": "sigma",
+        "initial": 0.011318316292207423,
+        "unit": "degC",
+        "scale": 0.011318316292207423,
+        "min": 3.999999999999915e-8,
+        "max": "",
+        "fixed": false
+      }
+    ],
+    "iterations": 200,
+    "tolerance": 1e-8,
+    "curve": true,
+    "residuals": true
+  },
+  "result": {
+    "success": true,
+    "status": "Converged: relative objective change",
+    "iterations": 7,
+    "objective": 28.455679840030925,
+    "parameters": {
+      "n": 791.1881471118518,
+      "mu": 24.999973340983328,
+      "sigma": 0.034888731386463534
+    },
+    "rows": [
+      {
+        "index": 0,
+        "x": 24.981,
+        "y": 18,
+        "lower": 24.98,
+        "upper": 24.982,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 15.605338655633942,
+        "residual": 2.3946613443660585
+      },
+      {
+        "index": 1,
+        "x": 24.983,
+        "y": 13,
+        "lower": 24.982,
+        "upper": 24.984,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 16.07293505007416,
+        "residual": -3.072935050074161
+      },
+      {
+        "index": 2,
+        "x": 24.985,
+        "y": 17,
+        "lower": 24.984,
+        "upper": 24.986,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 16.500240683905194,
+        "residual": 0.4997593160948064
+      },
+      {
+        "index": 3,
+        "x": 24.987000000000002,
+        "y": 17,
+        "lower": 24.986,
+        "upper": 24.988,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 16.88334327463957,
+        "residual": 0.11665672536042848
+      },
+      {
+        "index": 4,
+        "x": 24.989,
+        "y": 12,
+        "lower": 24.988,
+        "upper": 24.990000000000002,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 17.21867448123071,
+        "residual": -5.21867448123071
+      },
+      {
+        "index": 5,
+        "x": 24.991,
+        "y": 20,
+        "lower": 24.990000000000002,
+        "upper": 24.992,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 17.503065994913378,
+        "residual": 2.496934005086622
+      },
+      {
+        "index": 6,
+        "x": 24.993000000000002,
+        "y": 20,
+        "lower": 24.992,
+        "upper": 24.994,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 17.73380050598952,
+        "residual": 2.266199494010479
+      },
+      {
+        "index": 7,
+        "x": 24.994999999999997,
+        "y": 18,
+        "lower": 24.994,
+        "upper": 24.996,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 17.908656499146137,
+        "residual": 0.09134350085386345
+      },
+      {
+        "index": 8,
+        "x": 24.997,
+        "y": 13,
+        "lower": 24.996,
+        "upper": 24.998,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 18.025945964252283,
+        "residual": -5.0259459642522835
+      },
+      {
+        "index": 9,
+        "x": 24.999000000000002,
+        "y": 20,
+        "lower": 24.998,
+        "upper": 25,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 18.084545030497697,
+        "residual": 1.9154549695023029
+      },
+      {
+        "index": 10,
+        "x": 25.000999999999998,
+        "y": 25,
+        "lower": 25,
+        "upper": 25.002,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 18.083749470051092,
+        "residual": 6.916250529948908
+      },
+      {
+        "index": 11,
+        "x": 25.003,
+        "y": 24,
+        "lower": 25.002,
+        "upper": 25.004,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 18.023576883190547,
+        "residual": 5.976423116809453
+      },
+      {
+        "index": 12,
+        "x": 25.005000000000003,
+        "y": 23,
+        "lower": 25.004,
+        "upper": 25.006,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 17.904735603800056,
+        "residual": 5.095264396199944
+      },
+      {
+        "index": 13,
+        "x": 25.006999999999998,
+        "y": 11,
+        "lower": 25.006,
+        "upper": 25.008,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 17.728365602346937,
+        "residual": -6.728365602346937
+      },
+      {
+        "index": 14,
+        "x": 25.009,
+        "y": 7,
+        "lower": 25.008,
+        "upper": 25.009999999999998,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 17.49616953546473,
+        "residual": -10.49616953546473
+      },
+      {
+        "index": 15,
+        "x": 25.011,
+        "y": 14,
+        "lower": 25.009999999999998,
+        "upper": 25.012,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 17.21038265838779,
+        "residual": -3.2103826583877897
+      },
+      {
+        "index": 16,
+        "x": 25.012999999999998,
+        "y": 18,
+        "lower": 25.012,
+        "upper": 25.014,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 16.873734914717478,
+        "residual": 1.1262650852825224
+      },
+      {
+        "index": 17,
+        "x": 25.015,
+        "y": 22,
+        "lower": 25.014,
+        "upper": 25.016,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 16.489405964085318,
+        "residual": 5.510594035914682
+      },
+      {
+        "index": 18,
+        "x": 25.017,
+        "y": 10,
+        "lower": 25.016,
+        "upper": 25.018,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 16.060974064656563,
+        "residual": -6.060974064656563
+      },
+      {
+        "index": 19,
+        "x": 25.019,
+        "y": 21,
+        "lower": 25.018,
+        "upper": 25.02,
+        "upperInclusive": true,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 15.592359861018316,
+        "residual": 5.407640138981684
+      }
+    ],
+    "free": 3,
+    "informative": 20,
+    "df": 17,
+    "rmse": 4.77418608541278,
+    "r2": 0.031225043963489574,
+    "atBounds": [],
+    "uncertainty": {
+      "status": "unavailable",
+      "method": "Poisson expected Fisher information",
+      "confidenceLevel": 0.95,
+      "intervalMethod": "Normal approximation",
+      "criticalValue": 1.959963984540054,
+      "parameterOrder": [
+        "n",
+        "mu",
+        "sigma"
+      ],
+      "covariance": null,
+      "varianceScale": null,
+      "condition": 351.84127704940806,
+      "assumptions": "Independent Poisson bin counts; local large-sample approximation. No overdispersion correction.",
+      "parameters": {
+        "n": {
+          "status": "unavailable",
+          "standardError": null,
+          "lower95": null,
+          "upper95": null
+        },
+        "mu": {
+          "status": "unavailable",
+          "standardError": null,
+          "lower95": null,
+          "upper95": null
+        },
+        "sigma": {
+          "status": "unavailable",
+          "standardError": null,
+          "lower95": null,
+          "upper95": null
+        }
+      },
+      "reason": "An approximate 95% interval reaches a parameter bound; symmetric uncertainty is not reliable. Intervals are not clipped."
+    }
+  }
+}

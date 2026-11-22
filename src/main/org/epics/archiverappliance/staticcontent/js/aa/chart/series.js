@@ -1,11 +1,11 @@
 // The series of a chart: the samples that count, the gaps between them, the running statistics and the look of a line.
 
+import { combination } from "./profile.js";
+
 const d3 = globalThis.d3;
 
-export const DASHES = ["", "", "6 3", "2 3", "9 3 2 3"];
-
-// The colors of the lines of a chart that has a legend, by position in the series list.
-export const PALETTE = ["#007681", "#5a6b70", "#b36b00", "#6a4c93", "#b3261e", "#2e7d32", "#c2185b", "#1565c0", "#7b5e00", "#455a64"];
+// The dash patterns and the colors of the lines come from the display profile in force (see profile.js).
+export { DASHES } from "./profile.js";
 
 /** The series with the samples whose value is a number; a series left without a sample is dropped. */
 export function finiteSeries(series) {
@@ -42,7 +42,14 @@ export function movingStats(values, size) {
     return out;
 }
 
-/** The look of the line of the series at position slot of a chart that has a legend. */
+/** The look of the line of the series at position slot of a chart: the combination of the profile in force and the width. */
 export function lineLook(series, slot) {
-    return { color: PALETTE[slot % PALETTE.length], dash: DASHES[slot % DASHES.length] || null, width: series.focus ? 2.5 : series.quiet ? 1.2 : 1.8 };
+    const combo = combination(slot);
+    return { color: combo.color, dash: combo.dash || null, marker: combo.marker, width: series.focus ? 2.5 : series.quiet ? 1.2 : 1.8 };
+}
+
+/** The path of the marker of a combination, centered on the origin, by the name of its d3 symbol. */
+export function markerPath(name, size = 30) {
+    const types = { circle: d3.symbolCircle, square: d3.symbolSquare, triangle: d3.symbolTriangle, diamond: d3.symbolDiamond, cross: d3.symbolCross };
+    return d3.symbol().type(types[name] || d3.symbolCircle).size(size)();
 }

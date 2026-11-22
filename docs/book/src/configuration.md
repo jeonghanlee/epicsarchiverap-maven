@@ -97,7 +97,8 @@ stands for both when they are equal. Each key starts with
   application.
 - `config.PVTypeInfo.sampleBufferMarginSeconds`: the write delay every
   PV's buffer absorbs without dropping a sample, in seconds; a value
-  below 1.0 is raised to 1.0. Site file and unset `1.0`.
+  below 1.0 is raised to 1.0. Site file `10.0`; unset `1.0`. The engine
+  reads it at its start, so a change applies to every PV after a restart.
 - `retrieval.DefaultUseReducedPostProcessor`: the post-processor class
   used when a request asks for reduced data. Site file
   `org.epics.archiverappliance.retrieval.postprocessors.TwoWeekRaw`;
@@ -305,12 +306,22 @@ also choose when adding a PV:
 | Policy | Chosen when | Stores |
 | --- | --- | --- |
 | `2HzPVs` | the event rate is above 2 Hz | STS, MTS, LTS |
-| `BPMS` | the name starts with `BPMS` and the storage rate is above 35 bytes/s | STS, MTS, LTS, with a sampling period that limits storage to about 1 GB per year |
+| `BPMS` | the name starts with `BPMS` and the storage rate is above 35 bytes/s | STS, MTS, LTS |
 | `3DaysMTSOnly` | chosen by the operator | STS, an MTS with `hold=4` and `gather=1`, which keeps 4 to 5 completed days, and a `blackhole` LTS |
 | `Default` | otherwise | STS, MTS, LTS; when an operator chooses it, or for the PV `mshankar:arch:sine`, the LTS also caches the post-processors `firstSample` and `firstSample_3600` (`pp`) |
 
-Except for `BPMS`, the policies sample by monitor at 1 s. The file sets
-the fields archived with a PV by the record type (`RTYP`) of the PV:
+`2HzPVs` samples by monitor at 0.1 s and the other policies at 1 s. With
+the write period of 10 s and the margin of 10 s of the site file, a PV
+under `2HzPVs` keeps every update up to 20 per second and a PV under the
+other policies up to 2 per second ([How many slots a buffer
+has](architecture.md#how-many-slots-a-buffer-has)); above that it loses
+samples and the loss is counted. The policy runs once, when a PV is
+archived: a changed file applies to the PVs archived after the change,
+and a PV archived before it keeps its period until Change sampling sets
+another, also after a restart.
+
+The file sets the fields archived with a PV by the record type (`RTYP`)
+of the PV:
 
 | Record type | Fields |
 | --- | --- |
@@ -359,7 +370,7 @@ Parameters of the `pb` plugin:
 | `pp` | post-processors computed and cached while data moves into this store; a retrieval request that matches one exactly reads the cached result. The cached files of a partition leave the store with its data when the ETL moves it on or the PV is deleted. Not combined with `reducedata` on one store, since the caches would be computed from the reduced data |
 | `etlIntoStoreIf` | name of a flag ([Operating](operating.md#named-flags)); while the flag is false, data moved into this store is discarded |
 | `etlOutofStoreIf` | name of a flag; while the flag is false, data stays in this store and accumulates |
-| `compress` | `ZIP_PER_PV` keeps the files of a PV in one zip archive instead of a folder. For the last store of a chain only: a zip store that is the source of a move keeps the partition it moved, so the data would exist twice. The move out of an uncompressed store deletes the moved partition and its cached files |
+| `compress` | `ZIP_PER_PV` keeps the files of a PV in one zip archive instead of a folder. For the last store of a chain only. The move out of an uncompressed store deletes the moved partition and its cached files |
 
 Parameters of the `merge`, `pbraw` and `rtree` plugins:
 

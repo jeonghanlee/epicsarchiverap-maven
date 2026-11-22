@@ -56,6 +56,70 @@ the medium term store (MTS) and the long term store (LTS).
 - Retrieval merges the data of all stores for the requested range, so a
   client sees one continuous stream.
 
+## The sample buffer
+
+The engine holds the samples of each PV in a buffer in memory until the
+next write to the STS. The figures follow a PV archived with the
+MONITOR method, with the write period of 10 s of the default site.
+
+![The path of an event through the sample buffer: the timestamp check,
+the sample buffer, the swap at each write period and the write to the
+short term store, with the three places where a sample is lost](images/sample-buffer-path.svg)
+
+Every update of a MONITOR PV passes this path once; the sampling period
+does not filter updates. A sample is lost in one of three places:
+
+- **Wrong timestamp.** The time of the event is too far from the server
+  clock (`engine.epics.server_ioc_drift_seconds`, 1800 s by default), is
+  earlier than the previous sample, or equals it. An event with the same
+  time as the previous one is dropped without being counted as lost.
+- **Type change.** The type of the value differs from the type the PV
+  was archived with.
+- **Buffer full.** Every slot is taken, so the oldest sample is pushed
+  out and counted as lost.
+
+At each write period the buffer that holds samples becomes the batch to
+write, and the engine continues with a new empty buffer. A buffer without
+samples is not written. If the write fails, the same batch is tried again
+at the next write while new samples fill the new buffer.
+
+### How many slots a buffer has
+
+The number of slots follows from the sampling period of the PV: the
+samples expected in one write period plus a margin, 10 s in the site
+file of the default site. The
+formula is in [What is the difference between SCAN and
+MONITOR?](faq.md#what-is-the-difference-between-scan-and-monitor), and
+the write period and the margin are the properties
+`config.PVTypeInfo.secondsToBuffer` and
+`config.PVTypeInfo.sampleBufferMarginSeconds` of
+[Configuration](configuration.md).
+
+![The slots of a buffer for a sampling period of 1.0 s and of 0.1 s: 10
+expected samples and a margin of 10 give 20 slots, 100 expected samples
+and a margin of 100 give 200 slots](images/sample-buffer-capacity.svg)
+
+For a Channel Access PV, `getPVDetails` returns the number of slots as
+Sample buffer capacity.
+
+### When more samples arrive than the buffer holds
+
+If more samples arrive between two writes than the buffer has slots,
+each new sample pushes out the oldest one, and the batch that is written
+holds the newest samples. A buffer of 11 slots, which a 1.0 s PV has with
+a margin of 1 s, that receives 20 samples keeps samples 10 to 20 and
+loses the first 9.
+
+![Twenty samples arrive between two writes into a buffer of 11 slots:
+samples 1 to 9 are pushed out and counted as buffer-full losses, and
+samples 10 to 20 are kept](images/sample-buffer-overflow.svg)
+
+The losses begin when more updates arrive in one write period than the
+buffer has slots, that is, above the number of slots divided by the
+write period per second: 1.1 updates per second for 11 slots, 2 for the
+20 slots of a 1.0 s PV on the default site and 20 for the 200 slots of a
+0.1 s PV.
+
 ## Stores
 
 A store is a storage plugin configured by a URL. The default policy

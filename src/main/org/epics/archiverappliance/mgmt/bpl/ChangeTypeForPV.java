@@ -35,7 +35,7 @@ import org.json.simple.JSONValue;
  *
  */
 @BPLEndpoint(
-        summary = "Change the type of the PV to the specified type. The PV needs to be paused first. For best results, consolidate all the data to one store. Note, this is actually changing the data so you should make a backup just in case. There is every chance that this may leave the data for this PV in an inconsistent state. It is also possible that the plugin may do nothing in which case you may have to rename the existing PV to a new PV; delete this PV and issue a fresh archival request.",
+        summary = "Change the type of the PV to the specified type and convert its stored data. The PV needs to be paused first. A numeric PV can become another number type, a string (the text of each number) or a numeric waveform (a vector of one element); DBR_WAVEFORM_STRING and DBR_V4_GENERIC_BYTES have no conversion, so the call fails and the data keep their type. For best results, consolidate all the data to one store. Note, this is actually changing the data so you should make a backup just in case. If a store fails after another store was converted, the stores can be left in different types; then rename the PV and issue a fresh archival request.",
         params = {
             @BPLParam(name = "pv", description = "The name of the pv."),
             @BPLParam(name = "newtype", description = "The new type - one of the ArchDBRTypes. For example, DBR_SCALAR_DOUBLE.")
@@ -106,6 +106,7 @@ public class ChangeTypeForPV implements BPLAction {
 			return;
 		}
 
+		ArchDBRTypes oldDBRType = typeInfo.getDBRType();
 		for(String store : typeInfo.getDataStores()) {
 			StoragePlugin plugin = StoragePluginURLParser.parseStoragePlugin(store, configService);
 			try(BasicContext context = new BasicContext()) {
@@ -117,8 +118,14 @@ public class ChangeTypeForPV implements BPLAction {
 		
 		// Update the type info in the database.
 		typeInfo.setDBRType(newDBRType);
+		typeInfo.setScalar(!newDBRType.isWaveForm());
 		configService.updateTypeInfoForPV(pvName, typeInfo);
+		logger.info("Changed the type of PV " + pvName + " from " + oldDBRType + " to " + newDBRType);
 		infoValues.put("status", "ok");
+		infoValues.put("pv", pvName);
+		infoValues.put("oldType", oldDBRType.toString());
+		infoValues.put("newType", newDBRType.toString());
+		infoValues.put("history", "The stored history in " + typeInfo.getDataStores().length + " store(s) was converted from " + oldDBRType + " to " + newDBRType);
 		try(PrintWriter out = resp.getWriter()) {
 			out.println(JSONValue.toJSONString(infoValues));
 		}

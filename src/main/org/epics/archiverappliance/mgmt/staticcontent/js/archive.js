@@ -4,6 +4,7 @@
 import { infoButton } from "../comm/js/aa/card.js";
 import { node } from "../comm/js/aa/dom.js";
 import * as api from "./browse/api.js";
+import { suggestNames } from "./suggest.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -23,6 +24,7 @@ const POLL_SLOW_MS = 10000;
 const AFTER_ACTION_MS = 15000;
 const INFO_PER_POLL = 6;
 const HELP = "help.html#archive";
+const ADDRESS_NAMES = 100;
 
 const CARD = [
     "Archive PVs: how do I add PVs and follow them?",
@@ -123,6 +125,26 @@ function refreshInput() {
     }
     $("archive").disabled = list.length === 0 || Boolean(problem);
     $("archive").textContent = list.length > 1 ? `Archive ${list.length} PVs` : "Archive";
+    if (list.length > ADDRESS_NAMES) {
+        note.append(`; only the first ${ADDRESS_NAMES} are kept in the address`);
+    }
+    keepInAddress(list);
+}
+
+// The typed names (at most ADDRESS_NAMES) and the sampling choice are kept in the fragment of the address, so the menu
+// and a bookmark bring them back. The fields are written only when they are set.
+function keepInAddress(list) {
+    const params = new URLSearchParams();
+    list.slice(0, ADDRESS_NAMES).forEach((name) => params.append("pv", name));
+    for (const id of ["method", "period", "policy", "controlling"]) {
+        const value = $(id).value.trim();
+        if (value) {
+            params.set(id, value);
+        }
+    }
+    const fragment = params.toString();
+    const target = window.location.pathname + window.location.search + (fragment ? `#${fragment}` : "");
+    window.history.replaceState(window.history.state, "", target);
 }
 
 // ---- the request -----------------------------------------------------------------------------------
@@ -536,6 +558,7 @@ async function stopSelected() {
 
 async function start() {
     $("pageHeading").parentElement.append(" ", infoButton(CARD[0], CARD[1], null, HELP));
+    suggestNames($("controlling"));
     for (const id of ["names", "method", "period", "policy", "controlling"]) {
         $(id).addEventListener("input", refreshInput);
     }
@@ -580,9 +603,15 @@ async function start() {
     });
 
     // Names carried in the address (pv=NAME, repeatable) fill the input.
-    const carried = new URLSearchParams(window.location.hash.slice(1)).getAll("pv");
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const carried = fragment.getAll("pv");
     if (carried.length) {
         $("names").value = carried.join("\n");
+    }
+    for (const id of ["method", "period", "controlling"]) {
+        if (fragment.has(id)) {
+            $(id).value = fragment.get(id);
+        }
     }
     refreshInput();
 
@@ -604,6 +633,10 @@ async function start() {
             const policies = await response.json();
             for (const name of Object.keys(policies).sort()) {
                 $("policy").append(node("option", { value: name }, name));
+            }
+            if (fragment.has("policy")) {
+                $("policy").value = fragment.get("policy");
+                refreshInput();
             }
         }
     } catch (error) {

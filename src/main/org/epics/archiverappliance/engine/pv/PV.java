@@ -115,6 +115,11 @@ public interface PV {
      */
     public void sampleWrittenIntoStores();
 
+    /** Acknowledge the exact sample accepted by the archive buffer. */
+    default void sampleWrittenIntoStores(DBRTimeEvent sample) {
+        sampleWrittenIntoStores();
+    }
+
     /**
      * This method is called each time the Write thread is about to write a batch of samples.
      * The writer thread passes in the last sample of the previous batch of samples after buffer rotation.

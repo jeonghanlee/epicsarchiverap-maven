@@ -25,13 +25,17 @@ they keep.
   ```
 
   samples, and at least 2. The second term is a margin of
-  `sampleBufferMarginSeconds` (default 1 s, never below 1 s) converted
+  `sampleBufferMarginSeconds` (10 s in the site file of the default site,
+  1 s when unset, never below 1 s) converted
   to samples, so a late write pass costs a 0.1 s PV and a 1 s PV the
   same amount of time.
-  With the default write period of 10 s, a 1 s PV holds 11 samples and
-  a 0.1 s PV holds 110. A PV that changes faster than its sampling
-  period fills its buffer before the next write; each further update
-  then drops the oldest sample in the buffer.
+  With the write period and the margin of the default site, 10 s each,
+  a 1 s PV holds 20 samples and a 0.1 s PV holds 200. A PV whose
+  updates in one write period outnumber the slots fills its buffer
+  before the next write; each further update then drops the oldest
+  sample in the buffer.
+  The figures of [The sample buffer](architecture.md#the-sample-buffer)
+  show the path of an update through the buffer and what an overflow keeps.
 - **SCAN** keeps only the latest update and writes at most one sample
   per sampling period, and only when the update has a new timestamp. A
   PV scanned at 1 s gives at most one sample per second, and none while

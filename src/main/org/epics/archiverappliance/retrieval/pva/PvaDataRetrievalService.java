@@ -28,9 +28,12 @@ public class PvaDataRetrievalService implements RPCService {
 	 */
 	Map<String, PvaAction> actions = new HashMap<String, PvaAction>();
 
+	private final PvaCallLimiter limiter;
+
 	public PvaDataRetrievalService(ConfigService configService) {
 		this.configService = configService;
-		logger.info("Creating an instance of PvaDataRetrievalService");
+		this.limiter = PvaCallLimiter.fromProperties(System.getProperties());
+		logger.info("Creating an instance of PvaDataRetrievalService with " + limiter.total() + " call permits");
 		actions.put(PvaGetPVData.NAME, new PvaGetPVData());
 	}
 
@@ -39,6 +42,18 @@ public class PvaDataRetrievalService implements RPCService {
 	 */
 	@Override
 	public PVAStructure call(PVAStructure pvaStructure) throws Exception {
+		if (!limiter.tryAcquire()) {
+			logger.warn("PVAccess retrieval call refused: all " + limiter.total() + " call permits are in use");
+			throw new IllegalStateException("PVAccess retrieval is busy: all " + limiter.total() + " call permits are in use");
+		}
+		try {
+			return handle(pvaStructure);
+		} finally {
+			limiter.release();
+		}
+	}
+
+	private PVAStructure handle(PVAStructure pvaStructure) throws Exception {
 		PVAURI uri = PVAURI.fromStructure(pvaStructure);
 		if (uri != null) {
 			if (actions.get(uri.getPath()) != null) {

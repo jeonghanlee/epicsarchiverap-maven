@@ -26,6 +26,7 @@ public class LastFill implements PostProcessor, PostProcessorWithConsolidatedEve
 	private static Logger logger = LogManager.getLogger(LastFill.class.getName());
 	private int intervalSecs = PostProcessors.DEFAULT_SUMMARIZING_INTERVAL;
 	private long firstBin = 0;
+	private Instant windowEnd = null;
 	private long lastBin = Long.MAX_VALUE;
 	private long currentBin = -1;
 	private LinkedHashMap<Long, Event> bin2Event = new LinkedHashMap<Long, Event>(); 
@@ -47,6 +48,7 @@ public class LastFill implements PostProcessor, PostProcessorWithConsolidatedEve
 
 	@Override
     public long estimateMemoryConsumption(String pvName, PVTypeInfo typeInfo, Instant start, Instant end, HttpServletRequest req) {
+		windowEnd = end;
 		firstBin = TimeUtils.convertToEpochSeconds(start)/intervalSecs;
 		lastBin = TimeUtils.convertToEpochSeconds(end)/intervalSecs;
 		float storageRate = typeInfo.getComputedStorageRate();
@@ -133,7 +135,7 @@ public class LastFill implements PostProcessor, PostProcessorWithConsolidatedEve
 		if(bin2Event.isEmpty()) { 
 			return new ArrayListEventStream(0, srcDesc);
 		} else { 
-			return new FillsCollectorEventStream(this.firstBin == 0 ? 0 : this.firstBin-1, lastBin, intervalSecs, srcDesc, bin2Event);
+			return new FillsCollectorEventStream(this.firstBin == 0 ? 0 : this.firstBin-1, lastBin, intervalSecs, srcDesc, bin2Event, true, windowEnd);
 		}
 	}
 

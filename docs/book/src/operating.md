@@ -24,7 +24,7 @@ bar, named by task; the entry of the page in view is marked:
 | Browse PVs | the Browse PVs page | find PVs, list them with their value and last event, plot them, act on them; the reports are the **Show** list of the Find panel |
 | System | System: Overview | status monitoring: the verdict on the appliance, then Operations and Retrieval performance |
 | Help | the help page | how to use each page, the management API reference ([Scripting](scripting.md)) and a link to this manual, which needs access to the internet |
-| Analyzer | the data viewer | the data viewer of the retrieval web application ([Retrieving data](retrieval.md#the-data-viewer)) |
+| Analyzer | archived signal trends | the Analyzer of the retrieval web application ([Retrieving data](retrieval.md#the-data-viewer)) |
 
 On a screen 720 px wide or narrower the entries fold behind a **Menu**
 button and open as one column. The **External servers** tab of System
@@ -46,10 +46,12 @@ value range of each unit, the Options panel, Enlarge chart) are listed in
 [Chart controls](interface.md#chart-controls), the columns of the table and
 the **Refresh** control in [The table of PVs](interface.md#the-table-of-pvs)
 and [Refreshing the page](interface.md#refreshing-the-page). The link **Open
-in the analyzer** above the chart opens the plotted PVs in the data viewer,
-which shows PVs as charts per unit, over the window of the chart
-([Retrieving data](retrieval.md#the-data-viewer)); **Open all selected in the
-analyzer** under the table opens every PV of the table.
+in the analyzer** above the chart opens the plotted PVs in Trend, with
+one value axis per unit and the chart's time window and settings
+([Retrieving data](retrieval.md#the-data-viewer)). **Open all selected in the
+analyzer** under the table opens every PV of the table with those settings.
+The enlarged chart offers the same link. All these links carry the selected
+time zone and display profile, including Browser and Default.
 
 ## Adding PVs
 
@@ -214,12 +216,13 @@ When a store runs full, ETL follows the `OutOfSpaceHandling` key
   Operations page or the three selections of the Show list that name
   dropped events. The Overview shows a Problem verdict while any PV
   dropped a sample.
-- **Type changes:** when a PV changes its data type, the appliance stops
-  archiving its new samples; the **Most events dropped by a type change**
-  selection lists them. Either rename the paused PV and archive it again
+- **Type changes:** when a PV changes its data type, the engine drops its
+  new samples and pauses it, with the reason in its Details; the **Most
+  events dropped by a type change** selection lists such a PV with its old
+  and its new type. Either rename the paused PV and archive it again
   under its name, which keeps the old data under the new name, or
   convert its archived data with **Change type** on the paused PV, which
-  rewrites the data (back it up first). The window reports `<PV> is stored
+  rewrites the data (back it up first). The conversion takes a numeric PV to another number type, to a string (the text of each number) or to a numeric waveform (a vector of one element); a string waveform and a byte blob have no conversion, so the call fails and the stored data keep their type. The type information keeps one element for a waveform, while the new samples have the size of the record, which the engine reads from the channel. The window reports `<PV> is stored
   as <type>` when the call succeeds. Before you resume the PV, check the
   **Data type** in **Details** and read back a sample of the stored data;
   if the data did not change, rename the PV and archive it again.

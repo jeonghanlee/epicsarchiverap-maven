@@ -7,7 +7,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.epics.archiverappliance</groupId>
   <artifactId>archappl</artifactId>
-  <version>2026-10</version>
+  <version>Ahsoka</version>
   <packaging>jar</packaging>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -593,6 +593,7 @@
               <arguments>
                 <argument>${src.main.dir}/org/epics/archiverappliance/mgmt/staticcontent/index.html</argument>
                 <argument>${src.main.dir}/org/epics/archiverappliance/mgmt/staticcontent/</argument>
+                <argument>${src.main.dir}/org/epics/archiverappliance/retrieval/staticcontent/viewer/archViewer.html</argument>
               </arguments>
               <classpathScope>compile</classpathScope>
             </configuration>
@@ -857,6 +858,13 @@
                 <resource>
                   <directory>${stage.dir}/org/epics/archiverappliance/retrieval/staticcontent</directory>
                   <targetPath>ui</targetPath>
+                </resource>
+                <resource>
+                  <directory>${stage.dir}/org/epics/archiverappliance/mgmt/staticcontent/js</directory>
+                  <targetPath>ui/js</targetPath>
+                  <includes>
+                    <include>menu.js</include>
+                  </includes>
                 </resource>
                 <resource>
                   <directory>${stage.dir}/org/epics/archiverappliance/staticcontent</directory>

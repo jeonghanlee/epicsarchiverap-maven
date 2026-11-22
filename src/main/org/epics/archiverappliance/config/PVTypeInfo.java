@@ -417,6 +417,7 @@ public class PVTypeInfo implements Serializable {
 	
 	
 	public void absorbMetaInfo(MetaInfo metaInfo) {
+		this.hostName = metaInfo.getHostName();
 		this.lowerAlarmLimit = metaInfo.getLowerAlarmLimit();
 		this.lowerCtrlLimit = metaInfo.getLoweCtrlLimit();
 		this.lowerDisplayLimit = metaInfo.getLowerDisplayLimit();

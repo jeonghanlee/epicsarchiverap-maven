@@ -17,9 +17,9 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import javax.servlet.http.HttpServletRequest;
 
@@ -61,7 +61,7 @@ public class RetrievalState {
         this.engineWriteThreadInSeconds = Integer.parseInt(configService
                 .getInstallationProperties()
                 .getProperty("org.epics.archiverappliance.config.PVTypeInfo.secondsToBuffer", "60"));
-        this.retrievalMetricsMap = new HashMap<>();
+        this.retrievalMetricsMap = new ConcurrentHashMap<>();
     }
 
     /**
@@ -227,6 +227,9 @@ public class RetrievalState {
         return true;
     }
 
+    // The retrieval metrics of each PV, written by the request threads of the servlet at once: the map is safe for
+    // concurrent use and the entry of a PV is created and updated in one step, so that a request never meets a
+    // missing entry it has just created, and the entry itself synchronizes its updates and its reads.
     private final Map<String, RetrievalMetrics> retrievalMetricsMap;
 
     public Map<String, RetrievalMetrics> getRetrievalMetrics() {
@@ -236,8 +239,7 @@ public class RetrievalState {
     protected void updateRetrievalMetrics(String pvName, Instant time, String user) {
         logger.debug("Update metrics for " + pvName);
 
-        retrievalMetricsMap.putIfAbsent(pvName, new RetrievalMetrics());
-        retrievalMetricsMap.get(pvName).updateMetrics(time, user);
+        retrievalMetricsMap.computeIfAbsent(pvName, name -> new RetrievalMetrics()).updateMetrics(time, user);
     }
 
     public RetrievalMetrics getPVRetrievalMetrics(String pvName) {

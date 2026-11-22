@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Checks once whether any PV dropped events because its type changed, and exits. One GET
-# /getPVsByDroppedEventsTypeChange returns the PVs the engines report (paused PVs excluded).
+# /getPVsByDroppedEventsTypeChange returns the PVs the engines report and the PVs the engine
+# paused because their type changed.
 # When the report is not empty, "<count> PVs have changed type" and one PV name per line go to
 # stdout; otherwise "No PVs have changed type". The management report drops an engine that does
 # not answer, so an unavailable engine reads as an empty report.

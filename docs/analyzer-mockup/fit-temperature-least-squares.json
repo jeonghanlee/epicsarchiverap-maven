@@ -1,0 +1,396 @@
+{
+  "source": "synthetic",
+  "view": "distribution",
+  "example": "temperature",
+  "selection": [
+    "temperature",
+    "default",
+    1767228000000,
+    1767229202000,
+    "ready",
+    "full",
+    [
+      "temperature.response.normal_degC",
+      20,
+      24.885518180801046,
+      25.10414587576281
+    ]
+  ],
+  "x_unit": "degC",
+  "y_unit": "sample count",
+  "config": {
+    "model": "normal-background",
+    "low": 24.885518180801046,
+    "high": 25.10414587576281,
+    "x0": 0,
+    "objective": "least-squares",
+    "parameters": [
+      {
+        "name": "n",
+        "initial": 601,
+        "unit": "samples / full distribution",
+        "scale": 601,
+        "min": 1e-9,
+        "max": "",
+        "fixed": false
+      },
+      {
+        "name": "mu",
+        "initial": 25.00031836845202,
+        "unit": "degC",
+        "scale": 0.02537089207884057,
+        "min": "",
+        "max": "",
+        "fixed": false
+      },
+      {
+        "name": "sigma",
+        "initial": 0.02537089207884057,
+        "unit": "degC",
+        "scale": 0.02537089207884057,
+        "min": 2.1862769496176424e-7,
+        "max": "",
+        "fixed": false
+      },
+      {
+        "name": "background",
+        "initial": 0,
+        "unit": "samples / degC",
+        "scale": 274.8965542106222,
+        "min": 0,
+        "max": "",
+        "fixed": false
+      }
+    ],
+    "iterations": 200,
+    "tolerance": 1e-8,
+    "curve": true,
+    "residuals": true
+  },
+  "result": {
+    "success": true,
+    "status": "Converged: relative objective change",
+    "iterations": 5,
+    "objective": 422.20032680913613,
+    "parameters": {
+      "n": 603.3903146452847,
+      "mu": 24.999766426396416,
+      "sigma": 0.025510034774918883,
+      "background": 0
+    },
+    "rows": [
+      {
+        "index": 0,
+        "x": 24.890983873175088,
+        "y": 0,
+        "lower": 24.885518180801046,
+        "upper": 24.896449565549133,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 0.013187529210945029,
+        "residual": -0.013187529210945029
+      },
+      {
+        "index": 1,
+        "x": 24.90191525792318,
+        "y": 0,
+        "lower": 24.896449565549133,
+        "upper": 24.907380950297224,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 0.07291936119468269,
+        "residual": -0.07291936119468269
+      },
+      {
+        "index": 2,
+        "x": 24.91284664267127,
+        "y": 1,
+        "lower": 24.907380950297224,
+        "upper": 24.91831233504531,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 0.3364267628365304,
+        "residual": 0.6635732371634696
+      },
+      {
+        "index": 3,
+        "x": 24.923778027419353,
+        "y": 1,
+        "lower": 24.91831233504531,
+        "upper": 24.929243719793398,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 1.295154343495695,
+        "residual": -0.2951543434956949
+      },
+      {
+        "index": 4,
+        "x": 24.934709412167443,
+        "y": 3,
+        "lower": 24.929243719793398,
+        "upper": 24.94017510454149,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 4.160517002218073,
+        "residual": -1.1605170022180733
+      },
+      {
+        "index": 5,
+        "x": 24.945640796915534,
+        "y": 10,
+        "lower": 24.94017510454149,
+        "upper": 24.951106489289575,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 11.152643542826288,
+        "residual": -1.1526435428262882
+      },
+      {
+        "index": 6,
+        "x": 24.956572181663617,
+        "y": 23,
+        "lower": 24.951106489289575,
+        "upper": 24.962037874037662,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 24.947357070891716,
+        "residual": -1.9473570708917158
+      },
+      {
+        "index": 7,
+        "x": 24.967503566411708,
+        "y": 45,
+        "lower": 24.962037874037662,
+        "upper": 24.972969258785753,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 46.56964665334903,
+        "residual": -1.5696466533490323
+      },
+      {
+        "index": 8,
+        "x": 24.978434951159798,
+        "y": 74,
+        "lower": 24.972969258785753,
+        "upper": 24.98390064353384,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 72.54886546587382,
+        "residual": 1.451134534126183
+      },
+      {
+        "index": 9,
+        "x": 24.98936633590788,
+        "y": 94,
+        "lower": 24.98390064353384,
+        "upper": 24.994832028281927,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 24,
+        "logFactorials": [],
+        "fitted": 94.32292286052987,
+        "residual": -0.3229228605298715
+      },
+      {
+        "index": 10,
+        "x": 25.000297720655972,
+        "y": 113,
+        "lower": 24.994832028281927,
+        "upper": 25.005763413030017,
+        "upperInclusive": false,
+        "firstInteger": 25,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 102.34508162321411,
+        "residual": 10.654918376785886
+      },
+      {
+        "index": 11,
+        "x": 25.011229105404063,
+        "y": 77,
+        "lower": 25.005763413030017,
+        "upper": 25.016694797778104,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 92.67943737556837,
+        "residual": -15.67943737556837
+      },
+      {
+        "index": 12,
+        "x": 25.02216049015215,
+        "y": 72,
+        "lower": 25.016694797778104,
+        "upper": 25.027626182526195,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 70.04258945797774,
+        "residual": 1.9574105420222594
+      },
+      {
+        "index": 13,
+        "x": 25.033091874900236,
+        "y": 51,
+        "lower": 25.027626182526195,
+        "upper": 25.03855756727428,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 44.17734551714344,
+        "residual": 6.8226544828565565
+      },
+      {
+        "index": 14,
+        "x": 25.044023259648327,
+        "y": 23,
+        "lower": 25.03855756727428,
+        "upper": 25.04948895202237,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 23.25330828105266,
+        "residual": -0.2533082810526608
+      },
+      {
+        "index": 15,
+        "x": 25.054954644396414,
+        "y": 10,
+        "lower": 25.04948895202237,
+        "upper": 25.06042033677046,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 10.214094517776147,
+        "residual": -0.21409451777614663
+      },
+      {
+        "index": 16,
+        "x": 25.0658860291445,
+        "y": 3,
+        "lower": 25.06042033677046,
+        "upper": 25.071351721518546,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 3.7439490542249905,
+        "residual": -0.7439490542249905
+      },
+      {
+        "index": 17,
+        "x": 25.07681741389259,
+        "y": 1,
+        "lower": 25.071351721518546,
+        "upper": 25.082283106266633,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 1.1451536266709783,
+        "residual": -0.1451536266709783
+      },
+      {
+        "index": 18,
+        "x": 25.08774879864068,
+        "y": 0,
+        "lower": 25.082283106266633,
+        "upper": 25.093214491014724,
+        "upperInclusive": false,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 0.2922747873475837,
+        "residual": -0.2922747873475837
+      },
+      {
+        "index": 19,
+        "x": 25.098680183388765,
+        "y": 0,
+        "lower": 25.093214491014724,
+        "upper": 25.10414587576281,
+        "upperInclusive": true,
+        "firstInteger": 26,
+        "lastInteger": 25,
+        "logFactorials": [],
+        "fitted": 0.06224449945792777,
+        "residual": -0.06224449945792777
+      }
+    ],
+    "free": 4,
+    "informative": 20,
+    "df": 16,
+    "rmse": 4.594563781302509,
+    "r2": 0.9837858159868529,
+    "atBounds": [
+      "background"
+    ],
+    "uncertainty": {
+      "status": "unavailable",
+      "method": "Residual-scaled local covariance",
+      "confidenceLevel": 0.95,
+      "intervalMethod": "Normal approximation",
+      "criticalValue": 1.959963984540054,
+      "parameterOrder": [
+        "n",
+        "mu",
+        "sigma",
+        "background"
+      ],
+      "covariance": null,
+      "varianceScale": null,
+      "condition": null,
+      "assumptions": "Independent, equal-variance Y errors; locally linear model. No X-error or serial-correlation correction.",
+      "parameters": {
+        "n": {
+          "status": "unavailable",
+          "standardError": null,
+          "lower95": null,
+          "upper95": null
+        },
+        "mu": {
+          "status": "unavailable",
+          "standardError": null,
+          "lower95": null,
+          "upper95": null
+        },
+        "sigma": {
+          "status": "unavailable",
+          "standardError": null,
+          "lower95": null,
+          "upper95": null
+        },
+        "background": {
+          "status": "unavailable",
+          "standardError": null,
+          "lower95": null,
+          "upper95": null
+        }
+      },
+      "reason": "A free parameter is at a bound (background); symmetric uncertainty is not reliable."
+    }
+  }
+}

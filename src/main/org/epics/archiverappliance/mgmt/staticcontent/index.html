@@ -16,6 +16,7 @@
     <script type="module" src="js/browse.js"></script>
     <script src="js/menu.js" defer></script>
     <script type="module" src="comm/js/aa/timezone.js"></script>
+    <script type="module" src="comm/js/aa/chart/profile.js"></script>
   </head>
   <body>
     <div class="pageheader">
@@ -47,7 +48,7 @@
       <section class="finder" aria-label="Find PVs">
         <h2>Find</h2>
         <label for="q" class="hint" id="queryHint">Words in any order, case ignored</label>
-        <input id="q" class="search" type="search" placeholder="bpm c02 x" autocomplete="off" spellcheck="false" />
+        <input id="q" class="search" type="search" placeholder="bpm c02 x" spellcheck="false" />
         <div class="modes-row">
           <div class="modes" id="modes" role="group" aria-label="Search mode">
             <button type="button" data-mode="contains">Contains</button>
@@ -86,7 +87,7 @@
         <p id="reportNote" class="hint"></p>
         <div class="chips" id="groups" role="group" aria-label="Name groups"></div>
         <p class="count"><span id="count"></span> <span id="indexCount" class="faint">Loading PV names…</span></p>
-        <p class="plot-tools list-tools"><button type="button" id="listSelected" class="plain" aria-pressed="false">Selected only</button><button type="button" id="listClear" class="plain">Clear selection</button></p>
+        <p class="plot-tools list-tools"><button type="button" id="listSelected" class="plain" aria-pressed="false">Selected only</button><button type="button" id="listAll" class="plain">Select matches</button><button type="button" id="listClear" class="plain">Clear selection</button></p>
         <p class="offer"><a id="archiveLink" href="archive.html">Archive PVs…</a></p>
         <div
           class="results"
@@ -99,6 +100,10 @@
           <div id="resultsSpacer" class="spacer">
             <ul id="resultRows" role="presentation"></ul>
           </div>
+        </div>
+        <div id="similarBox" class="similar" hidden>
+          <p class="hint" id="similarHead">Similar names. The text matches no PV, or only a few, so these names that differ by a typo or a missing character are offered; click one to select it.</p>
+          <ul id="similar" aria-labelledby="similarHead"></ul>
         </div>
       </section>
 
@@ -229,6 +234,7 @@
         <h2 id="maintainTitle"></h2>
         <p class="pv" id="maintainName"></p>
         <p class="muted" id="maintainText"></p>
+        <p class="muted" id="maintainHelpRow" hidden><a id="maintainHelp" target="_blank" rel="noopener"></a></p>
         <div id="maintainFields"></div>
         <label class="check" id="maintainAckRow" hidden><input id="maintainAck" type="checkbox" /> <span id="maintainAckText"></span></label>
         <p id="maintainError" class="error" role="status"></p>

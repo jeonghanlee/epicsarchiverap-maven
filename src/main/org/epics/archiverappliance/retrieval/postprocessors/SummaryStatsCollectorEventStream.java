@@ -1,6 +1,7 @@
 package org.epics.archiverappliance.retrieval.postprocessors;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -41,7 +42,17 @@ public class SummaryStatsCollectorEventStream implements EventStream, RemotableO
 	private Iterator<Event> theOneAndOnlyIterator;
 	private final boolean vectorType;
 	private final ArchDBRTypes dbrType;
+	private final Instant windowEnd;
+
 	public SummaryStatsCollectorEventStream(long firstBin, long lastBin, int intervalSecs, RemotableEventStreamDesc desc, LinkedHashMap<Long, SummaryValue> consolidatedData, boolean inheritValuesFromPreviousBins, boolean zeroOutEmptyBins, boolean vectorType, int elementCount) {
+		this(firstBin, lastBin, intervalSecs, desc, consolidatedData, inheritValuesFromPreviousBins, zeroOutEmptyBins, vectorType, elementCount, null);
+	}
+
+	/**
+	 * @param windowEnd the end of the request window; the event of the bin that contains it is stamped no later than it, see {@link BinTimeStamp}
+	 */
+	public SummaryStatsCollectorEventStream(long firstBin, long lastBin, int intervalSecs, RemotableEventStreamDesc desc, LinkedHashMap<Long, SummaryValue> consolidatedData, boolean inheritValuesFromPreviousBins, boolean zeroOutEmptyBins, boolean vectorType, int elementCount, Instant windowEnd) {
+	    this.windowEnd = windowEnd;
 	    this.vectorType = vectorType;
 		this.firstBin = firstBin;
 		this.lastBin = lastBin;
@@ -124,15 +135,16 @@ public class SummaryStatsCollectorEventStream implements EventStream, RemotableO
 				}
 				if(foundValue) { 
 					long epochSeconds = binNum*intervalSecs + intervalSecs/2;
+					Instant stamp = BinTimeStamp.of(binNum, intervalSecs, nanos, consolidatedData.containsKey(binNum), windowEnd);
 					POJOEvent pojoEvent;
 					if (vectorType) {
 					    pojoEvent = new POJOEvent(dbrType,
-                                TimeUtils.convertFromEpochSeconds(epochSeconds, nanos), 
+                                stamp,
                                 new VectorValue<>(summaryValue.values), 
                                 0, summaryValue.severity);
 					} else {
     					pojoEvent = new POJOEvent(dbrType,
-    							TimeUtils.convertFromEpochSeconds(epochSeconds, nanos), 
+								stamp,
     							new ScalarValue<Double>(summaryValue.value), 
     							0, summaryValue.severity);
 					}

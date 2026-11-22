@@ -21,6 +21,9 @@ java_home="${JAVA_HOME:-}"
 port_base=17665
 start_timeout=180
 stop_timeout=300
+# The maximum heaps of the retrieval and the engine JVMs; mgmt and etl keep 256m.
+retrieval_heap='256m'
+engine_heap='256m'
 # Lines of archappl.properties the run adds to the file taken from the WAR; one KEY=VALUE per --property.
 properties=()
 stop_signal=0
@@ -52,6 +55,9 @@ Options:
   --port-base PORT       Loopback HTTP ports PORT..PORT+3; cluster PORT+5 (17665)
   --start-timeout SEC    Startup limit, integer seconds from 1 to 86400 (180)
   --stop-timeout SEC     Total graceful-stop limit, 1 to 86400 seconds (300)
+  --retrieval-heap SIZE  Maximum heap of the retrieval JVM, a whole number of
+                         megabytes or gigabytes such as 512m or 2g (256m)
+  --engine-heap SIZE     Maximum heap of the engine JVM, in the same form (256m)
   --property KEY=VALUE   Add or replace one line of archappl.properties, which the
                          launcher writes from the WAR at every start; repeatable
   -h, --help            Show this help
@@ -73,7 +79,7 @@ function parse_args {
         option="$1"
         case "$option" in
             -h|--help) usage; exit 0 ;;
-            --war-dir|--tomcat-home|--port-base|--start-timeout|--stop-timeout)
+            --war-dir|--tomcat-home|--port-base|--start-timeout|--stop-timeout|--retrieval-heap|--engine-heap)
                 (( $# >= 2 )) || die "Missing value for $option"
                 [[ -n "$2" ]] || die "Empty value for $option"
                 case "$option" in
@@ -82,6 +88,9 @@ function parse_args {
                     --port-base) positive_integer "$option" "$2"; port_base=$((10#$2)) ;;
                     --start-timeout) positive_integer "$option" "$2"; start_timeout=$((10#$2)) ;;
                     --stop-timeout) positive_integer "$option" "$2"; stop_timeout=$((10#$2)) ;;
+                    --retrieval-heap|--engine-heap)
+                        [[ "$2" =~ ^[1-9][0-9]{0,5}[mg]$ ]] || die "$option takes a size such as 512m or 2g"
+                        if [[ "$option" == --retrieval-heap ]]; then retrieval_heap="$2"; else engine_heap="$2"; fi ;;
                 esac
                 shift 2
                 ;;
@@ -350,8 +359,10 @@ for offset, name in enumerate(components):
     )
     server = ET.Element("Server", port="-1")
     service = ET.SubElement(server, "Service", name="Catalina")
+    # relaxedQueryChars lets a query carry a raw bracket, as a link to the Analyzer built with encodeURI does for a
+    # PV name such as SR:BPM[1]:X and for a per-target parameter such as width[PV].
     ET.SubElement(service, "Connector", port=str(first + offset), address="127.0.0.1",
-                  protocol="HTTP/1.1", connectionTimeout="20000", maxThreads="40")
+                  protocol="HTTP/1.1", connectionTimeout="20000", maxThreads="40", relaxedQueryChars="[]")
     engine = ET.SubElement(service, "Engine", name="Catalina", defaultHost="localhost")
     ET.SubElement(engine, "Host", name="localhost", appBase="webapps", unpackWARs="true", autoDeploy="false")
     write_xml(base / "conf/server.xml", server)
@@ -371,13 +382,16 @@ PY
 }
 
 function start_components {
-    local i component base options pid
+    local i component base options pid heap
     : > "$run_dir/children.tsv"
     for i in "${!COMPONENTS[@]}"; do
         (( stop_signal == 0 )) || return 0
         component="${COMPONENTS[i]}"
         base="$run_dir/instances/$component"
-        printf -v options '%q ' '-Xms32m' '-Xmx256m' '-XX:ActiveProcessorCount=2' "${JVM_COMMON_OPTIONS[@]}" \
+        heap='256m'
+        [[ "$component" != retrieval ]] || heap="$retrieval_heap"
+        [[ "$component" != engine ]] || heap="$engine_heap"
+        printf -v options '%q ' '-Xms32m' "-Xmx$heap" '-XX:ActiveProcessorCount=2' "${JVM_COMMON_OPTIONS[@]}" \
             "-Duser.home=$run_dir/home" "-Dorg.sqlite.tmpdir=$base/temp" "-Dpython.cachedir=$base/temp/jython" \
             "-XX:ErrorFile=$base/logs/hs_err_pid%p.log" "-XX:HeapDumpPath=$base/logs"
         (

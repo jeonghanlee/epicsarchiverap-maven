@@ -1,0 +1,821 @@
+#!/usr/bin/env python3
+"""Writes references.json: fixed datasets and the values that NumPy and SciPy compute from them, against which the checks of
+the analyzer routines (stats.js, tests.js, spectrum.js, trend.js, compare.js, the preparation of the Spectrum tab, and the correlations,
+regression, principal components, mutual information, clustering and matrix routines of the tools of two and several signals) compare their results. NumPy and SciPy are needed to write the file
+and never to run the checks, which read it. The background of an array is written by ROOT (6.36.10, run as root -l -b -q with
+root_background.C; ROOT is found on the PATH or in ROOT_BIN, and without it the values already in the file are kept).
+
+Usage: python3 -I src/test/js/analyzer/reference/generate-references.py
+"""
+import json
+import math
+import os
+import warnings
+
+import numpy as np
+import scipy
+from scipy import signal, special, stats
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+rng = np.random.default_rng(20261107)
+
+
+def listing(array):
+    return [float(x) for x in np.asarray(array).ravel()]
+
+
+def moments_of(values):
+    n = len(values)
+    sd = float(np.std(values, ddof=1))
+    return {
+        "n": n,
+        "min": float(np.min(values)),
+        "max": float(np.max(values)),
+        "mean": float(np.mean(values)),
+        "variance": float(np.var(values, ddof=1)),
+        "sd": sd,
+        "skewness": float(stats.skew(values, bias=True)),
+        "kurtosis": float(stats.kurtosis(values, fisher=True, bias=True)),
+        "seMean": sd / math.sqrt(n),
+        "seSd": sd / math.sqrt(2 * (n - 1)),
+    }
+
+
+def box_of(values):
+    q1, median, q3 = np.quantile(values, [0.25, 0.5, 0.75])
+    low, high = q1 - 1.5 * (q3 - q1), q3 + 1.5 * (q3 - q1)
+    inside = values[(values >= low) & (values <= high)]
+    return {
+        "q1": float(q1), "median": float(median), "q3": float(q3),
+        "whiskerLow": float(inside.min()), "whiskerHigh": float(inside.max()),
+        "outliers": listing(np.sort(values[(values < low) | (values > high)])),
+    }
+
+
+reference = {"meta": {"numpy": np.__version__, "scipy": scipy.__version__, "seed": 20261107}}
+
+# Samples: a normal one, a skewed one with outliers and a small one.
+samples = {
+    "normal": rng.normal(10.0, 2.0, 1000),
+    "skewed": rng.gamma(2.0, 3.0, 600),
+    "small": np.array([2.5, 3.5, 3.5, 7.0, 9.25]),
+}
+reference["moments"] = []
+for name, values in samples.items():
+    ps = [0.0, 0.05, 0.25, 0.5, 0.75, 0.95, 1.0]
+    grid = np.linspace(values.min() - 1, values.max() + 1, 61)
+    kde = stats.gaussian_kde(values, bw_method="silverman")
+    reference["moments"].append({
+        "name": name,
+        "values": listing(values),
+        "expected": moments_of(values),
+        "quantiles": {"ps": ps, "values": listing(np.quantile(values, ps))},
+        "box": box_of(values),
+        "kde": {"grid": listing(grid), "density": listing(kde(grid)), "bandwidth": float(kde.factor * np.std(values, ddof=1))},
+    })
+
+# Distribution functions.
+xs = [0.001, 0.2, 1.0, 3.2, 7.9, 15.0, 40.0, 120.0]
+ks = [1, 2, 4, 7, 10, 30, 60]
+reference["chi2sf"] = [{"x": x, "k": k, "sf": float(stats.chi2.sf(x, k))} for x in xs for k in ks]
+# A histogram of hundreds of bins gives hundreds of degrees of freedom.
+reference["chi2sf"] += [{"x": x, "k": k, "sf": float(stats.chi2.sf(x, k))}
+                        for x, k in [(100, 99), (300, 299), (520, 499), (1000, 999), (1100, 999)]]
+lambdas = [0.02, 0.1, 0.3, 0.5, 0.8, 0.99, 1.0, 1.01, 1.3, 1.8, 2.5, 3.2]
+reference["kolmogorov"] = [{"lambda": v, "q": float(special.kolmogorov(v))} for v in lambdas]
+
+# Two histograms on common bins, one with empty bins.
+edges = np.linspace(2, 18, 17)
+a = rng.normal(10, 2, 800)
+b = rng.normal(10.4, 2.3, 500)
+ca, _ = np.histogram(a, edges)
+cb, _ = np.histogram(b, edges)
+table = np.array([ca, cb])
+table = table[:, table.sum(axis=0) > 0]
+chi2 = stats.chi2_contingency(table, correction=False)
+reference["chiSquare"] = [{
+    "a": [int(x) for x in ca], "b": [int(x) for x in cb],
+    "statistic": float(chi2.statistic), "degrees": int(chi2.dof), "pValue": float(chi2.pvalue),
+}]
+ca2 = np.array([0, 3, 9, 20, 11, 4, 0, 0])
+cb2 = np.array([0, 1, 5, 14, 17, 9, 2, 0])
+table2 = np.array([ca2, cb2])[:, (ca2 + cb2) > 0]
+chi2b = stats.chi2_contingency(table2, correction=False)
+reference["chiSquare"].append({
+    "a": [int(x) for x in ca2], "b": [int(x) for x in cb2],
+    "statistic": float(chi2b.statistic), "degrees": int(chi2b.dof), "pValue": float(chi2b.pvalue),
+})
+
+# Two-sample Kolmogorov-Smirnov: the statistic of ks_2samp and the Kolmogorov survival at its scaled value.
+reference["ks"] = []
+pairs = {
+    "shifted": (rng.normal(0, 1, 300), rng.normal(0.3, 1, 220)),
+    "same": (rng.normal(0, 1, 250), rng.normal(0, 1, 250)),
+    "ties": (np.round(rng.normal(5, 2, 200)), np.round(rng.normal(5.5, 2, 150))),
+    "far": (rng.normal(0, 1, 100), rng.normal(4, 1, 100)),
+}
+for name, (x, y) in pairs.items():
+    result = stats.ks_2samp(x, y, method="asymp")
+    d = float(stats.ks_2samp(x, y).statistic)
+    en = len(x) * len(y) / (len(x) + len(y))
+    reference["ks"].append({
+        "name": name, "a": listing(x), "b": listing(y), "statistic": d,
+        "effectiveSize": en, "pValue": float(special.kolmogorov(math.sqrt(en) * d)),
+    })
+
+# k-sample Anderson-Darling with midranks, as SciPy reports it (the p-value is capped at 0.25 and floored at 0.001).
+reference["ad"] = []
+cases = {
+    "two same": [rng.normal(0, 1, 120), rng.normal(0, 1, 90)],
+    "two near": [rng.normal(0, 1, 150), rng.normal(0.35, 1, 120)],
+    "two far": [rng.normal(0, 1, 100), rng.normal(2.5, 1, 100)],
+    "three": [rng.normal(0, 1, 80), rng.normal(0.2, 1.1, 70), rng.normal(0.5, 1, 90)],
+    "ties": [np.round(rng.normal(5, 2, 100)), np.round(rng.normal(5.6, 2, 80))],
+}
+for name, groups in cases.items():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        result = stats.anderson_ksamp(groups)
+    reference["ad"].append({
+        "name": name, "samples": [listing(g) for g in groups],
+        "statistic": float(result.statistic), "critical": listing(result.critical_values),
+        "significance": float(result.significance_level),
+        "capped": bool(result.statistic < result.critical_values.min()),
+        "floored": bool(result.statistic > result.critical_values.max()),
+    })
+
+# The difference of two samples, by the arithmetic of its definition.
+x, y = samples["normal"][:400], samples["skewed"][:300]
+mx, my = moments_of(x), moments_of(y)
+reference["compare"] = {
+    "a": listing(x), "b": listing(y),
+    "meanDifference": mx["mean"] - my["mean"],
+    "meanDifferenceError": math.hypot(mx["seMean"], my["seMean"]),
+    "sdDifference": mx["sd"] - my["sd"],
+    "sdDifferenceError": math.hypot(mx["seSd"], my["seSd"]),
+}
+
+# Resampling irregular samples to an even interval.
+times = np.cumsum(rng.uniform(0.5, 2.0, 300))
+values = np.sin(times / 7) + 0.1 * rng.normal(size=300)
+interval = 1.25
+grid = times[0] + interval * np.arange(int(math.floor((times[-1] - times[0]) / interval + 1e-9)) + 1)
+reference["resample"] = {
+    "times": listing(times), "values": listing(values), "interval": interval,
+    "expected": listing(np.interp(grid, times, values)),
+    "largestGap": float(np.max(np.diff(times))),
+}
+
+# Windows, periodic as SciPy's get_window gives them.
+reference["windows"] = {name: listing(signal.get_window(scipy_name, 64))
+                        for name, scipy_name in [("rectangular", "boxcar"), ("hann", "hann"), ("hamming", "hamming"), ("blackman", "blackman")]}
+
+# The transform at a power of two, composite lengths and a prime.
+reference["fft"] = []
+for n in [1, 2, 8, 64, 12, 100, 97, 1000, 1024]:
+    re, im = rng.normal(size=n), rng.normal(size=n)
+    out = np.fft.fft(re + 1j * im)
+    reference["fft"].append({"n": n, "re": listing(re), "im": listing(im), "outRe": listing(out.real), "outIm": listing(out.imag)})
+
+# The periodogram density, with and without padding, for an even and an odd length.
+fs = 10.0
+t = np.arange(1000) / fs
+x = 2.0 * np.sin(2 * np.pi * 1.3 * t + 0.4) + 0.5 * np.sin(2 * np.pi * 3.1 * t) + rng.normal(0, 0.3, 1000) + 7.0
+reference["periodogram"] = []
+for name, window, nfft, data in [("hann", "hann", 1000, x), ("hamming padded", "hamming", 2048, x),
+                                 ("rectangular odd", "boxcar", 999, x[:999]), ("blackman", "blackman", 1000, x)]:
+    f, p = signal.periodogram(data, fs, window=window, nfft=nfft, detrend="constant", scaling="density")
+    reference["periodogram"].append({
+        "name": "rectangular" if window == "boxcar" else window, "fs": fs, "nfft": nfft, "values": listing(data),
+        "frequencies": listing(f), "power": listing(p),
+    })
+
+# The spectrogram.
+f, tt, sxx = signal.spectrogram(x[:1024] if len(x) >= 1024 else np.pad(x, (0, 1024 - len(x))), fs, window="hann", nperseg=128,
+                                noverlap=64, nfft=128, detrend="constant", scaling="density", mode="psd")
+padded = x[:1024] if len(x) >= 1024 else np.pad(x, (0, 1024 - len(x)))
+reference["spectrogram"] = {
+    "values": listing(padded), "fs": fs, "segment": 128, "overlap": 64,
+    "frequencies": listing(f), "times": listing(tt), "power": [listing(sxx[:, j]) for j in range(sxx.shape[1])],
+}
+
+# The autocorrelation by direct sums.
+n = 500
+series = np.sin(2 * np.pi * np.arange(n) / 40) + 0.4 * rng.normal(size=n) + 3.0
+d = series - series.mean()
+full = np.correlate(d, d, "full")
+reference["autocorrelation"] = {"values": listing(series), "maxLag": 120, "expected": listing(full[n - 1:n - 1 + 121] / full[n - 1])}
+
+# The Trend additions: irregular times, the rate between successive samples, the least-squares line, and the time held beyond a
+# level (computed here by clipping each holding interval to the window with NumPy, not by the routine under check).
+trend_rng = np.random.default_rng(20261108)
+count = 400
+gaps = trend_rng.choice([5, 10, 10, 10, 20, 60], size=count - 1)
+times_s = np.concatenate([[0], np.cumsum(gaps)])
+slope_true, level0 = 0.002, 10.0
+vals = level0 + slope_true * times_s + 1.5 * np.sin(2 * np.pi * times_s / 900) + 0.3 * trend_rng.normal(size=count)
+t0_ms = 1794000000000
+times_ms = t0_ms + times_s * 1000
+dt = np.diff(times_s)
+fit = stats.linregress(times_s, vals)
+
+
+def beyond_of(level, side, lo_ms, hi_ms):
+    start = np.clip(times_ms[:-1], lo_ms, hi_ms)
+    stop = np.clip(times_ms[1:], lo_ms, hi_ms)
+    length = stop - start
+    held = vals[:-1]
+    flag = held > level if side == "above" else held < level
+    return {"beyond": float(length[flag].sum()), "observed": float(length.sum())}
+
+
+window = [int(times_ms[40]), int(times_ms[300])]
+reference["trend"] = {
+    "times": [int(t) for t in times_ms], "values": listing(vals),
+    "rates": listing(np.diff(vals) / dt),
+    "fit": {"slope": float(fit.slope), "intercept": float(fit.intercept), "rSquared": float(fit.rvalue ** 2), "slopeError": float(fit.stderr), "n": count},
+    "window": window,
+    "beyond": [
+        {"level": 11.0, "side": "above", "window": window, **beyond_of(11.0, "above", *window)},
+        {"level": 9.0, "side": "below", "window": window, **beyond_of(9.0, "below", *window)},
+        {"level": 11.0, "side": "above", "window": [int(times_ms[0] - 5000), int(times_ms[-1] + 5000)], **beyond_of(11.0, "above", int(times_ms[0] - 5000), int(times_ms[-1] + 5000))},
+        {"level": float(vals[10]), "side": "above", "window": window, **beyond_of(float(vals[10]), "above", *window)},
+    ],
+}
+
+# A constant series has no coefficient of determination (zero over zero); SciPy settles it by returning a correlation of 0.
+constant = stats.linregress([0.0, 1.0, 2.0, 3.0], [5.0, 5.0, 5.0, 5.0])
+reference["trendConstant"] = {"slope": float(constant.slope), "stderr": float(constant.stderr), "rvalue": float(constant.rvalue)}
+
+# The Compare tab: two samples, the common bins, the chi-square table with the expected counts of SciPy's chi2_contingency, the two-sample
+# Kolmogorov-Smirnov distance with the classical asymptotic p-value, the k-sample Anderson-Darling test, and the decision of each test.
+compare_rng = np.random.default_rng(20261109)
+
+
+def compare_case(name, a, b):
+    a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+    pooled = np.concatenate([a, b])
+    bins = int(math.ceil(math.log2(len(pooled)))) + 1
+    lo, hi = float(pooled.min()), float(pooled.max())
+    flat = not hi > lo
+    case = {"name": name, "a": listing(a), "b": listing(b), "bins": bins}
+    if flat or len(a) < 8 or len(b) < 8:
+        case["refusal"] = "samples" if (len(a) < 8 or len(b) < 8) else "flat"
+        return case
+    ca = np.histogram(a, bins=bins, range=(lo, hi))[0]
+    cb = np.histogram(b, bins=bins, range=(lo, hi))[0]
+    used = (ca + cb) > 0
+    table = np.vstack([ca[used], cb[used]])
+    chi2, p, dof, expected = stats.chi2_contingency(table, correction=False)
+    below = int((expected < 5).sum())
+    case["countsA"], case["countsB"] = [int(c) for c in ca], [int(c) for c in cb]
+    case["expectedBelowFive"], case["cells"] = below, int(expected.size)
+    case["chi2Refused"] = bool(below / expected.size > 0.2)
+    case["chi2"] = {"statistic": float(chi2), "degrees": int(dof), "bins": int(used.sum()), "p": float(p)}
+    d = float(stats.ks_2samp(a, b).statistic)
+    effective = len(a) * len(b) / (len(a) + len(b))
+    case["ks"] = {"statistic": d, "p": float(special.kolmogorov(math.sqrt(effective) * d))}
+    ad = stats.anderson_ksamp([a, b], midrank=True)
+    case["ad"] = {"statistic": float(ad.statistic), "significance": float(ad.significance_level)}
+    return case
+
+
+reference["compareCases"] = [
+    compare_case("equal", compare_rng.normal(10, 2, 400), compare_rng.normal(10, 2, 400)),
+    compare_case("shifted", compare_rng.normal(10, 2, 400), compare_rng.normal(11, 2, 400)),
+    compare_case("unequal sizes", compare_rng.normal(10, 2, 20), compare_rng.normal(10, 2, 2000)),
+    compare_case("twenty each", 1.5 * np.sin(compare_rng.uniform(0, 2 * np.pi, 20)), 1.5 * np.sin(compare_rng.uniform(0, 2 * np.pi, 20))),
+    compare_case("two separate groups", compare_rng.normal(0, 0.5, 100), compare_rng.normal(20, 0.5, 100)),
+    compare_case("few", compare_rng.normal(0, 1, 6), compare_rng.normal(0, 1, 5)),
+    compare_case("flat", [5.0] * 12, [5.0] * 14),
+]
+
+# The Spectrum tab: the preparation of an irregular series (the median spacing, the gaps, the linear interpolation to an even interval) and
+# the three scalings of the one-sided spectrum (SciPy's periodogram with density and spectrum), on a regular series, on an irregular
+# series with a gap and on a sine whose period is a whole number of samples (the amplitude of its bin is the amplitude of the sine).
+spectrum_rng = np.random.default_rng(20261110)
+
+
+def scalings(even, fs, window):
+    f, density = signal.periodogram(even, fs, window=window, detrend="constant", scaling="density")
+    _, power = signal.periodogram(even, fs, window=window, detrend="constant", scaling="spectrum")
+    return {"window": window, "frequencies": listing(f), "density": listing(density), "power": listing(power)}
+
+
+def spectrum_case(name, times, values, windows=("boxcar", "hann")):
+    times, values = np.asarray(times, dtype=float), np.asarray(values, dtype=float)
+    median = float(np.median(np.diff(times)))
+    count = int(math.floor((times[-1] - times[0]) / median + 1e-9)) + 1
+    case = {"name": name, "times": listing(times), "values": listing(values), "median": median, "count": count}
+    spacings = np.diff(times)
+    case["gaps"] = [{"from": float(times[i]), "to": float(times[i + 1])} for i in np.where(spacings > 5 * median)[0]]
+    even_times = times[0] + np.arange(count) * median
+    even = np.interp(even_times, times, values)
+    case["even"] = listing(even)
+    case["spectra"] = [scalings(even, 1 / median, w) for w in windows]
+    return case
+
+
+regular_times = np.arange(0, 1200 * 10, 10.0)
+sine_values = 1.5 * np.sin(2 * np.pi * regular_times / 600)
+noisy = 1.5 * np.sin(2 * np.pi * regular_times / 600) + 0.3 * spectrum_rng.normal(size=len(regular_times)) + 10.0
+irregular_times = np.cumsum(spectrum_rng.integers(7, 14, size=700)).astype(float)
+irregular_times[300:] += 300.0
+irregular_values = 1.5 * np.sin(2 * np.pi * irregular_times / 600) + 0.3 * spectrum_rng.normal(size=len(irregular_times))
+reference["spectrumCases"] = {
+    "regular": spectrum_case("regular", regular_times, noisy, ("boxcar", "hann", "hamming", "blackman")),
+    "sine": spectrum_case("sine", regular_times, sine_values),
+    "irregularWithGap": spectrum_case("irregular with a gap", irregular_times, irregular_values),
+}
+
+# The tools of two and several signals: fixed datasets with the values of NumPy and SciPy for the correlations, the
+# regression, the principal component analysis, the mutual information, the clustering, the profile and the matrix routines.
+from scipy import optimize, linalg
+from scipy.cluster import hierarchy
+from scipy.spatial import distance
+
+pair_rng = np.random.default_rng(20261111)
+
+
+def linear_fit(design, y):
+    """Least squares of y on the columns of design: the coefficients, their errors (the covariance scaled by the reduced
+    chi-square, as an unweighted fit has them), the chi-square per degree of freedom and R squared."""
+    coef, _, _, _ = np.linalg.lstsq(design, y, rcond=None)
+    residuals = y - design @ coef
+    dof = len(y) - design.shape[1]
+    chi2 = float(residuals @ residuals)
+    cov = np.linalg.inv(design.T @ design) * (chi2 / dof)
+    ss_tot = float(((y - y.mean()) ** 2).sum())
+    return {"params": listing(coef), "errors": listing(np.sqrt(np.diag(cov))), "chi2PerDof": chi2 / dof, "rSquared": 1 - chi2 / ss_tot, "dof": dof}
+
+
+def gaussian_model(x, a, mu, sigma, c):
+    return a * np.exp(-((x - mu) ** 2) / (2 * sigma ** 2)) + c
+
+
+# The fits of the fit tab are made by ROOT (root_fits.C writes root-fits.json). These draws keep the random sequence of the cases
+# below as it was, when the data of those fits came from this generator.
+for size, scale in ((60, 0.4), (60, 0.5), (60, 0.05), (60, 0.05), (60, 0.2), (200, 0.15), (200, 0.1), (300, 0.05)):
+    pair_rng.normal(0, scale, size)
+
+# Correlations: Pearson and Spearman with their p-values, the cross-correlation over lags (Pearson's r of x[t] and y[t + lag] over
+# the samples both have), and the partial correlation of four variables from the inverse of their correlation matrix.
+cx = pair_rng.normal(0, 1, 200)
+cy = 0.6 * cx + pair_rng.normal(0, 0.8, 200)
+lagged = np.roll(cx, 3) + pair_rng.normal(0, 0.3, 200)
+pearson = stats.pearsonr(cx, cy)
+spearman = stats.spearmanr(cx, cy)
+def cross(x, y, lag):
+    if lag >= 0:
+        a, b = x[: len(x) - lag], y[lag:]
+    else:
+        a, b = x[-lag:], y[: len(y) + lag]
+    return float(np.corrcoef(a, b)[0, 1])
+four = np.column_stack([cx, cy, cx ** 2 + pair_rng.normal(0, 0.5, 200), pair_rng.normal(0, 1, 200)])
+corr4 = np.corrcoef(four, rowvar=False)
+precision = np.linalg.inv(corr4)
+partial = -precision / np.sqrt(np.outer(np.diag(precision), np.diag(precision)))
+np.fill_diagonal(partial, 1.0)
+reference["correlationCases"] = {
+    "x": listing(cx), "y": listing(cy),
+    "pearson": {"r": float(pearson.statistic), "p": float(pearson.pvalue)},
+    "spearman": {"rho": float(spearman.statistic), "p": float(spearman.pvalue)},
+    "lagged": listing(lagged), "lags": list(range(-5, 6)), "cross": [cross(cx, lagged, lag) for lag in range(-5, 6)],
+    "four": [listing(col) for col in four.T], "correlationMatrix": [listing(row) for row in corr4], "partialCorrelation": [listing(row) for row in partial],
+}
+
+# The multiple linear regression of y on three variables with an intercept: the coefficients, their errors, the standardised
+# coefficients (each times the standard deviation of its variable over that of y), R squared and the residuals.
+X3 = pair_rng.normal(0, 1, (120, 3)) * np.array([1.0, 2.0, 0.5])
+ry = 2.0 + 1.5 * X3[:, 0] - 0.7 * X3[:, 1] + 3.0 * X3[:, 2] + pair_rng.normal(0, 0.5, 120)
+design = np.column_stack([np.ones(120), X3])
+regression = linear_fit(design, ry)
+reference["regressionCases"] = {
+    "x": [listing(col) for col in X3.T], "y": listing(ry), "truth": [2.0, 1.5, -0.7, 3.0], **regression,
+    "standardised": listing(np.array(regression["params"][1:]) * X3.std(axis=0, ddof=1) / ry.std(ddof=1)),
+    "residuals": listing(ry - design @ np.array(regression["params"])),
+}
+
+# The principal component analysis of standardised variables: the eigenvalues of the correlation matrix in descending order, the
+# share of the variance of each, and the components with the sign that makes their largest element positive.
+standardised = (four - four.mean(axis=0)) / four.std(axis=0, ddof=1)
+values, vectors = np.linalg.eigh(np.corrcoef(standardised, rowvar=False))
+order = np.argsort(values)[::-1]
+values, vectors = values[order], vectors[:, order]
+for k in range(vectors.shape[1]):
+    if vectors[np.argmax(np.abs(vectors[:, k])), k] < 0:
+        vectors[:, k] = -vectors[:, k]
+reference["pcaCases"] = {"columns": [listing(col) for col in four.T], "eigenvalues": listing(values), "share": listing(values / values.sum()), "components": [listing(vectors[:, k]) for k in range(vectors.shape[1])]}
+
+# The mutual information of two variables as the binned plug-in estimate in nats over k equal-width bins of each variable's range.
+def mutual_information(x, y, bins):
+    counts, _, _ = np.histogram2d(x, y, bins=bins)
+    p = counts / counts.sum()
+    px, py = p.sum(axis=1, keepdims=True), p.sum(axis=0, keepdims=True)
+    nonzero = p > 0
+    return float((p[nonzero] * np.log(p[nonzero] / (px @ py)[nonzero])).sum())
+mi_x, mi_y = pair_rng.normal(0, 1, 500), pair_rng.normal(0, 1, 500)
+reference["mutualInformationCases"] = {"bins": 16, "cases": [
+    {"name": "linear", "x": listing(cx), "y": listing(cy), "value": mutual_information(cx, cy, 16)},
+    {"name": "square", "x": listing(cx), "y": listing(cx ** 2), "value": mutual_information(cx, cx ** 2, 16)},
+    {"name": "independent", "x": listing(mi_x), "y": listing(mi_y), "value": mutual_information(mi_x, mi_y, 16)},
+]}
+
+# Hierarchical clustering of six signals by the distance one minus the absolute correlation, with average linkage: the linkage
+# matrix of SciPy and the order of the leaves, which orders the correlation matrix of the Dependency tab.
+base_a, base_b = pair_rng.normal(0, 1, 300), pair_rng.normal(0, 1, 300)
+six = np.column_stack([base_a, base_a + pair_rng.normal(0, 0.3, 300), -base_a + pair_rng.normal(0, 0.5, 300), base_b, base_b + pair_rng.normal(0, 0.4, 300), pair_rng.normal(0, 1, 300)])
+corr6 = np.corrcoef(six, rowvar=False)
+dist6 = 1 - np.abs(corr6)
+np.fill_diagonal(dist6, 0.0)
+linkage = hierarchy.linkage(distance.squareform(dist6, checks=False), method="average")
+reference["clusteringCases"] = {"correlationMatrix": [listing(row) for row in corr6], "linkage": [listing(row) for row in linkage], "leaves": [int(i) for i in hierarchy.leaves_list(linkage)]}
+
+# The profile of y against x: the mean of y, its standard error and the count in each of ten equal bins of x.
+edges = np.linspace(cx.min(), cx.max(), 11)
+which = np.clip(np.digitize(cx, edges) - 1, 0, 9)
+profile = []
+for b in range(10):
+    inside = cy[which == b]
+    profile.append({"count": int(len(inside)), "mean": float(inside.mean()) if len(inside) else None, "error": float(inside.std(ddof=1) / math.sqrt(len(inside))) if len(inside) > 1 else None})
+reference["profileCases"] = {"x": listing(cx), "y": listing(cy), "edges": listing(edges), "bins": profile}
+
+# The matrix routines: a symmetric positive definite matrix with its inverse, Cholesky factor, a solved system and its eigen
+# decomposition (ascending eigenvalues, each vector with its largest element positive), and a general matrix with its inverse.
+spd = np.array([[4.0, 1.0, 0.5, 0.0], [1.0, 3.0, 0.2, 0.1], [0.5, 0.2, 2.0, 0.3], [0.0, 0.1, 0.3, 1.0]])
+rhs = np.array([1.0, 2.0, 3.0, 4.0])
+evals, evecs = np.linalg.eigh(spd)
+for k in range(4):
+    if evecs[np.argmax(np.abs(evecs[:, k])), k] < 0:
+        evecs[:, k] = -evecs[:, k]
+general = np.array([[2.0, -1.0, 0.0], [1.0, 3.0, 1.0], [0.5, 0.0, 4.0]])
+reference["matrixCases"] = {
+    "spd": [listing(row) for row in spd], "inverse": [listing(row) for row in np.linalg.inv(spd)], "cholesky": [listing(row) for row in np.linalg.cholesky(spd)],
+    "rhs": listing(rhs), "solution": listing(np.linalg.solve(spd, rhs)), "eigenvalues": listing(evals), "eigenvectors": [listing(evecs[:, k]) for k in range(4)],
+    "general": [listing(row) for row in general], "generalInverse": [listing(row) for row in np.linalg.inv(general)],
+}
+
+# The pairing of two irregular signals at the union of their sample times, by the gap rule of the Correlation tab: the value a
+# signal holds at a time is its last sample at or before it, paired only when that sample is not older than five times the
+# signal's median spacing and the sample that ends the hold does not follow a lost connection. Written here by its own loop.
+def held(points, t, gap_ms):
+    times = [q[0] for q in points]
+    i = int(np.searchsorted(times, t, side="right")) - 1
+    if i < 0:
+        return None
+    t0, v0, _ = points[i]
+    if t - t0 > gap_ms:
+        return None
+    if t > t0 and i + 1 < len(points) and points[i + 1][2]:
+        return None
+    return v0
+
+
+def pair_case(x, y):
+    median = lambda pts: float(np.median(np.diff([q[0] for q in pts]))) if len(pts) > 1 else None
+    gap_x, gap_y = 5 * median(x), 5 * median(y)
+    x_times = {q[0] for q in x}
+    pairs, excluded_x, excluded_y = [], 0, 0
+    for t, v, _ in x:
+        h = held(y, t, gap_y)
+        if h is None:
+            excluded_x += 1
+        else:
+            pairs.append((t, v, h))
+    for t, v, _ in y:
+        if t in x_times:
+            continue
+        h = held(x, t, gap_x)
+        if h is None:
+            excluded_y += 1
+        else:
+            pairs.append((t, h, v))
+    pairs.sort()
+    return {"x": [list(q) for q in x], "y": [list(q) for q in y], "pairs": [list(q) for q in pairs], "excludedX": excluded_x, "excludedY": excluded_y, "medianX": median(x), "medianY": median(y)}
+
+
+# x every 10 s from 0 with a gap of 120 s after 100 s and a lost connection at 400 s; y every 25 s from 7 s. Times in ms.
+pair_x = [(t * 1000, float(np.sin(t / 50)), False) for t in list(range(0, 110, 10)) + list(range(230, 400, 10))] + [(400000, 0.5, True)] + [(t * 1000, float(np.cos(t / 50)), False) for t in range(410, 500, 10)]
+pair_y = [(t * 1000, 0.1 * t, False) for t in range(7, 500, 25)]
+reference["pairingCases"] = {"irregular": pair_case(pair_x, pair_y), "aligned": pair_case([(t * 1000, float(t), False) for t in range(0, 100, 10)], [(t * 1000, float(2 * t), False) for t in range(0, 100, 10)])}
+
+# The histogram fit and the bands of the fit tab are taken from ROOT (root_fits.C, root-fits.json); this draw keeps the random
+# sequence of the cases below as it was.
+pair_rng.normal(10.0, 2.0, 5000)
+
+# The alignment of several signals on the times all of them share (the means over one interval of the server carry the time of
+# their interval, and an interval without samples is absent): the common times, the columns on them, the number of distinct times
+# in any signal, the number dropped and the share of the union each signal holds.
+align_times = [[0, 60, 120, 180, 240, 300, 360], [0, 60, 180, 240, 300, 360, 420], [60, 120, 180, 240, 360, 420, 480]]
+align_series = [{"name": f"s{k}", "points": [{"t": t * 1000, "v": float(k * 100 + t / 60)} for t in times]} for k, times in enumerate(align_times)]
+common_times = sorted(set.intersection(*[set(times) for times in align_times]))
+union_times = sorted(set.union(*[set(times) for times in align_times]))
+reference["alignmentCases"] = {
+    "series": align_series, "times": [t * 1000 for t in common_times], "union": len(union_times), "common": len(common_times),
+    "dropped": len(union_times) - len(common_times),
+    "columns": [[float(k * 100 + t / 60) for t in common_times] for k in range(3)],
+    "shares": [len(times) / len(union_times) for times in align_times],
+}
+
+# The condition number of a correlation matrix (the largest eigenvalue over the smallest, as np.linalg.cond gives for a symmetric
+# positive definite matrix) and the pairs of columns whose absolute correlation reaches a threshold, for a well-conditioned set
+# and for a set whose second column is the first plus a little noise.
+cond_base = pair_rng.normal(0, 1, (200, 3))
+cond_near = np.column_stack([cond_base[:, 0], cond_base[:, 0] + pair_rng.normal(0, 0.02, 200), cond_base[:, 2]])
+def cond_case(columns, threshold):
+    corr = np.corrcoef(columns, rowvar=False)
+    pairs = [{"i": i, "j": j, "r": float(corr[i, j])} for i in range(corr.shape[0]) for j in range(i + 1, corr.shape[0]) if abs(corr[i, j]) >= threshold]
+    pairs.sort(key=lambda pair: -abs(pair["r"]))
+    return {"columns": [listing(col) for col in columns.T], "cond": float(np.linalg.cond(corr)), "threshold": threshold, "pairs": pairs}
+reference["conditionCases"] = {"well": cond_case(cond_base, 0.9), "near": cond_case(cond_near, 0.9)}
+
+# The change of unit: a unit that is an SI prefix and a base unit in use can be shown in another prefix of the same base, the values
+# multiplied by a power of ten (computed here with decimals, and the units that each base lists in ascending order of the factor);
+# a compound, a text such as degC or Gs, an empty text and another base offer no change.
+from decimal import Decimal
+unit_exponent = {"p": -12, "n": -9, "u": -6, "\u00b5": -6, "m": -3, "": 0, "k": 3, "M": 6, "G": 9}
+unit_bases = {"Hz": ["m", "", "k", "M", "G"], "Pa": ["m", "", "k", "M"], "rad": ["u", "m", ""], "Ohm": ["m", "", "k", "M"], "m": ["p", "n", "u", "m", "", "k"],
+              "V": ["n", "u", "m", "", "k", "M"], "A": ["p", "n", "u", "m", "", "k"], "W": ["u", "m", "", "k", "M", "G"], "s": ["p", "n", "u", "m", ""],
+              "T": ["n", "u", "m", ""], "J": ["u", "m", "", "k", "M"], "K": ["m", ""]}
+def unit_factor(a, b):
+    (pa, ba), (pb, bb) = a, b
+    return float(Decimal(10) ** (unit_exponent[pa] - unit_exponent[pb])) if ba == bb else None
+unit_pairs = [(("m", "m"), ("u", "m")), (("u", "m"), ("m", "m")), (("", "V"), ("m", "V")), (("k", "V"), ("", "V")), (("m", "A"), ("u", "A")), (("m", "m"), ("", "m")),
+              (("", "Hz"), ("M", "Hz")), (("\u00b5", "m"), ("m", "m")), (("m", "m"), ("m", "m")), (("k", "Ohm"), ("", "Ohm")), (("m", "rad"), ("u", "rad")), (("n", "s"), ("m", "s"))]
+reference["unitCases"] = {
+    "conversions": [{"from": a[0] + a[1], "to": b[0] + b[1], "factor": unit_factor(a, b)} for a, b in unit_pairs],
+    "refused": [["mm", "mV"], ["Gs", "ms"], ["mm/s", "m/s"], ["", "mm"], ["degC", "K"], ["mm", ""], ["min", "ms"], ["dm", "m"], ["Mm", "m"]],
+    "compatible": {text: [prefix.replace("u", "u") + base for prefix in unit_bases[base]] for text, base in (("mm", "m"), ("V", "V"), ("kHz", "Hz"), ("uA", "A"), ("ms", "s"), ("Pa", "Pa"))},
+}
+
+# Arrays and images. The routines index an array from zero and an image row-major from the top left (the column index runs along X); a
+# region is the half-open block [x0, x1) by [y0, y1) of stored indices. The summary values of an array: the maximum and its first
+# position, the minimum and its first position, the mean, the root mean square, the sum, the centre (the intensity-weighted centroid
+# in elements, defined only when the sum is positive) and the half-maximum width. The half-maximum width is measured at the level
+# half way from the minimum to the maximum, on the first position of the maximum: from there to each side to the first element
+# strictly below the level, and between that element and its neighbour towards the maximum the crossing is linearly interpolated;
+# it is not defined when either side never falls below the level, or when the array is flat. The background of an array is the one
+# that TSpectrum::Background of ROOT computes (the clipping of Morhac: order 2, no smoothing, a rising or a falling width, the number
+# of iterations given); its values here are written by ROOT itself (root_background.C run as root -l -b -q), and when ROOT is not on
+# the PATH (or named by the environment variable ROOT_BIN) the values already in the file are kept. The method of both is the code of
+# TSpectrum in https://github.com/root-project/root/blob/v6-40-04/hist/spectrum/src/TSpectrum.cxx (tag v6-40-04 of the ROOT repository). The peaks are those that
+# SearchHighRes of ROOT finds (root_search.C); the width of a peak, which ROOT does not give, is the width at half of its height above
+# the background of ROOT's clipping, found here by a second method.
+import shutil
+import subprocess
+import tempfile
+array_rng = np.random.default_rng(20261114)
+previous_root = {}
+if os.path.exists(os.path.join(HERE, "references.json")):
+    with open(os.path.join(HERE, "references.json")) as old:
+        previous_root = {case["name"]: case for case in json.load(old).get("arrayCases", {}).get("rootBackground", [])}
+root_bin = os.environ.get("ROOT_BIN") or shutil.which("root")
+root_requests = {}
+
+
+def root_background(name, values, iterations, direction):
+    """The background that ROOT computes for the values (direction 'increasing' or 'decreasing'), kept under the name of the case."""
+    values = [float(v) for v in values]
+    case = {"name": name, "iterations": iterations, "direction": direction, "values": values}
+    if root_bin:
+        flag = 0 if direction == "increasing" else 1
+        with tempfile.TemporaryDirectory() as folder:
+            source = os.path.join(folder, "in.txt")
+            result = os.path.join(folder, "out.txt")
+            with open(source, "w") as handle:
+                handle.write(f"{iterations} {flag} {len(values)}\n" + " ".join(repr(v) for v in values) + "\n")
+            macro = os.path.join(HERE, "root_background.C")
+            done = subprocess.run([root_bin, "-l", "-b", "-q", f'{macro}("{source}","{result}")'], capture_output=True, text=True, timeout=300)
+            if done.returncode != 0 or not os.path.exists(result):
+                raise SystemExit("ROOT failed on the case " + name + ": " + done.stderr[-400:])
+            text = open(result).read().strip()
+            if text.startswith("ERROR"):
+                case["background"] = None
+                case["error"] = text[len("ERROR"):].strip()
+            else:
+                case["background"] = [float(x) for x in text.split()]
+    else:
+        kept = previous_root.get(name)
+        if not kept or kept["values"] != values or kept["iterations"] != iterations or kept["direction"] != direction:
+            raise SystemExit("ROOT is not on the PATH (set ROOT_BIN) and the file holds no background of the case " + name + " for these values")
+        case["background"] = kept["background"]
+        if "error" in kept:
+            case["error"] = kept["error"]
+    root_requests[name] = case
+    if case["background"] is None:
+        return None
+    return np.array(case["background"])
+
+
+def half_maximum_width(values):
+    values = np.asarray(values, dtype=float)
+    top = int(np.argmax(values))
+    low, high = float(values.min()), float(values.max())
+    if high == low:
+        return None
+    level = low + (high - low) / 2
+    i = top
+    while i > 0 and values[i] >= level:
+        i -= 1
+    if values[i] >= level:
+        return None
+    left = i + (level - values[i]) / (values[i + 1] - values[i])
+    j = top
+    while j < len(values) - 1 and values[j] >= level:
+        j += 1
+    if values[j] >= level:
+        return None
+    right = j - 1 + (values[j - 1] - level) / (values[j - 1] - values[j])
+    return {"left": float(left), "right": float(right), "width": float(right - left), "level": float(level)}
+
+
+def array_summary(values):
+    values = np.asarray(values, dtype=float)
+    total = float(values.sum())
+    indices = np.arange(len(values))
+    return {
+        "max": float(values.max()), "maxAt": int(np.argmax(values)), "min": float(values.min()), "minAt": int(np.argmin(values)),
+        "mean": float(values.mean()), "rms": float(np.sqrt(np.mean(values ** 2))), "sum": total,
+        "centre": float((indices * values).sum() / total) if total > 0 else None,
+        "fwhm": half_maximum_width(values),
+    }
+
+
+previous_search = {}
+if os.path.exists(os.path.join(HERE, "references.json")):
+    with open(os.path.join(HERE, "references.json")) as old:
+        previous_search = {case["name"]: case for case in json.load(old).get("arrayCases", {}).get("rootSearch", [])}
+search_requests = {}
+
+
+def root_search(name, values, sigma=2.0, threshold=0.05, background=True, markov=True, iterations=3, window=3, max_peaks=100):
+    """The peaks that SearchHighRes of ROOT finds (the engine of TSpectrum::Search), with the deconvolved spectrum it leaves."""
+    values = [float(v) for v in values]
+    case = {"name": name, "values": values, "sigma": sigma, "threshold": threshold, "background": background, "markov": markov,
+            "deconvolutionIterations": iterations, "averageWindow": window, "maxPeaks": max_peaks}
+    if root_bin:
+        with tempfile.TemporaryDirectory() as folder:
+            source = os.path.join(folder, "in.txt")
+            result = os.path.join(folder, "out.txt")
+            with open(source, "w") as handle:
+                handle.write(f"{sigma} {threshold * 100} {int(background)} {int(markov)} {iterations} {window} {max_peaks} {len(values)}\n" + " ".join(repr(v) for v in values) + "\n")
+            macro = os.path.join(HERE, "root_search.C")
+            done = subprocess.run([root_bin, "-l", "-b", "-q", f'{macro}("{source}","{result}")'], capture_output=True, text=True, timeout=300)
+            if done.returncode != 0 or not os.path.exists(result):
+                raise SystemExit("ROOT failed on the search case " + name + ": " + done.stderr[-400:])
+            lines = open(result).read().strip().split("\n")
+            head = lines[0].split()
+            case["positions"] = [float(x) for x in head[1:]]
+            case["deconvolved"] = [float(x) for x in lines[1].split()]
+            case["refused"] = "Error in <TSpectrum::SearchHighRes>" in (done.stdout + done.stderr)
+    else:
+        kept = previous_search.get(name)
+        keys = ("values", "sigma", "threshold", "background", "markov", "deconvolutionIterations", "averageWindow", "maxPeaks")
+        if not kept or any(kept[k] != case[k] for k in keys):
+            raise SystemExit("ROOT is not on the PATH (set ROOT_BIN) and the file holds no search of the case " + name + " for these arguments")
+        case["positions"], case["deconvolved"], case["refused"] = kept["positions"], kept["deconvolved"], kept["refused"]
+    search_requests[name] = case
+    return case
+
+
+def width_at_half(above, index):
+    """The width at half of the height above the background, by a second method: the run of elements at or above half the height."""
+    above = np.asarray(above, dtype=float)
+    height = above[index]
+    if not height > 0:
+        return None
+    half = height / 2
+    low = index
+    while low > 0 and above[low - 1] >= half:
+        low -= 1
+    high = index
+    while high < len(above) - 1 and above[high + 1] >= half:
+        high += 1
+    if low == 0 or high == len(above) - 1:
+        return None
+    left = (low - 1) + (half - above[low - 1]) / (above[low] - above[low - 1])
+    right = high + (above[high] - half) / (above[high] - above[high + 1])
+    return {"left": float(left), "right": float(right), "width": float(right - left)}
+
+
+def peak_widths_case(name, values, search, width_iterations=20, width_direction="decreasing"):
+    """The peaks of a ROOT search with their widths: the background of ROOT's clipping, the width at half of the height above it."""
+    values = np.asarray(values, dtype=float)
+    background = np.zeros(len(values)) if width_iterations is None else root_background(name + "-width", values, width_iterations, width_direction)
+    above = values - background
+    peaks = []
+    for x in search["positions"]:
+        index = int(x + 0.5)
+        width = width_at_half(above, index)
+        peaks.append({"position": x, "index": index, "value": float(values[index]), "height": float(above[index]),
+                      "width": width["width"] if width else None, "left": width["left"] if width else None, "right": width["right"] if width else None})
+    return {"name": name, "values": listing(values), "searchName": search["name"], "widthIterations": width_iterations, "widthDirection": width_direction, "peaks": peaks}
+
+
+wave_n = 2048
+wave_index = np.arange(wave_n)
+wave_values = (np.sin(2 * np.pi * 100.5 * wave_index / 2048.0) + 0.5 + 0.4 * (wave_index / (wave_n - 1)) ** 2
+               + sum(h * np.exp(-0.5 * ((wave_index - c) / sg) ** 2) for h, c, sg in ((3.0, 400.0, 12.0), (2.0, 900.0, 20.0), (4.0, 1500.0, 15.0)))
+               + array_rng.normal(0, 0.05, wave_n))
+wave_reference = wave_values + 0.1 * array_rng.normal(0, 1, wave_n) + 0.25
+clean_index = np.arange(401)
+clean_gaussian = 0.2 + 3.0 * np.exp(-0.5 * ((clean_index - 200.3) / 20.0) ** 2)
+ramp = np.linspace(0.0, 10.0, 50)
+plateau = np.concatenate([np.zeros(10), np.linspace(0, 5, 6), np.full(8, 5.0), np.linspace(5, 0, 6), np.zeros(10), [0.5, 3.0, 0.5], np.zeros(10)])
+short_peaks = np.array([0, 1, 0, 0.5, 4, 0.5, 0, 0.2, 0.1, 2.5, 6.0, 2.5, 0.1, 0.3, 0.2, 0.2, 1.0, 0.9, 0, 0], dtype=float)
+positive_noise = np.abs(array_rng.normal(0, 1, 300)) * 3 + 50 * np.exp(-0.5 * ((np.arange(300) - 150) / 10.0) ** 2) + np.linspace(5, 20, 300)
+reference["arrayCases"] = {
+    "wave": {"values": listing(wave_values), "summary": array_summary(wave_values), "reference": listing(wave_reference), "difference": listing(wave_values - wave_reference),
+             },
+    "gaussian": {"values": listing(clean_gaussian), "summary": array_summary(clean_gaussian), "fwhmOfModel": float(2 * math.sqrt(2 * math.log(2)) * 20.0)},
+    "ramp": {"values": listing(ramp), "summary": array_summary(ramp)},
+    "negative": {"values": [-1.0, -2.0, -3.0, -1.0], "summary": array_summary([-1.0, -2.0, -3.0, -1.0])},
+    "flat": {"values": [2.0, 2.0, 2.0, 2.0], "summary": array_summary([2.0, 2.0, 2.0, 2.0])},
+    "plateau": {"values": listing(plateau)},
+    "short": {"values": listing(short_peaks)},
+    "positive": {"values": listing(positive_noise)},
+    "heatmap": {"frames": [listing(wave_values[:32] * (1 + 0.1 * k)) for k in range(5)], "min": float(min((wave_values[:32] * (1 + 0.1 * k)).min() for k in range(5))),
+                "max": float(max((wave_values[:32] * (1 + 0.1 * k)).max() for k in range(5)))},
+}
+# The clipping itself, for each way ROOT is called: arrays with negative values and without, both directions, a single iteration, many
+# iterations, and a number of iterations larger than half of a short array.
+for name, values, iterations, direction in (
+        ("wave-20-decreasing", wave_values, 20, "decreasing"), ("wave-20-increasing", wave_values, 20, "increasing"),
+        ("wave-1-decreasing", wave_values, 1, "decreasing"), ("wave-5-increasing", wave_values, 5, "increasing"), ("wave-100-decreasing", wave_values, 100, "decreasing"),
+        ("positive-20-decreasing", positive_noise, 20, "decreasing"), ("positive-7-increasing", positive_noise, 7, "increasing"),
+        ("gaussian-30-decreasing", clean_gaussian, 30, "decreasing"), ("short-2-decreasing", short_peaks, 2, "decreasing"), ("short-4-increasing", short_peaks, 4, "increasing"),
+        ("short-15-decreasing", short_peaks, 15, "decreasing"), ("plateau-6-decreasing", plateau, 6, "decreasing"), ("ramp-10-decreasing", ramp, 10, "decreasing"),
+        ("short-9-decreasing", short_peaks, 9, "decreasing"), ("short-10-decreasing", short_peaks, 10, "decreasing"),
+        ("odd-10-decreasing", np.append(short_peaks, 0.7), 10, "decreasing"), ("odd-11-decreasing", np.append(short_peaks, 0.7), 11, "decreasing"),
+        ("three-1-increasing", np.array([1.0, 5.0, 2.0]), 1, "increasing"), ("two-1-decreasing", np.array([1.0, 5.0]), 1, "decreasing")):
+    root_background(name, values, iterations, direction)
+wave_small = wave_values[:600]
+sym_index = np.arange(120)
+symmetric_pair = 4.0 + 30 * np.exp(-0.5 * ((sym_index - 30.0) / 4.0) ** 2) + 30 * np.exp(-0.5 * ((sym_index - 90.0) / 4.0) ** 2)
+start_rng = np.random.default_rng(20261116)
+signed_index = np.arange(200)
+signed_start = start_rng.normal(0, 0.6, 200) - 2.0 + 25 * np.exp(-0.5 * ((signed_index - 100.0) / 5.0) ** 2)
+start_peak = 2.0 + start_rng.normal(0, 0.1, 150) + 30 * np.exp(-0.5 * ((np.arange(150) - 0.0) / 4.0) ** 2)
+end_peak = 2.0 + start_rng.normal(0, 0.1, 150) + 30 * np.exp(-0.5 * ((np.arange(150) - 149.0) / 4.0) ** 2)
+search_specs = [
+    ("wave-default", wave_values, {}), ("wave-sigma8", wave_values, {"sigma": 8.0}), ("wave-sigma3-plain", wave_values, {"sigma": 3.0, "background": False, "markov": False}),
+    ("wave-threshold30", wave_values, {"sigma": 5.0, "threshold": 0.3}), ("wave-five-peaks", wave_values, {"sigma": 2.0, "max_peaks": 5}),
+    ("wave-decon10", wave_values, {"sigma": 4.0, "iterations": 10, "window": 5}), ("wave-nodecon", wave_values, {"sigma": 4.0, "iterations": 0}),
+    ("positive-default", positive_noise, {}), ("positive-sigma5", positive_noise, {"sigma": 5.0}), ("positive-nomarkov", positive_noise, {"sigma": 3.0, "markov": False}),
+    ("gaussian-sigma20", clean_gaussian, {"sigma": 20.0}), ("gaussian-sigma10-nobackground", clean_gaussian, {"sigma": 10.0, "background": False}),
+    ("short-sigma1", short_peaks, {"sigma": 1.0}), ("plateau-sigma1", plateau, {"sigma": 1.0}), ("ramp-sigma2", ramp, {"sigma": 2.0}),
+    ("wave-small-sigma2", wave_small, {"sigma": 2.0}), ("wave-small-sigma15", wave_small, {"sigma": 15.0}),
+    ("wave-small-sigma1.5", wave_small, {"sigma": 1.5}), ("positive-sigma2.5", positive_noise, {"sigma": 2.5}),
+    ("symmetric-pair", symmetric_pair, {"sigma": 3.0}), ("tie-plain", symmetric_pair, {"sigma": 3.0, "background": False, "markov": False}),
+    ("peak-at-the-start", start_peak, {"sigma": 3.0}), ("signed-noise-start", signed_start, {"sigma": 3.0}), ("peak-at-the-end", end_peak, {"sigma": 3.0}),
+    ("boundary-clipping-ok", np.append(short_peaks[:14], 0.0)[:15], {"sigma": 1.0}), ("refused-boundary-clipping", short_peaks[:14], {"sigma": 1.0}),
+    ("boundary-sigma-ok", positive_noise, {"sigma": 102.2, "background": False}), ("refused-boundary-sigma", positive_noise, {"sigma": 102.3, "background": False}),
+    ("refused-sigma-below-1", short_peaks, {"sigma": 0.5}), ("refused-clipping-window", short_peaks, {"sigma": 3.0}), ("refused-threshold", short_peaks, {"sigma": 1.0, "threshold": 1.5}),
+    ("refused-sigma-too-large", positive_noise, {"sigma": 110.0, "background": False}),
+]
+for name, values, options in search_specs:
+    root_search(name, values, **options)
+reference["arrayCases"]["rootSearch"] = list(search_requests.values())
+width_specs = [("wave-widths", wave_values, "wave-sigma8", 20, "decreasing"), ("wave-widths-none", wave_values, "wave-sigma8", None, "decreasing"),
+               ("wave-widths-rising", wave_values, "wave-sigma3-plain", 12, "increasing"), ("positive-widths", positive_noise, "positive-sigma5", 20, "decreasing"),
+               ("gaussian-widths", clean_gaussian, "gaussian-sigma20", 30, "decreasing"), ("small-widths", wave_small, "wave-small-sigma2", 20, "decreasing")]
+reference["arrayCases"]["peakWidths"] = [peak_widths_case(name, values, search_requests[search_name], iterations, direction) for name, values, search_name, iterations, direction in width_specs]
+reference["arrayCases"]["rootBackground"] = list(root_requests.values())
+
+# Images: the region sums and projections, the centroid and the peak (the first maximum in row-major order), the subtraction of a
+# constant, and the difference of two frames. The Gaussian size of the projections is computed by ROOT (root_fits.C).
+image_rng = np.random.default_rng(20261115)
+image_w, image_h = 64, 48
+yy, xx = np.mgrid[0:image_h, 0:image_w]
+image_pixels = np.round(1000 + 20000 * np.exp(-0.5 * (((xx - 30.4) / 5.0) ** 2 + ((yy - 22.6) / 3.0) ** 2)) + image_rng.normal(0, 20, (image_h, image_w))).astype(float)
+image_second = np.round(1000 + 20000 * np.exp(-0.5 * (((xx - 33.4) / 5.0) ** 2 + ((yy - 22.6) / 3.0) ** 2)) + image_rng.normal(0, 20, (image_h, image_w))).astype(float)
+
+
+def image_case(pixels, x0, x1, y0, y1):
+    region = pixels[y0:y1, x0:x1]
+    total = float(region.sum())
+    columns = region.sum(axis=0)
+    rows = region.sum(axis=1)
+    xs = np.arange(x0, x1)
+    ys = np.arange(y0, y1)
+    flat = int(np.argmax(region))
+    peak_y, peak_x = divmod(flat, region.shape[1])
+    result = {"x0": x0, "x1": x1, "y0": y0, "y1": y1, "total": total, "projectionX": listing(columns), "projectionY": listing(rows),
+              "peak": {"x": int(x0 + peak_x), "y": int(y0 + peak_y), "value": float(region.max())}, "min": float(region.min()), "mean": float(region.mean()),
+              "centroid": {"x": float((xs * columns).sum() / total), "y": float((ys * rows).sum() / total)} if total > 0 else None}
+    return result
+
+
+image_reference_cases = {"pixels": listing(image_pixels), "width": image_w, "height": image_h,
+    "regions": [image_case(image_pixels, 0, image_w, 0, image_h), image_case(image_pixels, 8, 56, 6, 42), image_case(image_pixels, 20, 41, 14, 32)],
+    "constant": 1000.0, "subtracted": {"centroid": {"x": float(((xx * (image_pixels - 1000.0)).sum()) / (image_pixels - 1000.0).sum()), "y": float(((yy * (image_pixels - 1000.0)).sum()) / (image_pixels - 1000.0).sum())},
+                                      "total": float((image_pixels - 1000.0).sum()), "min": float((image_pixels - 1000.0).min())},
+    "second": listing(image_second), "difference": {"total": float((image_pixels - image_second).sum()), "min": float((image_pixels - image_second).min()), "max": float((image_pixels - image_second).max()),
+                                                     "cells": listing((image_pixels - image_second)[10:14, 28:34])},
+    "zero": {"width": 3, "height": 2, "pixels": [0.0] * 6, "centroid": None}}
+reference["imageCases"] = image_reference_cases
+
+with open(os.path.join(HERE, "references.json"), "w") as out:
+    json.dump(reference, out, separators=(",", ":"))
+    out.write("\n")
+print("wrote references.json", os.path.getsize(os.path.join(HERE, "references.json")), "bytes")

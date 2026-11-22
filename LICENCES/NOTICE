@@ -114,6 +114,11 @@ WAR location: ui/comm/js/vendor):
     dist/d3.min.js of the npm tarball d3-7.9.0.tgz. d3.SOURCE.txt beside the
     file records the tarball integrity and the SHA-256 of the file, and
     d3.LICENSE.txt beside it carries the same license text.
+  uFuzzy.iife.min.js (uFuzzy 1.0.19): MIT; ufuzzy_license.txt
+    dist/uFuzzy.iife.min.js of the npm tarball @leeoniya/ufuzzy-1.0.19.tgz.
+    ufuzzy.SOURCE.txt beside the file records the tarball integrity and the
+    SHA-256 of the file, and ufuzzy.LICENSE.txt beside it carries the same
+    license text.
 
 Default header images (source: src/main/org/epics/archiverappliance/staticcontent/img;
 WAR location: ui/comm/img):
@@ -148,6 +153,8 @@ License text sources
 
   d3_license.txt: copy of src/main/org/epics/archiverappliance/staticcontent/js/vendor/
     d3.LICENSE.txt, the ISC license text supplied with the D3 7.9.0 files.
+  ufuzzy_license.txt: copy of src/main/org/epics/archiverappliance/staticcontent/js/vendor/
+    ufuzzy.LICENSE.txt, the MIT license text supplied with the uFuzzy 1.0.19 files.
   slf4j_license.txt: slf4j-api-2.0.19.jar!/META-INF/LICENSE.txt
   jna_license.txt: jna-5.13.0.jar!/META-INF/LICENSE
   jmatio_license.txt: JMatIO attribution supplied with this repository;

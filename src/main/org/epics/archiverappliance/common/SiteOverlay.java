@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  * Applies a site folder to the staged static content of the build, in this order:
  * <ol>
  * <li>writes the version file with the version text the build passes, the commit and the date of the build;</li>
- * <li>when the site folder has <code>template_changes.html</code>, merges it into the staged management pages with
+ * <li>when the site folder has <code>template_changes.html</code>, merges it into the staged management and analyzer pages with
  * {@link SyncStaticContentHeadersFooters};</li>
  * <li>copies <code>img/</code> (with its subfolders) over the staged <code>staticcontent/img</code> and
  * <code>css/main.css</code> over the staged <code>staticcontent/css/main.css</code>, replacing the staged defaults.</li>
@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 public final class SiteOverlay {
     private static final String COMMON_STATIC = "org/epics/archiverappliance/staticcontent";
     private static final String MGMT_STATIC = "org/epics/archiverappliance/mgmt/staticcontent";
+    private static final String ANALYZER = "org/epics/archiverappliance/retrieval/staticcontent/viewer/archViewer.html";
     private static final String LEFTOVER_BUILD_FILE = "build.xml";
     private static final String VERSION_FILE = "version.txt";
     private static final String VERSION_PREFIX = "Archiver Appliance Version ";
@@ -77,7 +78,9 @@ public final class SiteOverlay {
 
         Path template = site.resolve(TEMPLATE_FILE);
         if (Files.isRegularFile(template)) {
-            SyncStaticContentHeadersFooters.main(new String[] {template.toString(), mgmtStage + "/"});
+            SyncStaticContentHeadersFooters.main(new String[] {
+                template.toString(), mgmtStage + "/", stage.resolve(ANALYZER).toString()
+            });
         }
 
         copyTree(site.resolve("img"), commonStage.resolve("img"));

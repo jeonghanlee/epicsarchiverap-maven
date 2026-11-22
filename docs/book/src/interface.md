@@ -15,7 +15,7 @@ carries a content security policy, and the charts are drawn with D3.
 The addresses of the pages are relative to the base address of the
 management web application, for example
 `http://archiver.example.org:17665/mgmt/ui/index.html`
-([Installation layout and settings](installing.md)). The data viewer is served by the retrieval
+([Installation layout and settings](installing.md)). The Analyzer is served by the retrieval
 web application, at `http://archiver.example.org:17668/retrieval/ui/viewer/archViewer.html`.
 
 | Page | Address | For | Content |
@@ -26,9 +26,9 @@ web application, at `http://archiver.example.org:17668/retrieval/ui/viewer/archV
 | System: Operations | `operations.html` | The person who looks after the appliance | Samples, dropped samples, write path, stores and ETL, processes, configuration |
 | System: Retrieval performance | `retrieval.html` | A person whose data requests are slow | What the server reports and a request measured in the browser |
 | System: External servers | `external.html` | Administrators | The other EPICS Archiver Appliance installations whose data this appliance serves: add or remove one |
-| Analyzer | `analyzer.html` | Everyone | The Analyzer menu entry; forwards to the data viewer of the retrieval web application |
+| Analyzer | `analyzer.html` | Everyone | Forwards to the Analyzer of the retrieval web application |
 | Help | `help.html` | Everyone | How to use each page (moving around, Archive PVs, Browse PVs, System, Analyzer), a link to the management API reference of the appliance and a link to this manual, which needs access to the internet |
-| Data viewer | `/retrieval/ui/viewer/archViewer.html` | Everyone | Charts per unit for the PVs of the address |
+| Analyzer workspace | `/retrieval/ui/viewer/archViewer.html` | Everyone | Trend with one axis per unit, common time controls, the Signals, Axes, Options, Data and Export tabs, and an address that restores every setting |
 
 The right end of the menu bar of every page holds the time zone of the
 console: Browser (the default), UTC, Berkeley, Chicago, NYC, Seoul or
@@ -37,6 +37,18 @@ which names the zone), the Last event column of the PV table and the
 times of the Details window are written in the chosen zone; the choice is
 kept in the browser and passed to the analyzer in the address as `tz`.
 The five cities follow their own daylight saving time at each instant.
+
+Beside the time zone, Profile chooses how the lines of the charts are
+told apart: Default, Red-green for a reader who cannot tell red from
+green, or Monochrome for a reader who sees no color. In each profile
+every line has its own combination of color, dash pattern and marker, and
+the legend shows the same combination as the line. The choice is kept in
+the browser, as the time zone is, and the Analyzer entry of the menu and
+the links of Browse that open the analyzer pass it to the data viewer in
+the address as `profile`. These links include both preferences even for
+Browser and Default. An explicit valid parameter wins in the Analyzer.
+Without `tz`, it uses Browser; without `profile`, it uses its origin's
+stored profile, or Default. The two fallbacks apply independently.
 
 The addresses `metrics.html`, `storage.html`, `appliance.html`,
 `reports.html`, `pvdetails.html`, `integration.html` and `cacompare.html`
@@ -108,7 +120,7 @@ The Browse PVs page, with five PVs in the table and two of them plotted:
 
 | Part | Behavior |
 | :--- | :--- |
-| Find | Words in any order with case ignored, glob, or regular expression; the **i** button beside the three modes explains the modes, the Show list and the prefix buttons; the prefix buttons, at most 24, group the matches by the first two `:` segments, and one pressed shows the PVs of that prefix until it is pressed again, as its title says; the rows in view show the state of a PV that is not in the table (paused, not archived), read in one call for at most 60 rows; under the count, Selected only shows only the selected PVs in the list until it is pressed again, and Clear selection clears every selection |
+| Find | Words in any order with case ignored, glob, or regular expression; the **i** button beside the three modes explains the modes, the Show list and the prefix buttons; the prefix buttons, at most 24, group the matches by the first two `:` segments, and one pressed shows the PVs of that prefix until it is pressed again, as its title says; the rows in view show the state of a PV that is not in the table (paused, not archived), read in one call for at most 60 rows; under the count, Selected only shows only the selected PVs in the list until it is pressed again, Select matches adds the PVs of the list to the table in the order of the list, keeps the PVs already selected, stops at the limit of 100 and says in the note under the table how many it added and how many it left out (it is off while Selected only is on), and Clear selection clears every selection; when a Contains search of at least three characters finds fewer than 10 PVs, Similar names under the list offers up to 20 names that differ by a typo or a missing character, found by uFuzzy 1.0.19 in the Worker that holds the list (typo setting first, then the setting for missing characters), which a click selects and which the count and Select matches never include; the list is not shown for Glob or Regex, when the text is the whole name of a PV (case ignored), with a prefix button or a Show list chosen, or when more than 500,000 names are archived and the server answers each search |
 | Show | A selection of the list by one of the server reports: disconnected now, paused, never connected, waiting for the first connection, recently added, recently changed, highest event rate, highest storage rate, most storage used, most connection drops, silent for the longest time, most events dropped for a wrong time stamp, by buffer overflow and by a type change |
 | Chart | The PVs whose Plot box is on, at most 5, with one value axis for each unit and a legend. Above it are the range buttons and the Refresh control; the line above the chart holds the time window and the value ranges; Options, Enlarge chart and Open in the analyzer are on the row of the Inspect heading. The gestures and options are listed under [Chart controls](#chart-controls) |
 | Table of PVs | One row per PV selected in the list, at most 100, under the chart; the columns are listed under [The table of PVs](#the-table-of-pvs) |
@@ -121,12 +133,12 @@ through a time without samples, so a PV that changes rarely is drawn as
 one line. It stops at the last sample and starts again at the next one
 only where the archiver recorded a lost connection or an engine start, so
 a lost connection is never drawn as a held value. A range of up to 10
-minutes on the Browse PVs page (11 minutes in the viewer) shows the stored
+minutes on the Browse PVs page (700 seconds in the Analyzer) shows the stored
 samples; a longer one shows means over equal intervals (`meanSample_N`),
 and the chart says so. An interval of such a range in which the archiver
 has no sample has no value, and the line is not extended through it. The
-viewer's CSV download holds the values as drawn, with the column
-`interval_seconds` (1 for a stored sample, N for a mean over N seconds).
+Export tab of the Analyzer writes the samples of a chosen source as CSV
+([Retrieving data](retrieval.md#the-data-viewer)).
 
 The state of a PV and the actions in its row:
 
@@ -152,7 +164,9 @@ Open all selected in the analyzer opens every PV of the table in the
 analyzer over the window of the chart.
 
 The state is kept in the fragment of the address, the part after `#`
-(`index.html#q=bpm&range=10&pv=SR:BPM:01:X`), so a link reproduces the view:
+(`index.html#q=bpm&range=10&pv=SR:BPM:01:X`), so a link reproduces the view. A menu entry opens a page at the last address
+that the page had in the same browser tab, a new tab starts fresh, and an
+address that you open yourself is used as it is:
 
 | Parameter | Meaning |
 | :--- | :--- |
@@ -184,9 +198,17 @@ State column says what a lost sample is and what to do about each cause:
 
 Value and Last event come from one call of `getDataAtTime` for all the PVs of the table. While the window ends now the page leaves the instant out and the server answers with the newest sample; for a window that ends earlier the page sends the end of the window. A window of 10 minutes or less shows the same sample as the last one that `getData` returns for it; a longer window draws a mean in its last interval, which is not a sample.
 
-The **Details** button opens a window with the groups below. A value is read by the exact name of the call that holds it, `getPVStatus`, `getPVTypeInfo` or `getPVDetails`; a time of those calls also comes as epoch seconds (`epochSeconds` in an element of `getPVDetails`, `lastEventEpochSeconds` beside `lastEvent`), which a client uses to write it in another zone. A name that the call does not hold reads *not provided*; for a PVA PV these are the unit and the host. A value that is present and empty, a pair of limits that are both 0 or both NaN, and a limit that is NaN read *not set*; for a CA record without a unit the call returns an empty string, so its unit reads *not set*. A time that comes with its epoch seconds is written in the time zone chosen in the menu bar, and any other time as the server writes it, in the time zone of the server, under the heading of its kind: the time of the data, received, recorded, moved, and the times of the connection, of the settings of the PV and of the last request for its data.
+The **Details** button opens a window with the groups below. A value is read by the exact name of the call that holds it, `getPVStatus`, `getPVTypeInfo` or `getPVDetails`; a time of those calls also comes as epoch seconds (`epochSeconds` in an element of `getPVDetails`, `lastEventEpochSeconds` beside `lastEvent`), which a client uses to write it in another zone. A name that the call does not hold reads *not provided*. PVA units and connection endpoints are reported when available. A value that is present and empty, a pair of limits that are both NaN, and a limit that is NaN read *not set*; for a CA record without a unit the call returns an empty string, so its unit reads *not set*. A time that comes with its epoch seconds is written in the time zone chosen in the menu bar, and any other time as the server writes it, in the time zone of the server, under the heading of its kind: the time of the data, received, recorded, moved, and the times of the connection, of the settings of the PV and of the last request for its data.
 
-![The Details window of a PV](images/browse-details.png)
+Stored configuration rows, including SCAN, show `getPVTypeInfo` values. The separate latest received metadata group shows engine availability, enum choices, description, and alarm hysteresis. Valid zero limits, including a 0/0 pair, remain visible.
+
+Availability follows the parent PV connection. Paused or disconnected channels do not supply current metadata; this differs from an empty value received from the IOC. Enum choices reads *empty list* when the IOC supplies an empty choice list, and *not provided* when choice metadata is unavailable.
+
+Archived PVA channels also monitor the record `DESC` and `HYST` fields when available. Received field values take precedence over the corresponding main-PV metadata. If an individual field disconnects, the archiver uses the main-PV value when available. A reconnected field takes precedence again only after receiving a valid value. Servers without those field channels retain main-PV metadata.
+
+Field changes remain pending until the archive buffer accepts a timestamped sample carrying them. With SCAN sampling, skipped samples retain their metadata changes for the next stored sample. Latest received metadata can therefore be newer than the last archived sample.
+
+![Stored configuration and latest received metadata in PV Details](images/browse-details.png)
 
 | Group | Content |
 | :--- | :--- |
@@ -195,7 +217,8 @@ The **Details** button opens a window with the groups below. A value is read by 
 | Connection | Whether the PV is connected, its connection state and the connection drops, with the time of the data of the last event, the time at which the archiver received the last event, and the times of the connection |
 | Lost events | The events lost for a wrong time stamp, for a full sample buffer and for a change of type, and their sum |
 | Who reads it | The number of retrieval requests and of users, and the time of the last request |
-| The PV itself | The data type, the unit, the precision, the display, control, warning and alarm limits, the record type, the archived fields and the host, with the times at which its settings were created and last changed |
+| The PV itself (stored configuration) | The data type, unit, precision, limits, record type, SCAN, archived fields and the host of the latest connection that updated the stored configuration, with the times at which its settings were created and last changed |
+| Latest received metadata | Engine availability, enum choices, description and alarm hysteresis from the latest received metadata |
 | Moves between stores | For each move, for example from the short term store to the medium term store, the granularity of the source and of the destination, the duration of the last job, the number of runs, and the times of the last and the next run |
 
 A paused PV has no connection, no lost events and no moves between stores to report; its Details window says so for those groups.
@@ -310,9 +333,10 @@ in `archappl.properties`, at least 1.0 ([Configuration](configuration.md)).
 The heap size of a process is a setting of the installation that starts
 the JVMs, not of the appliance.
 
-Disconnected PVs are grouped by the host the Channel Access connection
-came from and the time they were lost, because the appliance reports no
-IOC name. A PV Access PV has no host and is listed under an unknown host.
+Disconnected PVs are grouped by the endpoint reported by the CA or PVA
+connection and the time they were lost. PVA endpoints may include a port.
+The appliance reports no IOC name, and one host can serve several IOCs.
+A missing endpoint is listed under an unknown host.
 
 ## Retrieval performance page
 
@@ -365,7 +389,7 @@ takes under 50 ms.
 | Supported | The current releases of Firefox, Edge and Safari; no jQuery, no framework and no build tool. Checked in Firefox, Edge and the WebKitGTK engine of Safari, not in the Safari application |
 | Content security policy | `script-src 'self'` on every page: no inline script, event-handler attribute or style attribute, and no outside host |
 | `connect-src` | `'self'`, and `http:` and `https:` on the Browse PVs page and the Retrieval performance page, which read the data retrieval address the appliance reports |
-| Stored in the browser | The snapshot of the names (IndexedDB database `aa-browse-names`), the time zone of the console (`aa.timeZone`) and the period of the Refresh control (`aa.browse.refresh`), both in local storage; nothing else |
+| Stored in the browser | The snapshot of the names (IndexedDB database `aa-browse-names`), the time zone of the console (`aa.timeZone`), the display profile of the charts (`aa.chartProfile`) and the period of the Refresh control (`aa.browse.refresh`), all in local storage, and the last address of each menu entry (`aa.lastAddress:` followed by the page of the entry, for example `aa.lastAddress:index.html`), in session storage; nothing else |
 | Data inserted into a page | Only as text, never as markup |
 
 ## Files and site skin
@@ -376,7 +400,8 @@ build copies each `staticcontent` folder whole into its WAR:
 | Folder | Served as | Content |
 | :--- | :--- | :--- |
 | `mgmt/staticcontent/` | `/mgmt/ui/` | The pages, `css/` and `js/` of the management interface |
-| `retrieval/staticcontent/viewer/` | `/retrieval/ui/viewer/` | The data viewer |
+| `retrieval/staticcontent/viewer/` | `/retrieval/ui/viewer/` | The Analyzer |
+| `mgmt/staticcontent/js/menu.js` | `/retrieval/ui/js/menu.js` | The same menu behavior used by the console |
 | `staticcontent/` | `ui/comm/` of every WAR | `css/main.css` (the site skin), `css/chart.css`, `img/` (the header and site logos), `js/aa/` (the shared chart code) and `js/vendor/` (D3) |
 
 The chart library is D3 7.9.0 (ISC): `js/vendor/d3.min.js` is
@@ -412,10 +437,12 @@ requires at least 4.5 to 1. A site file keeps the same contrast; the
 check does not read it.
 
 The build replaces the marker blocks `site_header`, `site_logo`,
-`site_navbar` and `site_footer` of every management page that carries
-them with those of `index.html`; the forwarding pages carry none. A
-site's `template_changes.html` replaces them in turn, so every other
-management page keeps the four blocks.
+`site_navbar` and `site_footer` of the management pages and the Analyzer
+with those of `index.html`; the forwarding pages carry none. A site's
+`template_changes.html` replaces those blocks in the staged files.
+For the Analyzer, the synchronizer changes `comm/` asset references to
+`../comm/` to match its directory. The Analyzer obtains console navigation
+from its own `getApplianceInfo` action and the returned `mgmtURL`.
 
 ## Checks
 
@@ -433,6 +460,6 @@ Three checks guard the interface files:
   exists in its page, that `d3.min.js` is the file whose SHA-256
   `d3.SOURCE.txt` records, the PV name pattern, the contrast of the text
   colors, and the form of the [information cards](#information-cards);
-  twenty-three broken copies of the tree must each be refused for their
+  twenty-five broken copies of the tree must each be refused for their
   own reason. Run it locally with `bash scripts/ui-static-checks.bash`; it
   needs `python3` and `sha256sum`.

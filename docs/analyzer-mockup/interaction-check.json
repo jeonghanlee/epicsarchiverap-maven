@@ -1,0 +1,351 @@
+{
+  "status": "passed",
+  "code_sha256": "c2443c6cccf015d8455ba3d7a2eb56fc917701f4c00a3a9a335ac6dad48db2bb",
+  "errors": [],
+  "checks": [
+    {
+      "share_restore": "camera frame 31"
+    },
+    {
+      "irregular_spectrum": "rejected"
+    },
+    {
+      "missing_interval": "no invented zeros"
+    },
+    {
+      "export": "export-dependency.csv"
+    },
+    {
+      "export": "export-correlation.csv"
+    },
+    {
+      "m1": "Trend only"
+    },
+    {
+      "request_state": "loading"
+    },
+    {
+      "request_state": "empty"
+    },
+    {
+      "request_state": "error"
+    },
+    {
+      "request_state": "partial"
+    },
+    {
+      "request_state": "ready"
+    },
+    {
+      "zone": "instants preserved"
+    },
+    {
+      "width": 1440,
+      "example": "beam_current",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "beam_current",
+      "recipe": 0
+    },
+    {
+      "example": "beam_current",
+      "recipe": 1
+    },
+    {
+      "example": "beam_current",
+      "recipe": 2
+    },
+    {
+      "width": 1440,
+      "example": "bpm",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "bpm",
+      "recipe": 0
+    },
+    {
+      "example": "bpm",
+      "recipe": 1
+    },
+    {
+      "example": "bpm",
+      "recipe": 2
+    },
+    {
+      "example": "bpm",
+      "recipe": 3
+    },
+    {
+      "example": "bpm",
+      "recipe": 4
+    },
+    {
+      "width": 1440,
+      "example": "magnet_supply",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "magnet_supply",
+      "recipe": 0
+    },
+    {
+      "example": "magnet_supply",
+      "recipe": 1
+    },
+    {
+      "example": "magnet_supply",
+      "recipe": 2
+    },
+    {
+      "example": "magnet_supply",
+      "recipe": 3
+    },
+    {
+      "width": 1440,
+      "example": "rf_cavity",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "rf_cavity",
+      "recipe": 0
+    },
+    {
+      "example": "rf_cavity",
+      "recipe": 1
+    },
+    {
+      "example": "rf_cavity",
+      "recipe": 2
+    },
+    {
+      "width": 1440,
+      "example": "vacuum",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "vacuum",
+      "recipe": 0
+    },
+    {
+      "example": "vacuum",
+      "recipe": 1
+    },
+    {
+      "example": "vacuum",
+      "recipe": 2
+    },
+    {
+      "width": 1440,
+      "example": "temperature",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "temperature",
+      "recipe": 0
+    },
+    {
+      "example": "temperature",
+      "recipe": 1
+    },
+    {
+      "example": "temperature",
+      "recipe": 2
+    },
+    {
+      "width": 1440,
+      "example": "photon_counts",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "photon_counts",
+      "recipe": 0
+    },
+    {
+      "example": "photon_counts",
+      "recipe": 1
+    },
+    {
+      "example": "photon_counts",
+      "recipe": 2
+    },
+    {
+      "example": "photon_counts",
+      "recipe": 3
+    },
+    {
+      "width": 1440,
+      "example": "camera",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "example": "camera",
+      "recipe": 0
+    },
+    {
+      "example": "camera",
+      "recipe": 1
+    },
+    {
+      "example": "camera",
+      "recipe": 2
+    },
+    {
+      "example": "camera",
+      "recipe": 3
+    },
+    {
+      "width": 720,
+      "example": "beam_current",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 720,
+      "example": "bpm",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 720,
+      "example": "magnet_supply",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 720,
+      "example": "rf_cavity",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 720,
+      "example": "vacuum",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 720,
+      "example": "temperature",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 720,
+      "example": "photon_counts",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 720,
+      "example": "camera",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 390,
+      "example": "beam_current",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 390,
+      "example": "bpm",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 390,
+      "example": "magnet_supply",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 390,
+      "example": "rf_cavity",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 390,
+      "example": "vacuum",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 390,
+      "example": "temperature",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 390,
+      "example": "photon_counts",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 390,
+      "example": "camera",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 320,
+      "example": "beam_current",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 320,
+      "example": "bpm",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 320,
+      "example": "magnet_supply",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 320,
+      "example": "rf_cavity",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 320,
+      "example": "vacuum",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 320,
+      "example": "temperature",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 320,
+      "example": "photon_counts",
+      "overflow": false,
+      "nanPaths": false
+    },
+    {
+      "width": 320,
+      "example": "camera",
+      "overflow": false,
+      "nanPaths": false
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Independent chart canvases</title>
+    <link rel="stylesheet" href="../../src/main/org/epics/archiverappliance/staticcontent/css/chart.css">
+    <link rel="stylesheet" href="mockup.css">
+    <script src="../../src/main/org/epics/archiverappliance/staticcontent/js/vendor/d3.min.js" defer></script>
+    <script src="signal-data.js" defer></script>
+    <script src="signal-catalog.js" defer></script>
+    <script src="shared-chart.js" defer></script>
+    <script src="canvas-demo.js" defer></script>
+</head>
+<body>
+<main>
+    <h1>Independent chart canvases</h1>
+    <p>Two instances using the same saved synthetic temperature samples. Each owns its displayed ranges.</p>
+    <p>Drag inside a plot to zoom X; drag its value axis to zoom Y. Tab to either axis for keyboard controls.</p>
+    <p>Ctrl+wheel zooms X. Double-click or Reset axes restores that plot. <a href="index.html">Open the analyzer mockup</a>.</p>
+    <section class="analysis-view"><h2>Time series</h2><div id="time-plot" class="chart-area"></div></section>
+    <section class="analysis-view"><h2>Histogram</h2><div id="value-plot" class="chart-area"></div></section>
+</main>
+</body>
+</html>

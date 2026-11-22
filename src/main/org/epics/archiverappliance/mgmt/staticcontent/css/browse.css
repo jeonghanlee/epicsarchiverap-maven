@@ -738,6 +738,16 @@ dialog label.check {
     color: var(--ink);
 }
 
+/* A line break in the text of the maintenance dialog starts a new paragraph. */
+#maintainText {
+    white-space: pre-line;
+}
+
+/* The display of `dialog label` must not show an element that carries the hidden attribute. */
+dialog [hidden] {
+    display: none;
+}
+
 dialog select,
 dialog input[type="number"] {
     width: 100%;
@@ -978,4 +988,22 @@ dialog input[type="number"] {
 .inspect-head h2,
 .chart-dialog-head h2 {
     margin: 0;
+}
+
+/* The names close to a text that finds few or no PV, under the list of matches. */
+.similar {
+    margin: 0.5rem 0 0;
+}
+
+.similar ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    margin: 0.25rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.similar button[aria-pressed="true"] {
+    font-weight: 600;
 }
