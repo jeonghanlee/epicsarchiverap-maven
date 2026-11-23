@@ -306,9 +306,9 @@ CARD_SOURCES=(
     mgmt/staticcontent/js/archive.js
     mgmt/staticcontent/js/system/view.js
     staticcontent/js/aa/chart/widget.js
+    retrieval/staticcontent/viewer/viewer.js
 )
 ANALYZER_CARD_SOURCES=(
-    retrieval/staticcontent/viewer/viewer.js
     retrieval/staticcontent/viewer/distribution.js
     retrieval/staticcontent/viewer/trend-tools.js
     retrieval/staticcontent/viewer/compare.js
