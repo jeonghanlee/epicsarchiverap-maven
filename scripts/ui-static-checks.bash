@@ -292,7 +292,8 @@ assert_eq "${contrast}" "" "Every text color has a contrast of at least 4.5:1 on
 
 # ---- the information cards keep one form ------------------------------------------------------------
 # A card is written in its page script as a title that is a question followed by its rows, [title?, [[name, text], ...]].
-# The first row is In short; a card has at most six rows; the rows What it shows, Normal, Attention, Problem and What to do
+# The first row is In short; a console card has at most six rows and a card of an Analyzer tool, which explains a calculation,
+# at most ten; the rows What it shows, Normal, Attention, Problem and What to do
 # keep that order, and What to do is the last row; a sentence has fewer than 40 words; a threshold-shaped number (a count of
 # percent, days, hours, minutes, seconds or points) is written through a constant, never typed into the text; and no card
 # names a setting of a properties file. Each page script of the list holds at least one card.
@@ -306,10 +307,22 @@ CARD_SOURCES=(
     mgmt/staticcontent/js/system/view.js
     staticcontent/js/aa/chart/widget.js
 )
-cards=$(python3 -I - "${UI}" "${CARD_SOURCES[@]}" <<'PY'
+ANALYZER_CARD_SOURCES=(
+    retrieval/staticcontent/viewer/viewer.js
+    retrieval/staticcontent/viewer/distribution.js
+    retrieval/staticcontent/viewer/trend-tools.js
+    retrieval/staticcontent/viewer/compare.js
+    retrieval/staticcontent/viewer/spectrum.js
+    retrieval/staticcontent/viewer/correlation.js
+    retrieval/staticcontent/viewer/dependency.js
+    retrieval/staticcontent/viewer/waveform.js
+    retrieval/staticcontent/viewer/image.js
+)
+cards=$(python3 -I - "${UI}" "${CARD_SOURCES[@]}" --analyzer "${ANALYZER_CARD_SOURCES[@]}" <<'PY'
 import re, sys
 ORDERED = ["What it shows", "Normal", "Attention", "Problem", "What to do"]
 MOST_ROWS = 6
+MOST_ROWS_ANALYZER = 10
 MOST_WORDS = 40
 NUMBER = re.compile(r"\b\d+(?:\.\d+)?\s*(?:%|percent|points?|days?|hours?|minutes?|seconds?)\b")
 SETTING = re.compile(r"\.properties\b|PVTypeInfo\.")
@@ -393,7 +406,11 @@ def scan_rows(text, i):
 
 root = sys.argv[1]
 faults = []
-for relative in sys.argv[2:]:
+analyzer_from = sys.argv.index("--analyzer")
+for position, relative in enumerate(sys.argv[2:], start=2):
+    if relative == "--analyzer":
+        continue
+    most_rows = MOST_ROWS_ANALYZER if position > analyzer_from else MOST_ROWS
     text = open(f"{root}/{relative}", encoding="utf-8").read()
     found = 0
     for match in TITLE.finditer(text):
@@ -408,8 +425,8 @@ for relative in sys.argv[2:]:
         names = [row[0] for row in rows]
         if not names or names[0] != "In short":
             fault("the first row is not In short")
-        if len(rows) > MOST_ROWS:
-            fault(f"more than {MOST_ROWS} rows ({len(rows)})")
+        if len(rows) > most_rows:
+            fault(f"more than {most_rows} rows ({len(rows)})")
         if None in names:
             fault("a row without a name")
         places = [ORDERED.index(name) for name in names if name in ORDERED]
@@ -431,7 +448,7 @@ for relative in sys.argv[2:]:
 print("; ".join(faults))
 PY
 )
-assert_eq "${cards}" "" "Every information card keeps the form: In short first, at most six rows, the fixed rows in order, no typed threshold (wrong: ${cards})"
+assert_eq "${cards}" "" "Every information card keeps the form: In short first, at most six rows (ten in an Analyzer tool), the fixed rows in order, no typed threshold (wrong: ${cards})"
 
 # ---- the three places that name the options of the analysis tools agree ----------------------------
 # The declaration docs/analyzer-address.openapi.json, the defaults written in the modules of the viewer and the
@@ -581,6 +598,8 @@ if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
         "${A}/mgmt/staticcontent/js/operations.js" "sed -i '0,/\\[\"In short\", /s//[\"Summary\", /' \"\$F\""
     expect_rejected "an information card with a seventh row" "more than 6 rows" \
         "${A}/mgmt/staticcontent/js/operations.js" "sed -i '0,/\\[\"What to do\", /s//[\"Also\", \"x.\"], [\"What to do\", /' \"\$F\""
+    expect_rejected "an Analyzer card with an eleventh row" "more than 10 rows" \
+        "${A}/retrieval/staticcontent/viewer/image.js" "sed -i '0,/\\[\"Region\", /s//[\"Also\", \"x.\"], [\"Region\", /' \"\$F\""
     expect_rejected "an information card that types a threshold" "a typed number" \
         "${A}/mgmt/staticcontent/js/system.js" "sed -i 's|\${THRESHOLDS.daysLeftProblem} days|7 days|' \"\$F\""
     expect_rejected "a book row without a Waveform field" "waveform: the declaration and the book row name different fields" \

@@ -74,7 +74,8 @@ has one form:
   storage, Archive PVs, the external servers) has one row for each item of
   the control, named as the control names it, and **What to do** last when
   there is a next step.
-- A card has at most six rows, a sentence has fewer than 40 words, and a
+- A card has at most six rows, or ten for a tool of the Analyzer, which
+  explains a calculation. A sentence has fewer than 40 words, and a
   term is explained where it first appears in the card. The
   [Glossary](glossary.md) defines the same terms for the manual.
 - A threshold or a limit is read from the constant that the page judges
