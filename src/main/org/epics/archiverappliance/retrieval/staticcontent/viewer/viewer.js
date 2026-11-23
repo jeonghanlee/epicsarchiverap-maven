@@ -815,10 +815,10 @@ const CARDS = {
     summary: [
         "Summary: which samples does it count?",
         [
-            ["In short", "The samples of the selected range at the resolution the line above the plot names for the Summary, whatever the plot shows now; Visible range counts the displayed samples inside the time and Y ranges."],
+            ["In short", "The samples of the selected range at the resolution the line above the plot names for the Summary, whatever the plot shows now. Visible range counts the displayed samples inside the time and Y ranges."],
             ["Selected range", `From and To with Show, a shortcut or Apply selection choose the selected range. Its resolution follows the Interval option: Automatic gives means over whole seconds, up to about ${TARGET_SAMPLES} of them (one per second for a window shorter than ${TARGET_SAMPLES} seconds); Raw samples gives the stored samples. It is resolved once and kept while you pan or zoom.`],
-            ["Means", "A mean over N seconds is the retrieval's meanSample_N: the mean of the stored samples of each interval of N seconds. An interval without a sample has no value and is not counted."],
-            ["Columns", "Samples is the number of finite values; Min, Mean, Median and Max their smallest value, mean, median and largest value; Std dev their sample standard deviation (N - 1), 0 with fewer than two samples; Unit the unit of the PV."],
+            ["Means", "A mean over N seconds is the retrieval's meanSample_N: the mean of the stored samples of each N-second interval. An interval without a sample has no value and is not counted."],
+            ["Columns", "Samples is the number of finite values. Min, Mean, Median and Max are their smallest value, mean, median and largest value. Std dev is their sample standard deviation (N - 1), 0 with fewer than two samples. Unit is the unit of the PV."],
         ],
         null,
         helpPage,
@@ -828,7 +828,7 @@ const CARDS = {
         [
             ["In short", `Automatic draws means over whole seconds, up to about ${TARGET_SAMPLES} per window (one per second for a window shorter than ${TARGET_SAMPLES} seconds). Raw samples forces the stored samples; Seconds forces means over the interval typed.`],
             ["Means", "The mean of each interval is the retrieval's meanSample_N over the stored samples of that interval. An interval without a sample stays empty, and the line is not drawn through it."],
-            ["Min-max band", "The band is the minimum and the maximum of the stored samples of each averaging interval, the retrieval's minSample_N and maxSample_N, drawn under the mean. Raw samples have no interval, so the band is left out."],
+            ["Min-max band", "The band is the minimum and the maximum of the stored samples of each averaging interval (the retrieval's minSample_N and maxSample_N), drawn under the mean. Raw samples have no interval, so the band is left out."],
             ["Display and Summary", "The display resolution follows the window shown; the Summary keeps the resolution of the selected range. The note above the plot names both."],
         ],
         null,
@@ -837,11 +837,11 @@ const CARDS = {
     export: [
         "Export sources: how are the values produced?",
         [
-            ["In short", "Samples shown and Raw samples are the retrieval's values as they are. Optimized bins and Linear interpolation are calculated for the chosen range, and the CSV names its source, range and interval in its first lines."],
+            ["In short", "Samples shown and Raw samples are the retrieval's values as they are. Optimized bins and Linear interpolation are calculated for the chosen range. The CSV names its source, range and interval in its first lines."],
             ["Samples shown", "The values the plot draws over the range: the stored samples or the display means."],
             ["Raw samples", "Every stored sample of the range, with its severity and status."],
             ["Optimized bins", "The range divided into the number of bins asked for: the retrieval's mean, minimum and maximum of the stored samples over each interval (meanSample_N, minSample_N, maxSample_N). The interval is the span divided by the bins, rounded up to whole seconds, so there can be fewer bins than asked for."],
-            ["Linear interpolation", "A row at from, from + step and so on up to to, each value interpolated between the two stored samples around that time; the sample before the range comes from one getDataAtTime request. No value is made before the first or after the last sample, across a recorded gap, between samples farther apart than the gap typed, or through conflicting samples: the row stays, with an empty value and the reason in the quality and reason columns. An interpolated value takes the higher severity of its two samples and no status."],
+            ["Linear interpolation", "A row at from, from + step and so on up to to, each value interpolated between the two stored samples around that time; the sample before the range comes from one getDataAtTime request. No value is made before the first or after the last sample, across a recorded gap, between samples farther apart than the gap typed, or through conflicting samples. In those cases the row stays, with an empty value and the reason in the quality and reason columns. An interpolated value takes the higher severity of its two samples and no status."],
             ["Statistics", "Visible range or the Summary as the tables show them, with the source and the range of every row."],
         ],
         null,
