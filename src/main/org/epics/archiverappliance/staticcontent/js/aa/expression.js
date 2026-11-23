@@ -1,6 +1,8 @@
 // A parser of arithmetic expressions for the derived signals of the analyzer, since the content security policy of the pages
-// forbids eval: numbers, named variables, the operators + - * / ^ with the usual precedence (a unary minus applies to the power
-// that follows it, so -2^2 is -4 as in mathematics), parentheses, the
+// forbids eval: numbers, named variables (a name that starts with a letter or _ and goes on with letters, digits, _ : and . stands as it
+// is; any other name, such as a PV name that starts with a digit or has a sign or a bracket, is written between double quotes
+// and is a variable whatever it contains), the operators + - * / ^ with the usual precedence (a unary minus applies to the
+// power that follows it, so -2^2 is -4 as in mathematics), parentheses, the
 // constants pi and e, and the functions abs, sqrt, exp, log (natural), log10, sin, cos, tan, asin, acos, atan, min, max, pow.
 // parse(text) returns {ok: true, variables, evaluate} where evaluate takes an object of variable values, or {ok: false, reason}.
 
@@ -10,7 +12,7 @@ const FUNCTIONS = {
     min: [2, Math.min], max: [2, Math.max], pow: [2, Math.pow],
 };
 const CONSTANTS = { pi: Math.PI, e: Math.E };
-const TOKEN = /\s*(?:(\d+\.?\d*(?:[eE][-+]?\d+)?|\.\d+(?:[eE][-+]?\d+)?)|([A-Za-z_][A-Za-z0-9_:.]*)|([-+*/^(),]))/y;
+const TOKEN = /\s*(?:(\d+\.?\d*(?:[eE][-+]?\d+)?|\.\d+(?:[eE][-+]?\d+)?)|([A-Za-z_][A-Za-z0-9_:.]*)|([-+*/^(),])|"([^"]+)")/y;
 
 /** The tokens of the text, or null with the position of the first character that is not one. */
 function tokenize(text) {
@@ -24,7 +26,8 @@ function tokenize(text) {
         if (!match) return { error: at };
         if (match[1] !== undefined) tokens.push({ type: "number", value: Number(match[1]) });
         else if (match[2] !== undefined) tokens.push({ type: "name", value: match[2] });
-        else tokens.push({ type: "operator", value: match[3] });
+        else if (match[3] !== undefined) tokens.push({ type: "operator", value: match[3] });
+        else tokens.push({ type: "name", value: match[4], quoted: true });
         at = TOKEN.lastIndex;
     }
     return { tokens };
@@ -58,7 +61,7 @@ export function parse(text) {
         if (!token) throw new Error("The expression ends where a value is expected.");
         if (token.type === "number") return () => token.value;
         if (token.type === "name") {
-            if (peek() && peek().type === "operator" && peek().value === "(") {
+            if (!token.quoted && peek() && peek().type === "operator" && peek().value === "(") {
                 const definition = FUNCTIONS[token.value];
                 if (!definition) throw new Error(`Unknown function ${token.value}.`);
                 take();
@@ -68,7 +71,7 @@ export function parse(text) {
                 if (args.length !== definition[0]) throw new Error(`${token.value} takes ${definition[0]} argument${definition[0] === 1 ? "" : "s"}.`);
                 return (values) => definition[1](...args.map((arg) => arg(values)));
             }
-            if (token.value in CONSTANTS) return () => CONSTANTS[token.value];
+            if (!token.quoted && token.value in CONSTANTS) return () => CONSTANTS[token.value];
             if (!variables.includes(token.value)) variables.push(token.value);
             return (values) => (token.value in values ? Number(values[token.value]) : NaN);
         }

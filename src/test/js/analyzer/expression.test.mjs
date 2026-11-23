@@ -34,3 +34,22 @@ test("malformed expressions are refused with a reason", () => {
         assert.ok(parsed.reason.length > 0, text);
     }
 });
+
+test("a name between double quotes is a variable whatever it contains, and a name without quotes is as before", () => {
+    const parsed = parse('"DEV-01:TEMP" - x + "BPM[1]:X" / 2');
+    assert.equal(parsed.ok, true, parsed.reason);
+    assert.deepEqual(parsed.variables, ["DEV-01:TEMP", "x", "BPM[1]:X"]);
+    assert.equal(parsed.evaluate({ "DEV-01:TEMP": 10, x: 3, "BPM[1]:X": 4 }), 9);
+    assert.equal(value('"a b" * 2', { "a b": 4 }), 8);
+});
+
+test("a quoted name is never a constant or a function, and an unfinished or empty quote is refused with a reason", () => {
+    assert.equal(value('"pi" + 1', { pi: 2 }), 3);
+    assert.equal(parse('"sqrt"(4)').ok, false);
+    for (const text of ['"abc', 'x + "', '""', '"a" "b"']) {
+        const parsed = parse(text);
+        assert.equal(parsed.ok, false, text);
+        assert.ok(parsed.reason.length > 0, text);
+    }
+    assert.equal(parse("DEV-01:TEMP - x").ok, false, "unquoted, a name with a minus is not a name");
+});

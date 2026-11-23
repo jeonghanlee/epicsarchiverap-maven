@@ -57,7 +57,7 @@ const CARD = [
         ["Trends", "The two signals over the selected range, one under the other on the same time axis, so that a pair can be placed in time."],
         ["Fit", "A model of Y against X fitted to the pairs in the fit range from Run fit: the line, polynomial and logarithm by least squares, the exponential, power, sine, Gaussian and Landau by Levenberg-Marquardt from the start values, with parameters fixed or bounded; every model is fitted to Y itself, not to a transformed variable. The errors come from the covariance scaled by the reduced chi-square; the band is one sigma of the fitted curve; the residuals (observed minus fitted) are drawn under the fit result. A fit of another pairing is cleared, and a fit never certifies the physical model."],
         ["Unit", "The unit of X and of Y can be shown in another prefix of the same base unit (mm in um, V in mV, kHz in MHz): the values are multiplied by a power of ten and the pairs, the correlation, the fit and its parameters, the trends and the derived signal use the converted values. A unit that is not a prefix and a base unit in use (mm/s, degC, Gs) offers no change, so that nothing is converted by a guess; a change clears a fit made in the earlier unit."],
-        ["Derived signal", "A typed expression over x and y (or the PV names, in the units shown), evaluated at every pair and drawn as a third trend: a difference, a sum, a ratio, or any arithmetic of them. The unit is yours to name; the Export tab writes the signal as CSV."],
+        ["Derived signal", "A typed expression over x and y (or the PV names, in the units shown), evaluated at every pair and drawn as a third trend: a difference, a sum, a ratio, or any arithmetic of them. A name that starts with a digit or has a sign or a bracket is written between double quotes. The unit is yours to name; the Export tab writes the signal as CSV."],
     ],
     null,
 ];
@@ -138,7 +138,7 @@ export function createCorrelation(host, options) {
         const parsed = parse(text);
         if (!parsed.ok) { derivedError.textContent = parsed.reason; return; }
         const unknown = parsed.variables.filter((v) => !["x", "y", "X", "Y", settings.x, settings.y].includes(v));
-        if (unknown.length) { derivedError.textContent = `Unknown variable${unknown.length > 1 ? "s" : ""} ${unknown.join(", ")}: use x and y, or the names of the two signals.`; return; }
+        if (unknown.length) { derivedError.textContent = `Unknown variable${unknown.length > 1 ? "s" : ""} ${unknown.join(", ")}: use x and y, or the names of the two signals (a name that starts with a digit or has a sign or a bracket between double quotes).`; return; }
         derived.expression = text;
         derived.unit = unitField.value.trim();
         derived.parsed = parsed;
