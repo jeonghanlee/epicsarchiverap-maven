@@ -469,7 +469,9 @@ export function createChart(host, config) {
             if (hidden.has(series.name)) {
                 continue;
             }
-            const observation = heldObservation(series.points.filter((p) => Number.isFinite(p.v)), last.gapMs, +time);
+            const gap = (memory.signals.get(series.name) || {}).gap;
+            const gapMs = Number.isFinite(gap) && gap > 0 ? gap * 1000 : last.gapMs;
+            const observation = heldObservation(series.points.filter((p) => Number.isFinite(p.v)), gapMs, +time);
             if (observation && !memory.pins.some((pin) => pin.name === series.name && pin.t === observation.t)) {
                 memory.pins.push({ name: series.name, egu: series.egu || "", t: observation.t, v: observation.v, s: observation.s });
                 added = true;

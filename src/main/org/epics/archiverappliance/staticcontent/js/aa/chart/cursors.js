@@ -1,7 +1,8 @@
 // The readout of the reference cursors of a time-series chart: for each drawn series, the observation each cursor
 // reads and the differences between the two. A cursor reads the last observation at or before its time, the value the
-// step line holds there; a lost connection or a gap wider than the gap threshold between that observation and the
-// cursor leaves the reading unavailable, and nothing is interpolated.
+// step line holds there. Where the line is disconnected (a lost connection, or a step between two samples wider than the
+// gap threshold) the reading is unavailable, and so it is after the last sample once the gap threshold has passed;
+// the value of the last sample holds up to the gap threshold after it. Nothing is interpolated.
 
 import { splitOnGaps } from "./series.js";
 import { format } from "./text.js";
@@ -11,7 +12,8 @@ const TIME_FORMAT = "%Y-%m-%d %H:%M:%S";
 
 /**
  * The observation of points (sorted by t) that a cursor at time t reads, or null: the last observation at or before t,
- * unless the run of connected samples it belongs to ends before t.
+ * unless the run of connected samples it belongs to ends before t (the line is disconnected there), or t is more than
+ * gapMs after the last sample.
  */
 export function heldObservation(points, gapMs, t) {
     const parts = splitOnGaps(points, gapMs);
