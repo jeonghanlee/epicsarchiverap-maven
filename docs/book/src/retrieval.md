@@ -402,10 +402,10 @@ beside Summary, Visible range, Interval, the chart options and the Export
 form opens a card that states the calculation behind it.
 
 The selected range is the one chosen with Show, a shortcut or Apply
-selection. Its resolution is resolved once: the stored samples for a
-range of up to 700 seconds, otherwise means over whole seconds, about 700
-of them (`meanSample_N`, N the span in seconds divided by 700, rounded
-up). The Summary counts that dataset and keeps it while you pan or zoom.
+selection. Its resolution is resolved once: means over whole seconds,
+up to about 700 of them, one per second for a window shorter than 700
+seconds (`meanSample_N`, N the span in seconds divided by 700, rounded
+up, at least 1), or the stored samples when Interval is Raw samples. The Summary counts that dataset and keeps it while you pan or zoom.
 Pan, Box zoom and the wheel change the displayed window only; it is
 retrieved at the resolution of the window shown, and Visible range counts
 the displayed samples inside the time and value ranges. The note above

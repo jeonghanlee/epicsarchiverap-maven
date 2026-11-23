@@ -133,9 +133,11 @@ through a time without samples, so a PV that changes rarely is drawn as
 one line. It stops at the last sample and starts again at the next one
 only where the archiver recorded a lost connection or an engine start, so
 a lost connection is never drawn as a held value. A range of up to 10
-minutes on the Browse PVs page (700 seconds in the Analyzer) shows the stored
-samples; a longer one shows means over equal intervals (`meanSample_N`),
-and the chart says so. An interval of such a range in which the archiver
+minutes on the Browse PVs page shows the stored samples; a longer one shows
+means over equal intervals (`meanSample_N`), and the chart says so. The
+Analyzer draws means over whole seconds, up to about 700 to a window and
+one per second for a window shorter than 700 seconds, unless Interval is
+Raw samples. An interval of such a range in which the archiver
 has no sample has no value, and the line is not extended through it. The
 Export tab of the Analyzer writes the samples of a chosen source as CSV
 ([Retrieving data](retrieval.md#the-data-viewer)).

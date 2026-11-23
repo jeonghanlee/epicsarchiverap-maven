@@ -816,7 +816,7 @@ const CARDS = {
         "Summary: which samples does it count?",
         [
             ["In short", "The samples of the selected range at the resolution the line above the plot names for the Summary, whatever the plot shows now; Visible range counts the displayed samples inside the time and Y ranges."],
-            ["Selected range", `From and To with Show, a shortcut or Apply selection choose the selected range. Its resolution is resolved once, the stored samples up to ${TARGET_SAMPLES} seconds and above that means over whole seconds, about ${TARGET_SAMPLES} of them, and it is kept while you pan or zoom.`],
+            ["Selected range", `From and To with Show, a shortcut or Apply selection choose the selected range. Its resolution follows the Interval option: Automatic gives means over whole seconds, up to about ${TARGET_SAMPLES} of them (one per second for a window shorter than ${TARGET_SAMPLES} seconds); Raw samples gives the stored samples. It is resolved once and kept while you pan or zoom.`],
             ["Means", "A mean over N seconds is the retrieval's meanSample_N: the mean of the stored samples of each interval of N seconds. An interval without a sample has no value and is not counted."],
             ["Columns", "Samples is the number of finite values; Min, Mean, Median and Max their smallest value, mean, median and largest value; Std dev their sample standard deviation (N - 1), 0 with fewer than two samples; Unit the unit of the PV."],
         ],
@@ -826,7 +826,7 @@ const CARDS = {
     interval: [
         "Interval and band: what is drawn?",
         [
-            ["In short", `Automatic draws the stored samples of a window up to ${TARGET_SAMPLES} seconds and means over whole seconds above that, about ${TARGET_SAMPLES} per window. Raw samples forces the stored samples; Seconds forces means over the interval typed.`],
+            ["In short", `Automatic draws means over whole seconds, up to about ${TARGET_SAMPLES} per window (one per second for a window shorter than ${TARGET_SAMPLES} seconds). Raw samples forces the stored samples; Seconds forces means over the interval typed.`],
             ["Means", "The mean of each interval is the retrieval's meanSample_N over the stored samples of that interval. An interval without a sample stays empty, and the line is not drawn through it."],
             ["Min-max band", "The band is the minimum and the maximum of the stored samples of each averaging interval, the retrieval's minSample_N and maxSample_N, drawn under the mean. Raw samples have no interval, so the band is left out."],
             ["Display and Summary", "The display resolution follows the window shown; the Summary keeps the resolution of the selected range. The note above the plot names both."],
