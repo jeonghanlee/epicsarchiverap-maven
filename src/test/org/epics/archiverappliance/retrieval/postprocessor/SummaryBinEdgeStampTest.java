@@ -41,7 +41,6 @@ public class SummaryBinEdgeStampTest {
     private static final String[] OPERATORS = {
         "mean", "meanSample", "median", "firstFill", "lastFill", "linear", "loess"
     };
-    private static final long[] CANDIDATE_BINS = {432000, 345600, 259200, 604800, 172800, 86400, 43200, 21600};
     private static final double[] VALUES = {0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5};
 
     private final TomcatSetup tomcatSetup = new TomcatSetup();
@@ -118,14 +117,7 @@ public class SummaryBinEdgeStampTest {
         Instant start = TimeUtils.minusDays(TimeUtils.now(), 1);
         Instant end = TimeUtils.now();
         long endSeconds = TimeUtils.convertToEpochSeconds(end);
-        long bin = 0;
-        for (long candidate : CANDIDATE_BINS) {
-            if (endSeconds % candidate < candidate / 2 - 600) {
-                bin = candidate;
-                break;
-            }
-        }
-        Assertions.assertTrue(bin > 0, "no candidate bin has its midpoint after the end of the window");
+        long bin = WindowEndBin.forEnd(endSeconds);
         Instant nextEdge = TimeUtils.convertFromEpochSeconds((endSeconds / bin + 1) * bin, 0);
         long midpoint = (endSeconds / bin) * bin + bin / 2;
 
