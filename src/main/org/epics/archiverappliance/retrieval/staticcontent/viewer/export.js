@@ -222,7 +222,8 @@ export function longTable(series, options, cell) {
 /**
  * The wide table: one row per time, one group of columns per PV. On the interpolation grid every series has a row
  * at every time, and a missing result leaves its cells empty; otherwise the times are the union of the times of the
- * series, and a series without a sample at a time carries the sample at or before it (sample and hold).
+ * series, and a series without a sample at a time carries the sample at or before it (sample and hold), except
+ * where the next sample of that series marks a lost connection: the cell is then empty, as the plot leaves the line open.
  */
 export function wideTable(series, options, cell) {
     const header = ["time"];
@@ -246,7 +247,8 @@ export function wideTable(series, options, cell) {
                 cursors[index] += 1;
             }
             const exact = cursors[index] < s.rows.length && s.rows[cursors[index]].t === t ? s.rows[cursors[index]] : null;
-            const held = !options.quality && !exact && cursors[index] > 0 ? s.rows[cursors[index] - 1] : null;
+            const next = cursors[index] < s.rows.length ? s.rows[cursors[index]] : null;
+            const held = !options.quality && !exact && cursors[index] > 0 && !(next && next.lost) ? s.rows[cursors[index] - 1] : null;
             const row = exact || held;
             out.push(cell.value(row ? row.value : null));
             if (options.bins) out.push(cell.value(row ? row.min : null), cell.value(row ? row.max : null));

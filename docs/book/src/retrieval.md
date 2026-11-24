@@ -418,7 +418,8 @@ interrupt the line. Non-numeric samples are not drawn.
 Data as CSV begins with metadata lines (product, source, range, time
 format, values), then the columns `time`, `pv`, `value` (`mean`, `min`
 and `max` for bins), `severity` and `status`, and `quality` and `reason`
-for an interpolation; the wide layout has one column per PV. Optimized
+for an interpolation; the wide layout has one column per PV, and a PV without a sample at a time
+shows the sample before it, except before a sample that marks a lost connection, where its cells are empty. Optimized
 bins ask the retrieval for `meanSample_N`, `minSample_N` and
 `maxSample_N`, N being the span divided by the bins, rounded up to whole
 seconds. Linear interpolation is a calculation of the page over the raw
