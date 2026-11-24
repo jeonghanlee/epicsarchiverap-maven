@@ -91,14 +91,10 @@ public class DroppedEventsTypeChangeReport implements BPLAction {
 			paused.put(pvName, row);
 		}
 		List<JSONObject> rows = new ArrayList<>(paused.values());
-		if (limit != null && !limit.isBlank()) {
-			try {
-				int count = Integer.parseInt(limit.trim());
-				if (count >= 0 && count < rows.size()) rows = rows.subList(0, count);
-			} catch (NumberFormatException ex) {
-				logger.warn("Ignoring the limit " + limit + " of the type change report, which is not an integer");
-			}
+		if (limit == null) {
+			return rows;
 		}
-		return rows;
+		// The same limit as the rows of the engines: the engine answers first, so a limit that is not an integer is refused there.
+		return rows.subList(0, Math.min(Integer.parseInt(limit), rows.size()));
 	}
 }

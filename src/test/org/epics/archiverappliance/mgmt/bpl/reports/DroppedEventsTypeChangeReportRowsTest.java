@@ -2,6 +2,7 @@ package org.epics.archiverappliance.mgmt.bpl.reports;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -87,16 +88,22 @@ public class DroppedEventsTypeChangeReportRowsTest {
     @Test
     public void theLimitKeepsTheFirstRows() {
         assertEquals(List.of(PREFIX + "a", PREFIX + "b"), names(engineRows(), "2"));
-        assertEquals(List.of(PREFIX + "a"), names(engineRows(), " 1 "));
+        assertEquals(List.of(PREFIX + "a"), names(engineRows(), "1"));
         assertEquals(List.of(), names(engineRows(), "0"));
     }
 
     @Test
-    public void aLimitAboveTheCountOrNotAnIntegerKeepsEveryRow() {
+    public void aLimitAboveTheCountOrNoLimitKeepsEveryRow() {
         List<String> all = List.of(PREFIX + "a", PREFIX + "b", PREFIX + "c");
         assertEquals(all, names(engineRows(), "100"));
-        assertEquals(all, names(engineRows(), "many"));
-        assertEquals(all, names(engineRows(), ""));
-        assertEquals(all, names(engineRows(), "-1"));
+        assertEquals(all, names(engineRows(), null));
+    }
+
+    @Test
+    public void aLimitThatIsNotANonNegativeIntegerFailsAsItDoesInTheEngines() {
+        // The engines parse the same text first and fail on it, so the call never reaches these rows with such a limit.
+        assertThrows(NumberFormatException.class, () -> names(engineRows(), "many"));
+        assertThrows(NumberFormatException.class, () -> names(engineRows(), ""));
+        assertThrows(IllegalArgumentException.class, () -> names(engineRows(), "-1"));
     }
 }
