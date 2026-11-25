@@ -82,3 +82,23 @@ test("the limits are the numbers the metadata carries, and a display range of 0 
     assert.deepEqual(trend.limitsOf(null), []);
     assert.deepEqual(trend.limitsOf({ HIHI: "", HIGH: "abc", LOW: "Infinity" }), []);
 });
+
+// A lost connection or a step wider than the gap threshold is not held: the time across it is neither beyond nor observed.
+test("the time across a lost connection is left out of the time beyond and of the observed time", () => {
+    const samples = [{ t: 0, v: 9 }, { t: 10000, v: 1, g: true }, { t: 20000, v: 1 }];
+    assert.deepEqual(trend.timeBeyond(samples, 5, "above", 0, 20000), { beyond: 0, observed: 10000, fraction: 0 });
+    assert.deepEqual(trend.timeBeyond(samples.map(({ t, v }) => ({ t, v })), 5, "above", 0, 20000), { beyond: 10000, observed: 20000, fraction: 0.5 });
+});
+
+test("the time across a step wider than the gap threshold is left out, and without a threshold nothing is", () => {
+    const samples = [{ t: 0, v: 9 }, { t: 1000, v: 9 }, { t: 61000, v: 9 }, { t: 62000, v: 1 }];
+    assert.deepEqual(trend.timeBeyond(samples, 5, "above", 0, 62000, 5000), { beyond: 2000, observed: 2000, fraction: 1 });
+    assert.deepEqual(trend.timeBeyond(samples, 5, "above", 0, 62000, Infinity), { beyond: 62000, observed: 62000, fraction: 1 });
+    assert.deepEqual(trend.timeBeyond(samples, 5, "above", 0, 62000, 60000), { beyond: 62000, observed: 62000, fraction: 1 });
+});
+
+test("a window that clips a left-out span observes none of it", () => {
+    const samples = [{ t: 0, v: 9 }, { t: 10000, v: 1, g: true }, { t: 20000, v: 9 }];
+    assert.deepEqual(trend.timeBeyond(samples, 5, "above", 2000, 8000), { beyond: 0, observed: 0, fraction: null });
+    assert.deepEqual(trend.timeBeyond(samples, 5, "above", 2000, 15000), { beyond: 0, observed: 5000, fraction: 0 });
+});

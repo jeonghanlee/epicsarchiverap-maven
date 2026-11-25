@@ -1497,7 +1497,8 @@ function trendSignals() {
     });
 }
 trendTools = createTrendTools($("trendTools2"), { signals: trendSignals, window: () => ({ from: state.from, to: state.to }), zone: currentZone, onChange: () => { render(); writeAddress(); }, helpHref: helpPage,
-    sourceText, isHidden: (name) => chart.getState().hidden.includes(name), settings: state.tools.trend, metadata: metadataOf });
+    sourceText, isHidden: (name) => chart.getState().hidden.includes(name), settings: state.tools.trend, metadata: metadataOf,
+    gapMs: (name) => { const gap = (new Map(chart.getState().signals).get(name) || {}).gap; return Number.isFinite(gap) && gap > 0 ? gap * 1000 : Infinity; } });
 const spectrum = createSpectrum($("spectrumHost"), { signals: distributionSignals, zone: currentZone, sourceText, helpHref: helpPage, settings: state.tools.spectrum, changed: writeAddress });
 const correlation = createCorrelation($("correlationHost"), { signals: distributionSignals, range: () => state.selected, zone: currentZone, sourceText, helpHref: helpPage, settings: state.tools.correlation, changed: writeAddress });
 const dependency = createDependency($("dependencyHost"), { signals: distributionSignals, range: () => state.selected, resolution: () => state.sample ?? resolutionOf(state.selected.from, state.selected.to), autoSeconds,

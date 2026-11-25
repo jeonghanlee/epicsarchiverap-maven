@@ -65,14 +65,19 @@ export function fitValueAt(fit, t) {
 
 /**
  * The time a signal holds a value beyond a level, between two times. The signal holds each sample until the next one, which is how
- * the chart draws it, and only the time from the first sample inside or before the window to the last sample counts: the time
- * after the last sample is not known and is left out. side is "above" or "below"; a value equal to the level is not beyond it.
+ * the chart draws it, except across a lost connection (the next sample carries the flag g) or a step wider than gapMs, where the
+ * chart disconnects the line and the value is not known. Only the time from the first sample inside or before the window to the
+ * last sample counts, less those spans: the time after the last sample is not known either. side is "above" or "below"; a value
+ * equal to the level is not beyond it. gapMs is Infinity when the signal has no gap threshold.
  * Returns the milliseconds beyond, the milliseconds observed and their fraction (null when nothing was observed).
  */
-export function timeBeyond(points, level, side, from, to) {
+export function timeBeyond(points, level, side, from, to, gapMs = Infinity) {
     let beyond = 0;
     let observed = 0;
     for (let i = 0; i + 1 < points.length; i += 1) {
+        if (points[i + 1].g || points[i + 1].t - points[i].t > gapMs) {
+            continue;
+        }
         const start = Math.max(points[i].t, from);
         const stop = Math.min(points[i + 1].t, to);
         if (!(stop > start)) {

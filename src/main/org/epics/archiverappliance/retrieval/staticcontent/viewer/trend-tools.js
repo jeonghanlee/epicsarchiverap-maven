@@ -36,7 +36,7 @@ const CARD = [
         ["Slow trend", "The least-squares line of the values against time over the window's samples. The slope is given per hour and per day with its standard error. R squared is the share of the variation the line explains; it is undefined when the values do not vary. A signal with a daily cycle can show a slope that depends on where the window starts."],
         ["Limits", "The alarm and warning limits and the display range the archiver reports for the PV (HIHI, HIGH, LOW, LOLO, LOPR, HOPR). A limit that is not set is not drawn, and a display range of 0 and 0 counts as not set. A PV with none says so. If the limits could not be read, switch Limits off and on to ask again."],
         ["Dataset", "The samples the Trend draws now. With the automatic interval they are means over N seconds, so a value beyond a level for less than N seconds is not seen, and an interval whose mean is beyond the level counts whole. A time beyond a level can therefore read lower or higher than the stored samples give. Choose Raw samples under Options, Interval, to count the stored samples. The page names the dataset above the numbers."],
-        ["Time beyond", "The time the signal holds a value above or below a level, counted as the chart draws it: each sample holds until the next. The time before the first sample and after the last in the window is unknown and left out. A value equal to the level is not beyond it. The share is the time beyond over the observed time."],
+        ["Time beyond", "The time the signal holds a value above or below a level, counted as the chart draws it: each sample holds until the next. A lost connection and a step wider than the Gap of the signal are not held, as the line is disconnected there. The time before the first sample and after the last in the window, and those spans, is unknown and left out. A value equal to the level is not beyond it. The share is the time beyond over the observed time."],
         ["Threshold", "A level you type, in the signal's unit, with the side to count. It applies on Enter or when you leave the field. A value that is not a finite number is refused with its reason, and the last valid value stays; an empty field means none. Text typed but not entered stays while the page redraws."],
         ["Hidden signals", "A signal hidden in the Trend legend shows no tool lines or numbers; show it again to see them."],
     ],
@@ -183,7 +183,7 @@ export function createTrendTools(host, options) {
         }
         const table = [];
         const addRow = (name, field, value, side) => {
-            const result = timeBeyond(dataset.points, value, side, +from, +to);
+            const result = timeBeyond(dataset.points, value, side, +from, +to, options.gapMs ? options.gapMs(entry.name) : Infinity);
             table.push({ name, field, value, side, result });
             lines.push({ kind: field === "threshold" ? "threshold" : field === "LOPR" || field === "HOPR" ? "display" : field === "HIHI" || field === "LOLO" ? "alarm" : "warning", name, field, value });
         };
@@ -211,7 +211,7 @@ export function createTrendTools(host, options) {
                     node("th", { scope: "row" }, row.name), node("td", null, row.field === "threshold" ? "typed" : row.field), node("td", { class: "num" }, format(row.value, unit)),
                     node("td", null, row.side), node("td", { class: "num" }, durationText(row.result.beyond)),
                     node("td", { class: "num" }, row.result.fraction === null ? "no observed time" : `${(100 * row.result.fraction).toFixed(2)} %`))))));
-            notes.push(`Observed time: ${durationText(observed)} of the displayed window, from the first to the last sample in it, each sample held until the next. `
+            notes.push(`Observed time: ${durationText(observed)} of the displayed window, from the first to the last sample in it, each sample held until the next, less a lost connection and a step wider than the Gap of the signal. `
                 + `Window ${formatInZone(from, TIME_FORMAT, zone)} to ${formatInZone(to, TIME_FORMAT, zone)} ${zoneName(zone, to)}.`);
         }
         for (const text of notes) numbers.append(node("p", { class: "note trend-note" }, text));
