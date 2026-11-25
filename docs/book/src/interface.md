@@ -457,12 +457,20 @@ Three checks guard the interface files:
 - `SiteOverlayTest` applies a site folder to the pages and checks the
   result.
 - `scripts/ui-static-checks.bash` runs in the CI before the Maven build.
-  It checks the marker blocks, the content security policy, the absence
-  of inline code, outside hosts, jQuery and text turned into markup, that
-  the files a page names exist, that every element id a script reads
-  exists in its page, that `d3.min.js` is the file whose SHA-256
-  `d3.SOURCE.txt` records, the PV name pattern, the contrast of the text
-  colors, and the form of the [information cards](#information-cards);
-  twenty-five broken copies of the tree must each be refused for their
-  own reason. Run it locally with `bash scripts/ui-static-checks.bash`; it
-  needs `python3` and `sha256sum`.
+  It checks the marker blocks, the content security policy, the names of
+  the main menu and of the dialogs, the absence of inline code, event
+  handlers, inline styles and `javascript:` addresses, outside hosts,
+  jQuery and text turned into markup, that every server call is written
+  with its literal path, that the files a page names exist, that every
+  element id a script reads exists in its page, that `d3.min.js` and
+  `uFuzzy.iife.min.js` are the files whose SHA-256 `d3.SOURCE.txt` and
+  `ufuzzy.SOURCE.txt` record, the PV name pattern, that no page asks the
+  server for `mean_N`, that the System overview builds its detail links
+  with the chosen appliance, the contrast of the text colors, the form of
+  the [information cards](#information-cards), that the declaration of
+  the address options, the module defaults and the book name the same
+  options of every analysis tool, and that the pom, the launcher and the
+  book name one Tomcat version; thirty broken copies of the tree must
+  each be refused for their own reason. Run it locally with
+  `bash scripts/ui-static-checks.bash`; it needs `python3` and
+  `sha256sum`.

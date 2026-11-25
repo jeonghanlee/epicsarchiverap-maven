@@ -4,7 +4,8 @@
 # security policy, no page has an inline script, an event-handler or style attribute, no interface file refers
 # to jQuery or to an outside host, every element id a script reads exists in its page, the vendored chart
 # library is the file its record names, the text colors of the shared stylesheet keep their contrast, and the
-# declaration, the module defaults and the book name the same options of every analysis tool.
+# declaration, the module defaults and the book name the same options of every analysis tool, and the pom, the launcher
+# and the book name one Tomcat version.
 # The last section copies the tree, breaks one thing per copy and requires the checks to refuse each copy.
 #
 # Usage: bash scripts/ui-static-checks.bash
@@ -525,6 +526,30 @@ PY
 )
 assert_eq "${consistency}" "" "The declaration, the module defaults and the book name the same options (wrong: ${consistency})"
 
+# ---- the Tomcat version is the one the repository pins ----------------------------------------------
+# pom.xml pins the version of the Tomcat servlet API; the launcher of the development appliance, the install page of the
+# bundle and the developer page name the Tomcat that is downloaded or installed. Every 9.0.N they write is the pinned one.
+tomcat=$(python3 -I - "${ROOT}" <<'PY'
+import os, re, sys
+root = sys.argv[1]
+pom = open(os.path.join(root, "pom.xml"), encoding="utf-8").read()
+pinned = re.search(r"<artifactId>tomcat-servlet-api</artifactId>\s*<version>(9\.0\.\d+)</version>", pom)
+faults = []
+if not pinned:
+    faults.append("pom.xml does not pin tomcat-servlet-api to a 9.0.N version")
+else:
+    for relative in ("scripts/run-local-appliance.bash", "docs/book/src/install-bundle.md", "docs/book/src/developer.md"):
+        text = open(os.path.join(root, relative), encoding="utf-8").read()
+        named = sorted(set(re.findall(r"(?<![0-9.])9\.0\.\d+", text)))
+        if not named:
+            faults.append(f"{relative} names no Tomcat version")
+        elif named != [pinned.group(1)]:
+            faults.append(f"{relative} names Tomcat {', '.join(named)} where pom.xml pins {pinned.group(1)}")
+print("; ".join(faults))
+PY
+)
+assert_eq "${tomcat}" "" "The pom pin, the launcher and the book name one Tomcat version (wrong: ${tomcat})"
+
 # ---- the checks reject a copy with one defect each -------------------------------------------------
 # A check that cannot fail protects nothing: each copy below holds one defect and must be refused,
 # and for the reason named, not for another one.
@@ -539,6 +564,10 @@ function expect_rejected {
     mkdir -p "${tree}/docs/book/src"
     cp -a "${ROOT}/docs/analyzer-address.openapi.json" "${tree}/docs/"
     cp -a "${ROOT}/docs/book/src/retrieval.md" "${tree}/docs/book/src/"
+    cp -a "${ROOT}/docs/book/src/install-bundle.md" "${ROOT}/docs/book/src/developer.md" "${tree}/docs/book/src/"
+    mkdir -p "${tree}/scripts"
+    cp -a "${ROOT}/pom.xml" "${tree}/"
+    cp -a "${ROOT}/scripts/run-local-appliance.bash" "${tree}/scripts/"
     F="${tree}/src/${relative}" bash -c "${snippet}"
     output=$(UI_STATIC_TREE_UNDER_TEST="${tree}" bash "${BASH_SOURCE[0]}" 2>&1) || status=$?
     if [[ "${status}" -eq 0 ]]; then
@@ -602,6 +631,8 @@ if [[ -z "${UI_STATIC_TREE_UNDER_TEST:-}" ]]; then
         "${A}/retrieval/staticcontent/viewer/image.js" "sed -i '0,/\\[\"Region\", /s//[\"Also\", \"x.\"], [\"Region\", /' \"\$F\""
     expect_rejected "an information card that types a threshold" "a typed number" \
         "${A}/mgmt/staticcontent/js/system.js" "sed -i 's|\${THRESHOLDS.daysLeftProblem} days|7 days|' \"\$F\""
+    expect_rejected "an install page whose download path names another Tomcat version" "install-bundle.md names Tomcat 9.0.121, 9.0.122 where pom.xml pins 9.0.122" \
+        "../docs/book/src/install-bundle.md" "sed -i 's|/v9\\.0\\.122/|/v9.0.121/|' \"\$F\""
     expect_rejected "a book row without a Waveform field" "waveform: the declaration and the book row name different fields" \
         "../docs/book/src/retrieval.md" "sed -i 's|\`waveform\[sigma\]\`, ||' \"\$F\""
     expect_rejected "a declaration whose Image views are reordered" "image[view]: the enumerated values of the declaration differ" \
