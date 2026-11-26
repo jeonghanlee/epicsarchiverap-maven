@@ -120,7 +120,7 @@ or source edits.
 First start an appliance with the [local launcher](developer.md#run-a-local-appliance),
 or export `BPL_URL` with an existing appliance's management BPL URL. The local
 launcher starts with no archived PVs. The [test procedure](https://github.com/jeonghanlee/epicsarchiverap-maven/blob/master/TESTING.md#python-listing-example)
-loads the shipped IOC fixture and archives 600 PVs with an `M17LIST:` prefix.
+loads the shipped IOC fixture and archives 600 PVs with a `LISTTEST:` prefix.
 Then run these commands from the repository root:
 
 ```bash
@@ -128,7 +128,7 @@ python3 -m venv --without-pip work/list-pvs-venv
 script=docs/book/src/samples/listArchivedPVs.py
 bpl=${BPL_URL:-http://127.0.0.1:17665/mgmt/bpl}
 work/list-pvs-venv/bin/python "$script" "$bpl"
-work/list-pvs-venv/bin/python "$script" "$bpl" --glob 'M17LIST:*'
+work/list-pvs-venv/bin/python "$script" "$bpl" --glob 'LISTTEST:*'
 work/list-pvs-venv/bin/python "$script" "$bpl" --limit 17
 ```
 

@@ -97,7 +97,7 @@ class Verification:
                 raise RuntimeError("baseline did not run with the recorded build sources and fixture")
         if {p.name for p in args.war_dir.glob("*.war")} != {Path(p).name for p in self.wars}:
             raise RuntimeError("WAR directory must contain exactly the selected four WARs")
-        self.prefix = "M17DISC:" + uuid.uuid4().hex[:8] + ":"
+        self.prefix = "DISCTEST:" + uuid.uuid4().hex[:8] + ":"
         self.pvs = [self.prefix + f"test_{n}" for n in range(3)]
         self.ioc_command = [args.ioc, "-m", "P=" + self.prefix, "-d", str(FIXTURE)]
         save(self.root, "manifest.json", {

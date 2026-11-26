@@ -110,7 +110,7 @@ def main():
                EPICS_PVAS_INTF_ADDR_LIST="224.0.1.1,1@127.0.0.1")
     bpl = f"http://127.0.0.1:{args.port_base}/mgmt/bpl"
     http = build_opener(ProxyHandler({}))
-    prefix = f"M17LIST:{uuid.uuid4().hex[:8]}:"
+    prefix = f"LISTTEST:{uuid.uuid4().hex[:8]}:"
     pvs = [f"{prefix}test_{i}" for i in range(PV_COUNT)]
     results = []
     app = ioc = None
@@ -217,7 +217,7 @@ def main():
         run_case("explicit-unlimited", ["--limit", "-1"], expected=pvs)
         run_case("glob", ["--glob", prefix + "test_5?"], expected=[prefix + f"test_{i}" for i in range(50, 60)])
         run_case("no-match", ["--glob", prefix + "missing*"], expected=[])
-        run_case("documented-glob", ["--glob", "M17LIST:*"], expected=pvs)
+        run_case("documented-glob", ["--glob", "LISTTEST:*"], expected=pvs)
         for limit in (1, 17, 500, 700):
             run_case(f"limit-{limit}", ["--limit", str(limit)], count=min(limit, PV_COUNT))
         run_case("glob-limit", ["--glob", prefix + "test_*", "--limit", "5"], count=5)

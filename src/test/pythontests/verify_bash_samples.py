@@ -712,7 +712,7 @@ def main():
                EPICS_CAS_INTF_ADDR_LIST="127.0.0.1", EPICS_CAS_BEACON_ADDR_LIST="127.0.0.1",
                EPICS_PVAS_INTF_ADDR_LIST="224.0.1.1,1@127.0.0.1")
     bpl = f"http://127.0.0.1:{args.port_base}/mgmt/bpl"
-    prefix = f"M37BASH:{uuid.uuid4().hex[:8]}:"
+    prefix = f"BASHTEST:{uuid.uuid4().hex[:8]}:"
     pvs = [f"{prefix}test_{i}" for i in range(PV_COUNT)]
     run = Run(root, env, bpl, prefix, pvs, retrieval=f"http://127.0.0.1:{args.port_base + 3}/retrieval")
     app = ioc = None

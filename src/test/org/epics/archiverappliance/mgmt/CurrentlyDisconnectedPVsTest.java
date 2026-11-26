@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CurrentlyDisconnectedPVsTest {
     private static final String MGMT = "http://127.0.0.1:17665/mgmt/bpl/";
     private static final String ENGINE = "http://127.0.0.1:17665/engine/bpl/";
-    private static final String PREFIX = "M17DISC:";
+    private static final String PREFIX = "DISCTEST:";
     private static final List<String> ACTIVE = List.of(PREFIX + "test_0", PREFIX + "test_1");
     private static final String PAUSED = PREFIX + "test_2";
     private final TomcatSetup tomcat = new TomcatSetup();
