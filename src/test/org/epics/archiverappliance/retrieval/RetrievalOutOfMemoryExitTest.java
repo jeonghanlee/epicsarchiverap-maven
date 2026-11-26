@@ -64,7 +64,7 @@ public class RetrievalOutOfMemoryExitTest {
         Instant start = TimeUtils.convertFromISO8601String(DATA_FROM);
         Instant end = TimeUtils.convertFromISO8601String(DATA_TO);
         long events = GenerateData.generateSineForPV(PV_NAME, 0, ArchDBRTypes.DBR_SCALAR_DOUBLE, start, end);
-        System.out.println("T3 data events generated now: " + events + " (0 when the files already exist)");
+        System.out.println("out-of-memory exit data events generated now: " + events + " (0 when the files already exist)");
     }
 
     private String getDataUrl(String format, String pp, String from, String to) {
@@ -76,7 +76,7 @@ public class RetrievalOutOfMemoryExitTest {
         Files.createDirectories(RESULT_FILE.getParent());
         Files.write(RESULT_FILE, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         for (String line : lines) {
-            System.out.println("T3 " + line);
+            System.out.println("out-of-memory exit " + line);
         }
     }
 

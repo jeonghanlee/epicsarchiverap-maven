@@ -34,7 +34,7 @@ public class RetrievalMemoryControlsTest {
                     assertTrue(RetrievalMemoryNetworkFixture.hasData(fixed), fixed.body());
                 }
                 Files.writeString(server.evidence.resolve(processor + ".json"), fixed.body());
-                System.out.println("T7 fixedQuery processor=" + processor + " maxHeap=" + maximum
+                System.out.println("memory controls fixedQuery processor=" + processor + " maxHeap=" + maximum
                         + " status=" + fixed.statusCode());
             }
 
@@ -94,7 +94,7 @@ public class RetrievalMemoryControlsTest {
             assertEquals(from.getEpochSecond(), first);
             assertEquals(to.getEpochSecond() - 1, last);
             assertNull(server.tomcat.exitStatus("appliance0"));
-            System.out.println("T7 raw complete events=" + count + " first=" + first + " last=" + last
+            System.out.println("memory controls raw complete events=" + count + " first=" + first + " last=" + last
                     + " bytes=" + Files.size(file));
         }
     }

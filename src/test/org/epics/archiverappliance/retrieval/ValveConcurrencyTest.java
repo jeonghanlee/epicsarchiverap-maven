@@ -81,7 +81,7 @@ public class ValveConcurrencyTest {
                         "Startup requests must release the connector before the overload workload");
                 Thread.sleep(25);
             }
-            String missingPV = "ca://T5:ABSENT:" + UUID.randomUUID();
+            String missingPV = "ca://VALVE:ABSENT:" + UUID.randomUUID();
             URI uri = URI.create(ConfigServiceForTests.MGMT_URL + "/searchPV?pv=" + encode(missingPV)
                     + "&timeout=" + SEARCH_SECONDS);
             List<CompletableFuture<Outcome>> pending = new ArrayList<>();
@@ -101,7 +101,7 @@ public class ValveConcurrencyTest {
             int admitted = 0;
             for (CompletableFuture<Outcome> future : pending) {
                 Outcome outcome = future.get();
-                System.out.println("T5 management status " + outcome.status() + " millis " + outcome.millis());
+                System.out.println("valve management status " + outcome.status() + " millis " + outcome.millis());
                 if (outcome.status() == 503) {
                     refused++;
                     Assertions.assertTrue(outcome.millis() < REFUSAL_MILLIS_LIMIT, "Late refusal: " + outcome.millis());
@@ -123,7 +123,7 @@ public class ValveConcurrencyTest {
             HttpResponse<String> recovery = client.send(HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(30))
                     .GET().build(), HttpResponse.BodyHandlers.ofString());
             Assertions.assertEquals(200, recovery.statusCode(), "A search must work after the permits are released");
-            System.out.println("T5 management maxBusyThreads " + maxBusy + " recoveryStatus " + recovery.statusCode());
+            System.out.println("valve management maxBusyThreads " + maxBusy + " recoveryStatus " + recovery.statusCode());
         } finally {
             fixture.tearDown();
         }
@@ -182,7 +182,7 @@ public class ValveConcurrencyTest {
             }
             List<Outcome> outcomes = new ArrayList<>();
             for (CompletableFuture<Outcome> future : pending) outcomes.add(future.get());
-            System.out.println("T5 outcomes " + outcomes + " maxBusyThreads " + maxBusy);
+            System.out.println("valve outcomes " + outcomes + " maxBusyThreads " + maxBusy);
 
             long refused = outcomes.stream().filter(ValveConcurrencyTest::isConcurrencyRefusal).count();
             long admitted = outcomes.size() - refused;
@@ -204,7 +204,7 @@ public class ValveConcurrencyTest {
                 Assertions.assertTrue(outcome.millis() >= STUCK_SECONDS * 1000L && outcome.millis() < INTERRUPT_MILLIS_LIMIT,
                         "A long request is outside the low-threshold window: " + outcome);
             }
-            System.out.println("T5 deadline stops elapsedMillis " + stopped.stream().map(Outcome::millis).toList());
+            System.out.println("valve deadline stops elapsedMillis " + stopped.stream().map(Outcome::millis).toList());
         } finally {
             fixture.tearDown();
         }

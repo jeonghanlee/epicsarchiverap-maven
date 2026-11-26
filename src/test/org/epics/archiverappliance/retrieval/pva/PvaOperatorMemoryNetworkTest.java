@@ -123,7 +123,7 @@ public class PvaOperatorMemoryNetworkTest {
                 maximum = server.memory.getHeapMemoryUsage().getMax();
             }
             if (exhausted || !alive) result = "exhausted";
-            String line = "T1 candidate=" + label + " result=" + result + " jvmAlive=" + alive
+            String line = "pva operator candidate=" + label + " result=" + result + " jvmAlive=" + alive
                     + " outOfMemoryError=" + exhausted + " peakHeap=" + peakHeap + " peakCollected=" + peakCollected + " heapAfterCollection=" + afterCollection
                     + " maxHeap=" + maximum + " names=" + names.split(";").length
                     + " argument=" + names.length() + " characters detail=[" + detail + "]";

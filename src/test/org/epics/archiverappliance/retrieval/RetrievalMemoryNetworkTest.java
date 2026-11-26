@@ -89,7 +89,7 @@ public class RetrievalMemoryNetworkTest {
             }
             List<LoadOutcome> outcomes = pending.stream().map(CompletableFuture::join).toList();
             Files.writeString(server.evidence.resolve("outcomes.txt"), outcomes + "\n");
-            System.out.println("T7 pressure " + parameters + "maxBusy=" + maximumBusy + " peak=" + peak
+            System.out.println("http memory pressure " + parameters + "maxBusy=" + maximumBusy + " peak=" + peak
                     + " headroom=" + (maximum - peak) + " admissionRefused=" + admissionRefused + " " + outcomes);
             assertTrue(maximumBusy >= 2, "The real HTTP requests must overlap");
             assertTrue(server.tomcat.consoleLines(APPLIANCE).stream()
@@ -121,7 +121,7 @@ public class RetrievalMemoryNetworkTest {
                             RetrievalMemoryNetworkFixture.FROM.plusSeconds(3600));
                     assertEquals(400, response.statusCode(), format + " " + processor + " " + response.body());
                     assertTrue(response.body().contains("budget"), response.body());
-                    System.out.println("T7 declared refusal format=" + format + " processor=" + processor
+                    System.out.println("http memory declared refusal format=" + format + " processor=" + processor
                             + " status=" + response.statusCode());
                 }
             }
@@ -175,7 +175,7 @@ public class RetrievalMemoryNetworkTest {
                     report.append(option).append('=').append(diagnostic.getVMOption(option).getValue()).append('\n');
                 }
                 Files.writeString(evidence.resolve("baseline.txt"), report);
-                System.out.println("T7 baseline " + evidence + "\n" + report);
+                System.out.println("http memory baseline " + evidence + "\n" + report);
                 assertTrue(memory.getHeapMemoryUsage().getMax() > 0);
                 assertFalse(pools.isEmpty());
             }

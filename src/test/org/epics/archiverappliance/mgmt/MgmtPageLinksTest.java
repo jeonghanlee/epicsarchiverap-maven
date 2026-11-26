@@ -193,7 +193,7 @@ public class MgmtPageLinksTest {
                     }
                 }
                 workloadMax = Math.max(workloadMax, maximum);
-                System.out.println("T5 console page " + page + " requests " + targets.size() * CONCURRENT_ROUNDS
+                System.out.println("valve console page " + page + " requests " + targets.size() * CONCURRENT_ROUNDS
                         + " samples " + samples + " maxBusyThreads " + maximum
                         + " millis " + (System.nanoTime() - started) / 1_000_000
                         + " paths " + targets.stream().map(URI::getPath).toList());

@@ -469,7 +469,7 @@ public class PvaMemoryNetworkTest {
                     request.cancel(true);
                     assertData(channel);
                     assertEquals(connectedStates, states.size(), "Recovery must not reconnect the channel: " + states);
-                    System.out.println("T8 declared refusal processor=" + processor
+                    System.out.println("pva memory declared refusal processor=" + processor
                             + " remote=" + channel.getRemoteAddress() + " recovery=data");
                 }
                 assertNull(server.tomcat.exitStatus("appliance0"));
@@ -504,7 +504,7 @@ public class PvaMemoryNetworkTest {
                         assertTrue(((PVAStructureArray) values.get()[0].get()).get().length > 0);
                     }
                     assertData(channel);
-                    System.out.println("T8 fixedQuery processor=" + processor + " maxHeap=" + maximum
+                    System.out.println("pva memory fixedQuery processor=" + processor + " maxHeap=" + maximum
                             + " refused=" + (maximum <= 512L * 1024 * 1024));
                 }
                 int seconds = Integer.getInteger("archappl.memory.test.rawSeconds", 5000);
@@ -521,7 +521,7 @@ public class PvaMemoryNetworkTest {
                 String result = "maxHeap=" + maximum + " records=" + data.get().length
                         + " elapsedMillis=" + (System.nanoTime() - started) / 1_000_000;
                 Files.writeString(server.evidence.resolve("pva-raw.txt"), result + "\n");
-                System.out.println("T8 raw " + result);
+                System.out.println("pva memory raw " + result);
                 assertNull(server.tomcat.exitStatus("appliance0"));
             }
         });
@@ -629,7 +629,7 @@ public class PvaMemoryNetworkTest {
                         + " overlap=" + overlap + " refusedClient=" + refused + " recoveredClients=" + count
                         + " elapsedMillis=" + (System.nanoTime() - started) / 1_000_000;
                 Files.writeString(server.evidence.resolve("pva-pressure-result.txt"), result + "\n");
-                System.out.println("T8 pressure " + result);
+                System.out.println("pva memory pressure " + result);
             } finally {
                 Files.write(server.evidence.resolve("pva-memory.csv"), samples);
                 Files.writeString(server.evidence.resolve("pva-pressure-states.txt"), states.toString() + "\n");

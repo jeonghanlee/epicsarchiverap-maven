@@ -126,7 +126,7 @@ public class RetrievalProtectedValveNetworkTest {
             assertTrue(RetrievalMemoryNetworkFixture.hasData(server.get("json", "mean_60",
                     RetrievalMemoryNetworkFixture.FROM, RetrievalMemoryNetworkFixture.FROM.plusSeconds(3600))));
             assertNull(server.tomcat.exitStatus("appliance0"));
-            System.out.println("T7 protected valve " + outcomes);
+            System.out.println("protected valve " + outcomes);
         }
     }
 
@@ -179,7 +179,7 @@ public class RetrievalProtectedValveNetworkTest {
                 assertTrue(RetrievalMemoryNetworkFixture.hasData(server.get("json", "mean_60",
                         RetrievalMemoryNetworkFixture.FROM, RetrievalMemoryNetworkFixture.FROM.plusSeconds(3600))));
                 assertNull(server.tomcat.exitStatus("appliance0"));
-                System.out.println("T7 committed valve elapsedMillis=" + elapsed + " " + outcome);
+                System.out.println("committed valve elapsedMillis=" + elapsed + " " + outcome);
             }
         }
         assertCommittedExceptions(server.evidence, requireInterrupt);

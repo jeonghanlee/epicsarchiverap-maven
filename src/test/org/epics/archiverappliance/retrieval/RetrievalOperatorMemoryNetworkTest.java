@@ -147,7 +147,7 @@ public class RetrievalOperatorMemoryNetworkTest {
             String result = exhausted || !alive ? "exhausted"
                     : (outcome.status() == 400 || outcome.status() == 503) && !refusal.isEmpty() ? "refused"
                     : outcome.status() == 200 && outcome.failure().isEmpty() ? "completed" : "failed";
-            String line = "T1 candidate=" + label + " result=" + result + " status=" + outcome.status()
+            String line = "http operator candidate=" + label + " result=" + result + " status=" + outcome.status()
                     + " bytes=" + outcome.bytes() + " failure=[" + outcome.failure() + "] jvmAlive=" + alive
                     + " outOfMemoryError=" + exhausted + " peakHeap=" + peakHeap + " peakCollected=" + peakCollected + " heapAfterCollection=" + afterCollection + " maxHeap=" + maximum
                     + " request=" + request.method() + " " + request.uri().toString().length() + " characters"

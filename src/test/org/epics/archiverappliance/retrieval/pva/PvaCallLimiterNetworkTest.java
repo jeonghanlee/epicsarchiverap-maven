@@ -161,7 +161,7 @@ public class PvaCallLimiterNetworkTest {
                 }
                 assertData(channels.get(PERMITS));
                 assertEquals(1, refusals(server), "The call after the held calls ended must not be refused");
-                String line = "T2 permits=" + PERMITS + " refusalMessages=" + refusals(server) + " refusedCallSaw=[" + seen + "]";
+                String line = "call limiter permits=" + PERMITS + " refusalMessages=" + refusals(server) + " refusedCallSaw=[" + seen + "]";
                 Files.writeString(server.evidence.resolve("pva-call-limiter.txt"), line + "\n");
                 System.out.println(line);
             } finally {
