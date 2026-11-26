@@ -61,3 +61,17 @@ test("a normal sample of known parameters is estimated within 4 standard errors"
     assert.ok(Math.abs(m.sd - 2) <= 4 * m.seSd, `sd ${m.sd} (se ${m.seSd})`);
     assert.ok(Math.abs(m.skewness) < 0.1 && Math.abs(m.kurtosis) < 0.2);
 });
+
+// The logarithm of the gamma function shared by the tests and the correlations, against values that are known exactly:
+// the factorials, the half-integers and the reflection below one half.
+test("the logarithm of the gamma function equals its exact values at integers, half-integers and below one half", () => {
+    const exact = [
+        [1, 0], [2, 0], [5, Math.log(24)], [10, Math.log(362880)], [20, Math.log(121645100408832000)],
+        [0.5, 0.5 * Math.log(Math.PI)], [1.5, Math.log(Math.sqrt(Math.PI) / 2)], [2.5, Math.log(0.75 * Math.sqrt(Math.PI))],
+        [0.25, Math.log(3.6256099082219083119)], [-0.5, Math.log(2 * Math.sqrt(Math.PI))],
+    ];
+    for (const [x, expected] of exact) {
+        const got = stats.logGamma(x);
+        assert.ok(Math.abs(got - expected) <= 1e-13 * Math.max(1, Math.abs(expected)), `logGamma(${x}) = ${got}, expected ${expected}`);
+    }
+});
