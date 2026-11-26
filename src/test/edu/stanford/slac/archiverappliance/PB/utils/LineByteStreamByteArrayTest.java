@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.ByteArray;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -15,10 +16,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 
 public class LineByteStreamByteArrayTest {
     private static Logger logger = LogManager.getLogger(LineByteStreamByteArrayTest.class.getName());
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        Files.createDirectories(Path.of(ConfigServiceForTests.getDefaultPBTestFolder()));
+    }
 
     @Test
     public void testLineByteStream() throws Exception {

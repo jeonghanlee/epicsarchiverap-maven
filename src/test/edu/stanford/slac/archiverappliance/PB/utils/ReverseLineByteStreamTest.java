@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedOutputStream;
@@ -13,11 +14,18 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.Random;
 
 public class ReverseLineByteStreamTest {
     private static Logger logger = LogManager.getLogger(ReverseLineByteStreamTest.class.getName());
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        Files.createDirectories(Path.of(ConfigServiceForTests.getDefaultPBTestFolder()));
+    }
 
     /*
      * Test that we are reading all the bytes in the file.
