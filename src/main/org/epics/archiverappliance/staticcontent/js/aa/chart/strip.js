@@ -97,7 +97,7 @@ export function buildRangeStrip(input, ranges, units, redraw) {
     }
     const windowText = document.createElement("span");
     windowText.className = "strip-window";
-    const label = windowLabel(input.from, input.to, input.fromIncluded !== false, input.toIncluded !== false, input.timeZone);
+    const label = windowLabel(input.from, input.to, input.timeZone);
     windowText.textContent = label.text;
     windowText.title = label.full;
     time.append(windowText);
@@ -131,7 +131,7 @@ export function buildRangeStrip(input, ranges, units, redraw) {
         if (range) {
             const text = document.createElement("span");
             text.className = "strip-range";
-            text.textContent = intervalText(range[0], range[1], true, true, (value) => format(value, ""));
+            text.textContent = intervalText(range[0], range[1], (value) => format(value, ""));
             values.append(text);
         }
     }

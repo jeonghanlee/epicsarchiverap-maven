@@ -16,9 +16,9 @@ export function format(value, egu) {
     return `${text}${egu ? ` ${egu}` : ""}`;
 }
 
-/** An interval as text: a bracket includes the data at its end and a parenthesis leaves it out, as in [a, b) or (a, b]. */
-export function intervalText(low, high, lowIncluded, highIncluded, text) {
-    return `${lowIncluded ? "[" : "("}${text(low)}, ${text(high)}${highIncluded ? "]" : ")"}`;
+/** An interval as text, [a, b], which includes the data at both ends. */
+export function intervalText(low, high, text) {
+    return `[${text(low)}, ${text(high)}]`;
 }
 
 /**
@@ -26,7 +26,7 @@ export function intervalText(low, high, lowIncluded, highIncluded, text) {
  * written once, in front of the brackets: the date when the day is the same and the hour too when that is the same as well;
  * when only the year is the same, the end leaves it out. {text, full} where full is the whole interval for a tooltip.
  */
-export function windowLabel(from, to, fromIncluded, toIncluded, zone) {
+export function windowLabel(from, to, zone) {
     const pad = (number) => String(number).padStart(2, "0");
     // The fields are read in the chosen zone (Browser and UTC included), so that both ends share the same clock.
     const fields = (date) => {
@@ -37,18 +37,16 @@ export function windowLabel(from, to, fromIncluded, toIncluded, zone) {
     const [f, t] = [fields(from), fields(to)];
     const day = (x) => `${x[0]}-${pad(x[1])}-${pad(x[2])}`;
     const clock = (x) => `${pad(x[3])}:${pad(x[4])}${seconds ? `:${pad(x[5])}` : ""}`;
-    const open = fromIncluded ? "[" : "(";
-    const close = toIncluded ? "]" : ")";
-    const full = `${open}${day(f)} ${clock(f)}, ${day(t)} ${clock(t)}${close}`;
+    const full = `[${day(f)} ${clock(f)}, ${day(t)} ${clock(t)}]`;
     if (f[0] === t[0] && f[1] === t[1] && f[2] === t[2]) {
         if (f[3] === t[3]) {
             const rest = (x) => `${pad(x[4])}${seconds ? `:${pad(x[5])}` : ""}`;
-            return { text: `${day(f)} ${pad(f[3])}:${open}${rest(f)}, ${rest(t)}${close}`, full };
+            return { text: `${day(f)} ${pad(f[3])}:[${rest(f)}, ${rest(t)}]`, full };
         }
-        return { text: `${day(f)} ${open}${clock(f)}, ${clock(t)}${close}`, full };
+        return { text: `${day(f)} [${clock(f)}, ${clock(t)}]`, full };
     }
     if (f[0] === t[0]) {
-        return { text: `${open}${day(f)} ${clock(f)}, ${pad(t[1])}-${pad(t[2])} ${clock(t)}${close}`, full };
+        return { text: `[${day(f)} ${clock(f)}, ${pad(t[1])}-${pad(t[2])} ${clock(t)}]`, full };
     }
     return { text: full, full };
 }

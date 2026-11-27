@@ -189,7 +189,7 @@ function cardsOf(helpHref, timed) {
                         ? "Drag along an axis, or Tab to it and use the arrow keys, + and -, to choose the range of that unit. The control of its unit returns it to the automatic range; so does Home or a double-click, and All resets the window and every range. The statistics follow it."
                         : "Drag along an axis, or Tab to it and use the arrow keys, + and -, to choose the range of that unit. The control of its unit returns it to the automatic range; so does Home or a double-click, and All resets every range. The statistics follow it.",
                 ],
-                ["Notation", "A bracket includes the data at that end and a parenthesis leaves it out: [a, b] includes both ends, (a, b] leaves the start out."],
+                ["Notation", "A range is written in square brackets, [a, b], which include the data at both ends."],
             ],
             null,
             helpHref,

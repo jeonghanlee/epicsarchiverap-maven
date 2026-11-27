@@ -49,8 +49,8 @@ const DASH_PATTERNS = { solid: "", dash: "8 4", dot: "2 3", dashdot: "9 3 2 3" }
  * The range strip above the chart always shows the time window as an interval, with its date and time (strip false leaves it
  * out, for a page that shows the window itself); windowChosen true
  * says that the window was chosen and not the range of the page, which lights the controls given by onPan(direction) (earlier
- * is -1, later is 1; canPanLater false dims later) and onReset(). fromIncluded and toIncluded false write that end of the
- * interval with a parenthesis because the data at that end is left out; both are included unless a page says otherwise.
+ * is -1, later is 1; canPanLater false dims later) and onReset(). The interval is written in square brackets, which
+ * include the data at both ends.
  * options is the object of buildChartOptions(): line shape, value scale, sample marks, running average and standard
  * deviation band; CHART_OPTIONS holds the values used until the viewer changes one.
  * projection true draws a histogram of the samples in view for each line at the right of the plot, on the value axis of
