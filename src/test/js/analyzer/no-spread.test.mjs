@@ -9,6 +9,7 @@ const AA = "../../../main/org/epics/archiverappliance/staticcontent/js/aa/";
 const { hasSpread, moments, silvermanBandwidth } = await import(`${AA}stats.js`);
 const { pearson, correlationMatrix } = await import(`${AA}correlation.js`);
 const { multipleRegression, principalComponents, conditionNumber, mutualInformation } = await import(`${AA}dependency.js`);
+const { linearLeastSquares, fitModel, MODEL_NAMES } = await import(`${AA}fit.js`);
 const { linearFit } = await import(`${AA}trend.js`);
 const { autocorrelation, prepareSeries } = await import(`${AA}spectrum.js`);
 
@@ -66,6 +67,26 @@ test("the linear fit of a constant series is the exact line through it and has n
     }
     const varying = linearFit(wave.map((v, i) => ({ t: 1.7e12 + i * 1000, v })));
     assert.ok(varying.rSquared > 0 && varying.rSquared < 1);
+});
+
+test("the coefficient of determination of a fit to constant values is null for the least squares and for every model", () => {
+    for (const value of CONSTANTS) {
+        assert.equal(linearLeastSquares(ramp.map((t) => [1, t]), flat(value)).rSquared, null, `least squares ${value}`);
+        for (const name of MODEL_NAMES) {
+            const result = fitModel(name, ramp, flat(value));
+            assert.ok(result.ok, `${name} ${value} fits`);
+            assert.equal(result.rSquared, null, `${name} ${value}`);
+        }
+    }
+    const varying = fitModel("line", ramp, wave);
+    assert.ok(varying.rSquared > 0 && varying.rSquared < 1, "a varying series keeps its coefficient of determination");
+});
+
+test("the coefficient of determination is null when the deviations of y are too small for their squares to sum above zero", () => {
+    const tiny = ramp.map((_, i) => (i % 2 ? 2e-170 : 1e-170));
+    assert.equal(hasSpread(tiny), true);
+    assert.equal(linearLeastSquares(ramp.map((t) => [1, t]), tiny).rSquared, null);
+    assert.equal(fitModel("line", ramp, tiny).rSquared, null);
 });
 
 test("the autocorrelation of a constant series is null", () => {

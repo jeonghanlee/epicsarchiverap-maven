@@ -7,6 +7,7 @@
 // high edge of the bin of each point) the value of the model at a point is its mean over the bin, as the option I of TH1::Fit
 // takes it. The bundled D3 has none of these.
 import { invert, transpose, multiply } from "./matrix.js";
+import { hasSpread } from "./stats.js";
 
 const LM_ITERATIONS_MOST = 500;
 const LM_DAMPING_START = 1e-3;
@@ -80,8 +81,9 @@ function covarianceOf(inverse, chi2, dof, weighted) {
 }
 
 /** The coefficient of determination: one minus the residual sum of squares over the total one, from the unweighted residuals also
- * for a weighted fit (it describes how much of the spread of y the model explains, not the weighted chi-square); null when y does not vary. */
+ * for a weighted fit (it describes how much of the spread of y the model explains, not the weighted chi-square); null when y does not vary (hasSpread) or its deviations are too small for their squares to sum above zero. */
 function rSquaredOf(y, chi2) {
+    if (!hasSpread(y)) return null;
     const mean = y.reduce((s, v) => s + v, 0) / y.length;
     const total = y.reduce((s, v) => s + (v - mean) ** 2, 0);
     return total > 0 ? 1 - chi2 / total : null;
