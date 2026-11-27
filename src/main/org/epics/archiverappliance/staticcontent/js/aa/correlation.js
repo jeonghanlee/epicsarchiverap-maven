@@ -3,7 +3,7 @@
 // variables, the partial correlation from its inverse, and the profile of y against x. Inputs are arrays of finite numbers of
 // equal length. The bundled D3 has none of these.
 import { invert } from "./matrix.js";
-import { logGamma } from "./stats.js";
+import { hasSpread, logGamma } from "./stats.js";
 
 const BETA_ITERATIONS_MOST = 300;
 const BETA_EPSILON = 1e-15;
@@ -68,6 +68,7 @@ const mean = (values) => values.reduce((s, v) => s + v, 0) / values.length;
 export function pearson(x, y) {
     const n = Math.min(x.length, y.length);
     if (n < 3) return null;
+    if (!hasSpread(x) || !hasSpread(y)) return null;
     const mx = mean(x);
     const my = mean(y);
     let sxy = 0;

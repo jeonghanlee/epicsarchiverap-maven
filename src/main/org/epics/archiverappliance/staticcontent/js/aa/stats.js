@@ -26,6 +26,21 @@ export function logGamma(x) {
     return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(sum);
 }
 
+/**
+ * Whether the numbers are not all the same. The decision is taken on the two ends and not on a variance: the mean of eight 0.1
+ * is not 0.1, so the sum of squared deviations of equal values is not always 0. A loop, not Math.min(...values), which fails
+ * for a very long array. Values that are not numbers are passed over.
+ */
+export function hasSpread(values) {
+    let low = Infinity;
+    let high = -Infinity;
+    for (const value of values) {
+        if (value < low) low = value;
+        if (value > high) high = value;
+    }
+    return high > low;
+}
+
 /** The finite numbers of values as a Float64Array, in the order given. */
 export function finiteValues(values) {
     const out = [];

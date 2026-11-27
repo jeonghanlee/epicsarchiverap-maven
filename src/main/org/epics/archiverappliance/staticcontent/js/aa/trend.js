@@ -2,6 +2,8 @@
 // the values against time (the slow trend), the time a signal holds a value beyond a level, and the reading of the limits that
 // the retrieval reports for a PV. The samples are objects {t, v} with t in milliseconds and v finite, in ascending time.
 
+import { hasSpread } from "./stats.js";
+
 const SECOND = 1000;
 
 /**
@@ -52,10 +54,12 @@ export function linearFit(points) {
     if (!(sxx > 0)) {
         return null;
     }
-    const slope = sxy / sxx;
-    const intercept = meanY - slope * meanX;
-    const residual = Math.max(0, syy - slope * sxy);
-    return { t0, slope, intercept, rSquared: syy > 0 ? 1 - residual / syy : null, slopeError: Math.sqrt(residual / (n - 2) / sxx), n };
+    // Equal values have the exact line through them: the means above carry a rounding error that would leave a slope near 0.
+    const constant = !hasSpread(points.map((p) => p.v));
+    const slope = constant ? 0 : sxy / sxx;
+    const intercept = constant ? points[0].v : meanY - slope * meanX;
+    const residual = constant ? 0 : Math.max(0, syy - slope * sxy);
+    return { t0, slope, intercept, rSquared: !constant && syy > 0 ? 1 - residual / syy : null, slopeError: Math.sqrt(residual / (n - 2) / sxx), n };
 }
 
 /** The value of a fit at the time t in milliseconds. */

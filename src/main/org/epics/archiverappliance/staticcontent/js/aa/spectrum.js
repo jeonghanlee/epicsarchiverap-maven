@@ -2,6 +2,8 @@
 // the Fourier transform (radix 2, and Bluestein for any length), the periodogram power spectral density, the peak with its
 // width, the spectrogram and the autocorrelation. The bundled D3 has none of these; the bisector is its one help.
 
+import { hasSpread } from "./stats.js";
+
 const d3 = globalThis.d3;
 
 /** The median spacing in seconds of ascending times in seconds; null for fewer than two times. */
@@ -242,7 +244,7 @@ export function spectrogram(values, fs, windowName, segment, overlap) {
  */
 export function autocorrelation(values, maxLag) {
     const n = values.length;
-    if (n < 2) {
+    if (n < 2 || !hasSpread(values)) {
         return null;
     }
     let mean = 0;

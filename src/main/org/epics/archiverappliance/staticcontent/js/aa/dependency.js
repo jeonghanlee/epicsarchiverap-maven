@@ -6,6 +6,7 @@
 import { linearLeastSquares } from "./fit.js";
 import { symmetricEigen } from "./matrix.js";
 import { correlationMatrix } from "./correlation.js";
+import { hasSpread } from "./stats.js";
 
 /** The mean and the sample standard deviation of an array. */
 function spread(values) {
@@ -108,10 +109,12 @@ export function principalComponents(columns) {
 /**
  * The multiple linear regression of y on the columns with an intercept: the coefficients (the intercept first), their errors,
  * the standardised coefficients (each times the standard deviation of its column over that of y), R squared, the chi-square
- * per degree of freedom, the degrees of freedom and the residuals. Null when the system is singular or has no degree of freedom.
+ * per degree of freedom, the degrees of freedom and the residuals. Null when the system is singular, has no degree of freedom,
+ * or y has no spread, whose R squared and standardised coefficients are a division of zero by zero.
  */
 export function multipleRegression(columns, y) {
     const n = y.length;
+    if (!hasSpread(y) || columns.some((column) => !hasSpread(column))) return null;
     const design = y.map((_, i) => [1, ...columns.map((column) => column[i])]);
     const fit = linearLeastSquares(design, y);
     if (!fit) return null;
