@@ -2,7 +2,7 @@
 import { createChart } from "../comm/js/aa/chart.js";
 import { node } from "../comm/js/aa/dom.js";
 import { infoButton } from "../comm/js/aa/card.js";
-import { PROFILES, currentProfile, setProfile, onProfileChange } from "../comm/js/aa/chart/profile.js";
+import { currentProfile, onProfileChange } from "../comm/js/aa/chart/profile.js";
 import { currentZone, ZONES, setZone, onZoneChange, formatInZone, partsInZone, zoneName } from "../comm/js/aa/timezone.js";
 import { booleanOf, integerIn, isoDuration, orderedParameters, parseIsoDuration, readChartState, timeOf, wholeSecondsOf, writeChartParameters } from "../comm/js/aa/chart/state.js";
 import { lineLook } from "../comm/js/aa/chart/series.js";
@@ -105,8 +105,9 @@ function resolutionOfText(text) {
 
 /**
  * Reads the address as docs/analyzer-address.openapi.json declares it: the PVs, the displayed and the selected range,
- * the resolutions, the band, the export choices, the options of the analysis tools (tool-address.js), the zone, the profile
- * and the view, and the chart state through state.js. An invalid value falls back to its default; a pair is applied whole or not at all.
+ * the resolutions, the band, the export choices, the options of the analysis tools (tool-address.js), the zone and the view,
+ * and the chart state through state.js; the profile is read from the address by chart/profile.js when the page loads. An invalid
+ * value falls back to its default; a pair is applied whole or not at all.
  */
 function readAddress() {
     const parameters = new URLSearchParams(window.location.search);
@@ -123,11 +124,6 @@ function readAddress() {
     state.tools = readToolParameters(parameters, state.pvs);
     const zone = parameters.get("tz");
     setZone(ZONES.some((item) => item.id === zone) ? zone : "browser");
-    let profile = parameters.get("profile");
-    if (!PROFILES.some((item) => item.id === profile)) {
-        try { profile = window.localStorage.getItem("aa.chartProfile"); } catch (error) { profile = null; }
-    }
-    setProfile(PROFILES.some((item) => item.id === profile) ? profile : "default");
     // The export choices restore the form only; an invalid field keeps its default and the others stay.
     const fields = deepFields(parameters, "export");
     const choice = { ...EXPORT_DEFAULTS, from: "", to: "" };
