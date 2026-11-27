@@ -353,10 +353,11 @@ export function createWaveform(host, options) {
             .then((body) => {
                 if (current !== mine) return;
                 const parsed = parseFrames(body);
-                const found = parsed.frames.find((f) => f.values);
+                const last = sampleAtFrame(parsed.frames, frame.t);
+                const found = last && last.values ? last : null;
                 entry.values = found ? found.values : null;
                 entry.state = found ? "ready" : "failed";
-                entry.reason = found ? "" : parsed.form === "No samples" ? `${settings.axisPv} holds no frame at or before the time of the frame.` : `${settings.axisPv} is not an array of numbers at the time of the frame.`;
+                entry.reason = found ? "" : last ? `${settings.axisPv} is not an array of numbers at the time of the frame.` : `${settings.axisPv} holds no frame at or before the time of the frame.`;
                 render();
             })
             .catch((problem) => { if (current === mine) { entry.state = "failed"; entry.reason = String(problem.message || problem); render(); } });

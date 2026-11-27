@@ -4,6 +4,8 @@
 // The response bodies have the shape the retrieval gives (measured on the appliance in the check of the retrieval of arrays).
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import "./load-d3.mjs";
 
 const arrays = await import("../../../main/org/epics/archiverappliance/staticcontent/js/aa/arrays.js");
@@ -239,4 +241,33 @@ test("a sample without nanoseconds counts at its whole second", () => {
     const whole = { secs: 1795800633, val: 1 };
     assert.equal(arrays.sampleAtFrame([whole], 1795800633000), whole);
     assert.equal(arrays.sampleAtFrame([whole], 1795800632998), null);
+});
+
+// The axis of a waveform is an array PV read for the window of the frame; its frames come from parseFrames and carry the seconds and
+// nanoseconds that sampleAtFrame reads.
+const AXIS_BEFORE = [1795800632, [0, 0.5, 1, 1.5], { nanos: 844987803 }];
+const AXIS_INSIDE = [1795800633, [100, 100.25, 100.5, 100.75], { nanos: 845030724 }];
+
+test("the axis in force at a frame is the last frame of its window, the one stamped in the frame's millisecond when there is one", () => {
+    const frames = arrays.parseFrames(frameBody([AXIS_BEFORE, AXIS_INSIDE])).frames;
+    const found = arrays.sampleAtFrame(frames, FRAME_T);
+    assert.deepEqual([...found.values], [100, 100.25, 100.5, 100.75]);
+    const gap = arrays.parseFrames(frameBody([AXIS_INSIDE])).frames;
+    assert.deepEqual([...arrays.sampleAtFrame(gap, FRAME_T + 500).values], [100, 100.25, 100.5, 100.75]);
+});
+
+test("a last frame of the axis that is not an array of numbers is the frame found, so that no older axis is taken in its place", () => {
+    const frames = arrays.parseFrames(frameBody([AXIS_BEFORE, [1795800633, 7, { nanos: 845030724 }]])).frames;
+    const found = arrays.sampleAtFrame(frames, FRAME_T);
+    assert.equal(found.values, null);
+    assert.equal(found.scalar, true);
+    assert.equal(arrays.sampleAtFrame(arrays.parseFrames(frameBody([])).frames, FRAME_T), null, "no frame at all");
+});
+
+test("the Image and Waveform tabs choose the sample of a second PV through sampleAtFrame at each of the three places that read one", () => {
+    const viewer = (file) => readFileSync(fileURLToPath(new URL(`../../../main/org/epics/archiverappliance/retrieval/staticcontent/viewer/${file}`, import.meta.url)), "utf8");
+    const calls = (text) => (text.match(/sampleAtFrame\(/g) ?? []).length;
+    assert.equal(calls(viewer("image.js")), 1, "the width and the height of the image");
+    assert.equal(calls(viewer("waveform.js")), 2, "the sampling frequency and the axis array");
+    assert.ok(!/\.find\(\(f\) => f\.values\)/.test(viewer("waveform.js")), "the first frame with values is not taken for the axis");
 });
