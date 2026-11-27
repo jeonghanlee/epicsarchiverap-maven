@@ -17,6 +17,11 @@ import java.io.InputStream;
 import java.util.HashMap;
 
 public class PolicyExecutionTest {
+    /** The two policies files that every test of the chosen policy runs against: the shipped one and the test one. */
+    private static final String SHIPPED_POLICIES = "src/sitespecific/default/classpathfiles/policies.py";
+
+    private static final String TEST_POLICIES = "src/sitespecific/tests/classpathfiles/policies.py";
+
     Logger logger = LogManager.getLogger(PolicyExecutionTest.class);
 
     /**
@@ -49,11 +54,7 @@ public class PolicyExecutionTest {
     }
 
     @ParameterizedTest
-    @ValueSource(
-            strings = {
-                "src/sitespecific/default/classpathfiles/policies.py",
-                "src/sitespecific/tests/classpathfiles/policies.py"
-            })
+    @ValueSource(strings = {SHIPPED_POLICIES, TEST_POLICIES})
     public void testPolicyOverrideReportsItsOwnName(String policiesFile) throws Exception {
         DefaultConfigService configService = configServiceReading(policiesFile);
         HashMap<String, Object> pvInfo = new HashMap<String, Object>();
@@ -94,11 +95,7 @@ public class PolicyExecutionTest {
 
     /** The event rate measured at the archive request selects 2HzPVs above 2 per second, with a period of 0.1 s. */
     @ParameterizedTest
-    @ValueSource(
-            strings = {
-                "src/sitespecific/default/classpathfiles/policies.py",
-                "src/sitespecific/tests/classpathfiles/policies.py"
-            })
+    @ValueSource(strings = {SHIPPED_POLICIES, TEST_POLICIES})
     public void testPolicyChosenByTheEventRate(String policiesFile) throws Exception {
         assertPolicy("Default", 1.0f, policyFor(policiesFile, "test:rate", 2.0, 1.0, null), "rate 2.0");
         assertPolicy("2HzPVs", 0.1f, policyFor(policiesFile, "test:rate", 2.5, 1.0, null), "rate 2.5");
@@ -109,11 +106,7 @@ public class PolicyExecutionTest {
      * policies; another name at the same storage rate does not.
      */
     @ParameterizedTest
-    @ValueSource(
-            strings = {
-                "src/sitespecific/default/classpathfiles/policies.py",
-                "src/sitespecific/tests/classpathfiles/policies.py"
-            })
+    @ValueSource(strings = {SHIPPED_POLICIES, TEST_POLICIES})
     public void testBpmsChosenByTheStorageRate(String policiesFile) throws Exception {
         assertPolicy("BPMS", 1.0f, policyFor(policiesFile, "BPMS:test", 1.0, 36.0, null), "storage rate 36");
         assertPolicy("Default", 1.0f, policyFor(policiesFile, "BPMS:test", 1.0, 34.0, null), "storage rate 34");
@@ -123,11 +116,7 @@ public class PolicyExecutionTest {
 
     /** A policy chosen by its name keeps that name and its period. */
     @ParameterizedTest
-    @ValueSource(
-            strings = {
-                "src/sitespecific/default/classpathfiles/policies.py",
-                "src/sitespecific/tests/classpathfiles/policies.py"
-            })
+    @ValueSource(strings = {SHIPPED_POLICIES, TEST_POLICIES})
     public void testPolicyChosenByItsName(String policiesFile) throws Exception {
         assertPolicy("2HzPVs", 0.1f, policyFor(policiesFile, "test:name", 1.0, 1.0, "2HzPVs"), "2HzPVs");
         assertPolicy("BPMS", 1.0f, policyFor(policiesFile, "test:name", 1.0, 1.0, "BPMS"), "BPMS");
@@ -141,11 +130,7 @@ public class PolicyExecutionTest {
      * rate of 1.0 only; the policies answer it without reading another input.
      */
     @ParameterizedTest
-    @ValueSource(
-            strings = {
-                "src/sitespecific/default/classpathfiles/policies.py",
-                "src/sitespecific/tests/classpathfiles/policies.py"
-            })
+    @ValueSource(strings = {SHIPPED_POLICIES, TEST_POLICIES})
     public void testInputOfTheRetrievalLookup(String policiesFile) throws Exception {
         PolicyConfig policyConfig = policyFor(policiesFile, "test:retrieval", 1.0, null, "");
         assertPolicy("Default", 1.0f, policyConfig, "retrieval lookup");
