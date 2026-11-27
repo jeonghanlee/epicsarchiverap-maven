@@ -62,7 +62,7 @@ export function parse(text) {
         if (token.type === "number") return () => token.value;
         if (token.type === "name") {
             if (!token.quoted && peek() && peek().type === "operator" && peek().value === "(") {
-                const definition = FUNCTIONS[token.value];
+                const definition = Object.hasOwn(FUNCTIONS, token.value) ? FUNCTIONS[token.value] : undefined;
                 if (!definition) throw new Error(`Unknown function ${token.value}.`);
                 take();
                 const args = [expression()];
@@ -71,9 +71,9 @@ export function parse(text) {
                 if (args.length !== definition[0]) throw new Error(`${token.value} takes ${definition[0]} argument${definition[0] === 1 ? "" : "s"}.`);
                 return (values) => definition[1](...args.map((arg) => arg(values)));
             }
-            if (!token.quoted && token.value in CONSTANTS) return () => CONSTANTS[token.value];
+            if (!token.quoted && Object.hasOwn(CONSTANTS, token.value)) return () => CONSTANTS[token.value];
             if (!variables.includes(token.value)) variables.push(token.value);
-            return (values) => (token.value in values ? Number(values[token.value]) : NaN);
+            return (values) => (Object.hasOwn(values, token.value) ? Number(values[token.value]) : NaN);
         }
         if (token.value === "(") {
             const inner = expression();

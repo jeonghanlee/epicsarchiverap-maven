@@ -53,3 +53,28 @@ test("a quoted name is never a constant or a function, and an unfinished or empt
     }
     assert.equal(parse("DEV-01:TEMP - x").ok, false, "unquoted, a name with a minus is not a name");
 });
+
+test("a name that Object.prototype also holds is a variable like any other", () => {
+    for (const name of ["constructor", "valueOf", "hasOwnProperty", "__proto__", "toString"]) {
+        const parsed = parse(`${name} + 1`);
+        assert.equal(parsed.ok, true, name);
+        assert.deepEqual(parsed.variables, [name], name);
+        assert.equal(parsed.evaluate({ [name]: 2 }), 3, name);
+        assert.ok(Number.isNaN(parsed.evaluate({})), `${name} missing`);
+    }
+});
+
+test("a quoted name that Object.prototype also holds is missing when no value is given for it", () => {
+    const parsed = parse('"toString" + 1');
+    assert.deepEqual(parsed.variables, ["toString"]);
+    assert.ok(Number.isNaN(parsed.evaluate({ x: 2 })));
+    assert.equal(parsed.evaluate({ toString: 4 }), 5);
+});
+
+test("a call of a name that Object.prototype holds is an unknown function", () => {
+    for (const name of ["constructor", "toString", "valueOf", "__proto__"]) {
+        const parsed = parse(`${name}(1)`);
+        assert.equal(parsed.ok, false, name);
+        assert.equal(parsed.reason, `Unknown function ${name}.`, name);
+    }
+});
