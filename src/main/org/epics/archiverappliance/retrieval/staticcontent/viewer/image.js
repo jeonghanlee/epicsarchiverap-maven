@@ -16,7 +16,7 @@ import { createHoverTip } from "../comm/js/aa/chart/hover.js";
 import { node } from "../comm/js/aa/dom.js";
 import { infoButton } from "../comm/js/aa/card.js";
 import { finiteNumber } from "../comm/js/aa/chart/state.js";
-import { BYTES_PER_ELEMENT, elementsText, parseFrames, readBounded } from "../comm/js/aa/arrays.js";
+import { BYTES_PER_ELEMENT, elementsText, parseFrames, readBounded, sampleAtFrame } from "../comm/js/aa/arrays.js";
 import { FWHM_FACTOR, checkImage, checkRegion, frameDifference, gaussianSize, regionStats, subtractConstant } from "../comm/js/aa/image.js";
 import { formatInZone } from "../comm/js/aa/timezone.js";
 
@@ -316,7 +316,7 @@ export function createImage(host, options) {
                 options.retrieve(pv, new Date(frame.t), new Date(frame.t + 1), new AbortController().signal)
                     .then((response) => (response.ok ? response.json() : Promise.reject(new Error(`${response.statusText || "Retrieval failed"} (HTTP ${response.status})`))))
                     .then((body) => {
-                        const sample = Array.isArray(body) && body[0] && Array.isArray(body[0].data) ? body[0].data.filter((s) => Number(s.secs) * 1000 <= frame.t + 1).pop() || body[0].data[0] : null;
+                        const sample = Array.isArray(body) && body[0] && Array.isArray(body[0].data) ? sampleAtFrame(body[0].data, frame.t) : null;
                         if (!sample) Object.assign(entry, { state: "failed", reason: `${pv} holds no value at or before the time of the frame.` });
                         else if (Array.isArray(sample.val)) Object.assign(entry, { state: "failed", reason: `${pv} is an array, not one number of pixels.` });
                         else Object.assign(entry, { state: "ready", value: Number(sample.val) });

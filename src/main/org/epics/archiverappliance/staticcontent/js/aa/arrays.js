@@ -1,8 +1,8 @@
 // The reading of arrays for the analyzer: what a request for the frames of an array PV may ask, the reading of the response within a
 // byte limit, the frames as typed arrays, the thinning of the frames to the most the page draws, the frame at or before a time, the
-// element axis, and the series of a summary value over the frames. The server refuses by declared size only the binned operators, so a
-// raw or thinned range of arrays is bounded here to protect the browser: in elements from the type information before the request, in
-// bytes while the response arrives, and in elements again over the frames read.
+// sample of another PV that is in force at a frame, the element axis, and the series of a summary value over the frames. The server
+// refuses by declared size only the binned operators, so a raw or thinned range of arrays is bounded here to protect the browser: in
+// elements from the type information before the request, in bytes while the response arrives, and in elements again over the frames read.
 import { checkValues, summary } from "./array.js";
 
 /** The most frames the page keeps for the overlay, the heatmap over time and the series of summary values. */
@@ -156,6 +156,19 @@ export function frameAtOrBefore(frames, t) {
         } else {
             high = middle - 1;
         }
+    }
+    return found;
+}
+
+/**
+ * The sample of a PV that is in force at the frame of time t (milliseconds), from the samples of a retrieval of the window from t
+ * to t + 1 ms, given in time order as the retrieval gives them: the last sample at or before the end of the window, which is the
+ * one stamped in the millisecond of the frame when there is one and the sample before the window otherwise; null when there is none.
+ */
+export function sampleAtFrame(samples, t) {
+    let found = null;
+    for (const sample of samples) {
+        if (Number(sample.secs) * 1000 + Number(sample.nanos ?? 0) / 1e6 <= t + 1) found = sample;
     }
     return found;
 }

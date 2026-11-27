@@ -1,5 +1,6 @@
 // The reading of arrays (aa/arrays.js): the plan of a request from the type information, the bounded reading of a response, the frames of
-// a response, the thinning, the frame at or before a time, the element axis, the series of a summary value and the frames of an overlay.
+// a response, the thinning, the frame at or before a time, the sample of another PV in force at a frame, the element axis, the series of a
+// summary value and the frames of an overlay.
 // The response bodies have the shape the retrieval gives (measured on the appliance in the check of the retrieval of arrays).
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -213,4 +214,29 @@ test("an overlay holds the current frame and others spaced evenly over the frame
     assert.equal(new Set(withOdd).size, 5);
     assert.equal(arrays.overlayFrames(frames, 0, 500).length, arrays.OVERLAY_MOST, "no more than the most");
     assert.deepEqual(arrays.overlayFrames(frames.slice(0, 3), 1, 10), [0, 1, 2], "fewer frames than asked");
+});
+
+// Samples as the retrieval gives them for the window of one millisecond at the frame (measured on the appliance): the sample before
+// the window, then the one stamped in it when there is one.
+const BEFORE = { secs: 1795800632, nanos: 844987803, val: 0.5411306935225452 };
+const INSIDE = { secs: 1795800633, nanos: 845030724, val: 0.25172808422980086 };
+const FRAME_T = 1795800633845;
+
+test("the sample in force at a frame is the one stamped in its millisecond, or else the one before the window", () => {
+    assert.equal(arrays.sampleAtFrame([BEFORE, INSIDE], FRAME_T), INSIDE);
+    assert.equal(arrays.sampleAtFrame([INSIDE], FRAME_T + 500), INSIDE, "a window in the gap holds only the sample before it");
+    assert.equal(arrays.sampleAtFrame([BEFORE], FRAME_T), BEFORE);
+});
+
+test("the sample in force at a frame is null when no sample is at or before the end of its window", () => {
+    assert.equal(arrays.sampleAtFrame([], FRAME_T), null);
+    assert.equal(arrays.sampleAtFrame([INSIDE], FRAME_T - 1000), null);
+    assert.equal(arrays.sampleAtFrame([BEFORE, INSIDE], FRAME_T - 1000), BEFORE, "a later sample is not taken for an earlier frame");
+    assert.equal(arrays.sampleAtFrame([BEFORE, INSIDE], 1795800633000), BEFORE, "a sample later in its second is after a frame at the start of the second");
+});
+
+test("a sample without nanoseconds counts at its whole second", () => {
+    const whole = { secs: 1795800633, val: 1 };
+    assert.equal(arrays.sampleAtFrame([whole], 1795800633000), whole);
+    assert.equal(arrays.sampleAtFrame([whole], 1795800632998), null);
 });

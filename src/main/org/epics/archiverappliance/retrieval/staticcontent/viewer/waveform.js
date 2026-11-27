@@ -14,7 +14,7 @@ import { node } from "../comm/js/aa/dom.js";
 import { infoButton } from "../comm/js/aa/card.js";
 import { finiteNumber } from "../comm/js/aa/chart/state.js";
 import { ELEMENTS_MOST, FRAMES_MOST, OVERLAY_MOST, REQUEST_BYTES_MOST, SUMMARY_VALUES, elementsText, axisValues, checkFrames, frameAtOrBefore, frameSummaries, framesInside, lengthsOf, overlayFrames, parseFrames, readBounded,
-    requestPlan, summarySeries, thinOnPage, drawingIndices } from "../comm/js/aa/arrays.js";
+    requestPlan, sampleAtFrame, summarySeries, thinOnPage, drawingIndices } from "../comm/js/aa/arrays.js";
 import { DIRECTIONS, difference, heatmapGrid, peaks, summary } from "../comm/js/aa/array.js";
 import { nextPowerOfTwo, spectra, spectralPeak } from "../comm/js/aa/spectrum.js";
 import { formatInZone, zoneName } from "../comm/js/aa/timezone.js";
@@ -389,7 +389,7 @@ export function createWaveform(host, options) {
             options.retrieve(settings.fsPv, new Date(frame.t), new Date(frame.t + 1), new AbortController().signal)
                 .then((response) => (response.ok ? response.json() : Promise.reject(new Error(`${response.statusText || "Retrieval failed"} (HTTP ${response.status})`))))
                 .then((body) => {
-                    const sample = Array.isArray(body) && body[0] && Array.isArray(body[0].data) ? body[0].data.find((s) => Number(s.secs) * 1000 <= frame.t + 1) || body[0].data[0] : null;
+                    const sample = Array.isArray(body) && body[0] && Array.isArray(body[0].data) ? sampleAtFrame(body[0].data, frame.t) : null;
                     if (!sample) Object.assign(entry, { state: "failed", reason: `${settings.fsPv} holds no value at or before the time of the frame.` });
                     else if (Array.isArray(sample.val)) Object.assign(entry, { state: "failed", reason: `${settings.fsPv} is an array, not one number; the sampling frequency is one number of Hz.` });
                     else if (!(Number(sample.val) > 0)) Object.assign(entry, { state: "failed", reason: `${settings.fsPv} holds ${sample.val} at the time of the frame, not a positive number of Hz.` });
