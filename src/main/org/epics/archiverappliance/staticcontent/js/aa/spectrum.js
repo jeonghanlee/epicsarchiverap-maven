@@ -161,36 +161,13 @@ export function fft(reInput, imInput = null) {
 }
 
 /**
- * The periodogram power spectral density of the samples at the sampling frequency fs (Hz): the mean is removed, the window of
- * the name is applied, the series is padded with zeros to nfft, and the one-sided density is |X|^2 / (fs sum of w^2), doubled
- * except at zero frequency and, for an even nfft, at the Nyquist frequency (SciPy's periodogram with the density scaling).
+ * The periodogram power spectral density of the samples at the sampling frequency fs (Hz), SciPy's periodogram with the density
+ * scaling: the density of spectra(), as {frequencies, power, binWidth} where power is that density (unit squared per hertz, not
+ * the power spectrum that spectra() also gives under the same name). Null where spectra() is.
  */
 export function periodogram(values, fs, windowName = "rectangular", nfft = values.length) {
-    const n = values.length;
-    if (n < 2 || !(fs > 0) || nfft < n) {
-        return null;
-    }
-    let mean = 0;
-    for (let i = 0; i < n; i += 1) mean += values[i];
-    mean /= n;
-    const w = windowFunction(windowName, n);
-    const x = new Float64Array(nfft);
-    let windowPower = 0;
-    for (let i = 0; i < n; i += 1) {
-        x[i] = (values[i] - mean) * w[i];
-        windowPower += w[i] * w[i];
-    }
-    const { re, im } = fft(x);
-    const half = Math.floor(nfft / 2) + 1;
-    const frequencies = new Float64Array(half);
-    const power = new Float64Array(half);
-    const scale = 1 / (fs * windowPower);
-    for (let k = 0; k < half; k += 1) {
-        frequencies[k] = (k * fs) / nfft;
-        const doubled = k > 0 && !(nfft % 2 === 0 && k === half - 1);
-        power[k] = (re[k] * re[k] + im[k] * im[k]) * scale * (doubled ? 2 : 1);
-    }
-    return { frequencies, power, binWidth: fs / nfft };
+    const s = spectra(values, fs, windowName, nfft);
+    return s && { frequencies: s.frequencies, power: s.density, binWidth: s.binWidth };
 }
 
 /**
@@ -314,11 +291,11 @@ export function autocorrelationPeriod(r, minimum = -Infinity) {
 
 /**
  * The one-sided spectra of the samples at the sampling frequency fs (Hz) in the three scalings that the tab keeps apart: the power
- * spectral density (unit squared per hertz, SciPy's scaling "density"), the power spectrum (unit squared, the mean square a bin
- * carries, SciPy's scaling "spectrum": |X|^2 / (sum w)^2, doubled except at zero frequency and at the Nyquist frequency of an even
- * length) and the amplitude (unit) that a sinusoid of the bin's frequency would have, the square root of twice the power. The mean
- * is removed and the window applied as in periodogram(). Null for fewer than two samples, a frequency that is not positive or a
- * transform length below the number of samples.
+ * spectral density (unit squared per hertz, SciPy's scaling "density": |X|^2 / (fs sum of w^2)), the power spectrum (unit squared,
+ * the mean square a bin carries, SciPy's scaling "spectrum": |X|^2 / (sum w)^2) and the amplitude (unit) that a sinusoid of the
+ * bin's frequency would have, the square root of twice the power. The two spectra are doubled except at zero frequency and at the
+ * Nyquist frequency of an even length. The mean is removed, the window of the name applied and the series padded with zeros to
+ * nfft. Null for fewer than two samples, a frequency that is not positive or a transform length below the number of samples.
  */
 export function spectra(values, fs, windowName = "rectangular", nfft = values.length) {
     const n = values.length;

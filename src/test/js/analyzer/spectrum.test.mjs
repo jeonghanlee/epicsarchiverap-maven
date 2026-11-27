@@ -128,3 +128,17 @@ test("a series resampled to an even interval gives the frequency of the signal i
     const peak = spectrum.spectralPeak(frequencies, power);
     assert.ok(Math.abs(peak.frequency - 0.05) <= binWidth, `${peak.frequency} (bin ${binWidth})`);
 });
+
+// The periodogram is the density of spectra(), with its frequencies and its bin width fs / nfft, whatever the window and padding.
+test("the periodogram is the density of the spectra with their frequencies and the bin width of the sampling frequency over the length", () => {
+    const values = Float64Array.from({ length: 50 }, (_, i) => Math.sin(i * 0.4) + 0.1 * Math.cos(i * 1.9) + 3);
+    for (const window of ["rectangular", "hann", "hamming", "blackman"]) {
+        for (const nfft of [50, 64, 128]) {
+            const p = spectrum.periodogram(values, 2.5, window, nfft);
+            const s = spectrum.spectra(values, 2.5, window, nfft);
+            assert.deepEqual(Array.from(p.power), Array.from(s.density), `${window} nfft ${nfft}: power`);
+            assert.deepEqual(Array.from(p.frequencies), Array.from(s.frequencies), `${window} nfft ${nfft}: frequencies`);
+            assert.equal(p.binWidth, 2.5 / nfft, `${window} nfft ${nfft}: bin width`);
+        }
+    }
+});
