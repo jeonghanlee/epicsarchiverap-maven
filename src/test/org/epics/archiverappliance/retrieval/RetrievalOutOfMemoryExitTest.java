@@ -5,6 +5,7 @@ import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigServiceForTests;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -29,12 +30,15 @@ import java.util.concurrent.TimeUnit;
  * fixture with one PV of 1 Hz doubles over 30 days.
  *
  * Part A, without the JVM options of the first protection layer: for each response format, the status and the body
- * of a request whose preallocation fails (an argument near 2^31 of optimized, which fails with Requested array size
- * exceeds VM limit before an event is written), and whether the next request is answered.
+ * of a request that declares far more than the heap (an argument near 2^31 of optimized), which the request budget refuses
+ * with status 400 before anything is allocated, and whether the next request is answered.
  *
  * Part B, with -XX:+ExitOnOutOfMemoryError and -XX:+HeapDumpOnOutOfMemoryError and a limited heap: the request of
  * optimized_2000000 over 80 days that needs more than that heap; the exit status of the JVM, the heap dump in its logs
- * folder, the console line of the JVM and what the client received.
+ * folder, the console line of the JVM and what the client received. Part B is disabled: the request budget refuses that
+ * request with status 400 and, with the byte model of the budget lowered and the pressure limits at their highest, the
+ * pressure layer stops it at 99 percent of the heap, so no request reaches the exit of the JVM. The reason is recorded in
+ * docs/CLOSED_DOORS.md.
  *
  * It exhausts memory on purpose, so it is tagged slow and run on its own, for example
  * ./mvnw -o -B -ntp test -Dtest=RetrievalOutOfMemoryExitTest -Dtest.excludedGroups=
@@ -117,6 +121,8 @@ public class RetrievalOutOfMemoryExitTest {
         }
     }
 
+    @Disabled("No retrieval request reaches the exit of the JVM: the request budget refuses it and the pressure layer "
+            + "stops it before the heap is exhausted")
     @Test
     public void partBHeapExhaustionWithTheOptionsEndsTheJvm() throws Exception {
         generateData();
